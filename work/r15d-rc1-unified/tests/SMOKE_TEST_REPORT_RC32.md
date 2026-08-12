@@ -6,7 +6,7 @@ Canlı sisteme yazma: Yapılmadı
 ## Sonuç
 
 - JavaScript sözdizimi: Geçti
-- Statik uygulama/migration güvenlik kontrolleri: 138/138 geçti
+- Statik uygulama/migration güvenlik kontrolleri: 143/143 geçti
 - Git whitespace/diff kontrolü: Geçti
 - Temiz origin tarayıcı açılışı: Geçti
 - Görünen uygulama sürümü: R15D-rc3.2
@@ -22,4 +22,3 @@ Canlı sisteme yazma: Yapılmadı
 - Kütüphane değişikliği sonrasında başlamış denetim snapshot metninin değişmediğinin uçtan uca doğrulanması
 - Teknik müdür silme işleminde sunucu tarafından oluşturulan kimlik kaydının doğrulanması
 - Production alan adında Service Worker yükseltme testi
-

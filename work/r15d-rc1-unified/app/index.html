@@ -78,6 +78,10 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .pill.total{background:#EAF0FB;color:var(--navy);}
 .pill.cached{background:#E7F6EF;color:#1E7A46;}
 .pill.readonly{background:#ECEEF4;color:#5C6176;}
+.offline-card-state{margin-top:10px;border-radius:10px;padding:10px 11px;display:grid;gap:2px;text-align:left;}
+.offline-card-state.ok{background:#E8F7EF;color:#12643D;border:1px solid #B8E4CB;}
+.offline-card-state.no{background:#FFF5E5;color:#845A00;border:1px solid #F0D696;}
+.offline-card-state b{font-size:12.5px}.offline-card-state small{font-size:10.5px;line-height:1.35;font-weight:600;}
 .empty{color:var(--muted);text-align:center;padding:40px 0;font-size:14px;}
 
 /* ===== FORM ===== */
@@ -225,6 +229,7 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 .offline-ready{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:11.5px;font-weight:800;}
 .offline-ready.ok{background:#e8f7ef;color:#12643d;border:1px solid #b8e4cb;}
 .offline-ready.pending{background:#fff8e8;color:#845a00;border:1px solid #f0d696;}
+.offline-ready b,.offline-ready small{display:block}.offline-ready small{margin-top:3px;font-size:10.5px;line-height:1.35;font-weight:600;}
 .preflight-list{display:grid;gap:7px;margin:12px 0;}
 .preflight-row{display:flex;gap:9px;align-items:flex-start;padding:9px;border:1px solid var(--line);border-radius:9px;background:#fff;}
 .preflight-row>span{font-size:17px;font-weight:900;line-height:1;}.preflight-row.ok>span{color:var(--ok);}.preflight-row.fail>span{color:var(--bad);}

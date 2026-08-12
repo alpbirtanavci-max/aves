@@ -829,6 +829,22 @@ const UI = (() => {
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
+  async function cevrimdisiHazirlikDurumu(d, rows = []) {
+    const marker = await DB.kvGet(`offline_ready_${d.id}`);
+    if (!marker) return { ready: false, detail: 'Bu cihazda hazırlık kontrolü yapılmadı.' };
+    if (marker.device_id !== await getDeviceId()) return { ready: false, detail: 'Hazırlık başka bir cihazda yapılmış.' };
+    if (marker.app_build_id !== APP_VERSION) return { ready: false, detail: 'Uygulama güncellendi; bu cihazda tekrar kontrol edilmeli.' };
+    if (!rows.length) return { ready: false, detail: 'Checklist maddeleri bu cihazda bulunmuyor.' };
+    if (rows.length !== marker.expected_item_count) return { ready: false, detail: `${rows.length}/${marker.expected_item_count} madde cihazda.` };
+    const itemSetHash = await sha256Hex(rows.map(row => row.madde_id).sort().join('|'));
+    if (itemSetHash !== marker.item_set_hash) return { ready: false, detail: 'Cihazdaki madde kümesi hazırlanan kopyayla eşleşmiyor.' };
+    return {
+      ready: true,
+      detail: `${rows.length} madde ve gerekli uygulama dosyaları bu cihazda doğrulandı.`,
+      checkedAt: marker.checked_at,
+    };
+  }
+
   // TS EN 81-70 (erişilebilirlik), TS EN 81-71 (kasıtlı tahribata dayanıklılık)
   // ve TS EN 81-73 (yangın anında davranış) AVES saha denetiminin zorunlu
   // katmanlarıdır. Denetçi bunları ek standart olarak seçip kaldıramaz;
@@ -953,7 +969,9 @@ const UI = (() => {
     const denetimler = (await DB.all('denetimler')).sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
     const sahaAll = await DB.all('saha');
     const statsBy = {};
+    const rowsBy = {};
     for (const s of sahaAll) {
+      (rowsBy[s.denetim_id] || (rowsBy[s.denetim_id] = [])).push(s);
       const st = statsBy[s.denetim_id] || (statsBy[s.denetim_id] = { toplam:0, ok:0, bad:0, na:0, ic:0 });
       st.toplam++;
       if (s.denetci_gordu !== false) {
@@ -972,6 +990,7 @@ const UI = (() => {
     const dl = document.getElementById('dlist');
     for (const d of denetimler) {
       const st = statsBy[d.id];
+      const offlineState = await cevrimdisiHazirlikDurumu(d, rowsBy[d.id] || []);
       const canEdit = canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
@@ -987,10 +1006,10 @@ const UI = (() => {
              ${st.bad ? `<span class="pill bad">${st.bad} uygun değil</span>` : ''}
              ${st.ic ? `<span class="pill warn">${st.ic} iç kontrol notu</span>` : ''}
              <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Çalışma tamamlandı' : (gozden ? 'Gözden geçirme' : 'Devam ediyor')}</span>
-             ${d.offline_hazir_at && d.app_build_id === APP_VERSION ? '<span class="pill ok">✓ Sahaya hazır</span>' : '<span class="pill warn">Hazırlık doğrulanmadı</span>'}
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
-          : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>`;
+          : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
+        <div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`;
       card.onclick = () => showDenetim(d.id);
       dl.appendChild(card);
     }
@@ -1340,6 +1359,8 @@ const UI = (() => {
 
   /* ---- Denetim detay ---- */
   async function sahayaHazirla(d, rows) {
+    // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez.
+    await DB.kvDel(`offline_ready_${d.id}`);
     const checks = [];
     const add = (name, ok, detail) => checks.push({ name, ok: !!ok, detail });
     const manifest = await DB.kvGet('kutuphane_manifest');
@@ -1398,6 +1419,14 @@ const UI = (() => {
       d.kutuphane_content_hash = manifest.content_hash;
       d.offline_check = { checked_at: now, checks };
       d.updated_at = now;
+      await DB.kvSet(`offline_ready_${d.id}`, {
+        device_id: await getDeviceId(),
+        app_build_id: APP_VERSION,
+        expected_item_count: rows.length,
+        item_set_hash: itemSetHash,
+        kutuphane_content_hash: manifest.content_hash,
+        checked_at: now,
+      });
       await localWrite('denetimler', d, 'denetimler');
     }
     return { ready, checks };
@@ -1407,9 +1436,9 @@ const UI = (() => {
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal"><button class="close">×</button>
-      <h3>${result.ready ? '✓ Sahaya hazır' : '⚠ Hazırlık tamamlanmadı'}</h3>
+      <h3>${result.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</h3>
       <div class="preflight-list">${result.checks.map(check => `<div class="preflight-row ${check.ok?'ok':'fail'}"><span>${check.ok?'✓':'✕'}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`).join('')}</div>
-      <div class="photo-help">${result.ready ? 'Bu denetim internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu denetim yeşil “Sahaya hazır” olarak işaretlenmez.'}</div>
+      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'}</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -1492,6 +1521,7 @@ const UI = (() => {
     const rows = (await guncelKutuphaneMetadatasi(
       await DB.allByIndex('saha', 'byDenetim', currentDenetimId)
     )).sort(siraKarsilastir);
+    const offlineState = await cevrimdisiHazirlikDurumu(d, rows);
     const inspectionOutbox = (await DB.outboxAll()).filter(item => item.inspection_id === currentDenetimId);
     const conflictSync = inspectionOutbox.filter(item => item.sync_status === 'conflict').length;
     const protectedSync = inspectionOutbox.filter(item => ['forbidden','conflict'].includes(item.sync_status)).length;
@@ -1527,7 +1557,7 @@ const UI = (() => {
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <button class="backlink" id="back">‹ Denetimler</button>
         <div style="display:flex;gap:6px">
-          ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Çevrimdışı hazırlığı doğrula">📱 Sahaya Hazırla</button>' : ''}
+          ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) ? '<button class="delbtn" id="btnSil" title="Denetimi sil">🗑 Sil</button>' : ''}
         </div>
@@ -1547,9 +1577,9 @@ const UI = (() => {
           d.kabin_kapi_acilma_tipi,
         ].filter(Boolean).join(' · '))}</div>` : ''}
         <div class="dmeta" style="margin-top:4px"><b>Durum:</b> ${tamamlandi ? '✓ Çalışma Tamamlandı' : (gozden ? 'Gözden Geçirme' : 'Devam Ediyor')}</div>
-        <div class="offline-ready ${d.offline_hazir_at && d.app_build_id === APP_VERSION ? 'ok' : 'pending'}">${d.offline_hazir_at && d.app_build_id === APP_VERSION
-          ? `✓ Sahaya hazır · ${d.expected_item_count || rows.length} madde cihazda doğrulandı`
-          : 'Sahaya hazırlık henüz doğrulanmadı'}</div>
+        <div class="offline-ready ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready
+          ? '✓ Bu cihaz çevrimdışı çalışmaya hazır'
+          : '⚠ Bu cihaz çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
         <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}" id="localSyncState">${protectedSync
           ? `⚠ ${protectedSync} işlem cihazda korumada · ${conflictSync ? 'Çakışma veya yetki' : 'Yetki'} incelemesi gerekiyor`
           : waitingSync
@@ -1669,7 +1699,7 @@ const UI = (() => {
       } catch (error) {
         sahayaHazirlikSonucuGoster({ ready: false, checks: [{ name: 'Hazırlık kontrolü', ok: false, detail: error.message }] });
         btnSahayaHazirla.disabled = false;
-        btnSahayaHazirla.textContent = '📱 Sahaya Hazırla';
+        btnSahayaHazirla.textContent = '📱 Çevrimdışı Kontrol';
       }
     };
     const btnSil = document.getElementById('btnSil');
@@ -1680,6 +1710,7 @@ const UI = (() => {
       const sahaRows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
       for (const r of sahaRows) await DB.del('saha', r.id);
       await DB.del('denetimler', currentDenetimId);
+      await DB.kvDel(`offline_ready_${currentDenetimId}`);
       await DB.outboxAdd({ op: 'delete', table: 'denetimler', filter: `id=eq.${currentDenetimId}`, ts: Date.now() });
       const deleted = (await DB.kvGet('deleted_ids')) || [];
       deleted.push(currentDenetimId);

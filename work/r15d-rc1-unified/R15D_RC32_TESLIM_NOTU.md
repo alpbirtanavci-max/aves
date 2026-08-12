@@ -11,6 +11,7 @@
 - Oluşturma ve değişiklik olaylarında kişinin adı, e-postası, rolü, cihaz kimliği, uygulama sürümü ve zaman kaydedilir. Bu kimlik alanları sunucuda aktif kullanıcı profilinden yeniden yazılır.
 - Denetim silme olayı istemcinin beyanına değil gerçek veritabanı DELETE işlemine bağlı sunucu tetikleyicisiyle kaydedilir.
 - İnceleme Modu salt okunurdur; tüm maddeler aranabilir ve sonuç/not/ölçüm durumuna göre filtrelenebilir. Bir maddeye geçildiğinde uygulama salt okunur kalır.
+- Denetim listesinde ve denetim başlığında “Çevrimdışı çalışmaya hazır / hazır değil” durumu açıkça gösterilir. Hazırlık denetime genel değil cihaz bazlıdır; farklı cihazda veya uygulama sürümü değiştiğinde yeniden doğrulama gerekir.
 - Eğitim ve teknik onay akışları eklenmemiştir.
 
 ## Güvenli kurulum sırası
@@ -39,4 +40,3 @@
 - Eski denetimlerin mevcut snapshot satırları korunur ve güncel kütüphaneyle ezilmez.
 - Eski denetimlere geriye dönük sahte hash veya kilit zamanı üretilmez. Güçlü snapshot ve bütünlük doğrulaması R15D-rc3.2 ile oluşturulan yeni denetimlerde başlar.
 - Migration canlı checklist cevabı veya denetim silmez.
-
