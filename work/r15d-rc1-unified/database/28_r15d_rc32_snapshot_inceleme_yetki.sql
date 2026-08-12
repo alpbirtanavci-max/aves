@@ -1,5 +1,7 @@
 -- AVES R15D-rc3.2 — snapshot kilidi, değişiklik geçmişi ve kesin rol ayrımı
 -- Bu migration veri silmez. Uygulama paketinden ÖNCE çalıştırılmalıdır.
+-- Canlı uygulama: 2026-08-12, Supabase proje jmccmkqyncunpqliqvox.
+-- Öncesinde aves_backup_r15d_rc32_20260812 şema yedeği oluşturuldu.
 
 begin;
 
