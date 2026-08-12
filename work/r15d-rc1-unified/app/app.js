@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc2.3 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D-rc3.0 — Offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc2.3';
+const APP_VERSION = 'R15D-rc3.0';
 const DB_VERSION = 2;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './app.js', './manifest.json', './logo.png'];
 
@@ -1140,6 +1140,7 @@ const UI = (() => {
             olcum_degerleri: {},
             otomatik_aranmaz_kurali: m.otomatik_aranmaz_kurali ?? null,
             aranmaz_kosulu: m.aranmaz_kosulu ?? null,
+            otomatik_gerekce: otoSebep,
             gorsel_referansi: m.gorsel_referansi ?? null,
             durum: otoSebep ? 'Uygulanmaz' : null,
             otomatik_uygulanmaz: !!otoSebep,
@@ -1731,6 +1732,7 @@ const UI = (() => {
       ${ayni && !resmiMetin ? '' : `${rehberParca.ana ? `<div class="mrequirement">${esc(rehberParca.ana)}</div>` : ''}
       ${rehberParca.saha ? `<div class="mguide saha-guide"><span>AVES SAHA REHBERİ</span>${esc(rehberParca.saha)}</div>` : ''}`}
       ${r.aranmaz_kosulu ? `<div class="aranmaz-note"><b>Uygulanmaz koşulu:</b> ${esc(uygulanmazKosuluMetni(r.aranmaz_kosulu))}</div>` : ''}
+      ${r.otomatik_uygulanmaz && r.otomatik_gerekce ? `<div class="aranmaz-note"><b>Otomatik Uygulanmaz gerekçesi:</b> ${esc(r.otomatik_gerekce)}</div>` : ''}
       ${gorselHTML(r)}
       ${olcumHTML(r)}
       ${icKontrolNotu ? `<div class="aranmaz-note"><b>İç kontrol notu:</b> ${esc(icKontrolNotu)}</div>` : ''}
@@ -1823,6 +1825,7 @@ const UI = (() => {
         const yeni = durumBtn.dataset.durum;
         row.durum = (row.durum === yeni) ? null : yeni;
         row.otomatik_uygulanmaz = false;
+        row.otomatik_gerekce = null;
         if (row.durum) {
           row.gozden_gecirme_nedeni = null;
           row.gozden_gecirme_notu = null;
@@ -1969,6 +1972,7 @@ const UI = (() => {
         } else if (!shouldBeNa && target.otomatik_uygulanmaz && target.durum === 'Uygulanmaz') {
           target.durum = null;
           target.otomatik_uygulanmaz = false;
+          target.otomatik_gerekce = null;
           target.denetci_gordu = false;
           changed = true;
         }

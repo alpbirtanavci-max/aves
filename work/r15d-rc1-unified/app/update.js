@@ -1,7 +1,7 @@
 /* AVES güvenli cache kurtarma aracı.
    IndexedDB, localStorage ve outbox'a kesinlikle dokunmaz. */
 (function () {
-  const EXPECTED_BUILD = 'R15D-rc2.3';
+  const EXPECTED_BUILD = 'R15D-rc3.0';
   const status = document.getElementById('updateStatus');
   const retry = document.getElementById('retryUpdate');
 
