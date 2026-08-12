@@ -61,12 +61,17 @@ Migration dosyaları: `database/01_r15d_rc32_kurulum_kontrol.sql`, `database/28_
 
 `R15D-rc3.2`
 
+Canlı smoke test sırasında Service Worker güncelleme seçiminin `Güncelleniyor…`
+durumunda kalmasına yol açan yarış koşulu giderildi. Yeni worker artık denetçinin
+onayından önce zorla etkinleşmiyor; `Şimdi güncelle` seçildiğinde kontrollü olarak
+etkinleşip sayfayı yeniliyor. IndexedDB, outbox ve açık denetim kayıtlarına dokunulmaz.
+
 Cloudflare uygulama ZIP'inin SHA-256 değeri (`AVES_Saha_R15D_rc3_2_20260812.zip`):
 
-`927FFEE7607018182F33BB90ACB74CCB9BD768BF3B90FD5AD957AB49647C1C20`
+`16AF07845CADA0803F2E6DE81C2BABFE881A4FD83D7FBAABFF0B050754021C49`
 
-## Henüz yapılmadı
+## Canlı yayın durumu
 
-Bu paket **Cloudflare Pages'e deploy edilmedi**. Deploy, ayrı bir onay ve şu sırayı gerektirir: preview/test alanında yayım → temiz cihaz, eski Service Worker'lı cihaz ve tamamen offline cihazda smoke test → mühendis/yönetici/teknik müdür test hesaplarıyla rol matrisi doğrulaması → kullanıcı kabulü → production.
+Cloudflare Pages projesi GitHub'a bağlıdır ve production dalındaki değişiklikler otomatik yayımlanır. Kalıcı giriş adresi `https://saha.avesbelgelendirme.com.tr` olarak doğrulanmıştır. `pages.dev` adresi yalnız Cloudflare'ın teknik deployment adresidir.
 
-Canlı Supabase'e rc3.2'nin veritabanı tarafı (`database/28_r15d_rc32_snapshot_inceleme_yetki.sql`) zaten uygulanmış durumda (bkz. `tests/SMOKE_TEST_REPORT_RC32.md`); uygulama (frontend) paketi henüz production alan adına yayımlanmadı.
+Canlı Supabase'e rc3.2'nin veritabanı tarafı (`database/28_r15d_rc32_snapshot_inceleme_yetki.sql`) uygulanmıştır (bkz. `tests/SMOKE_TEST_REPORT_RC32.md`). Frontend, Supabase verisini RLS ve rol kuralları üzerinden kullanır.

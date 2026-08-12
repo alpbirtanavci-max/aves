@@ -102,7 +102,7 @@ test('arka plan senkronu yeni denetim formunu kapatmıyor', app.includes("curren
 test('müşteri ünvanı alanı erişilebilir ve normal input', app.includes('label for="fMusteri"') && app.includes('id="fMusteri" autocomplete="organization"'));
 
 const installBlock = sw.slice(sw.indexOf("self.addEventListener('install'"), sw.indexOf("self.addEventListener('message'"));
-test('service worker bekleme kilidinde kalmıyor', installBlock.includes('self.skipWaiting'));
+test('service worker kullanıcı onayından önce etkinleşmiyor', !installBlock.includes('self.skipWaiting'));
 test('service worker kontrollü güncelleme mesajı', sw.includes("type === 'SKIP_WAITING'"));
 test('yeni sürüm kullanıcı onayıyla etkinleşiyor', app.includes('registerServiceWorkerWithUpdateChoice') && app.includes('Şimdi güncelle') && app.includes("worker.postMessage({ type: 'SKIP_WAITING' })"));
 test('service worker değişimi yalnız kullanıcı isterse sayfayı yeniliyor', app.includes('if (reloadRequested) location.reload()'));
