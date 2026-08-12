@@ -1967,6 +1967,9 @@ const UI = (() => {
         if (shouldBeNa && target.durum !== 'Uygulanmaz') {
           target.durum = 'Uygulanmaz';
           target.otomatik_uygulanmaz = true;
+          // Bu yolun gerekçesi aranmaz_kosulu'dur; tahrik/MD yolundan kalan
+          // eski gerekçe metni yanlışlıkla gösterilmesin.
+          target.otomatik_gerekce = null;
           target.denetci_gordu = false;
           changed = true;
         } else if (!shouldBeNa && target.otomatik_uygulanmaz && target.durum === 'Uygulanmaz') {
