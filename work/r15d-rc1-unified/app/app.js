@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc3.0 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D-rc3.1 — Offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.0';
+const APP_VERSION = 'R15D-rc3.1';
 const DB_VERSION = 2;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './app.js', './manifest.json', './logo.png'];
 
@@ -716,11 +716,15 @@ const UI = (() => {
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
-  // TS EN 81-70, AVES'in normal TS EN 81-20 saha denetiminin zorunlu
-  // erişilebilirlik katmanıdır. Denetçi bunu ek standart olarak seçip
-  // kaldıramaz; madde sayımı ve yerel madde üretimi aynı kümeyi kullanır.
+  // TS EN 81-70 (erişilebilirlik), TS EN 81-71 (kasıtlı tahribata dayanıklılık)
+  // ve TS EN 81-73 (yangın anında davranış) AVES saha denetiminin zorunlu
+  // katmanlarıdır. Denetçi bunları ek standart olarak seçip kaldıramaz;
+  // uygulanabilirlik (örn. bina yüksekliği eşiği) her bölümün kendi ilk
+  // maddesinde denetçi tarafından değerlendirilir. TS EN 81-72 (itfaiyeci
+  // asansörü) ise ayrı, kategorik bir asansör tipidir — yalnız denetçi
+  // açıkça işaretlerse (ek_standartlar) checklist'e eklenir.
   function seciliStandartGruplari(anaStandart, ekStandartlar = []) {
-    const gruplar = new Set(['Genel', anaStandart, ...(ekStandartlar || [])]);
+    const gruplar = new Set(['Genel', anaStandart, '81-71', '81-73', ...(ekStandartlar || [])]);
     if (anaStandart === '81-20') gruplar.add('81-70');
     return gruplar;
   }
@@ -748,7 +752,8 @@ const UI = (() => {
   function standartOzeti(d) {
     const gruplar = [d.ana_standart];
     if (d.ana_standart === '81-20') gruplar.push('81-70 (zorunlu)');
-    gruplar.push(...(d.ek_standartlar || []));
+    gruplar.push('81-71 (zorunlu)', '81-73 (zorunlu)');
+    gruplar.push(...(d.ek_standartlar || []).map(g => g === '81-72' ? '81-72 (İtfaiyeci)' : g));
     return gruplar.filter(Boolean).join(' + ');
   }
 
@@ -927,14 +932,21 @@ const UI = (() => {
           <div class="field"><label>Durak sayısı</label><input id="fDurak" type="number" inputmode="numeric"></div>
         </div>
       </div>
+      <div class="form-card"><h3>İtfaiyeci Asansörü</h3>
+        <div class="segs" id="sItfaiyeci">
+          <button type="button" class="seg on" data-v="hayir">Hayır</button>
+          <button type="button" class="seg" data-v="evet">Evet — TS EN 81-72</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71) ve yangın anında davranış (TS EN 81-73) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
+      </div>
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>
     </div>`;
     document.getElementById('back').onclick = showList;
 
     // seçim davranışı
-    const single = {};
-    ['sDenetimTuru','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski'].forEach(id => {
+    const single = { sItfaiyeci: 'hayir' };
+    ['sDenetimTuru','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         const b = e.target.closest('.seg'); if (!b) return;
         document.querySelectorAll(`#${id} .seg`).forEach(x => x.classList.remove('on'));
@@ -984,8 +996,9 @@ const UI = (() => {
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
 
+      const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
       const lib = await DB.all('kutuphane');
-      const secili = seciliStandartGruplari(single.sAna, []);
+      const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
       const kontrolProfil = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G
         ? KONTROL_PROFILLERI.TAM
         : single.sDenetimTuru === DENETIM_TURLERI.MODUL_E
@@ -1007,7 +1020,7 @@ const UI = (() => {
         modul: single.sDenetimTuru === DENETIM_TURLERI.MODUL_G ? 'Modül G' :
           single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ? 'Modül E' : 'Modül H1',
         anaStandart: single.sAna,
-        ekStandartlar: [],
+        ekStandartlar,
         binaAsansorSayisi,
         kabinGirisDuzeni: single.sKabinGiris,
         kabinKapiAcilmaTipi: single.sKapiAcilma,
@@ -1036,6 +1049,8 @@ const UI = (() => {
           f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_E ? 'Modül E saha teyidi' : 'Modül H1 saha teyidi')}
         ${satir('Ana standart', f.anaStandart)}
         ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
+        ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
+        ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}
         ${satir('Kapı açılma biçimi', f.kabinKapiAcilmaTipi)}
