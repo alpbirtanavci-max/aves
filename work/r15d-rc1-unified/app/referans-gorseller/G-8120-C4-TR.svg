@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="700" viewBox="0 0 920 700">
+  <rect width="920" height="700" fill="#fff"/>
+  <style>
+    text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;fill:#20235b}.h{font-weight:700}.c{font-size:20px}.s{font-size:17px}.line{stroke:#20235b;stroke-width:2;fill:none}.person{stroke:#20235b;stroke-width:9;stroke-linecap:round;fill:none}
+  </style>
+  <text x="460" y="42" text-anchor="middle" class="h c">TS EN 81-20 Çizelge 4 — Kuyu dibi sığınma alanları</text>
+  <rect x="35" y="65" width="850" height="565" class="line"/>
+  <path d="M35 125H885M35 290H885M35 455H885M135 65V630M345 65V630M690 65V630M790 65V630" class="line"/>
+  <text x="85" y="103" text-anchor="middle" class="h s">Tip</text><text x="240" y="103" text-anchor="middle" class="h s">Duruş</text><text x="518" y="103" text-anchor="middle" class="h s">Görsel</text><text x="740" y="91" text-anchor="middle" class="h s">Taban</text><text x="740" y="113" text-anchor="middle" class="h s">(mm × mm)</text><text x="837" y="91" text-anchor="middle" class="h s">Yükseklik</text><text x="837" y="113" text-anchor="middle" class="h s">(mm)</text>
+  <text x="85" y="214" text-anchor="middle" class="h c">1</text><text x="240" y="214" text-anchor="middle" class="c">Ayakta</text><text x="740" y="214" text-anchor="middle" class="h c">400 × 500</text><text x="837" y="214" text-anchor="middle" class="h c">2000</text>
+  <circle cx="518" cy="165" r="15" fill="#20235b"/><path d="M518 185V242M485 207L518 193 551 207M500 274L518 242 536 274" class="person"/><path d="M465 275H570M465 145V275M465 145l-8 16m8-16 8 16" class="line"/><text x="445" y="214" transform="rotate(-90 445 214)" text-anchor="middle" class="h s">2000 mm</text>
+  <text x="85" y="379" text-anchor="middle" class="h c">2</text><text x="240" y="379" text-anchor="middle" class="c">Çömelmiş</text><text x="740" y="379" text-anchor="middle" class="h c">500 × 700</text><text x="837" y="379" text-anchor="middle" class="h c">1000</text>
+  <circle cx="505" cy="333" r="14" fill="#20235b"/><path d="M515 349L550 375 510 400M550 375L575 403M510 400L478 403" class="person"/><path d="M450 420H590M450 320V420M450 320l-8 16m8-16 8 16" class="line"/><text x="430" y="370" transform="rotate(-90 430 370)" text-anchor="middle" class="h s">1000 mm</text>
+  <text x="85" y="544" text-anchor="middle" class="h c">3</text><text x="240" y="544" text-anchor="middle" class="c">Yatar</text><text x="740" y="544" text-anchor="middle" class="h c">700 × 1000</text><text x="837" y="544" text-anchor="middle" class="h c">500</text>
+  <circle cx="475" cy="544" r="13" fill="#20235b"/><path d="M493 544H570M520 544L495 566M550 544L580 566" class="person"/><path d="M440 585H600M440 510V585M440 510l-8 16m8-16 8 16" class="line"/><text x="420" y="548" transform="rotate(-90 420 548)" text-anchor="middle" class="h s">500 mm</text>
+  <text x="35" y="666" class="s">Her gerekli kişi için bir alan bulunmalı; birden fazla alan aynı tipte ve birbiriyle çakışmayacak şekilde olmalıdır.</text>
+</svg>

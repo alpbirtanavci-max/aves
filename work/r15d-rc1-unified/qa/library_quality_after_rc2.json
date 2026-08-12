@@ -1,0 +1,1669 @@
+{
+  "generated_at": "2026-08-11T11:15:53.241Z",
+  "source_file": "C:\\Users\\alpbi\\.codex\\.chatgpt-projects\\g-p-6a75d253936481918d62895a1af0b2f2\\work\\r15d-rc1-unified\\qa\\library_after_rc2.json",
+  "summary": {
+    "total_rows": 1019,
+    "active_rows": 964,
+    "inactive_rows": 55,
+    "finding_count": 68,
+    "findings_by_severity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 68,
+      "low": 0
+    }
+  },
+  "mandatory_targets": {
+    "title_fix_range": [
+      "MAD-0561",
+      "MAD-0562",
+      "MAD-0563",
+      "MAD-0564",
+      "MAD-0565",
+      "MAD-0566",
+      "MAD-0567",
+      "MAD-0568",
+      "MAD-0569",
+      "MAD-0570",
+      "MAD-0571",
+      "MAD-0572",
+      "MAD-0573",
+      "MAD-0574",
+      "MAD-0575",
+      "MAD-0576",
+      "MAD-0577",
+      "MAD-0578",
+      "MAD-0579",
+      "MAD-0580",
+      "MAD-0581",
+      "MAD-0582",
+      "MAD-0583",
+      "MAD-0584",
+      "MAD-0585",
+      "MAD-0586",
+      "MAD-0587",
+      "MAD-0588",
+      "MAD-0589",
+      "MAD-0590",
+      "MAD-0591",
+      "MAD-0592",
+      "MAD-0593",
+      "MAD-0594",
+      "MAD-0595",
+      "MAD-0596",
+      "MAD-0597",
+      "MAD-0598",
+      "MAD-0599",
+      "MAD-0600",
+      "MAD-0601",
+      "MAD-0602",
+      "MAD-0603",
+      "MAD-0604",
+      "MAD-0605",
+      "MAD-0606",
+      "MAD-0607",
+      "MAD-0608",
+      "MAD-0609",
+      "MAD-0610",
+      "MAD-0611",
+      "MAD-0612",
+      "MAD-0613"
+    ],
+    "duplicate_candidate_0824": {
+      "madde_id": "MAD-0824",
+      "sira_no": 824,
+      "bolum": "07 - TS EN 81-72 İtfaiyeci Asansörü",
+      "standart_grubu": "81-72",
+      "kaynak_turu": "Standart / ÜB.FR.40",
+      "standart_madde_no": "5.8.9.2. c) 4) | ZA: 1.6.2 4.10",
+      "kontrol_basligi": "Güvenli alanlar farklı taraflarda: diğer kumanda panelleri",
+      "denetci_yonlendirmesi": "Birden çok kabin kumanda panosu olması durumunda; Aşama 2 de kullanılmayacak kabin kumanda panosu devre dışı bırakılmalıdır.",
+      "yontem_kodu": "A,B,E",
+      "dogrulama_yontemi": "Görsel + Test + Talimat/İşaret",
+      "hazir_secenekler": null,
+      "olcu1_adi": null,
+      "olcu1_birimi": null,
+      "olcu2_adi": null,
+      "olcu2_birimi": null,
+      "aktif": true,
+      "tahrik_kosulu": null,
+      "md_kosulu": null,
+      "esik_deger": null,
+      "esik_operator": null,
+      "olcum_tanimlari": [],
+      "otomatik_aranmaz_kurali": null,
+      "denetim_profilleri": [
+        "modul_g_tam"
+      ],
+      "resmi_madde_metni": null,
+      "kaynak_form_kodu": null,
+      "kaynak_form_revizyonu": null,
+      "kaynak_form_tablo_no": null,
+      "kaynak_form_satir_no": null,
+      "kaynak_form_bolumu": null,
+      "kaynak_form_alt_grubu": null,
+      "aranmaz_kosulu": "Çift girişli kabinde güvenli alanlar itfaiye erişim seviyesiyle aynı taraftaysa veya birden çok kabin kumanda panosu yoksa.",
+      "gorsel_referansi": null
+    },
+    "duplicate_reference_0814": {
+      "madde_id": "MAD-0814",
+      "sira_no": 814,
+      "bolum": "07 - TS EN 81-72 İtfaiyeci Asansörü",
+      "standart_grubu": "81-72",
+      "kaynak_turu": "Standart / ÜB.FR.40",
+      "standart_madde_no": "5.8.9.1. b) 2) | ZA: 1.6.2 4.10",
+      "kontrol_basligi": "Güvenli alanlar aynı tarafta: diğer kumanda panelleri",
+      "denetci_yonlendirmesi": "Birden çok kabin kumanda panosu olması durumunda; Aşama 2 de kullanılmayacak kabin kumanda panosu devre dışı bırakılmalıdır.",
+      "yontem_kodu": "A,B,E",
+      "dogrulama_yontemi": "Görsel + Test + Talimat/İşaret",
+      "hazir_secenekler": null,
+      "olcu1_adi": null,
+      "olcu1_birimi": null,
+      "olcu2_adi": null,
+      "olcu2_birimi": null,
+      "aktif": true,
+      "tahrik_kosulu": null,
+      "md_kosulu": null,
+      "esik_deger": null,
+      "esik_operator": null,
+      "olcum_tanimlari": [],
+      "otomatik_aranmaz_kurali": null,
+      "denetim_profilleri": [
+        "modul_g_tam"
+      ],
+      "resmi_madde_metni": null,
+      "kaynak_form_kodu": null,
+      "kaynak_form_revizyonu": null,
+      "kaynak_form_tablo_no": null,
+      "kaynak_form_satir_no": null,
+      "kaynak_form_bolumu": null,
+      "kaynak_form_alt_grubu": null,
+      "aranmaz_kosulu": "Çift girişli kabinde güvenli alanlar itfaiye erişim seviyesiyle aynı tarafta değilse veya birden çok kabin kumanda panosu yoksa.",
+      "gorsel_referansi": null
+    },
+    "mr_condition_targets": [
+      {
+        "id": "MAD-0460",
+        "row": {
+          "madde_id": "MAD-0460",
+          "sira_no": 460,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": null,
+          "yontem_kodu": "A,C",
+          "dogrulama_yontemi": "Görsel + Ölçüm",
+          "hazir_secenekler": null,
+          "olcu1_adi": "Pano önü net derinliği",
+          "olcu1_birimi": "m",
+          "olcu2_adi": "Pano önü net genişliği",
+          "olcu2_birimi": "m",
+          "aktif": true,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": "0.7",
+          "esik_operator": ">=",
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Pano önlerindeki açıklıklar (derinlik en az 0,7 m, genişlik en az 0,5 m veya pano genişliği)",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 146,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null
+        }
+      },
+      {
+        "id": "MAD-0467",
+        "row": {
+          "madde_id": "MAD-0467",
+          "sira_no": 467,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.3.7 | ZA: 1.6",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": null,
+          "yontem_kodu": "A,C",
+          "dogrulama_yontemi": "Görsel + Ölçüm",
+          "hazir_secenekler": null,
+          "olcu1_adi": null,
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "aktif": true,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Topraklı priz",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 153,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null
+        }
+      },
+      {
+        "id": "MAD-0486",
+        "row": {
+          "madde_id": "MAD-0486",
+          "sira_no": 486,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "14.2.2.1 | ZA: 6.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": null,
+          "yontem_kodu": "A",
+          "dogrulama_yontemi": "Görsel",
+          "hazir_secenekler": null,
+          "olcu1_adi": null,
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "aktif": true,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Tahrik makinası 1m yakınında durdurma tertibatı",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 172,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null
+        }
+      },
+      {
+        "id": "MAD-0492",
+        "row": {
+          "madde_id": "MAD-0492",
+          "sira_no": 492,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.6.2 | ZA: 1.4.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": null,
+          "yontem_kodu": "A,E",
+          "dogrulama_yontemi": "Görsel + Talimat/İşaret",
+          "hazir_secenekler": null,
+          "olcu1_adi": null,
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "aktif": true,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Tahrik makinasının doğrudan gözlenmesi veya kabinin hareket yönü, kilit açılma bölgesine ulaşıldığı ve kabinin hızı içi göstergeler",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 178,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null
+        }
+      }
+    ]
+  },
+  "findings": [
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0034",
+        "MAD-0116"
+      ],
+      "details": {
+        "titles": [
+          "Muayene anahtarının güvenli yapısı",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0035",
+        "MAD-0117"
+      ],
+      "details": {
+        "titles": [
+          "NORMAL ve KONTROL konum işaretleri",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0038",
+        "MAD-0119"
+      ],
+      "details": {
+        "titles": [
+          "Muayene kumandası ÇALIŞTIR butonu",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0039",
+        "MAD-0120"
+      ],
+      "details": {
+        "titles": [
+          "Muayene kumandasının dokunmaya karşı koruması",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0043",
+        "MAD-0125"
+      ],
+      "details": {
+        "titles": [
+          "Muayene hızının üst sınırı",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0094",
+        "MAD-0356"
+      ],
+      "details": {
+        "titles": [
+          "Kuyu dibinde temizlik ve yanıcı madde kontrolü",
+          "Kabin üstünde temizlik ve yanıcı madde kontrolü"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 4 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0096",
+        "MAD-0359",
+        "MAD-0399",
+        "MAD-0456"
+      ],
+      "details": {
+        "titles": [
+          "Kuyu dibi koruyucu topraklama sürekliliği",
+          "Kabin üstü koruyucu topraklama sürekliliği",
+          "Makine alanında koruyucu topraklama sürekliliği",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0097",
+        "MAD-0360"
+      ],
+      "details": {
+        "titles": [
+          "Kuyu dibi alarm ve iki yönlü haberleşme",
+          "Kabin üstü alarm ve iki yönlü haberleşme"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0134",
+        "MAD-0626"
+      ],
+      "details": {
+        "titles": [
+          "Korkuluk",
+          "Kabin üstü dış kenarındaki açıklığın sınırlandırılması"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0205",
+        "MAD-0393"
+      ],
+      "details": {
+        "titles": [
+          "Aydınlatma elemanları, mekanik hasara karşı korunmuş olmalıdır",
+          "Aydınlatma elemanlarının mekanik korunması"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0206",
+        "MAD-0394"
+      ],
+      "details": {
+        "titles": [
+          "Etiket, bildirim ve talimatların kalıcılığı ve dili",
+          "Etiket, işaret ve talimatların kalıcılığı ve dili"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0209",
+        "MAD-0215"
+      ],
+      "details": {
+        "titles": [
+          "Yangın anında asansörün kullanmaması yönünde uyarı işareti",
+          "Kabin Kapısı, Durak Kapıları ve Katlar"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0400",
+        "MAD-0472"
+      ],
+      "details": {
+        "titles": [
+          "Güvenlik aksamı montaj ve bakım talimatları",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0401",
+        "MAD-0473"
+      ],
+      "details": {
+        "titles": [
+          "Devre şemaları, bakım talimatları ve kayıt defteri",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0411",
+        "MAD-0434"
+      ],
+      "details": {
+        "titles": [
+          "Ağır donanım için kaldırma ve taşıma vasıtası",
+          "MRL donanımı için kaldırma ve taşıma vasıtası"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0425",
+        "MAD-0495"
+      ],
+      "details": {
+        "titles": [
+          "Regülatör devreye girme hızı ile asansör hızının uyumu",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0426",
+        "MAD-0478"
+      ],
+      "details": {
+        "titles": [
+          "Kuvvet panosunda hata akımına karşı koruma",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0427",
+        "MAD-0481"
+      ],
+      "details": {
+        "titles": [
+          "Kumanda panosunda hata akımına karşı koruma",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0460",
+        "MAD-0508"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0486",
+        "MAD-0510"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0492",
+        "MAD-0507"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0566",
+        "MAD-0683"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik Kontrol ve Testleri"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0567",
+        "MAD-0631"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik askı tertibatında gevşek halat veya zincir güvenliği"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0591",
+        "MAD-0632"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik asansörün anma hızı sınırı"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0625",
+        "MAD-0710"
+      ],
+      "details": {
+        "titles": [
+          "Kabinin kilit açılma bölgesinde olduğunun bağımsız kontrolü",
+          "Hidrolik Kontrol ve Testleri"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0810",
+        "MAD-0818"
+      ],
+      "details": {
+        "titles": [
+          "Güvenli alanlar aynı tarafta: tek panelde iki kapı açma düğmesi",
+          "Güvenli alanlar farklı taraflarda: tek panelde iki kapı açma düğmesi"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0814",
+        "MAD-0824"
+      ],
+      "details": {
+        "titles": [
+          "Güvenli alanlar aynı tarafta: diğer kumanda panelleri",
+          "Güvenli alanlar farklı taraflarda: diğer kumanda panelleri"
+        ]
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "PARALLEL_REQUIREMENT",
+      "message": "Aynı kontrol metni farklı standart veya uygulanabilirlik alanlarında kullanılıyor; birlikte gösterilmediği doğrulanmalı.",
+      "row_ids": [
+        "MAD-0566",
+        "MAD-0683"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "16 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0112",
+        "MAD-0113",
+        "MAD-0114",
+        "MAD-0115",
+        "MAD-0116",
+        "MAD-0117",
+        "MAD-0118",
+        "MAD-0119",
+        "MAD-0120",
+        "MAD-0121",
+        "MAD-0122",
+        "MAD-0123",
+        "MAD-0124",
+        "MAD-0125",
+        "MAD-0126",
+        "MAD-0127"
+      ],
+      "details": {
+        "title": "Kabin üstündeki bakım kumandası"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0132",
+        "MAD-0133",
+        "MAD-0134",
+        "MAD-0135",
+        "MAD-0136",
+        "MAD-0137",
+        "MAD-0138",
+        "MAD-0139",
+        "MAD-0140"
+      ],
+      "details": {
+        "title": "Korkuluk"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0145",
+        "MAD-0146",
+        "MAD-0147",
+        "MAD-0148",
+        "MAD-0149",
+        "MAD-0150"
+      ],
+      "details": {
+        "title": "Kabin üstü sığınma alanları ve güvenlik mesafeleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0152",
+        "MAD-0153",
+        "MAD-0154",
+        "MAD-0155",
+        "MAD-0156",
+        "MAD-0157"
+      ],
+      "details": {
+        "title": "Güvenlik tertibatı"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0158",
+        "MAD-0159",
+        "MAD-0160",
+        "MAD-0161",
+        "MAD-0162"
+      ],
+      "details": {
+        "title": "Askı halatları ve bağlantıları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "13 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0171",
+        "MAD-0172",
+        "MAD-0173",
+        "MAD-0174",
+        "MAD-0175",
+        "MAD-0176",
+        "MAD-0177",
+        "MAD-0178",
+        "MAD-0179",
+        "MAD-0180",
+        "MAD-0181",
+        "MAD-0182",
+        "MAD-0183"
+      ],
+      "details": {
+        "title": "Kapı ve kuyu duvarları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "8 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0188",
+        "MAD-0189",
+        "MAD-0190",
+        "MAD-0191",
+        "MAD-0192",
+        "MAD-0193",
+        "MAD-0194",
+        "MAD-0195"
+      ],
+      "details": {
+        "title": "Kapı ve kuyu duvarları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "19 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0214",
+        "MAD-0215",
+        "MAD-0216",
+        "MAD-0217",
+        "MAD-0218",
+        "MAD-0219",
+        "MAD-0220",
+        "MAD-0221",
+        "MAD-0222",
+        "MAD-0223",
+        "MAD-0224",
+        "MAD-0225",
+        "MAD-0226",
+        "MAD-0227",
+        "MAD-0228",
+        "MAD-0229",
+        "MAD-0230",
+        "MAD-0231",
+        "MAD-0232"
+      ],
+      "details": {
+        "title": "Kabin Kapısı, Durak Kapıları ve Katlar"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "18 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0233",
+        "MAD-0234",
+        "MAD-0235",
+        "MAD-0236",
+        "MAD-0237",
+        "MAD-0238",
+        "MAD-0239",
+        "MAD-0240",
+        "MAD-0241",
+        "MAD-0242",
+        "MAD-0243",
+        "MAD-0244",
+        "MAD-0245",
+        "MAD-0246",
+        "MAD-0247",
+        "MAD-0248",
+        "MAD-0249",
+        "MAD-0250"
+      ],
+      "details": {
+        "title": "Kuyu Üst Boşluğu ve Kuyu İçi"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0253",
+        "MAD-0254",
+        "MAD-0255",
+        "MAD-0256",
+        "MAD-0257"
+      ],
+      "details": {
+        "title": "Makine Ve Makara Dairesine Erişim"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "48 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0452",
+        "MAD-0453",
+        "MAD-0454",
+        "MAD-0455",
+        "MAD-0456",
+        "MAD-0457",
+        "MAD-0458",
+        "MAD-0459",
+        "MAD-0460",
+        "MAD-0461",
+        "MAD-0462",
+        "MAD-0463",
+        "MAD-0464",
+        "MAD-0465",
+        "MAD-0466",
+        "MAD-0467",
+        "MAD-0468",
+        "MAD-0469",
+        "MAD-0470",
+        "MAD-0471",
+        "MAD-0472",
+        "MAD-0473",
+        "MAD-0474",
+        "MAD-0475",
+        "MAD-0476",
+        "MAD-0477",
+        "MAD-0478",
+        "MAD-0479",
+        "MAD-0480",
+        "MAD-0481",
+        "MAD-0482",
+        "MAD-0483",
+        "MAD-0484",
+        "MAD-0485",
+        "MAD-0486",
+        "MAD-0487",
+        "MAD-0488",
+        "MAD-0489",
+        "MAD-0490",
+        "MAD-0491",
+        "MAD-0492",
+        "MAD-0493",
+        "MAD-0494",
+        "MAD-0495",
+        "MAD-0496",
+        "MAD-0497",
+        "MAD-0498",
+        "MAD-0499"
+      ],
+      "details": {
+        "title": "Makine/Makara Dairesi"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "18 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0500",
+        "MAD-0501",
+        "MAD-0502",
+        "MAD-0503",
+        "MAD-0504",
+        "MAD-0505",
+        "MAD-0506",
+        "MAD-0507",
+        "MAD-0508",
+        "MAD-0509",
+        "MAD-0510",
+        "MAD-0511",
+        "MAD-0512",
+        "MAD-0513",
+        "MAD-0514",
+        "MAD-0515",
+        "MAD-0516",
+        "MAD-0517"
+      ],
+      "details": {
+        "title": "Makine Kuyu İçerisinde"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0521",
+        "MAD-0522",
+        "MAD-0523",
+        "MAD-0524"
+      ],
+      "details": {
+        "title": "MOTOR HAREKET SÜRESİ SINIRLAYICI"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0525",
+        "MAD-0526",
+        "MAD-0527",
+        "MAD-0528",
+        "MAD-0529"
+      ],
+      "details": {
+        "title": "SINIR GÜVENLİK KESİCİLERİ"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0540",
+        "MAD-0541",
+        "MAD-0542",
+        "MAD-0543"
+      ],
+      "details": {
+        "title": "TAHRİK YETENEĞİ KONTROLÜ"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "49 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0562",
+        "MAD-0563",
+        "MAD-0564",
+        "MAD-0565",
+        "MAD-0566",
+        "MAD-0567",
+        "MAD-0568",
+        "MAD-0569",
+        "MAD-0570",
+        "MAD-0571",
+        "MAD-0572",
+        "MAD-0573",
+        "MAD-0574",
+        "MAD-0575",
+        "MAD-0576",
+        "MAD-0577",
+        "MAD-0578",
+        "MAD-0579",
+        "MAD-0580",
+        "MAD-0581",
+        "MAD-0582",
+        "MAD-0583",
+        "MAD-0584",
+        "MAD-0585",
+        "MAD-0586",
+        "MAD-0587",
+        "MAD-0588",
+        "MAD-0589",
+        "MAD-0590",
+        "MAD-0591",
+        "MAD-0592",
+        "MAD-0593",
+        "MAD-0594",
+        "MAD-0595",
+        "MAD-0596",
+        "MAD-0597",
+        "MAD-0598",
+        "MAD-0599",
+        "MAD-0600",
+        "MAD-0601",
+        "MAD-0602",
+        "MAD-0603",
+        "MAD-0604",
+        "MAD-0605",
+        "MAD-0606",
+        "MAD-0607",
+        "MAD-0608",
+        "MAD-0609",
+        "MAD-0610"
+      ],
+      "details": {
+        "title": "Hidrolik Kontrol ve Testleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "23 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0660",
+        "MAD-0661",
+        "MAD-0662",
+        "MAD-0663",
+        "MAD-0664",
+        "MAD-0665",
+        "MAD-0666",
+        "MAD-0667",
+        "MAD-0668",
+        "MAD-0669",
+        "MAD-0670",
+        "MAD-0671",
+        "MAD-0672",
+        "MAD-0673",
+        "MAD-0674",
+        "MAD-0675",
+        "MAD-0676",
+        "MAD-0677",
+        "MAD-0678",
+        "MAD-0679",
+        "MAD-0680",
+        "MAD-0681",
+        "MAD-0682"
+      ],
+      "details": {
+        "title": "Testler"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "30 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0683",
+        "MAD-0684",
+        "MAD-0685",
+        "MAD-0686",
+        "MAD-0687",
+        "MAD-0688",
+        "MAD-0689",
+        "MAD-0690",
+        "MAD-0691",
+        "MAD-0692",
+        "MAD-0693",
+        "MAD-0694",
+        "MAD-0695",
+        "MAD-0696",
+        "MAD-0697",
+        "MAD-0698",
+        "MAD-0699",
+        "MAD-0700",
+        "MAD-0701",
+        "MAD-0702",
+        "MAD-0703",
+        "MAD-0704",
+        "MAD-0705",
+        "MAD-0706",
+        "MAD-0707",
+        "MAD-0708",
+        "MAD-0709",
+        "MAD-0710",
+        "MAD-0711",
+        "MAD-0712"
+      ],
+      "details": {
+        "title": "Hidrolik Kontrol ve Testleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "42 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0713",
+        "MAD-0714",
+        "MAD-0715",
+        "MAD-0716",
+        "MAD-0717",
+        "MAD-0718",
+        "MAD-0719",
+        "MAD-0720",
+        "MAD-0721",
+        "MAD-0722",
+        "MAD-0723",
+        "MAD-0724",
+        "MAD-0725",
+        "MAD-0726",
+        "MAD-0727",
+        "MAD-0728",
+        "MAD-0729",
+        "MAD-0730",
+        "MAD-0731",
+        "MAD-0732",
+        "MAD-0733",
+        "MAD-0734",
+        "MAD-0735",
+        "MAD-0736",
+        "MAD-0737",
+        "MAD-0738",
+        "MAD-0739",
+        "MAD-0740",
+        "MAD-0741",
+        "MAD-0742",
+        "MAD-0743",
+        "MAD-0744",
+        "MAD-0745",
+        "MAD-0746",
+        "MAD-0747",
+        "MAD-0748",
+        "MAD-0749",
+        "MAD-0750",
+        "MAD-0751",
+        "MAD-0752",
+        "MAD-0753",
+        "MAD-0754"
+      ],
+      "details": {
+        "title": "Ortam/bina gereklilikleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0755",
+        "MAD-0756",
+        "MAD-0757",
+        "MAD-0758"
+      ],
+      "details": {
+        "title": "Merdivenler"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "7 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0759",
+        "MAD-0760",
+        "MAD-0761",
+        "MAD-0762",
+        "MAD-0763",
+        "MAD-0764",
+        "MAD-0765"
+      ],
+      "details": {
+        "title": "Kabinde kurtarma prosedürleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0769",
+        "MAD-0770",
+        "MAD-0771",
+        "MAD-0772",
+        "MAD-0773"
+      ],
+      "details": {
+        "title": "Kumanda sistemleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "35 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0774",
+        "MAD-0775",
+        "MAD-0776",
+        "MAD-0777",
+        "MAD-0778",
+        "MAD-0779",
+        "MAD-0780",
+        "MAD-0781",
+        "MAD-0782",
+        "MAD-0783",
+        "MAD-0784",
+        "MAD-0785",
+        "MAD-0786",
+        "MAD-0787",
+        "MAD-0788",
+        "MAD-0789",
+        "MAD-0790",
+        "MAD-0791",
+        "MAD-0792",
+        "MAD-0793",
+        "MAD-0794",
+        "MAD-0795",
+        "MAD-0796",
+        "MAD-0797",
+        "MAD-0798",
+        "MAD-0799",
+        "MAD-0800",
+        "MAD-0801",
+        "MAD-0802",
+        "MAD-0803",
+        "MAD-0804",
+        "MAD-0805",
+        "MAD-0806",
+        "MAD-0807",
+        "MAD-0808"
+      ],
+      "details": {
+        "title": "Aşama 1"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0819",
+        "MAD-0820",
+        "MAD-0821",
+        "MAD-0822",
+        "MAD-0823"
+      ],
+      "details": {
+        "title": "Çift girişli kabin"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0825",
+        "MAD-0826",
+        "MAD-0827",
+        "MAD-0828",
+        "MAD-0829"
+      ],
+      "details": {
+        "title": "Çift girişli kabin"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0830",
+        "MAD-0831",
+        "MAD-0832",
+        "MAD-0833",
+        "MAD-0834",
+        "MAD-0835"
+      ],
+      "details": {
+        "title": "Kabin ve durak kumandaları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0836",
+        "MAD-0837",
+        "MAD-0838",
+        "MAD-0839",
+        "MAD-0840",
+        "MAD-0841",
+        "MAD-0842",
+        "MAD-0843",
+        "MAD-0844"
+      ],
+      "details": {
+        "title": "İtfaiye hizmeti haberleşme sistemi"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0845",
+        "MAD-0846",
+        "MAD-0847",
+        "MAD-0848",
+        "MAD-0849",
+        "MAD-0850"
+      ],
+      "details": {
+        "title": "Kuyu Mahfazası"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0851",
+        "MAD-0852",
+        "MAD-0853",
+        "MAD-0854",
+        "MAD-0855",
+        "MAD-0856",
+        "MAD-0857",
+        "MAD-0858",
+        "MAD-0859"
+      ],
+      "details": {
+        "title": "Havalandırma"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "11 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0860",
+        "MAD-0861",
+        "MAD-0862",
+        "MAD-0863",
+        "MAD-0864",
+        "MAD-0865",
+        "MAD-0866",
+        "MAD-0867",
+        "MAD-0868",
+        "MAD-0869",
+        "MAD-0870"
+      ],
+      "details": {
+        "title": "Durak ve kabin kapıları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "11 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0871",
+        "MAD-0872",
+        "MAD-0873",
+        "MAD-0874",
+        "MAD-0875",
+        "MAD-0876",
+        "MAD-0877",
+        "MAD-0878",
+        "MAD-0879",
+        "MAD-0880",
+        "MAD-0881"
+      ],
+      "details": {
+        "title": "Kabin"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0882",
+        "MAD-0883",
+        "MAD-0884",
+        "MAD-0885",
+        "MAD-0886"
+      ],
+      "details": {
+        "title": "Alarm"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "7 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0893",
+        "MAD-0894",
+        "MAD-0895",
+        "MAD-0896",
+        "MAD-0897",
+        "MAD-0898",
+        "MAD-0899"
+      ],
+      "details": {
+        "title": "Çağırma aracı"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "8 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0900",
+        "MAD-0901",
+        "MAD-0902",
+        "MAD-0903",
+        "MAD-0904",
+        "MAD-0905",
+        "MAD-0906",
+        "MAD-0907"
+      ],
+      "details": {
+        "title": "Yasak işareti"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "14 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0909",
+        "MAD-0910",
+        "MAD-0911",
+        "MAD-0912",
+        "MAD-0913",
+        "MAD-0914",
+        "MAD-0915",
+        "MAD-0916",
+        "MAD-0917",
+        "MAD-0918",
+        "MAD-0919",
+        "MAD-0920",
+        "MAD-0921",
+        "MAD-0922"
+      ],
+      "details": {
+        "title": "Yasak işareti"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "26 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0935",
+        "MAD-0936",
+        "MAD-0937",
+        "MAD-0938",
+        "MAD-0939",
+        "MAD-0940",
+        "MAD-0941",
+        "MAD-0942",
+        "MAD-0943",
+        "MAD-0944",
+        "MAD-0945",
+        "MAD-0946",
+        "MAD-0947",
+        "MAD-0948",
+        "MAD-0949",
+        "MAD-0950",
+        "MAD-0951",
+        "MAD-0952",
+        "MAD-0953",
+        "MAD-0954",
+        "MAD-0955",
+        "MAD-0956",
+        "MAD-0957",
+        "MAD-0958",
+        "MAD-0959",
+        "MAD-0960"
+      ],
+      "details": {
+        "title": "Durak ve kabin kapı kontrolleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0961",
+        "MAD-0962",
+        "MAD-0963",
+        "MAD-0964"
+      ],
+      "details": {
+        "title": "Kabin kumanda panellerinin yerleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "25 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0965",
+        "MAD-0966",
+        "MAD-0967",
+        "MAD-0968",
+        "MAD-0969",
+        "MAD-0970",
+        "MAD-0971",
+        "MAD-0972",
+        "MAD-0973",
+        "MAD-0974",
+        "MAD-0975",
+        "MAD-0976",
+        "MAD-0977",
+        "MAD-0978",
+        "MAD-0979",
+        "MAD-0980",
+        "MAD-0981",
+        "MAD-0982",
+        "MAD-0983",
+        "MAD-0984",
+        "MAD-0985",
+        "MAD-0986",
+        "MAD-0987",
+        "MAD-0988",
+        "MAD-0989"
+      ],
+      "details": {
+        "title": "Kat ve durak butonları"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "10 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0990",
+        "MAD-0991",
+        "MAD-0992",
+        "MAD-0993",
+        "MAD-0994",
+        "MAD-0995",
+        "MAD-0996",
+        "MAD-0997",
+        "MAD-0998",
+        "MAD-0999"
+      ],
+      "details": {
+        "title": "Kabin içi donanımlar"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-1000",
+        "MAD-1001",
+        "MAD-1002",
+        "MAD-1003",
+        "MAD-1004"
+      ],
+      "details": {
+        "title": "Diğer Kontroller"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="720" viewBox="0 0 980 720">
+  <rect width="980" height="720" fill="#fff"/>
+  <style>text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;fill:#20235b}.h{font-weight:700}.c{font-size:21px}.s{font-size:17px}.line{stroke:#20235b;stroke-width:3;fill:none}.dash{stroke:#778;stroke-width:2;fill:none;stroke-dasharray:8 7}</style>
+  <text x="490" y="40" text-anchor="middle" class="h c">TS EN 81-20 Şekil 6 ve 7 — Ray çevresindeki kabin altı parçaları</text>
+  <rect x="35" y="70" width="405" height="585" rx="12" class="line"/><rect x="465" y="70" width="480" height="585" rx="12" class="line"/>
+  <text x="238" y="108" text-anchor="middle" class="h c">Şekil 6 — XH ölçüm yönü</text>
+  <path d="M238 240V455M165 350H311M205 333H271M220 333V275H256V333" class="line"/>
+  <ellipse cx="238" cy="350" rx="145" ry="175" class="dash"/>
+  <path d="M238 270L115 180M165 350L92 350M238 455L238 555" class="line"/>
+  <text x="132" y="195" class="h c">XH</text><text x="100" y="335" class="h c">XH</text><text x="250" y="530" class="h c">XH</text>
+  <text x="238" y="615" text-anchor="middle" class="s">XH: kabin çerçevesi, güvenlik tertibatı,</text><text x="238" y="638" text-anchor="middle" class="s">kılavuz pabucu veya oturma tertibatının raya yatay uzaklığı</text>
+  <text x="705" y="108" text-anchor="middle" class="h c">Şekil 7 — Asgari düşey mesafe</text>
+  <path d="M535 555V155M535 555H900" class="line"/>
+  <path d="M535 490H650L755 345 865 190H900M650 555V490M755 555V345M865 555V190" class="line"/>
+  <path d="M520 490H535M520 345H535M520 190H535" class="line"/>
+  <text x="508" y="497" text-anchor="end" class="h s">100 mm</text><text x="508" y="352" text-anchor="end" class="h s">300 mm</text><text x="508" y="197" text-anchor="end" class="h s">500 mm</text>
+  <text x="650" y="584" text-anchor="middle" class="h s">150 mm</text><text x="755" y="584" text-anchor="middle" class="h s">300 mm</text><text x="865" y="584" text-anchor="middle" class="h s">500 mm</text>
+  <text x="718" y="622" text-anchor="middle" class="h s">Yatay mesafe XH</text><text x="480" y="370" transform="rotate(-90 480 370)" text-anchor="middle" class="h s">Asgari düşey mesafe</text>
+  <text x="705" y="678" text-anchor="middle" class="s">Ara XH değerleri kalın doğru üzerinden değerlendirilir.</text>
+</svg>

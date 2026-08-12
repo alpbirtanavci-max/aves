@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" role="img" aria-labelledby="title desc">
+  <title id="title">Kuyu dibi merdiveni Tip 3 ve Tip 4 ayırt etme şeması</title>
+  <desc id="desc">Tip 3 hareketli düz merdiven ile Tip 4 menteşeli katlanabilir merdivenin şematik karşılaştırması.</desc>
+  <rect width="960" height="620" fill="#fff"/>
+  <style>
+    text{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;fill:#20235b}.h{font-size:28px;font-weight:750}.t{font-size:23px;font-weight:700}.s{font-size:18px}.line{stroke:#20235b;stroke-width:8;stroke-linecap:round;fill:none}.thin{stroke:#687091;stroke-width:3;fill:none}.accent{stroke:#ea0048;stroke-width:5;fill:none}.box{fill:#f7f8fc;stroke:#d7dbea;stroke-width:2}
+  </style>
+  <text x="480" y="45" text-anchor="middle" class="h">Kuyu dibi erişim merdiveni — tip ayırt etme şeması</text>
+  <rect x="35" y="75" width="430" height="435" rx="18" class="box"/>
+  <rect x="495" y="75" width="430" height="435" rx="18" class="box"/>
+  <text x="250" y="115" text-anchor="middle" class="t">Tip 3 — hareketli</text>
+  <text x="710" y="115" text-anchor="middle" class="t">Tip 4 — katlanabilir</text>
+
+  <!-- Tip 3: tek parça düz merdiven, depolama yerinden kullanım konumuna taşınır -->
+  <path d="M145 410L250 155M235 410L340 155" class="line"/>
+  <path d="M165 360H255M180 320H270M195 280H285M210 240H300M225 200H315" class="line"/>
+  <path d="M90 445H405" class="thin"/>
+  <path d="M112 182C82 228 78 286 96 333" class="accent"/>
+  <path d="M87 315L96 333 108 316" class="accent"/>
+  <text x="250" y="480" text-anchor="middle" class="s">Tek parça merdiven kullanım konumuna taşınır.</text>
+
+  <!-- Tip 4: ortada menteşeli, katlanarak muhafaza edilir -->
+  <path d="M585 410L670 265M670 265L742 150M675 410L760 265M760 265L832 150" class="line"/>
+  <path d="M610 365H701M630 325H721M650 285H741M690 235H779M715 195H804" class="line"/>
+  <circle cx="715" cy="265" r="13" fill="#fff" stroke="#ea0048" stroke-width="5"/>
+  <path d="M555 195C530 244 535 308 565 345" class="accent"/>
+  <path d="M552 328L565 345 573 324" class="accent"/>
+  <path d="M555 410H870" class="thin"/>
+  <text x="710" y="480" text-anchor="middle" class="s">Menteşeli gövde açılarak kullanım konumuna getirilir.</text>
+
+  <rect x="35" y="535" width="890" height="55" rx="10" fill="#fff5f8" stroke="#f1b3c6"/>
+  <text x="480" y="559" text-anchor="middle" class="s">Şematik gösterimdir; ölçü ve uygunluk kararı için ilgili checklist maddeleri ve teknik belge esas alınır.</text>
+  <text x="480" y="582" text-anchor="middle" class="s">Tip 3 ve Tip 4 merdiven kütlesi 15 kg’ı aşmamalıdır.</text>
+</svg>

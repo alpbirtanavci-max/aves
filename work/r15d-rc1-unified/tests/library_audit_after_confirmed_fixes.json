@@ -1,0 +1,5403 @@
+{
+  "generated_at": "2026-08-10T12:02:49.106Z",
+  "source_file": "C:\\Users\\alpbi\\.codex\\.chatgpt-projects\\g-p-6a75d253936481918d62895a1af0b2f2\\work\\r15d-rc1-unified\\data\\madde_kutuphanesi.json",
+  "summary": {
+    "total_rows": 1018,
+    "active_rows": 987,
+    "inactive_rows": 31,
+    "finding_count": 452,
+    "findings_by_severity": {
+      "critical": 4,
+      "high": 67,
+      "medium": 381,
+      "low": 0
+    }
+  },
+  "mandatory_targets": {
+    "title_fix_range": [
+      "MAD-0561",
+      "MAD-0562",
+      "MAD-0563",
+      "MAD-0564",
+      "MAD-0565",
+      "MAD-0566",
+      "MAD-0567",
+      "MAD-0568",
+      "MAD-0569",
+      "MAD-0570",
+      "MAD-0571",
+      "MAD-0572",
+      "MAD-0573",
+      "MAD-0574",
+      "MAD-0575",
+      "MAD-0576",
+      "MAD-0577",
+      "MAD-0578",
+      "MAD-0579",
+      "MAD-0580",
+      "MAD-0581",
+      "MAD-0582",
+      "MAD-0583",
+      "MAD-0584",
+      "MAD-0585",
+      "MAD-0586",
+      "MAD-0587",
+      "MAD-0588",
+      "MAD-0589",
+      "MAD-0590",
+      "MAD-0591",
+      "MAD-0592",
+      "MAD-0593",
+      "MAD-0594",
+      "MAD-0595",
+      "MAD-0596",
+      "MAD-0597",
+      "MAD-0598",
+      "MAD-0599",
+      "MAD-0600",
+      "MAD-0601",
+      "MAD-0602",
+      "MAD-0603",
+      "MAD-0604",
+      "MAD-0605",
+      "MAD-0606",
+      "MAD-0607",
+      "MAD-0608",
+      "MAD-0609",
+      "MAD-0610",
+      "MAD-0611",
+      "MAD-0612",
+      "MAD-0613"
+    ],
+    "duplicate_candidate_0824": {
+      "madde_id": "MAD-0824",
+      "sira_no": 824,
+      "bolum": "07 - TS EN 81-72 İtfaiyeci Asansörü",
+      "standart_grubu": "81-72",
+      "kaynak_turu": "Standart / ÜB.FR.40",
+      "standart_madde_no": "5.8.9.2. c) 4) | ZA: 1.6.2 4.10",
+      "kontrol_basligi": "Çift girişli kabin",
+      "denetci_yonlendirmesi": "Birden çok kabin kumanda panosu olması durumunda; Aşama 2 de kullanılmayacak kabin kumanda panosu devre dışı bırakılmalıdır.",
+      "yontem_kodu": "A,B,E",
+      "dogrulama_yontemi": "Görsel + Test + Talimat/İşaret",
+      "hazir_secenekler": null,
+      "olcu1_adi": null,
+      "olcu1_birimi": null,
+      "olcu2_adi": null,
+      "olcu2_birimi": null,
+      "tahrik_kosulu": null,
+      "md_kosulu": null,
+      "esik_deger": null,
+      "esik_operator": null,
+      "aranmaz_kosulu": null,
+      "gorsel_referansi": null,
+      "aktif": false,
+      "olcum_tanimlari": [],
+      "otomatik_aranmaz_kurali": null,
+      "denetim_profilleri": [
+        "modul_g_tam"
+      ],
+      "resmi_madde_metni": null,
+      "kaynak_form_kodu": null,
+      "kaynak_form_revizyonu": null,
+      "kaynak_form_tablo_no": null,
+      "kaynak_form_satir_no": null,
+      "kaynak_form_bolumu": null,
+      "kaynak_form_alt_grubu": null
+    },
+    "duplicate_reference_0814": {
+      "madde_id": "MAD-0814",
+      "sira_no": 814,
+      "bolum": "07 - TS EN 81-72 İtfaiyeci Asansörü",
+      "standart_grubu": "81-72",
+      "kaynak_turu": "Standart / ÜB.FR.40",
+      "standart_madde_no": "5.8.9.1. b) 2) | ZA: 1.6.2 4.10",
+      "kontrol_basligi": "Çift girişli kabin",
+      "denetci_yonlendirmesi": "Birden çok kabin kumanda panosu olması durumunda; Aşama 2 de kullanılmayacak kabin kumanda panosu devre dışı bırakılmalıdır.",
+      "yontem_kodu": "A,B,E",
+      "dogrulama_yontemi": "Görsel + Test + Talimat/İşaret",
+      "hazir_secenekler": null,
+      "olcu1_adi": null,
+      "olcu1_birimi": null,
+      "olcu2_adi": null,
+      "olcu2_birimi": null,
+      "tahrik_kosulu": null,
+      "md_kosulu": null,
+      "esik_deger": null,
+      "esik_operator": null,
+      "aranmaz_kosulu": null,
+      "gorsel_referansi": null,
+      "aktif": true,
+      "olcum_tanimlari": [],
+      "otomatik_aranmaz_kurali": null,
+      "denetim_profilleri": [
+        "modul_g_tam"
+      ],
+      "resmi_madde_metni": null,
+      "kaynak_form_kodu": null,
+      "kaynak_form_revizyonu": null,
+      "kaynak_form_tablo_no": null,
+      "kaynak_form_satir_no": null,
+      "kaynak_form_bolumu": null,
+      "kaynak_form_alt_grubu": null
+    },
+    "mr_condition_targets": [
+      {
+        "id": "MAD-0460",
+        "row": {
+          "madde_id": "MAD-0460",
+          "sira_no": 460,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": "Pano önlerindeki açıklıklar (derinlik en az 0,7 m, genişlik en az 0,5 m veya pano genişliği)",
+          "yontem_kodu": "A,C",
+          "dogrulama_yontemi": "Görsel + Ölçüm",
+          "hazir_secenekler": null,
+          "olcu1_adi": "Ölçülen değer",
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": 0.7,
+          "esik_operator": ">=",
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null,
+          "aktif": true,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Pano önlerindeki açıklıklar (derinlik en az 0,7 m, genişlik en az 0,5 m veya pano genişliği)",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 146,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null
+        }
+      },
+      {
+        "id": "MAD-0467",
+        "row": {
+          "madde_id": "MAD-0467",
+          "sira_no": 467,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.3.7 | ZA: 1.6",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": "Topraklı priz",
+          "yontem_kodu": "A,C",
+          "dogrulama_yontemi": "Görsel + Ölçüm",
+          "hazir_secenekler": null,
+          "olcu1_adi": "Ölçülen değer",
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null,
+          "aktif": true,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Topraklı priz",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 153,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null
+        }
+      },
+      {
+        "id": "MAD-0486",
+        "row": {
+          "madde_id": "MAD-0486",
+          "sira_no": 486,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "14.2.2.1 | ZA: 6.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": "Tahrik makinası 1m yakınında durdurma tertibatı",
+          "yontem_kodu": "A",
+          "dogrulama_yontemi": "Görsel",
+          "hazir_secenekler": null,
+          "olcu1_adi": null,
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null,
+          "aktif": true,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Tahrik makinası 1m yakınında durdurma tertibatı",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 172,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null
+        }
+      },
+      {
+        "id": "MAD-0492",
+        "row": {
+          "madde_id": "MAD-0492",
+          "sira_no": 492,
+          "bolum": "04 - Makine ve Şase",
+          "standart_grubu": "81-1/2+A3",
+          "kaynak_turu": "Standart / ÜB.FR.39",
+          "standart_madde_no": "6.6.2 | ZA: 1.4.2",
+          "kontrol_basligi": "Makine/Makara Dairesi",
+          "denetci_yonlendirmesi": "Tahrik makinasının doğrudan gözlenmesi veya kabinin hareket yönü, kilit açılma bölgesine ulaşıldığı ve kabinin hızı içi göstergeler",
+          "yontem_kodu": "A,E",
+          "dogrulama_yontemi": "Görsel + Talimat/İşaret",
+          "hazir_secenekler": null,
+          "olcu1_adi": null,
+          "olcu1_birimi": null,
+          "olcu2_adi": null,
+          "olcu2_birimi": null,
+          "tahrik_kosulu": null,
+          "md_kosulu": "MR",
+          "esik_deger": null,
+          "esik_operator": null,
+          "aranmaz_kosulu": null,
+          "gorsel_referansi": null,
+          "aktif": true,
+          "olcum_tanimlari": [],
+          "otomatik_aranmaz_kurali": null,
+          "denetim_profilleri": [
+            "modul_g_tam"
+          ],
+          "resmi_madde_metni": "Tahrik makinasının doğrudan gözlenmesi veya kabinin hareket yönü, kilit açılma bölgesine ulaşıldığı ve kabinin hızı içi göstergeler",
+          "kaynak_form_kodu": "ÜB.FR.39",
+          "kaynak_form_revizyonu": "R.02",
+          "kaynak_form_tablo_no": 12,
+          "kaynak_form_satir_no": 178,
+          "kaynak_form_bolumu": null,
+          "kaynak_form_alt_grubu": null
+        }
+      }
+    ]
+  },
+  "findings": [
+    {
+      "severity": "critical",
+      "code": "DUPLICATE_ITEM",
+      "message": "Aktif maddelerde başlık ve metin birlikte mükerrer.",
+      "row_ids": [
+        "MAD-0566",
+        "MAD-0683"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "critical",
+      "code": "DUPLICATE_ITEM",
+      "message": "Aktif maddelerde başlık ve metin birlikte mükerrer.",
+      "row_ids": [
+        "MAD-0810",
+        "MAD-0818"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "critical",
+      "code": "DUPLICATE_ITEM",
+      "message": "Aktif maddelerde başlık ve metin birlikte mükerrer.",
+      "row_ids": [
+        "MAD-0816",
+        "MAD-0825"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "critical",
+      "code": "DUPLICATE_ITEM",
+      "message": "Aktif maddelerde başlık ve metin birlikte mükerrer.",
+      "row_ids": [
+        "MAD-0888",
+        "MAD-1004"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0034",
+        "MAD-0116"
+      ],
+      "details": {
+        "titles": [
+          "Muayene anahtarının güvenli yapısı",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0035",
+        "MAD-0117"
+      ],
+      "details": {
+        "titles": [
+          "NORMAL ve KONTROL konum işaretleri",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0036",
+        "MAD-0118"
+      ],
+      "details": {
+        "titles": [
+          "Muayene kumandası yön butonları",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0038",
+        "MAD-0119"
+      ],
+      "details": {
+        "titles": [
+          "Muayene kumandası ÇALIŞTIR butonu",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0039",
+        "MAD-0120"
+      ],
+      "details": {
+        "titles": [
+          "Muayene kumandasının dokunmaya karşı koruması",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0043",
+        "MAD-0125"
+      ],
+      "details": {
+        "titles": [
+          "Muayene hızının üst sınırı",
+          "Kabin üstündeki bakım kumandası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0094",
+        "MAD-0356"
+      ],
+      "details": {
+        "titles": [
+          "Kuyu dibinde temizlik ve yanıcı madde kontrolü",
+          "Kabin üstünde temizlik ve yanıcı madde kontrolü"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 4 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0096",
+        "MAD-0359",
+        "MAD-0399",
+        "MAD-0456"
+      ],
+      "details": {
+        "titles": [
+          "Kuyu dibi koruyucu topraklama sürekliliği",
+          "Kabin üstü koruyucu topraklama sürekliliği",
+          "Makine alanında koruyucu topraklama sürekliliği",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0134",
+        "MAD-0626"
+      ],
+      "details": {
+        "titles": [
+          "Korkuluk",
+          "Kabin üstü dış kenarındaki açıklığın sınırlandırılması"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0205",
+        "MAD-0393"
+      ],
+      "details": {
+        "titles": [
+          "Aydınlatma elemanları, mekanik hasara karşı korunmuş olmalıdır",
+          "Aydınlatma elemanlarının mekanik korunması"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0206",
+        "MAD-0394"
+      ],
+      "details": {
+        "titles": [
+          "Etiket, bildirim ve talimatların kalıcılığı ve dili",
+          "Etiket, işaret ve talimatların kalıcılığı ve dili"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0209",
+        "MAD-0215"
+      ],
+      "details": {
+        "titles": [
+          "Yangın anında asansörün kullanmaması yönünde uyarı işareti",
+          "Kabin Kapısı, Durak Kapıları ve Katlar"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0400",
+        "MAD-0472"
+      ],
+      "details": {
+        "titles": [
+          "Güvenlik aksamı montaj ve bakım talimatları",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0401",
+        "MAD-0473"
+      ],
+      "details": {
+        "titles": [
+          "Devre şemaları, bakım talimatları ve kayıt defteri",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0411",
+        "MAD-0434"
+      ],
+      "details": {
+        "titles": [
+          "Ağır donanım için kaldırma ve taşıma vasıtası",
+          "MRL donanımı için kaldırma ve taşıma vasıtası"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0425",
+        "MAD-0495"
+      ],
+      "details": {
+        "titles": [
+          "Regülatör devreye girme hızı ile asansör hızının uyumu",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0426",
+        "MAD-0478"
+      ],
+      "details": {
+        "titles": [
+          "Kuvvet panosunda hata akımına karşı koruma",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0427",
+        "MAD-0481"
+      ],
+      "details": {
+        "titles": [
+          "Kumanda panosunda hata akımına karşı koruma",
+          "Makine/Makara Dairesi"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0460",
+        "MAD-0508"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0486",
+        "MAD-0510"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0492",
+        "MAD-0507"
+      ],
+      "details": {
+        "titles": [
+          "Makine/Makara Dairesi",
+          "Makine Kuyu İçerisinde"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0566",
+        "MAD-0683"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik Kontrol ve Testleri"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0567",
+        "MAD-0631"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik askı tertibatında gevşek halat veya zincir güvenliği"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0591",
+        "MAD-0632"
+      ],
+      "details": {
+        "titles": [
+          "Hidrolik Kontrol ve Testleri",
+          "Hidrolik asansörün anma hızı sınırı"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0625",
+        "MAD-0710"
+      ],
+      "details": {
+        "titles": [
+          "Kabinin kilit açılma bölgesinde olduğunun bağımsız kontrolü",
+          "Hidrolik Kontrol ve Testleri"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0810",
+        "MAD-0818"
+      ],
+      "details": {
+        "titles": [
+          "Çift girişli kabin",
+          "Çift girişli kabin"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 2 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0816",
+        "MAD-0825"
+      ],
+      "details": {
+        "titles": [
+          "Çift girişli kabin",
+          "Çift girişli kabin"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "DUPLICATE_BODY",
+      "message": "Aktif maddelerde birebir aynı normalize edilmiş metin 4 kez bulunuyor.",
+      "row_ids": [
+        "MAD-0841",
+        "MAD-0888",
+        "MAD-0922",
+        "MAD-1004"
+      ],
+      "details": {
+        "titles": [
+          "İtfaiye hizmeti haberleşme sistemi",
+          "Diğer Kontroller",
+          "Yasak işareti",
+          "Diğer Kontroller"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "16 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0112",
+        "MAD-0113",
+        "MAD-0114",
+        "MAD-0115",
+        "MAD-0116",
+        "MAD-0117",
+        "MAD-0118",
+        "MAD-0119",
+        "MAD-0120",
+        "MAD-0121",
+        "MAD-0122",
+        "MAD-0123",
+        "MAD-0124",
+        "MAD-0125",
+        "MAD-0126",
+        "MAD-0127"
+      ],
+      "details": {
+        "title": "Kabin üstündeki bakım kumandası"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0132",
+        "MAD-0133",
+        "MAD-0134",
+        "MAD-0135",
+        "MAD-0136",
+        "MAD-0137",
+        "MAD-0138",
+        "MAD-0139",
+        "MAD-0140"
+      ],
+      "details": {
+        "title": "Korkuluk"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0145",
+        "MAD-0146",
+        "MAD-0147",
+        "MAD-0148",
+        "MAD-0149",
+        "MAD-0150"
+      ],
+      "details": {
+        "title": "Kabin üstü sığınma alanları ve güvenlik mesafeleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0152",
+        "MAD-0153",
+        "MAD-0154",
+        "MAD-0155",
+        "MAD-0156",
+        "MAD-0157"
+      ],
+      "details": {
+        "title": "Güvenlik tertibatı"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0158",
+        "MAD-0159",
+        "MAD-0160",
+        "MAD-0161",
+        "MAD-0162"
+      ],
+      "details": {
+        "title": "Askı halatları ve bağlantıları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "13 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0171",
+        "MAD-0172",
+        "MAD-0173",
+        "MAD-0174",
+        "MAD-0175",
+        "MAD-0176",
+        "MAD-0177",
+        "MAD-0178",
+        "MAD-0179",
+        "MAD-0180",
+        "MAD-0181",
+        "MAD-0182",
+        "MAD-0183"
+      ],
+      "details": {
+        "title": "Kapı ve kuyu duvarları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "8 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0188",
+        "MAD-0189",
+        "MAD-0190",
+        "MAD-0191",
+        "MAD-0192",
+        "MAD-0193",
+        "MAD-0194",
+        "MAD-0195"
+      ],
+      "details": {
+        "title": "Kapı ve kuyu duvarları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "19 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0214",
+        "MAD-0215",
+        "MAD-0216",
+        "MAD-0217",
+        "MAD-0218",
+        "MAD-0219",
+        "MAD-0220",
+        "MAD-0221",
+        "MAD-0222",
+        "MAD-0223",
+        "MAD-0224",
+        "MAD-0225",
+        "MAD-0226",
+        "MAD-0227",
+        "MAD-0228",
+        "MAD-0229",
+        "MAD-0230",
+        "MAD-0231",
+        "MAD-0232"
+      ],
+      "details": {
+        "title": "Kabin Kapısı, Durak Kapıları ve Katlar"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "20 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0233",
+        "MAD-0234",
+        "MAD-0235",
+        "MAD-0236",
+        "MAD-0237",
+        "MAD-0238",
+        "MAD-0239",
+        "MAD-0240",
+        "MAD-0241",
+        "MAD-0242",
+        "MAD-0243",
+        "MAD-0244",
+        "MAD-0245",
+        "MAD-0246",
+        "MAD-0247",
+        "MAD-0248",
+        "MAD-0249",
+        "MAD-0250",
+        "MAD-0251",
+        "MAD-0252"
+      ],
+      "details": {
+        "title": "Kuyu Üst Boşluğu ve Kuyu İçi"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0253",
+        "MAD-0254",
+        "MAD-0255",
+        "MAD-0256",
+        "MAD-0257"
+      ],
+      "details": {
+        "title": "Makine Ve Makara Dairesine Erişim"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "48 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0452",
+        "MAD-0453",
+        "MAD-0454",
+        "MAD-0455",
+        "MAD-0456",
+        "MAD-0457",
+        "MAD-0458",
+        "MAD-0459",
+        "MAD-0460",
+        "MAD-0461",
+        "MAD-0462",
+        "MAD-0463",
+        "MAD-0464",
+        "MAD-0465",
+        "MAD-0466",
+        "MAD-0467",
+        "MAD-0468",
+        "MAD-0469",
+        "MAD-0470",
+        "MAD-0471",
+        "MAD-0472",
+        "MAD-0473",
+        "MAD-0474",
+        "MAD-0475",
+        "MAD-0476",
+        "MAD-0477",
+        "MAD-0478",
+        "MAD-0479",
+        "MAD-0480",
+        "MAD-0481",
+        "MAD-0482",
+        "MAD-0483",
+        "MAD-0484",
+        "MAD-0485",
+        "MAD-0486",
+        "MAD-0487",
+        "MAD-0488",
+        "MAD-0489",
+        "MAD-0490",
+        "MAD-0491",
+        "MAD-0492",
+        "MAD-0493",
+        "MAD-0494",
+        "MAD-0495",
+        "MAD-0496",
+        "MAD-0497",
+        "MAD-0498",
+        "MAD-0499"
+      ],
+      "details": {
+        "title": "Makine/Makara Dairesi"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "18 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0500",
+        "MAD-0501",
+        "MAD-0502",
+        "MAD-0503",
+        "MAD-0504",
+        "MAD-0505",
+        "MAD-0506",
+        "MAD-0507",
+        "MAD-0508",
+        "MAD-0509",
+        "MAD-0510",
+        "MAD-0511",
+        "MAD-0512",
+        "MAD-0513",
+        "MAD-0514",
+        "MAD-0515",
+        "MAD-0516",
+        "MAD-0517"
+      ],
+      "details": {
+        "title": "Makine Kuyu İçerisinde"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0521",
+        "MAD-0522",
+        "MAD-0523",
+        "MAD-0524"
+      ],
+      "details": {
+        "title": "MOTOR HAREKET SÜRESİ SINIRLAYICI"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0525",
+        "MAD-0526",
+        "MAD-0527",
+        "MAD-0528",
+        "MAD-0529"
+      ],
+      "details": {
+        "title": "SINIR GÜVENLİK KESİCİLERİ"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0540",
+        "MAD-0541",
+        "MAD-0542",
+        "MAD-0543"
+      ],
+      "details": {
+        "title": "TAHRİK YETENEĞİ KONTROLÜ"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "49 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0562",
+        "MAD-0563",
+        "MAD-0564",
+        "MAD-0565",
+        "MAD-0566",
+        "MAD-0567",
+        "MAD-0568",
+        "MAD-0569",
+        "MAD-0570",
+        "MAD-0571",
+        "MAD-0572",
+        "MAD-0573",
+        "MAD-0574",
+        "MAD-0575",
+        "MAD-0576",
+        "MAD-0577",
+        "MAD-0578",
+        "MAD-0579",
+        "MAD-0580",
+        "MAD-0581",
+        "MAD-0582",
+        "MAD-0583",
+        "MAD-0584",
+        "MAD-0585",
+        "MAD-0586",
+        "MAD-0587",
+        "MAD-0588",
+        "MAD-0589",
+        "MAD-0590",
+        "MAD-0591",
+        "MAD-0592",
+        "MAD-0593",
+        "MAD-0594",
+        "MAD-0595",
+        "MAD-0596",
+        "MAD-0597",
+        "MAD-0598",
+        "MAD-0599",
+        "MAD-0600",
+        "MAD-0601",
+        "MAD-0602",
+        "MAD-0603",
+        "MAD-0604",
+        "MAD-0605",
+        "MAD-0606",
+        "MAD-0607",
+        "MAD-0608",
+        "MAD-0609",
+        "MAD-0610"
+      ],
+      "details": {
+        "title": "Hidrolik Kontrol ve Testleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "23 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0660",
+        "MAD-0661",
+        "MAD-0662",
+        "MAD-0663",
+        "MAD-0664",
+        "MAD-0665",
+        "MAD-0666",
+        "MAD-0667",
+        "MAD-0668",
+        "MAD-0669",
+        "MAD-0670",
+        "MAD-0671",
+        "MAD-0672",
+        "MAD-0673",
+        "MAD-0674",
+        "MAD-0675",
+        "MAD-0676",
+        "MAD-0677",
+        "MAD-0678",
+        "MAD-0679",
+        "MAD-0680",
+        "MAD-0681",
+        "MAD-0682"
+      ],
+      "details": {
+        "title": "Testler"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "30 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0683",
+        "MAD-0684",
+        "MAD-0685",
+        "MAD-0686",
+        "MAD-0687",
+        "MAD-0688",
+        "MAD-0689",
+        "MAD-0690",
+        "MAD-0691",
+        "MAD-0692",
+        "MAD-0693",
+        "MAD-0694",
+        "MAD-0695",
+        "MAD-0696",
+        "MAD-0697",
+        "MAD-0698",
+        "MAD-0699",
+        "MAD-0700",
+        "MAD-0701",
+        "MAD-0702",
+        "MAD-0703",
+        "MAD-0704",
+        "MAD-0705",
+        "MAD-0706",
+        "MAD-0707",
+        "MAD-0708",
+        "MAD-0709",
+        "MAD-0710",
+        "MAD-0711",
+        "MAD-0712"
+      ],
+      "details": {
+        "title": "Hidrolik Kontrol ve Testleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "42 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0713",
+        "MAD-0714",
+        "MAD-0715",
+        "MAD-0716",
+        "MAD-0717",
+        "MAD-0718",
+        "MAD-0719",
+        "MAD-0720",
+        "MAD-0721",
+        "MAD-0722",
+        "MAD-0723",
+        "MAD-0724",
+        "MAD-0725",
+        "MAD-0726",
+        "MAD-0727",
+        "MAD-0728",
+        "MAD-0729",
+        "MAD-0730",
+        "MAD-0731",
+        "MAD-0732",
+        "MAD-0733",
+        "MAD-0734",
+        "MAD-0735",
+        "MAD-0736",
+        "MAD-0737",
+        "MAD-0738",
+        "MAD-0739",
+        "MAD-0740",
+        "MAD-0741",
+        "MAD-0742",
+        "MAD-0743",
+        "MAD-0744",
+        "MAD-0745",
+        "MAD-0746",
+        "MAD-0747",
+        "MAD-0748",
+        "MAD-0749",
+        "MAD-0750",
+        "MAD-0751",
+        "MAD-0752",
+        "MAD-0753",
+        "MAD-0754"
+      ],
+      "details": {
+        "title": "Ortam/bina gereklilikleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0755",
+        "MAD-0756",
+        "MAD-0757",
+        "MAD-0758"
+      ],
+      "details": {
+        "title": "Merdivenler"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "7 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0759",
+        "MAD-0760",
+        "MAD-0761",
+        "MAD-0762",
+        "MAD-0763",
+        "MAD-0764",
+        "MAD-0765"
+      ],
+      "details": {
+        "title": "Kabinde kurtarma prosedürleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0769",
+        "MAD-0770",
+        "MAD-0771",
+        "MAD-0772",
+        "MAD-0773"
+      ],
+      "details": {
+        "title": "Kumanda sistemleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "35 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0774",
+        "MAD-0775",
+        "MAD-0776",
+        "MAD-0777",
+        "MAD-0778",
+        "MAD-0779",
+        "MAD-0780",
+        "MAD-0781",
+        "MAD-0782",
+        "MAD-0783",
+        "MAD-0784",
+        "MAD-0785",
+        "MAD-0786",
+        "MAD-0787",
+        "MAD-0788",
+        "MAD-0789",
+        "MAD-0790",
+        "MAD-0791",
+        "MAD-0792",
+        "MAD-0793",
+        "MAD-0794",
+        "MAD-0795",
+        "MAD-0796",
+        "MAD-0797",
+        "MAD-0798",
+        "MAD-0799",
+        "MAD-0800",
+        "MAD-0801",
+        "MAD-0802",
+        "MAD-0803",
+        "MAD-0804",
+        "MAD-0805",
+        "MAD-0806",
+        "MAD-0807",
+        "MAD-0808"
+      ],
+      "details": {
+        "title": "Aşama 1"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "21 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0809",
+        "MAD-0810",
+        "MAD-0811",
+        "MAD-0812",
+        "MAD-0813",
+        "MAD-0814",
+        "MAD-0815",
+        "MAD-0816",
+        "MAD-0817",
+        "MAD-0818",
+        "MAD-0819",
+        "MAD-0820",
+        "MAD-0821",
+        "MAD-0822",
+        "MAD-0823",
+        "MAD-0824",
+        "MAD-0825",
+        "MAD-0826",
+        "MAD-0827",
+        "MAD-0828",
+        "MAD-0829"
+      ],
+      "details": {
+        "title": "Çift girişli kabin"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0830",
+        "MAD-0831",
+        "MAD-0832",
+        "MAD-0833",
+        "MAD-0834",
+        "MAD-0835"
+      ],
+      "details": {
+        "title": "Kabin ve durak kumandaları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0836",
+        "MAD-0837",
+        "MAD-0838",
+        "MAD-0839",
+        "MAD-0840",
+        "MAD-0841",
+        "MAD-0842",
+        "MAD-0843",
+        "MAD-0844"
+      ],
+      "details": {
+        "title": "İtfaiye hizmeti haberleşme sistemi"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "6 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0845",
+        "MAD-0846",
+        "MAD-0847",
+        "MAD-0848",
+        "MAD-0849",
+        "MAD-0850"
+      ],
+      "details": {
+        "title": "Kuyu Mahfazası"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "9 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0851",
+        "MAD-0852",
+        "MAD-0853",
+        "MAD-0854",
+        "MAD-0855",
+        "MAD-0856",
+        "MAD-0857",
+        "MAD-0858",
+        "MAD-0859"
+      ],
+      "details": {
+        "title": "Havalandırma"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "11 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0860",
+        "MAD-0861",
+        "MAD-0862",
+        "MAD-0863",
+        "MAD-0864",
+        "MAD-0865",
+        "MAD-0866",
+        "MAD-0867",
+        "MAD-0868",
+        "MAD-0869",
+        "MAD-0870"
+      ],
+      "details": {
+        "title": "Durak ve kabin kapıları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "11 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0871",
+        "MAD-0872",
+        "MAD-0873",
+        "MAD-0874",
+        "MAD-0875",
+        "MAD-0876",
+        "MAD-0877",
+        "MAD-0878",
+        "MAD-0879",
+        "MAD-0880",
+        "MAD-0881"
+      ],
+      "details": {
+        "title": "Kabin"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0882",
+        "MAD-0883",
+        "MAD-0884",
+        "MAD-0885",
+        "MAD-0886"
+      ],
+      "details": {
+        "title": "Alarm"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "7 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0893",
+        "MAD-0894",
+        "MAD-0895",
+        "MAD-0896",
+        "MAD-0897",
+        "MAD-0898",
+        "MAD-0899"
+      ],
+      "details": {
+        "title": "Çağırma aracı"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "8 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0900",
+        "MAD-0901",
+        "MAD-0902",
+        "MAD-0903",
+        "MAD-0904",
+        "MAD-0905",
+        "MAD-0906",
+        "MAD-0907"
+      ],
+      "details": {
+        "title": "Yasak işareti"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "14 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0909",
+        "MAD-0910",
+        "MAD-0911",
+        "MAD-0912",
+        "MAD-0913",
+        "MAD-0914",
+        "MAD-0915",
+        "MAD-0916",
+        "MAD-0917",
+        "MAD-0918",
+        "MAD-0919",
+        "MAD-0920",
+        "MAD-0921",
+        "MAD-0922"
+      ],
+      "details": {
+        "title": "Yasak işareti"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "26 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0935",
+        "MAD-0936",
+        "MAD-0937",
+        "MAD-0938",
+        "MAD-0939",
+        "MAD-0940",
+        "MAD-0941",
+        "MAD-0942",
+        "MAD-0943",
+        "MAD-0944",
+        "MAD-0945",
+        "MAD-0946",
+        "MAD-0947",
+        "MAD-0948",
+        "MAD-0949",
+        "MAD-0950",
+        "MAD-0951",
+        "MAD-0952",
+        "MAD-0953",
+        "MAD-0954",
+        "MAD-0955",
+        "MAD-0956",
+        "MAD-0957",
+        "MAD-0958",
+        "MAD-0959",
+        "MAD-0960"
+      ],
+      "details": {
+        "title": "Durak ve kabin kapı kontrolleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "4 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0961",
+        "MAD-0962",
+        "MAD-0963",
+        "MAD-0964"
+      ],
+      "details": {
+        "title": "Kabin kumanda panellerinin yerleri"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "25 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0965",
+        "MAD-0966",
+        "MAD-0967",
+        "MAD-0968",
+        "MAD-0969",
+        "MAD-0970",
+        "MAD-0971",
+        "MAD-0972",
+        "MAD-0973",
+        "MAD-0974",
+        "MAD-0975",
+        "MAD-0976",
+        "MAD-0977",
+        "MAD-0978",
+        "MAD-0979",
+        "MAD-0980",
+        "MAD-0981",
+        "MAD-0982",
+        "MAD-0983",
+        "MAD-0984",
+        "MAD-0985",
+        "MAD-0986",
+        "MAD-0987",
+        "MAD-0988",
+        "MAD-0989"
+      ],
+      "details": {
+        "title": "Kat ve durak butonları"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "10 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-0990",
+        "MAD-0991",
+        "MAD-0992",
+        "MAD-0993",
+        "MAD-0994",
+        "MAD-0995",
+        "MAD-0996",
+        "MAD-0997",
+        "MAD-0998",
+        "MAD-0999"
+      ],
+      "details": {
+        "title": "Kabin içi donanımlar"
+      }
+    },
+    {
+      "severity": "high",
+      "code": "TITLE_INHERITANCE_RUN",
+      "message": "5 ardışık madde aynı başlığı taşıyor; başlık mirası hatası olabilir.",
+      "row_ids": [
+        "MAD-1000",
+        "MAD-1001",
+        "MAD-1002",
+        "MAD-1003",
+        "MAD-1004"
+      ],
+      "details": {
+        "title": "Diğer Kontroller"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0034"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0035"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0036"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0037"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0038"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0040"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0042"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0066"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0067"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0086"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0087"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0090"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0096"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0098"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0101"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0102"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0103"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0104"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0105"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0106"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0114"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0116"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0117"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0118"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0119"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0121"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0122"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0123"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0124"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0127"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0129"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0135"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0140"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0143"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0145"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0159"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0160"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0161"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0162"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0171"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0173"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0174"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0175"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0176"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0185"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0187"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0194"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0200"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0202"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0203"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0205"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0207"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0214"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0216"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0220"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0221"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0222"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0223"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0226"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0228"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0229"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0230"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0234"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0235"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0236"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0237"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0238"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0240"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0241"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0242"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0243"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0244"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0245"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0246"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0249"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0250"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0256"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0258"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0266"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0280"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0281"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0283"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0288"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0290"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0295"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0296"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0298"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0302"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0308"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0319"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0322"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0324"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0326"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0355"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0357"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0358"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0359"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0362"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0364"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0373"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0374"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0375"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0377"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0379"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0381"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0384"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0386"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0387"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0388"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0389"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0393"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0396"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0397"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0398"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0399"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0403"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0411"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0412"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0417"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0430"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0431"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0432"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0433"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0434"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0435"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0437"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0438"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0440"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0441"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0447"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0448"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0449"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0450"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0451"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0456"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0457"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0458"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0459"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0460"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0461"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0462"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0463"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0464"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0467"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0470"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0488"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0489"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0490"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0496"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0501"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0503"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0506"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0508"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0510"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0511"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0512"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0513"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0514"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0516"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0518"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0521"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0522"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0523"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0524"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0530"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0531"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0533"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0534"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0539"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0544"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0545"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0546"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0547"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0548"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0552"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0563"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0564"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0565"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0566"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0569"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0574"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0575"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0576"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0577"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0578"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0579"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0580"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0581"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0582"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0583"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0584"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0585"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0592"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0608"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0609"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0610"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0611"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0612"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0613"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0614"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0615"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0617"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0618"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0619"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0620"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0621"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0622"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0623"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0624"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0625"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0627"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0628"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0629"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0630"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0633"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0647"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0648"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0650"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0651"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0652"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0654"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0655"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0657"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0658"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0661"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0665"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0671"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0672"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0681"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0687"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0711"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0713"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0714"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0715"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0716"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0717"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0719"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0720"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0721"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0722"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0723"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0726"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0727"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0728"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0729"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0737"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0738"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0739"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0740"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0742"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0743"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0744"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0745"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0746"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0748"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0749"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0750"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0751"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0752"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0753"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0754"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0755"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0756"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0757"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0758"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0759"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0760"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0761"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0762"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0763"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0764"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0765"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0769"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0782"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0792"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0793"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0794"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0795"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0796"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0797"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0798"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0799"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0800"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0845"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0847"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0850"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0851"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0853"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0855"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0856"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0857"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0858"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0867"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0868"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0869"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0870"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0872"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0878"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0879"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0880"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0881"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0882"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0884"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0889"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0906"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0908"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0919"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0929"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0935"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0948"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0952"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0953"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0954"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0956"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0958"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0959"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0960"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0961"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0962"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0964"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0977"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0980"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0981"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0985"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0989"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0990"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0991"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0992"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0996"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0997"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "MEASUREMENT_WITHOUT_UNIT",
+      "message": "Ölçüm alanı var fakat birim tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0999"
+      ],
+      "details": {}
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0008A",
+        "MAD-0008B",
+        "MAD-0008D"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.38 / ÜB.FR.39|R.04 / R.02|||Genel|ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0008F",
+        "MAD-0008G",
+        "MAD-0008H",
+        "MAD-0008I"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.65|R.00|||Genel|ÜB.FR.65 R.00 — Teknik Dosya-Saha Eşleşme Formu; ÜB.RP.08 R.02 — Modül E/H1 Gözetim Denetimi Kontrol Raporu"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0010",
+        "MAD-0031"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.2.2.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0020",
+        "MAD-0021",
+        "MAD-0022",
+        "MAD-0023",
+        "MAD-0024",
+        "MAD-0025",
+        "MAD-0026",
+        "MAD-0027",
+        "MAD-0028",
+        "MAD-0029",
+        "MAD-0030"
+      ],
+      "details": {
+        "source_key": "||||81-20|EK F"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0053",
+        "MAD-0058"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.8.1.5"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0066",
+        "MAD-0067",
+        "MAD-0068"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.2.5.5.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0076",
+        "MAD-0077"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.2.5.8.1"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0079",
+        "MAD-0080",
+        "MAD-0081"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.2.5.8.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0082",
+        "MAD-0083"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.4.5.1"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0102",
+        "MAD-0239"
+      ],
+      "details": {
+        "source_key": "||||81-1/2+A3|Ek-I, 2.2 | ZA: 2.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0253",
+        "MAD-0254"
+      ],
+      "details": {
+        "source_key": "||||81-1/2+A3|6.2.1 | ZA: 1.2.1 4.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0255",
+        "MAD-0256"
+      ],
+      "details": {
+        "source_key": "||||81-1/2+A3|6.2.2 | ZA: 1.2.1 4.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0266",
+        "MAD-0267"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.4.2.3.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0269",
+        "MAD-0270"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.4.3.2.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0274",
+        "MAD-0275"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.4.4"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0290",
+        "MAD-0291"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.3.6.2.2.1 a"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0292",
+        "MAD-0293",
+        "MAD-0294",
+        "MAD-0295",
+        "MAD-0296"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.3.6.2.2.1 b"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0306",
+        "MAD-0307"
+      ],
+      "details": {
+        "source_key": "||||81-20|5.12.1.1.4"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0713",
+        "MAD-0714"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.1.1."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0716",
+        "MAD-0717"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.1.3."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0721",
+        "MAD-0722",
+        "MAD-0725",
+        "MAD-0726",
+        "MAD-0747",
+        "MAD-0791",
+        "MAD-0817",
+        "MAD-0825"
+      ],
+      "details": {
+        "source_key": "||||81-72|(devam)"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0723",
+        "MAD-0724"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.1.8."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0737",
+        "MAD-0738"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.3.1."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0739",
+        "MAD-0740"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.3.2."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0742",
+        "MAD-0743",
+        "MAD-0744",
+        "MAD-0745"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.3.4."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0749",
+        "MAD-0750",
+        "MAD-0751",
+        "MAD-0752",
+        "MAD-0753"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.4.1.2. | ZA: 4.4"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0759",
+        "MAD-0760"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.4.3. | ZA: 4.4"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0761",
+        "MAD-0762",
+        "MAD-0763",
+        "MAD-0764"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.4.4. | ZA: 4.4"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0769",
+        "MAD-0770"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.1. | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0781",
+        "MAD-0782",
+        "MAD-0783"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.7. g) | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0784",
+        "MAD-0785",
+        "MAD-0786"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.7. h) 1) | ZA: 1.6.2 4.1 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0788",
+        "MAD-0789"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.7. h) 3) | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0796",
+        "MAD-0797"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.8. d) | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0811",
+        "MAD-0812"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.9.1. a) 2) | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0820",
+        "MAD-0821"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.8.9.2. c) 1) | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0830",
+        "MAD-0831"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.11.1. | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0832",
+        "MAD-0833"
+      ],
+      "details": {
+        "source_key": "||||81-72|5.11.2. | ZA: 1.6.2 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0846",
+        "MAD-0851",
+        "MAD-0856",
+        "MAD-0857",
+        "MAD-0858"
+      ],
+      "details": {
+        "source_key": "||||81-71|(devam) | ZA: 1.5.2 2.1"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0878",
+        "MAD-0879"
+      ],
+      "details": {
+        "source_key": "||||81-71|5.5.1.9."
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0880",
+        "MAD-0881",
+        "MAD-0882",
+        "MAD-0884",
+        "MAD-0885",
+        "MAD-0886",
+        "MAD-0887"
+      ],
+      "details": {
+        "source_key": "||||81-71|(devam)"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0891",
+        "MAD-0892",
+        "MAD-0893"
+      ],
+      "details": {
+        "source_key": "||||81-73|(devam) | ZA: 1.6.2 4.4 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0895",
+        "MAD-0896",
+        "MAD-0897",
+        "MAD-0898",
+        "MAD-0900",
+        "MAD-0915",
+        "MAD-0916",
+        "MAD-0917",
+        "MAD-0918",
+        "MAD-0919"
+      ],
+      "details": {
+        "source_key": "||||81-73|(devam) | ZA: 4.4 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0904",
+        "MAD-0905",
+        "MAD-0906",
+        "MAD-0907",
+        "MAD-0908",
+        "MAD-0909",
+        "MAD-0910",
+        "MAD-0911"
+      ],
+      "details": {
+        "source_key": "||||81-73|(devam) | ZA: 4.1 4.4 4.10"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0924",
+        "MAD-0930"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|5.3.1. | ZA: 1.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0925",
+        "MAD-0926",
+        "MAD-0927",
+        "MAD-0928",
+        "MAD-0931",
+        "MAD-0932",
+        "MAD-0933",
+        "MAD-0934",
+        "MAD-0981",
+        "MAD-0982",
+        "MAD-0983",
+        "MAD-0984",
+        "MAD-0985",
+        "MAD-0986",
+        "MAD-0987",
+        "MAD-0988",
+        "MAD-0989"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|(devam) | ZA: 1.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0936",
+        "MAD-0937",
+        "MAD-0938",
+        "MAD-0939",
+        "MAD-0940",
+        "MAD-0941",
+        "MAD-0942",
+        "MAD-0943",
+        "MAD-0945",
+        "MAD-0946",
+        "MAD-0960",
+        "MAD-0970",
+        "MAD-0971",
+        "MAD-0991",
+        "MAD-0992",
+        "MAD-0993",
+        "MAD-0994",
+        "MAD-0995",
+        "MAD-0996",
+        "MAD-0997",
+        "MAD-0999"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|(devam)"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0947",
+        "MAD-0948",
+        "MAD-0949",
+        "MAD-0950",
+        "MAD-0951",
+        "MAD-0952",
+        "MAD-0953"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|(devam) | ZA: 1.6"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0956",
+        "MAD-0957",
+        "MAD-0958",
+        "MAD-0959"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|(devam) | ZA: 1.6.1,1.6.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "SOURCE_MAPPING_COLLISION",
+      "message": "Aynı kaynak konumuna farklı madde metinleri bağlanmış; elle doğrulanmalı.",
+      "row_ids": [
+        "MAD-0962",
+        "MAD-0963",
+        "MAD-0964",
+        "MAD-0966",
+        "MAD-0967",
+        "MAD-0968",
+        "MAD-0969",
+        "MAD-0973",
+        "MAD-0974",
+        "MAD-0976",
+        "MAD-0978",
+        "MAD-0979"
+      ],
+      "details": {
+        "source_key": "ÜB.FR.43|R.04|||81-70|(devam) | ZA: 1.6.1 1.6.2"
+      }
+    },
+    {
+      "severity": "medium",
+      "code": "THRESHOLD_WITHOUT_MEASUREMENT",
+      "message": "Eşik kuralı var fakat ölçüm tanımı bulunamadı.",
+      "row_ids": [
+        "MAD-0936"
+      ],
+      "details": {}
+    }
+  ]
+}

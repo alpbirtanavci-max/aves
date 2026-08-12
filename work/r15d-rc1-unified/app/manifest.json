@@ -1,0 +1,13 @@
+{
+  "name": "AVES Saha Denetim",
+  "short_name": "AVES Saha",
+  "version": "R15D-rc2",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#20235B",
+  "theme_color": "#20235B",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}
