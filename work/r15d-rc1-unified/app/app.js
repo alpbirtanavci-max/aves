@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc3.1 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D-rc3.2 — Offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,8 +9,8 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.1';
-const DB_VERSION = 2;
+const APP_VERSION = 'R15D-rc3.2';
+const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './app.js', './manifest.json', './logo.png'];
 
 // AVES saha checklist sonucu yalnız üçlüdür. "Kontrol edilemedi / Veri eksik"
@@ -155,6 +155,13 @@ const DB = (() => {
         if (!d.objectStoreNames.contains('outbox')) {
           d.createObjectStore('outbox', { keyPath: 'seq', autoIncrement: true });
         }
+        if (!d.objectStoreNames.contains('gecmis')) {
+          const h = d.createObjectStore('gecmis', { keyPath: 'id' });
+          h.createIndex('byDenetim', 'denetim_id');
+        } else {
+          const h = e.target.transaction.objectStore('gecmis');
+          if (!h.indexNames.contains('byDenetim')) h.createIndex('byDenetim', 'denetim_id');
+        }
       };
       req.onsuccess = () => { db = req.result; res(); };
       req.onerror = () => rej(req.error);
@@ -211,12 +218,18 @@ const DB = (() => {
       t.onerror = () => rej(t.error || new Error(`${store} bölüm yenileme işlemi başarısız`));
       t.onabort = () => rej(t.error || new Error(`${store} bölüm yenileme işlemi iptal edildi`));
     }),
-    putAllWithOutbox: (store, arr, outboxItem) => new Promise((res, rej) => {
-      const t = db.transaction([store, 'outbox'], 'readwrite');
+    putAllWithOutbox: (store, arr, outboxItem, historyItems = [], historyOutboxItem = null) => new Promise((res, rej) => {
+      const stores = historyItems.length ? [store, 'outbox', 'gecmis'] : [store, 'outbox'];
+      const t = db.transaction(stores, 'readwrite');
       const localStore = t.objectStore(store);
       const outbox = t.objectStore('outbox');
       arr.forEach(o => localStore.put(o));
       outbox.add(outboxItem);
+      if (historyItems.length) {
+        const history = t.objectStore('gecmis');
+        historyItems.forEach(item => history.put(item));
+        if (historyOutboxItem) outbox.add(historyOutboxItem);
+      }
       t.oncomplete = () => res(outboxItem.operation_id);
       t.onerror = () => rej(t.error || new Error('Yerel kayıt işlemi başarısız'));
       t.onabort = () => rej(t.error || new Error('Yerel kayıt işlemi iptal edildi'));
@@ -249,6 +262,12 @@ async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function stableStringify(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${stableStringify(value[key])}`).join(',')}}`;
 }
 
 /* ================= Supabase REST ================= */
@@ -325,7 +344,9 @@ const API = (() => {
   async function upsert(table, rows) {
     const resp = await authFetch(`/rest/v1/${table}`, {
       method: 'POST',
-      headers: { 'Prefer': 'resolution=merge-duplicates,return=minimal' },
+      // Geçmiş eklemeli ve değiştirilemezdir. Belirsiz ağ sonucundan sonra aynı
+      // olay yeniden gönderilirse mevcut satırı UPDATE etmeye çalışmadan geçilir.
+      headers: { 'Prefer': `${table === 'denetim_degisim_gecmisi' ? 'resolution=ignore-duplicates' : 'resolution=merge-duplicates'},return=minimal` },
       body: JSON.stringify(rows),
     });
     if (!resp.ok) {
@@ -398,7 +419,10 @@ const Profile = (() => {
     get role() { return current ? current.rol : 'muhendis'; },
     get isAdmin() { return !!current && current.rol === 'yonetici'; },
     get isTechnicalManager() { return !!current && current.rol === 'teknik_mudur'; },
-    get canManage() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
+    // Teknik müdür denetimleri inceler ve bütün denetimi silebilir; içerik,
+    // cevap veya iş akışı üzerinde değişiklik yapamaz.
+    get canManage() { return !!current && current.rol === 'yonetici'; },
+    get canCreate() { return !!current && current.rol !== 'teknik_mudur'; },
     get canDelete() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
   };
 })();
@@ -614,6 +638,19 @@ const Sync = (() => {
     await DB.replaceByIndex('saha', 'byDenetim', denetimId, [...merged.values()]);
   }
 
+  async function pullGecmis(denetimId) {
+    const rows = await API.selectPaged(
+      'denetim_degisim_gecmisi',
+      `select=*&denetim_id=eq.${denetimId}&order=created_at.desc`
+    );
+    const localRows = await DB.allByIndex('gecmis', 'byDenetim', denetimId);
+    const pending = await pendingRows('denetim_degisim_gecmisi');
+    const merged = new Map(localRows.map(row => [row.id, row]));
+    for (const row of rows) merged.set(row.id, row);
+    for (const [id,row] of pending) if (row.denetim_id === denetimId) merged.set(id,row);
+    await DB.replaceByIndex('gecmis', 'byDenetim', denetimId, [...merged.values()]);
+  }
+
   async function full() {
     if (running || !navigator.onLine || !API.loggedIn) { await updatePill(); return false; }
     running = true;
@@ -623,7 +660,10 @@ const Sync = (() => {
       if (!sent) return false; // yerel değişiklik sunucuya gitmediyse PULL ile üzerine yazma
       await pullKutuphane();
       await pullDenetimler();
-      if (UI.currentDenetimId) await pullSaha(UI.currentDenetimId);
+      if (UI.currentDenetimId) {
+        await pullSaha(UI.currentDenetimId);
+        await pullGecmis(UI.currentDenetimId);
+      }
       completed = true;
     } catch (e) {
       console.warn('Senkron hatası:', e.message);
@@ -654,13 +694,70 @@ const Sync = (() => {
     updatePill();
   }
 
-  return { full, manual, start, updatePill, pullSaha, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri };
+  return { full, manual, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri };
 })();
 
 /* ================= Yerel yazma (local-first) ================= */
+const GECMIS_ALANLARI = {
+  denetimler: [
+    'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
+    'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash',
+  ],
+  saha_kontrol: [
+    'durum', 'denetci_gordu', 'bulgu_secenegi', 'diger_bulgu', 'aciklama',
+    'olcu1_degeri', 'olcu2_degeri', 'olcum_degerleri', 'otomatik_uygulanmaz',
+  ],
+};
+
+function gecmisDegeri(table, row) {
+  const result = {};
+  for (const field of (GECMIS_ALANLARI[table] || [])) result[field] = row ? (row[field] ?? null) : null;
+  return result;
+}
+
+async function gecmisKayitlariHazirla(table, arr, store, now) {
+  if (!GECMIS_ALANLARI[table]) return [];
+  const events = [];
+  for (const row of arr) {
+    const before = await DB.get(store, row.id);
+    const previous = gecmisDegeri(table, before);
+    const next = gecmisDegeri(table, row);
+    if (before && stableStringify(previous) === stableStringify(next)) continue;
+    // İlk checklist üretimi 1000 ayrı geçmiş satırı oluşturmaz; denetimin
+    // oluşturulması tek olay olarak kaydedilir. Sonraki her cevap değişikliği izlenir.
+    if (!before && table === 'saha_kontrol') continue;
+    events.push({
+      id: crypto.randomUUID(),
+      denetim_id: table === 'saha_kontrol' ? row.denetim_id : row.id,
+      saha_kontrol_id: table === 'saha_kontrol' ? row.id : null,
+      madde_id: table === 'saha_kontrol' ? row.madde_id : null,
+      islem_turu: before ? (table === 'saha_kontrol' ? 'madde_guncelleme' : 'denetim_guncelleme') : 'denetim_olusturma',
+      onceki_deger: before ? previous : null,
+      yeni_deger: next,
+      degistiren_email: Profile.email || API.email || null,
+      degistiren_ad: Profile.name || null,
+      degistiren_rol: Profile.role || null,
+      cihaz_id: await getDeviceId(),
+      app_build_id: APP_VERSION,
+      created_at: now,
+    });
+  }
+  return events;
+}
+
 async function localWrite(table, rows, store) {
   const arr = Array.isArray(rows) ? rows : [rows];
   const operationId = crypto.randomUUID();
+  const now = new Date().toISOString();
+  const historyItems = await gecmisKayitlariHazirla(table, arr, store, now);
+  for (const row of arr) {
+    if (table === 'denetimler' || table === 'saha_kontrol') {
+      row.son_degistiren_email = Profile.email || API.email || null;
+      row.son_degistiren_ad = Profile.name || null;
+      row.son_degistiren_rol = Profile.role || null;
+      row.son_degistiren_at = now;
+    }
+  }
   const outboxItem = {
     operation_id: operationId,
     user_id: Profile.email || API.email || null,
@@ -673,12 +770,27 @@ async function localWrite(table, rows, store) {
     operation_type: 'upsert',
     table,
     rows: arr,
-    created_at: new Date().toISOString(),
+    created_at: now,
     ts: Date.now(),
     attempt_count: 0,
     sync_status: 'pending',
   };
-  await DB.putAllWithOutbox(store, arr, outboxItem);
+  const historyOutboxItem = historyItems.length ? {
+    operation_id: crypto.randomUUID(),
+    user_id: Profile.email || API.email || null,
+    device_id: await getDeviceId(),
+    inspection_id: historyItems[0].denetim_id,
+    entity_type: 'denetim_degisim_gecmisi',
+    entity_key: historyItems.length === 1 ? historyItems[0].id : null,
+    operation_type: 'upsert',
+    table: 'denetim_degisim_gecmisi',
+    rows: historyItems,
+    created_at: now,
+    ts: Date.now(),
+    attempt_count: 0,
+    sync_status: 'pending',
+  } : null;
+  await DB.putAllWithOutbox(store, arr, outboxItem, historyItems, historyOutboxItem);
   await Sync.updatePill();
   if (typeof UI !== 'undefined' && UI.refreshSyncState) await UI.refreshSyncState();
   Sync.schedulePush();
@@ -697,6 +809,7 @@ const UI = (() => {
   let autoAdvanceTimer = null;
   let transitioningId = null;
   let currentCanEdit = false;
+  let inspectionReadOnly = false;
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   // Eski kütüphane alan adları geriye uyumluluk için korunur. Denetçiye
@@ -715,6 +828,22 @@ const UI = (() => {
   const canEditDenetim = (d) => !!d && d.denetim_durumu !== 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
+
+  async function cevrimdisiHazirlikDurumu(d, rows = []) {
+    const marker = await DB.kvGet(`offline_ready_${d.id}`);
+    if (!marker) return { ready: false, detail: 'Bu cihazda hazırlık kontrolü yapılmadı.' };
+    if (marker.device_id !== await getDeviceId()) return { ready: false, detail: 'Hazırlık başka bir cihazda yapılmış.' };
+    if (marker.app_build_id !== APP_VERSION) return { ready: false, detail: 'Uygulama güncellendi; bu cihazda tekrar kontrol edilmeli.' };
+    if (!rows.length) return { ready: false, detail: 'Checklist maddeleri bu cihazda bulunmuyor.' };
+    if (rows.length !== marker.expected_item_count) return { ready: false, detail: `${rows.length}/${marker.expected_item_count} madde cihazda.` };
+    const itemSetHash = await sha256Hex(rows.map(row => row.madde_id).sort().join('|'));
+    if (itemSetHash !== marker.item_set_hash) return { ready: false, detail: 'Cihazdaki madde kümesi hazırlanan kopyayla eşleşmiyor.' };
+    return {
+      ready: true,
+      detail: `${rows.length} madde ve gerekli uygulama dosyaları bu cihazda doğrulandı.`,
+      checkedAt: marker.checked_at,
+    };
+  }
 
   // TS EN 81-70 (erişilebilirlik), TS EN 81-71 (kasıtlı tahribata dayanıklılık)
   // ve TS EN 81-73 (yangın anında davranış) AVES saha denetiminin zorunlu
@@ -840,7 +969,9 @@ const UI = (() => {
     const denetimler = (await DB.all('denetimler')).sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
     const sahaAll = await DB.all('saha');
     const statsBy = {};
+    const rowsBy = {};
     for (const s of sahaAll) {
+      (rowsBy[s.denetim_id] || (rowsBy[s.denetim_id] = [])).push(s);
       const st = statsBy[s.denetim_id] || (statsBy[s.denetim_id] = { toplam:0, ok:0, bad:0, na:0, ic:0 });
       st.toplam++;
       if (s.denetci_gordu !== false) {
@@ -852,13 +983,14 @@ const UI = (() => {
     }
     app.innerHTML = `
     <div class="screen">
-      <div class="list-head"><h2>Denetimler</h2><button class="btn-new" id="btnYeni">+ Yeni denetim</button></div>
+      <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
       <div id="dlist">${denetimler.length ? '' : '<div class="empty">Henüz denetim yok.<br>Yeni denetim ile başlayın.</div>'}</div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     const dl = document.getElementById('dlist');
     for (const d of denetimler) {
       const st = statsBy[d.id];
+      const offlineState = await cevrimdisiHazirlikDurumu(d, rowsBy[d.id] || []);
       const canEdit = canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
@@ -874,18 +1006,20 @@ const UI = (() => {
              ${st.bad ? `<span class="pill bad">${st.bad} uygun değil</span>` : ''}
              ${st.ic ? `<span class="pill warn">${st.ic} iç kontrol notu</span>` : ''}
              <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Çalışma tamamlandı' : (gozden ? 'Gözden geçirme' : 'Devam ediyor')}</span>
-             ${d.offline_hazir_at && d.app_build_id === APP_VERSION ? '<span class="pill ok">✓ Sahaya hazır</span>' : '<span class="pill warn">Hazırlık doğrulanmadı</span>'}
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
-          : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>`;
+          : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
+        <div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`;
       card.onclick = () => showDenetim(d.id);
       dl.appendChild(card);
     }
-    document.getElementById('btnYeni').onclick = showYeniForm;
+    const btnYeni = document.getElementById('btnYeni');
+    if (btnYeni) btnYeni.onclick = showYeniForm;
   }
 
   /* ---- Yeni denetim ---- */
   function showYeniForm() {
+    if (!Profile.canCreate) { toast('Teknik müdür yeni denetim oluşturamaz'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
     const seg = (id, opts, multi) => `<div class="segs" id="${id}">${opts.map(o =>
@@ -1109,9 +1243,20 @@ const UI = (() => {
         expected_item_set_hash: null,
         app_build_id: null,
         kutuphane_content_hash: null,
+        snapshot_kilitli_at: null,
+        snapshot_app_build_id: APP_VERSION,
+        snapshot_kutuphane_hash: null,
+        snapshot_bolum_surumleri: null,
+        snapshot_madde_sayisi: null,
+        snapshot_madde_set_hash: null,
+        snapshot_content_hash: null,
+        butunluk_ozeti: null,
+        butunluk_hash: null,
+        butunluk_hesaplandi_at: null,
         offline_check: null,
         foto_kontrol_durumlari: {},
         olusturan_email: Profile.email,
+        olusturan_ad: Profile.name,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -1157,6 +1302,7 @@ const UI = (() => {
             aranmaz_kosulu: m.aranmaz_kosulu ?? null,
             otomatik_gerekce: otoSebep,
             gorsel_referansi: m.gorsel_referansi ?? null,
+            snapshot_madde_hash: null,
             durum: otoSebep ? 'Uygulanmaz' : null,
             otomatik_uygulanmaz: !!otoSebep,
             denetci_gordu: false,
@@ -1166,9 +1312,41 @@ const UI = (() => {
             gozden_gecirme_nedeni: null,
             gozden_gecirme_notu: null,
             guncelleyen_email: API.email,
+            olusturan_email: Profile.email,
+            olusturan_ad: Profile.name,
             updated_at: new Date().toISOString(),
           };
         });
+
+      // Denetim başladıktan sonra bu içerik yeni kütüphane sürümleriyle
+      // değişmez. Hem madde bazında hem tüm seçili set için doğrulanabilir
+      // SHA-256 parmak izi saklanır.
+      const snapshotFields = [
+        'madde_id', 'sira_no', 'bolum', 'standart_grubu', 'kaynak_turu',
+        'standart_madde_no', 'kontrol_basligi', 'denetci_yonlendirmesi',
+        'resmi_madde_metni', 'kaynak_form_kodu', 'kaynak_form_revizyonu',
+        'kaynak_form_tablo_no', 'kaynak_form_satir_no', 'kaynak_form_bolumu',
+        'kaynak_form_alt_grubu', 'yontem_kodu', 'dogrulama_yontemi',
+        'hazir_secenekler', 'olcu1_adi', 'olcu1_birimi', 'olcu2_adi',
+        'olcu2_birimi', 'esik_deger', 'esik_operator', 'olcum_tanimlari',
+        'otomatik_aranmaz_kurali', 'aranmaz_kosulu', 'gorsel_referansi',
+      ];
+      for (const row of sahaRows) {
+        const frozen = {};
+        for (const field of snapshotFields) frozen[field] = row[field] ?? null;
+        row.snapshot_madde_hash = await sha256Hex(stableStringify(frozen));
+      }
+      const manifest = await DB.kvGet('kutuphane_manifest');
+      const itemIds = sahaRows.map(row => row.madde_id).sort();
+      const contentManifest = sahaRows
+        .map(row => ({ madde_id: row.madde_id, hash: row.snapshot_madde_hash }))
+        .sort((a,b) => a.madde_id.localeCompare(b.madde_id, 'tr'));
+      d.snapshot_kilitli_at = new Date().toISOString();
+      d.snapshot_kutuphane_hash = manifest ? manifest.content_hash : null;
+      d.snapshot_bolum_surumleri = manifest ? manifest.server_revision_key : null;
+      d.snapshot_madde_sayisi = sahaRows.length;
+      d.snapshot_madde_set_hash = await sha256Hex(itemIds.join('|'));
+      d.snapshot_content_hash = await sha256Hex(stableStringify(contentManifest));
 
       await localWrite('denetimler', d, 'denetimler');
       // 1000+ satırı tek outbox kalemi yapmak yerine 200'lük parçalara böl (istek boyutu güvenliği)
@@ -1181,6 +1359,8 @@ const UI = (() => {
 
   /* ---- Denetim detay ---- */
   async function sahayaHazirla(d, rows) {
+    // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez.
+    await DB.kvDel(`offline_ready_${d.id}`);
     const checks = [];
     const add = (name, ok, detail) => checks.push({ name, ok: !!ok, detail });
     const manifest = await DB.kvGet('kutuphane_manifest');
@@ -1239,6 +1419,14 @@ const UI = (() => {
       d.kutuphane_content_hash = manifest.content_hash;
       d.offline_check = { checked_at: now, checks };
       d.updated_at = now;
+      await DB.kvSet(`offline_ready_${d.id}`, {
+        device_id: await getDeviceId(),
+        app_build_id: APP_VERSION,
+        expected_item_count: rows.length,
+        item_set_hash: itemSetHash,
+        kutuphane_content_hash: manifest.content_hash,
+        checked_at: now,
+      });
       await localWrite('denetimler', d, 'denetimler');
     }
     return { ready, checks };
@@ -1248,9 +1436,9 @@ const UI = (() => {
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal"><button class="close">×</button>
-      <h3>${result.ready ? '✓ Sahaya hazır' : '⚠ Hazırlık tamamlanmadı'}</h3>
+      <h3>${result.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</h3>
       <div class="preflight-list">${result.checks.map(check => `<div class="preflight-row ${check.ok?'ok':'fail'}"><span>${check.ok?'✓':'✕'}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`).join('')}</div>
-      <div class="photo-help">${result.ready ? 'Bu denetim internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu denetim yeşil “Sahaya hazır” olarak işaretlenmez.'}</div>
+      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'}</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -1260,14 +1448,16 @@ const UI = (() => {
   async function showDenetim(id) {
     currentView = 'inspection';
     currentDenetimId = id;
+    inspectionReadOnly = false;
     filter = 'all'; search = ''; openBolums = new Set();
     let rows = await DB.allByIndex('saha', 'byDenetim', id);
     const pending = await DB.outboxCount();
     if (navigator.onLine && pending === 0) {
       if (!rows.length) toast('Maddeler indiriliyor…');
       try {
-        // Bölüm SQL'i devam eden denetim metinlerini yenilediyse açılışta alınır.
+        // Sunucudaki cevaplar ve kimlik geçmişi, bekleyen yerel işlem yoksa alınır.
         await Sync.pullSaha(id);
+        await Sync.pullGecmis(id);
         rows = await DB.allByIndex('saha', 'byDenetim', id);
       } catch {
         if (!rows.length) toast('İndirilemedi — internet bağlantısını kontrol edin');
@@ -1303,12 +1493,16 @@ const UI = (() => {
     const byId = new Map(library.map(item => [item.madde_id, item]));
     return rows.map(row => {
       const latest = byId.get(row.madde_id);
-      // Kütüphaneden sonradan pasifleştirilen, henüz cevaplanmamış bir satır
-      // devam eden denetimin kapanışını engellemez. Satır cihazdan veya
-      // sunucudan silinmez; önceden cevaplandıysa tarihsel kayıt olarak görünür.
-      if (!latest) return isFlowComplete(row) ? { ...row, kutuphane_pasif: true } : null;
+      // Denetim satırı tarihsel snapshot'tır. Kütüphanede sonradan değişen veya
+      // pasifleştirilen bir madde bu kopyayı değiştiremez ve denetimden düşüremez.
+      if (!latest) return { ...row, kutuphane_pasif: true };
       const merged = { ...row };
-      KUTUPHANE_META_ALANLARI.forEach(field => { merged[field] = latest[field] ?? null; });
+      // Yalnız eski sürümlerde hiç üretilmemiş alanlara geriye uyumluluk
+      // desteği verilir. Bilerek null bırakılmış ya da dolu hiçbir alanın
+      // üzerine güncel kütüphane değeri yazılmaz.
+      KUTUPHANE_META_ALANLARI.forEach(field => {
+        if (typeof merged[field] === 'undefined') merged[field] = latest[field] ?? null;
+      });
       return merged;
     }).filter(Boolean);
   }
@@ -1322,10 +1516,12 @@ const UI = (() => {
   async function renderDenetim() {
     const d = await DB.get('denetimler', currentDenetimId);
     if (!d) { showList(); return; }
-    currentCanEdit = canEditDenetim(d);
+    const normaldeDuzenleyebilir = canEditDenetim(d);
+    currentCanEdit = normaldeDuzenleyebilir && !inspectionReadOnly;
     const rows = (await guncelKutuphaneMetadatasi(
       await DB.allByIndex('saha', 'byDenetim', currentDenetimId)
     )).sort(siraKarsilastir);
+    const offlineState = await cevrimdisiHazirlikDurumu(d, rows);
     const inspectionOutbox = (await DB.outboxAll()).filter(item => item.inspection_id === currentDenetimId);
     const conflictSync = inspectionOutbox.filter(item => item.sync_status === 'conflict').length;
     const protectedSync = inspectionOutbox.filter(item => ['forbidden','conflict'].includes(item.sync_status)).length;
@@ -1361,14 +1557,16 @@ const UI = (() => {
       <div style="display:flex;justify-content:space-between;align-items:center;">
         <button class="backlink" id="back">‹ Denetimler</button>
         <div style="display:flex;gap:6px">
-          ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Çevrimdışı hazırlığı doğrula">📱 Sahaya Hazırla</button>' : ''}
+          ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) ? '<button class="delbtn" id="btnSil" title="Denetimi sil">🗑 Sil</button>' : ''}
         </div>
       </div>
-      ${currentCanEdit ? (gozden ? '<div class="readonly-banner">Gözden Geçirme · Sahadaki işaretleri serbestçe kontrol edip düzeltebilirsiniz.</div>' : '') : `<div class="readonly-banner">${tamamlandi
-        ? 'Çalışma tamamlandı · Değişiklik gerekiyorsa “Düzenlemeye Aç” ile Gözden Geçirme aşamasına dönün.'
-        : 'Salt okunur · Bu denetimi görüntüleyebilirsiniz; yalnız denetimin sahibi, teknik müdür veya yönetici değişiklik yapabilir.'}</div>`}
+      ${currentCanEdit ? (gozden ? '<div class="readonly-banner">Gözden Geçirme · Sahadaki işaretleri kontrol edip düzeltebilirsiniz.</div>' : '') : `<div class="readonly-banner">${inspectionReadOnly
+        ? `İnceleme Modu · Maddeler salt okunur gösteriliyor.${normaldeDuzenleyebilir ? ' <button type="button" class="inline-review-exit" id="btnDuzenlemeyeDon">Düzenlemeye dön</button>' : ''}`
+        : (tamamlandi
+          ? 'Çalışma tamamlandı · Yalnız denetimin sahibi veya yönetici yeniden düzenlemeye açabilir.'
+          : 'Salt okunur · Teknik müdür maddeleri inceleyebilir ve bütün denetimi silebilir; içerik veya sonuç değiştiremez.')}</div>`}
       <div class="det-head">
         <div class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</div>
         <div class="dmeta">${esc(d.denetim_adresi || '')} · ${esc(standartOzeti(d))}</div>
@@ -1379,9 +1577,9 @@ const UI = (() => {
           d.kabin_kapi_acilma_tipi,
         ].filter(Boolean).join(' · '))}</div>` : ''}
         <div class="dmeta" style="margin-top:4px"><b>Durum:</b> ${tamamlandi ? '✓ Çalışma Tamamlandı' : (gozden ? 'Gözden Geçirme' : 'Devam Ediyor')}</div>
-        <div class="offline-ready ${d.offline_hazir_at && d.app_build_id === APP_VERSION ? 'ok' : 'pending'}">${d.offline_hazir_at && d.app_build_id === APP_VERSION
-          ? `✓ Sahaya hazır · ${d.expected_item_count || rows.length} madde cihazda doğrulandı`
-          : 'Sahaya hazırlık henüz doğrulanmadı'}</div>
+        <div class="offline-ready ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready
+          ? '✓ Bu cihaz çevrimdışı çalışmaya hazır'
+          : '⚠ Bu cihaz çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
         <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}" id="localSyncState">${protectedSync
           ? `⚠ ${protectedSync} işlem cihazda korumada · ${conflictSync ? 'Çakışma veya yetki' : 'Yetki'} incelemesi gerekiyor`
           : waitingSync
@@ -1473,7 +1671,7 @@ const UI = (() => {
       <button class="sn-next" data-sn="next" ${stickyNav.canNext?'':'disabled'}>${stickyNav.nextLabel}</button>
     </div>` : ''}
     <div class="footbar">
-      <button class="btn btn-ozet" id="btnOzet">Gözden Geçirme (${bad + bakilmadiSayisi})</button>
+      <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
         ? (gozden ? 'Çalışmayı Tamamla' : 'Saha Kontrolünü Bitir')
         : 'Denetimi Bitir'}</button>` : ''}
@@ -1488,6 +1686,8 @@ const UI = (() => {
     }
 
     document.getElementById('back').onclick = showList;
+    const btnDuzenlemeyeDon = document.getElementById('btnDuzenlemeyeDon');
+    if (btnDuzenlemeyeDon) btnDuzenlemeyeDon.onclick = () => { inspectionReadOnly = false; renderDenetim(); };
     const btnSahayaHazirla = document.getElementById('btnSahayaHazirla');
     if (btnSahayaHazirla) btnSahayaHazirla.onclick = async () => {
       btnSahayaHazirla.disabled = true;
@@ -1499,7 +1699,7 @@ const UI = (() => {
       } catch (error) {
         sahayaHazirlikSonucuGoster({ ready: false, checks: [{ name: 'Hazırlık kontrolü', ok: false, detail: error.message }] });
         btnSahayaHazirla.disabled = false;
-        btnSahayaHazirla.textContent = '📱 Sahaya Hazırla';
+        btnSahayaHazirla.textContent = '📱 Çevrimdışı Kontrol';
       }
     };
     const btnSil = document.getElementById('btnSil');
@@ -1510,6 +1710,7 @@ const UI = (() => {
       const sahaRows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
       for (const r of sahaRows) await DB.del('saha', r.id);
       await DB.del('denetimler', currentDenetimId);
+      await DB.kvDel(`offline_ready_${currentDenetimId}`);
       await DB.outboxAdd({ op: 'delete', table: 'denetimler', filter: `id=eq.${currentDenetimId}`, ts: Date.now() });
       const deleted = (await DB.kvGet('deleted_ids')) || [];
       deleted.push(currentDenetimId);
@@ -1525,6 +1726,9 @@ const UI = (() => {
       if (!confirm('Bu çalışma Gözden Geçirme aşamasına yeniden açılsın mı?')) return;
       d.denetim_durumu = 'Gözden Geçirme';
       d.calisma_tamamlandi_at = null;
+      d.butunluk_ozeti = null;
+      d.butunluk_hash = null;
+      d.butunluk_hesaplandi_at = null;
       d.updated_at = new Date().toISOString();
       await localWrite('denetimler', d, 'denetimler');
       toast('Çalışma gözden geçirmeye açıldı');
@@ -1548,7 +1752,10 @@ const UI = (() => {
     if (btnBitirGlobal) btnBitirGlobal.onclick = async () => {
       const latestRows = (await DB.allByIndex('saha', 'byDenetim', currentDenetimId)).sort(siraKarsilastir);
       const firstPending = latestRows.find(r => !isFlowComplete(r));
-      if (!firstPending) { await showOzet(); return; }
+      if (!firstPending) {
+        await denetimDurumuDegistir(gozden ? 'Çalışma Tamamlandı' : 'Gözden Geçirme');
+        return;
+      }
       search = ''; filter = 'all';
       openBolums = new Set([firstPending.bolum]);
       const bolumRows = latestRows.filter(r => r.bolum === firstPending.bolum);
@@ -2165,10 +2372,46 @@ const UI = (() => {
     const pn = document.querySelector('.pnums');
     if (pn) pn.innerHTML = `<span>${done} / ${rows.length} madde</span><span>${bad} uygun değil${pending ? ` · ${pending} bakılmadı` : ''}</span>`;
     const ob = document.getElementById('btnOzet');
-    if (ob) ob.textContent = `Gözden Geçirme (${bad + pending})`;
+    if (ob) ob.textContent = `İnceleme Modu (${rows.length})`;
   }
 
   /* ---- Gözden Geçirme / kapanış ---- */
+  async function butunlukOzetiHesapla(d, rows, hedefDurum) {
+    const sorted = rows.slice().sort(siraKarsilastir);
+    const actors = [...new Set(sorted.map(row => row.son_degistiren_ad || row.son_degistiren_email).filter(Boolean))].sort();
+    const summary = {
+      surum: 1,
+      denetim_id: d.id,
+      durum: hedefDurum || d.denetim_durumu,
+      madde_sayisi: sorted.length,
+      uygun: sorted.filter(row => row.durum === 'Kontrol tamamlandı' && row.denetci_gordu !== false).length,
+      uygun_degil: sorted.filter(row => row.durum === 'Olumsuz bulgu' && row.denetci_gordu !== false).length,
+      uygulanmaz: sorted.filter(row => row.durum === 'Uygulanmaz' && row.denetci_gordu !== false).length,
+      sonucsuz: sorted.filter(row => !isFlowComplete(row)).length,
+      aciklamali: sorted.filter(row => !!String(row.aciklama || row.diger_bulgu || '').trim()).length,
+      olcumlu: sorted.filter(row => olcumTanimlari(row).some(def => olcumDegeri(row, def) !== '')).length,
+      snapshot_madde_set_hash: d.snapshot_madde_set_hash || d.expected_item_set_hash || null,
+      snapshot_content_hash: d.snapshot_content_hash || null,
+      snapshot_kutuphane_hash: d.snapshot_kutuphane_hash || d.kutuphane_content_hash || null,
+      snapshot_app_build_id: d.snapshot_app_build_id || d.app_build_id || APP_VERSION,
+      denetimi_yapan: d.denetimi_yapan || null,
+      degistirenler: actors,
+      satirlar: sorted.map(row => ({
+        madde_id: row.madde_id,
+        snapshot_hash: row.snapshot_madde_hash || null,
+        durum: row.durum || null,
+        denetci_gordu: row.denetci_gordu !== false,
+        aciklama: row.aciklama || null,
+        bulgu: row.bulgu_secenegi || null,
+        diger_bulgu: row.diger_bulgu || null,
+        olcumler: row.olcum_degerleri || null,
+        olcu1: row.olcu1_degeri ?? null,
+        olcu2: row.olcu2_degeri ?? null,
+      })),
+    };
+    return { summary, hash: await sha256Hex(stableStringify(summary)) };
+  }
+
   async function denetimDurumuDegistir(yeniDurum, overlay) {
     const d = await DB.get('denetimler', currentDenetimId);
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
@@ -2191,6 +2434,10 @@ const UI = (() => {
       d.calisma_tamamlandi_at = now;
       toast('Çalışma tamamlandı');
     } else return;
+    const integrity = await butunlukOzetiHesapla(d, rows, yeniDurum);
+    d.butunluk_ozeti = integrity.summary;
+    d.butunluk_hash = integrity.hash;
+    d.butunluk_hesaplandi_at = now;
     d.updated_at = now;
     await localWrite('denetimler', d, 'denetimler');
     if (overlay) overlay.remove();
@@ -2210,6 +2457,13 @@ const UI = (() => {
     const icNotlar = rows.filter(icKontrolNotuVar);
     const hazir = bakilmadi.length === 0;
     const durum = d.denetim_durumu || 'Devam Ediyor';
+    const currentIntegrity = await butunlukOzetiHesapla(d, rows, durum);
+    const integrityMatches = !!d.butunluk_hash && d.butunluk_hash === currentIntegrity.hash;
+    const history = (await DB.allByIndex('gecmis', 'byDenetim', currentDenetimId))
+      .sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const lastActor = history[0]
+      ? (history[0].degistiren_ad || history[0].degistiren_email)
+      : (d.son_degistiren_ad || d.son_degistiren_email);
     const kapanis = hazir
       ? '<div class="oz-hazir ok">✓ Tüm checklist maddelerine Uygun / Uygun Değil / Uygulanmaz sonucu verilmiş</div>'
       : `<div class="oz-hazir no">⚠ <b>${bakilmadi.length} madde</b> henüz sonuçlandırılmadı.</div>`;
@@ -2247,8 +2501,12 @@ const UI = (() => {
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal">
       <button class="close">×</button>
-      <h3>Gözden Geçirme — ${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</h3>
+      <h3>İnceleme Modu — ${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</h3>
+      <div class="photo-help">Bu ekran salt okunurdur. Arama veya filtreyle herhangi bir maddeye doğrudan ulaşabilirsiniz.</div>
       <div class="onay-satir"><span>Çalışma durumu</span><b>${esc(durum)}</b></div>
+      <div class="onay-satir"><span>Oluşturan</span><b>${esc(d.olusturan_ad || d.denetimi_yapan || d.olusturan_email || 'Kayıt yok')}</b></div>
+      <div class="onay-satir"><span>Son değiştiren</span><b>${esc(lastActor || 'Kayıt yok')}</b></div>
+      <div class="integrity-card ${integrityMatches ? 'ok' : 'pending'}"><b>${integrityMatches ? '✓ Bütünlük özeti doğrulandı' : 'Bütünlük özeti henüz kesinleşmedi'}</b><small>${d.butunluk_hash ? esc(d.butunluk_hash.slice(0,16)) + '…' : 'Çalışma tamamlanınca parmak izi kaydedilir'} · ${currentIntegrity.summary.uygun}/${rows.length} uygun · ${currentIntegrity.summary.uygun_degil} uygun değil · ${currentIntegrity.summary.uygulanmaz} uygulanmaz</small></div>
       <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}">${protectedSync
         ? `⚠ ${protectedSync} yerel işlem ${conflictSync ? 'çakışma/yetki' : 'yetki'} incelemesinde; hiçbir kayıt silinmedi`
         : inspectionOutbox.length
@@ -2256,7 +2514,8 @@ const UI = (() => {
           : '✓ Tüm yanıtlar cihazda · Sunucuyla tamamen eşitlendi'}</div>
       ${kapanis}
       <details class="compact-review" open>
-        <summary>Tüm maddeler — gözle kontrol (${rows.length})</summary>
+        <summary>Tüm maddeler (${rows.length})</summary>
+        <input class="searchbox compact-search" type="search" placeholder="Madde no, başlık veya kelime ara…">
         <div class="compact-filters">
           <button type="button" class="chip on" data-compact-filter="all">Tümü</button>
           <button type="button" class="chip" data-compact-filter="pending">Bakılmadı</button>
@@ -2271,10 +2530,9 @@ const UI = (() => {
       ${bad.length ? `<div style="font-size:12px;font-weight:700;color:var(--fuchsia);margin:12px 0 6px">UYGUN DEĞİL (${bad.length})</div>` + bad.map(r => item(r,'')).join('') : ''}
       ${icNotlar.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">İÇ KONTROL NOTU (${icNotlar.length})</div>` + icNotlar.map(r => `<div class="oz-item warn"><b>${esc(r.standart_madde_no || r.madde_id)} · ${esc(r.bolum)}</b>${esc(r.ic_kontrol_notu || 'Eski sürümden kalan iç kontrol kaydı')}</div>`).join('') : ''}
       ${notEntries.length ? `<div style="font-size:12px;font-weight:700;color:var(--navy);margin:12px 0 6px">BÖLÜM AÇIKLAMALARI</div>` + notEntries.map(([b,v]) => `<div class="oz-item" style="border-left-color:var(--navy)"><b>${esc(b)}</b>${esc(v)}</div>`).join('') : ''}
+      ${history.length ? `<details class="compact-review"><summary>Değişiklik geçmişi (${history.length})</summary><div class="history-list">${history.slice(0,250).map(event => `<div class="history-row"><b>${esc(event.degistiren_ad || event.degistiren_email || 'Bilinmeyen kullanıcı')}</b><span>${esc(event.madde_id || (event.islem_turu === 'denetim_olusturma' ? 'Denetim oluşturuldu' : 'Denetim bilgisi'))}</span><small>${esc(event.degistiren_rol || '')} · ${event.created_at ? new Date(event.created_at).toLocaleString('tr-TR') : ''}</small></div>`).join('')}</div></details>` : ''}
       ${!bad.length && !bakilmadi.length && !notEntries.length && !icNotlar.length ? '<div class="empty">Açık konu yok 🎉</div>' : ''}
       <button class="btn btn-ghost" id="ozKopya" style="margin-top:10px">Özeti panoya kopyala</button>
-      ${currentCanEdit && durum === 'Devam Ediyor' ? `<button class="btn btn-primary" id="ozGozden" style="margin-top:8px" ${hazir ? '' : 'disabled'}>Saha Kontrolünü Bitir → Gözden Geçirme</button>` : ''}
-      ${currentCanEdit && durum === 'Gözden Geçirme' ? `<button class="btn btn-primary" id="ozBitir" style="margin-top:8px" ${hazir ? '' : 'disabled'}>Çalışmayı Tamamla</button>` : ''}
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -2289,10 +2547,20 @@ const UI = (() => {
         row.classList.toggle('hidden', !visible);
       });
     });
+    const compactSearch = ov.querySelector('.compact-search');
+    if (compactSearch) compactSearch.oninput = () => {
+      const query = compactSearch.value.trim().toLocaleLowerCase('tr-TR');
+      ov.querySelectorAll('.compact-row').forEach((element, index) => {
+        const row = rows[index];
+        const haystack = `${row.madde_id || ''} ${row.standart_madde_no || ''} ${row.bolum || ''} ${row.kontrol_basligi || ''} ${row.denetci_yonlendirmesi || ''}`.toLocaleLowerCase('tr-TR');
+        element.classList.toggle('hidden', !!query && !haystack.includes(query));
+      });
+    };
     ov.querySelectorAll('[data-go-row]').forEach(btn => btn.onclick = () => {
       const hedef = rows.find(r => r.id === btn.dataset.goRow);
       if (!hedef) return;
       ov.remove();
+      inspectionReadOnly = true;
       search = ''; filter = 'all';
       openBolums = new Set([hedef.bolum]);
       const bolumRows = rows.filter(r => r.bolum === hedef.bolum);
@@ -2311,10 +2579,6 @@ const UI = (() => {
       notEntries.forEach(([b,v]) => { lines.push('', `${b} — AÇIKLAMA:`, v); });
       navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Panoya kopyalandı'));
     };
-    const gozdenBtn = ov.querySelector('#ozGozden');
-    if (gozdenBtn) gozdenBtn.onclick = () => denetimDurumuDegistir('Gözden Geçirme', ov);
-    const bitirBtn = ov.querySelector('#ozBitir');
-    if (bitirBtn) bitirBtn.onclick = () => denetimDurumuDegistir('Çalışma Tamamlandı', ov);
   }
 
   return {
