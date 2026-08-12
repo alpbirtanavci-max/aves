@@ -99,6 +99,7 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .progressbar>div{height:100%;background:linear-gradient(90deg,var(--navy),var(--navy-lt));transition:width .25s;}
 .det-head .pnums{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:5px;}
 .readonly-banner{background:#EEF0F6;color:#4E5368;border-left:4px solid var(--navy);border-radius:9px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:10px;}
+.inline-review-exit{border:0;background:var(--navy);color:#fff;border-radius:7px;padding:5px 8px;font-weight:800;margin-left:5px;}
 .filters{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
 .chip{flex:0 0 auto;padding:7px 13px;border-radius:99px;font-size:12.5px;font-weight:600;
   background:var(--panel);border:1.5px solid var(--line);color:var(--muted);}
@@ -212,6 +213,7 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 .compact-filters{display:flex;gap:6px;overflow-x:auto;padding:8px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
 .compact-filters .chip{white-space:nowrap;}
 .compact-list{max-height:42vh;overflow:auto;}
+.compact-search{margin:8px;width:calc(100% - 16px);}
 .compact-row{width:100%;display:grid;grid-template-columns:22px 78px minmax(0,1fr) auto;gap:5px;align-items:center;padding:7px 9px;border:0;border-bottom:1px solid #edf0f4;background:#fff;text-align:left;font-size:11px;color:var(--text);}
 .compact-row.hidden{display:none;}
 .compact-row .compact-icon{font-weight:900;text-align:center;}
@@ -229,6 +231,10 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 .preflight-row b,.preflight-row small{display:block;}.preflight-row b{font-size:12px;}.preflight-row small{margin-top:2px;color:var(--muted);font-size:10.5px;}
 .local-sync-state{margin-top:6px;padding:8px 10px;border-radius:8px;font-size:11.5px;font-weight:750;}
 .local-sync-state.ok{background:#edf8f2;color:#12643d;}.local-sync-state.pending{background:#eef3ff;color:#244c91;}.local-sync-state.error{background:#fff0f0;color:#9b2525;}
+.integrity-card{margin:8px 0;padding:10px;border-radius:9px;display:grid;gap:3px;font-size:12px;}
+.integrity-card.ok{background:var(--ok-bg);color:var(--ok);}.integrity-card.pending{background:var(--warn-bg);color:var(--warn);}
+.integrity-card small{font-family:var(--mono);font-size:10px;overflow-wrap:anywhere;}
+.history-list{max-height:36vh;overflow:auto}.history-row{display:grid;grid-template-columns:minmax(110px,1fr) 1.2fr;gap:3px 8px;padding:9px 11px;border-top:1px solid var(--line);font-size:11.5px}.history-row span{color:var(--ink)}.history-row small{grid-column:1/-1;color:var(--muted)}
 
 /* ===== MODAL ===== */
 .overlay{position:fixed;inset:0;background:rgba(18,20,45,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
@@ -263,7 +269,7 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:9px;">
     <img src="logo.png" alt="AVES" style="height:26px;width:auto;display:block;">
-    <div class="sub" style="border-left:1px solid #3A3E7E;padding-left:9px;">Saha<br>Denetim <b style="color:#EA0048">R15D-rc3.1</b></div>
+    <div class="sub" style="border-left:1px solid #3A3E7E;padding-left:9px;">Saha<br>Denetim <b style="color:#EA0048">R15D-rc3.2</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
