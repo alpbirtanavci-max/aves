@@ -61,26 +61,22 @@ Migration dosyaları: `database/01_r15d_rc32_kurulum_kontrol.sql`, `database/28_
 
 `R15D-rc3.2`
 
+Canlı smoke test sırasında Service Worker güncelleme seçiminin `Güncelleniyor…`
+durumunda kalmasına yol açan yarış koşulu giderildi. Yeni worker artık denetçinin
+onayından önce zorla etkinleşmiyor; `Şimdi güncelle` seçildiğinde kontrollü olarak
+etkinleşip sayfayı yeniliyor. IndexedDB, outbox ve açık denetim kayıtlarına dokunulmaz.
+
 Cloudflare uygulama ZIP'inin SHA-256 değeri (`AVES_Saha_R15D_rc3_2_20260812.zip`):
 
-`927FFEE7607018182F33BB90ACB74CCB9BD768BF3B90FD5AD957AB49647C1C20`
+`16AF07845CADA0803F2E6DE81C2BABFE881A4FD83D7FBAABFF0B050754021C49`
 
 ## Deploy durumu
 
-**R15D-rc3.2 production'a alındı** (12 Ağustos 2026, kullanıcı/Codex tarafında):
+**R15D-rc3.2 production'a alındı** (12 Ağustos 2026):
 - Cloudflare production commit: `45f2a66`
-- Canlı adres: https://saha.avesbelgelendirme.com.tr/
+- Cloudflare Pages projesi GitHub'a bağlıdır ve production dalındaki değişiklikler otomatik yayımlanır.
+- Kalıcı canlı adres: https://saha.avesbelgelendirme.com.tr/ (`pages.dev` adresi yalnız Cloudflare'ın teknik deployment adresidir, kullanılmamalıdır).
 - Statik kontroller: 143/143 başarılı, canlı konsol hatası yok, güvenlik/önbellek başlıkları doğrulandı.
-- Canlı Supabase: 1.019 toplam / 957 aktif / 62 pasif madde.
+- Canlı Supabase: 1.019 toplam / 957 aktif / 62 pasif madde. Veritabanı tarafı (`database/28_r15d_rc32_snapshot_inceleme_yetki.sql`) uygulanmıştır (bkz. `tests/SMOKE_TEST_REPORT_RC32.md`).
 
-Deploy sonrası smoke testte bulunan bir sorun ayrıca düzeltildi ve bu repoya geri alındı:
-
-- **Service Worker "Şimdi güncelle" düğmesi takılı kalma hatası** — `sw.js`'nin `install` olayı, `app.js`'deki kullanıcı onaylı güncelleme akışıyla (mesaj tabanlı `SKIP_WAITING`) yarışan bir `self.skipWaiting()` çağrısı içeriyordu; yeni worker kullanıcı onayı beklemeden hemen etkinleşiyor, bu da "Şimdi güncelle" düğmesinin işlevsiz kalmasına yol açıyordu. Çağrı kaldırıldı; artık yeni worker yalnız kullanıcı "Şimdi güncelle" dediğinde etkinleşiyor. IndexedDB, açık denetimler ve aktarım bekleyen kayıtlar bu değişiklikten etkilenmedi. Statik test seti bu davranışı doğrulayacak şekilde güncellendi (143/143 geçiyor).
-
-Bu düzeltmeyle yeniden derlenen `release/AVES_Saha_R15D_rc3_2_20260812.zip`'in SHA-256'sı (zip meta verisi farklı olduğundan üretimdeki paketten farklı bir hash üretir, içerik aynıdır):
-
-`8290A01C7E154174852EA0B5816A5731CDBA460D0E69A5361ABCB8418357FF7E`
-
-Üretimde şu an yayında olan, kullanıcı tarafından derlenen paketin SHA-256'sı:
-
-`16AF07845CADA0803F2E6DE81C2BABFE881A4FD83D7FBAABFF0B050754021C49`
+Deploy sonrası smoke testte bulunan Service Worker güncelleme takılma sorunu düzeltildi: `sw.js`'nin `install` olayındaki `self.skipWaiting()` çağrısı, `app.js`'deki kullanıcı onaylı güncelleme akışıyla (mesaj tabanlı `SKIP_WAITING`) yarışıyor ve "Şimdi güncelle" düğmesini işlevsiz bırakıyordu. Çağrı kaldırıldı; yeni worker artık yalnız kullanıcı "Şimdi güncelle" dediğinde etkinleşiyor. IndexedDB, açık denetimler ve aktarım bekleyen kayıtlar etkilenmedi.
