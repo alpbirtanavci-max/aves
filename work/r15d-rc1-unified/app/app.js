@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc3.2 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D-rc3.3 — Offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.2';
+const APP_VERSION = 'R15D-rc3.3';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './app.js', './manifest.json', './logo.png'];
 
@@ -1905,7 +1905,7 @@ const UI = (() => {
     const cls = durum ? 's-' + DURUM_CSS[durum] : '';
     const tasarim = r.kaynak_turu === 'Ek Mühendislik';
     const olcumKaydi = r.kaynak_turu === 'Saha Ölçümü';
-    const opts = (r.hazir_secenekler || '').split('|');
+    const opts = (r.hazir_secenekler || '').split('|').map(o => o.trim()).filter(Boolean);
     const ozelOpts = opts.filter(o => !GENEL_BULGULAR.includes(o));
     const uygunDegil = durum === 'Olumsuz bulgu';
     // Bulgu seçenekleri YALNIZCA Uygun Değil'de ve yalnızca özel seçenek varsa

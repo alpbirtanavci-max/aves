@@ -26,9 +26,9 @@ const byId = new Map(library.map(row => [row.madde_id, row]));
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D-rc3.2', index.includes('R15D-rc3.2'));
-test('app R15D-rc3.2', app.includes("const APP_VERSION = 'R15D-rc3.2'"));
-test('service worker R15D-rc3.2 cache', sw.includes("aves-saha-r15d-rc3-2"));
+test('index R15D-rc3.3', index.includes('R15D-rc3.3'));
+test('app R15D-rc3.3', app.includes("const APP_VERSION = 'R15D-rc3.3'"));
+test('service worker R15D-rc3.3 cache', sw.includes("aves-saha-r15d-rc3-3"));
 test('uygulama paketinde statik kütüphane yok', !fs.existsSync(path.join(appDir, 'madde_kutuphanesi.json')));
 test('service worker statik kütüphane cachelemiyor', !sw.includes('madde_kutuphanesi.json'));
 test('Cloudflare güvenlik başlıkları var', headers.includes('Content-Security-Policy') && headers.includes('X-Content-Type-Options: nosniff'));
@@ -111,7 +111,7 @@ test('ana belge ağ öncelikli ve çevrimdışı geri dönüşlü', sw.includes(
 test('ana belge ve service worker no-cache yayınlanıyor', headers.includes('/sw.js') && headers.includes('/index.html') && headers.includes('no-store, no-cache, must-revalidate'));
 test('yerel veritabanı hatası boş ekran bırakmıyor', app.includes('Uygulama yerel veritabanını açamadı'));
 test('güvenli cache kurtarma sayfası pakette', updateHtml.includes('AVES Saha güvenli güncelleme') && sw.includes("'./update.html', './update.js'"));
-test('kurtarma yeni sürümü silmeden önce doğruluyor', updateJs.includes("EXPECTED_BUILD = 'R15D-rc3.2'") && updateJs.indexOf('indexText.includes') < updateJs.indexOf('registration.unregister'));
+test('kurtarma yeni sürümü silmeden önce doğruluyor', updateJs.includes("EXPECTED_BUILD = 'R15D-rc3.3'") && updateJs.indexOf('indexText.includes') < updateJs.indexOf('registration.unregister'));
 test('kurtarma yalnız AVES cache ve service worker kaydını kaldırıyor', updateJs.includes("name.startsWith('aves-saha-')") && updateJs.includes('registration.unregister()'));
 test('kurtarma IndexedDB ve oturum verisini silmiyor', !updateJs.includes('deleteDatabase') && !updateJs.includes('localStorage.clear') && !updateJs.includes('sessionStorage.clear'));
 test('Tip 3/Tip 4 merdiven görseli pakette', fs.existsSync(path.join(appDir, 'referans-gorseller', 'G-PIT-LADDER-TYPE3-4-TR.svg')) && sw.includes('G-PIT-LADDER-TYPE3-4-TR.svg'));
@@ -191,6 +191,11 @@ test('teknik müdür veritabanında yalnız silme rolünde', rc32Migration.inclu
 test('denetim silme kimliği sunucu tetikleyicisinden yazılıyor', rc32Migration.includes('aves_denetim_silme_gecmisi') && rc32Migration.includes("before delete on public.denetimler"));
 test('snapshot alanları veritabanı tetikleyicisiyle kilitli', rc32Migration.includes('aves_snapshot_degisimini_engelle') && rc32Migration.includes('Denetim madde snapshot içeriği kilitlidir'));
 test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.includes('grant select, insert on public.denetim_degisim_gecmisi'));
+
+// rc3.3: hazir_secenekler boşsa ''.split('|') hayalet boş seçenek üretmemeli —
+// bu, Uygun Değil'de anlamsız bir bulgu butonu ve açıklama kutusunun yalnız
+// "Diğer bulgu" tıklanınca açılması hatasına yol açıyordu.
+test('boş hazir_secenekler hayalet bulgu seçeneği üretmiyor', app.includes(".split('|').map(o => o.trim()).filter(Boolean)"));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

@@ -1,8 +1,13 @@
-# AVES R15D-rc3.2 — Güncel Teslim Notu (birleşik paket)
+# AVES R15D-rc3.3 — Güncel Teslim Notu (birleşik paket)
 
-Hazırlanma tarihi: 12 Ağustos 2026. Bu paket iki paralel çalışmanın birleşimidir:
-- Claude Code oturumu: kütüphane içerik/kaynak eşlemesi (tüm bölümler) ve itfaiyeci asansörü (81-72) mimarisi.
-- Codex oturumu: rc3.2 denetim snapshot kilidi, İnceleme Modu ve rol yetkilendirmesi.
+Hazırlanma tarihi: 12 Ağustos 2026. Bu paket üç aşamalı bir birleşimdir:
+- Claude Code oturumu (rc3.1): kütüphane içerik/kaynak eşlemesi (tüm bölümler) ve itfaiyeci asansörü (81-72) mimarisi.
+- Codex oturumu (rc3.2): denetim snapshot kilidi, İnceleme Modu ve rol yetkilendirmesi; production'a alındı.
+- Claude Code oturumu (rc3.3): production'da mühendis rolüyle test sırasında bulunan "Uygun Değil" bulgu kutusu hatasının düzeltilmesi.
+
+## rc3.3'te ne değişti (rc3.2'ye göre)
+
+**Bulgu seçenekleri UI hatası düzeltildi.** `kontrol_basligi` alanı boş/null olan maddelerde (`hazir_secenekler` boşsa) `''.split('|')` ifadesi `['']` — yani içinde boş bir string olan bir dizi — üretiyordu. Bu hayalet boş seçenek "özel seçenek" sayıldığı için: (1) "Uygun Değil" işaretlendiğinde anlamsız/boş bir bulgu butonu beliriyordu, (2) açıklama kutusu yalnız kullanıcı "Diğer bulgu" butonuna tıklarsa açılıyordu — otomatik açılmıyordu. Düzeltme: `hazir_secenekler` artık `.split('|').map(o => o.trim()).filter(Boolean)` ile ayrıştırılıyor, böylece boş girişler tamamen elenip açıklama kutusu beklendiği gibi doğrudan açılıyor. Regresyon testi eklendi (`tests/r15d-static-test.mjs`).
 
 ## rc3.2'de ne değişti (rc3.0'a göre)
 
@@ -37,15 +42,16 @@ Migration dosyaları: `database/01_r15d_rc32_kurulum_kontrol.sql`, `database/28_
 
 ## Paket içeriği
 
-- `app/`: Güncel Cloudflare Pages uygulama kaynakları (`R15D-rc3.2`).
-- `release/AVES_Saha_R15D_rc3_2_20260812.zip`: **Güncel** Cloudflare Pages'e yüklenebilir uygulama paketi (içerik + rc3.2 özellikleri birleşik).
-- `release/AVES_Saha_R15D_rc3_0_20260812.zip`, `release/AVES_Saha_R15D_rc2_3_20260811.zip`: Tarihsel referans — artık deploy edilmemeli.
+- `app/`: Güncel Cloudflare Pages uygulama kaynakları (`R15D-rc3.3`).
+- `release/AVES_Saha_R15D_rc3_3_20260812.zip`: **Güncel** Cloudflare Pages'e yüklenebilir uygulama paketi (içerik + rc3.2 özellikleri + rc3.3 bulgu-kutusu düzeltmesi birleşik).
+- `release/AVES_Saha_R15D_rc3_2_20260812.zip`, `release/AVES_Saha_R15D_rc3_0_20260812.zip`, `release/AVES_Saha_R15D_rc2_3_20260811.zip`: Tarihsel referans — artık deploy edilmemeli.
 - `database/00_r15d_canli_on_kontrol.sql`, `01_r15d_rc32_kurulum_kontrol.sql`: Canlı sistem için salt okunur ön kontroller.
 - `database/21`–`25`: rc3.0 geçiş ve düzeltme migration'ları (bkz. önceki teslim notu tarihçesi).
 - `database/26`–`37`: rc3.1/rc3.2 kütüphane içerik/kaynak eşlemesi migration'ları (itfaiyeci asansörü mimarisi dahil).
 - `database/28_r15d_rc32_snapshot_inceleme_yetki.sql`: Snapshot kilidi, İnceleme Modu, rol yetkilendirmesi.
+- rc3.3'te veritabanı migration'ı yoktur — yalnızca `app/app.js` içindeki bir istemci-tarafı görüntüleme hatası düzeltildi.
 - `data/`: Kontrollü madde kütüphanesi geliştirme kaynakları (JSON/CSV). Cloudflare yayın paketine yüklenmez.
-- `tests/`: Statik test (143/143 geçiyor) ve smoke test raporları.
+- `tests/`: Statik test (144/144 geçiyor) ve smoke test raporları.
 - `qa/`, `tools/`: Kütüphane kalite taraması ve üretim araçları.
 - `CLAUDE_CODE_AVES_MASTER_BRIEF.md`: Projenin kapsamlı devir brifi.
 
@@ -59,24 +65,14 @@ Migration dosyaları: `database/01_r15d_rc32_kurulum_kontrol.sql`, `database/28_
 
 ## Mevcut uygulama sürümü
 
-`R15D-rc3.2`
+`R15D-rc3.3`
 
-Canlı smoke test sırasında Service Worker güncelleme seçiminin `Güncelleniyor…`
-durumunda kalmasına yol açan yarış koşulu giderildi. Yeni worker artık denetçinin
-onayından önce zorla etkinleşmiyor; `Şimdi güncelle` seçildiğinde kontrollü olarak
-etkinleşip sayfayı yeniliyor. IndexedDB, outbox ve açık denetim kayıtlarına dokunulmaz.
+Cloudflare uygulama ZIP'inin SHA-256 değeri (`AVES_Saha_R15D_rc3_3_20260812.zip`):
 
-Cloudflare uygulama ZIP'inin SHA-256 değeri (`AVES_Saha_R15D_rc3_2_20260812.zip`):
-
-`16AF07845CADA0803F2E6DE81C2BABFE881A4FD83D7FBAABFF0B050754021C49`
+`CA4D1913D3FD1DB3918ECA5FD52B2908CF7891837F71011A434AD39CCD87B7F5`
 
 ## Deploy durumu
 
-**R15D-rc3.2 production'a alındı** (12 Ağustos 2026):
-- Cloudflare production commit: `45f2a66`
-- Cloudflare Pages projesi GitHub'a bağlıdır ve production dalındaki değişiklikler otomatik yayımlanır.
-- Kalıcı canlı adres: https://saha.avesbelgelendirme.com.tr/ (`pages.dev` adresi yalnız Cloudflare'ın teknik deployment adresidir, kullanılmamalıdır).
-- Statik kontroller: 143/143 başarılı, canlı konsol hatası yok, güvenlik/önbellek başlıkları doğrulandı.
-- Canlı Supabase: 1.019 toplam / 957 aktif / 62 pasif madde. Veritabanı tarafı (`database/28_r15d_rc32_snapshot_inceleme_yetki.sql`) uygulanmıştır (bkz. `tests/SMOKE_TEST_REPORT_RC32.md`).
+**R15D-rc3.2 production'da** (12 Ağustos 2026, Cloudflare production commit `45f2a66`, canlı adres https://saha.avesbelgelendirme.com.tr/). rc3.2'nin bir parçası olarak, canlı smoke testte bulunan Service Worker "Şimdi güncelle" takılma hatası da düzeltilmişti (`sw.js`'deki `install` olayında `self.skipWaiting()` çağrısı `app.js`'nin mesaj tabanlı onay akışıyla yarışıyordu).
 
-Deploy sonrası smoke testte bulunan Service Worker güncelleme takılma sorunu düzeltildi: `sw.js`'nin `install` olayındaki `self.skipWaiting()` çağrısı, `app.js`'deki kullanıcı onaylı güncelleme akışıyla (mesaj tabanlı `SKIP_WAITING`) yarışıyor ve "Şimdi güncelle" düğmesini işlevsiz bırakıyordu. Çağrı kaldırıldı; yeni worker artık yalnız kullanıcı "Şimdi güncelle" dediğinde etkinleşiyor. IndexedDB, açık denetimler ve aktarım bekleyen kayıtlar etkilenmedi.
+**R15D-rc3.3 henüz deploy edilmedi.** Mühendis rolüyle yapılan canlı testte bulunan "Uygun Değil" bulgu kutusu hatası (yukarıda açıklandı) düzeltildi ve bu teslim notuyla birlikte paketlendi; production'a alınması ayrı bir onay/deploy adımı gerektirir.
