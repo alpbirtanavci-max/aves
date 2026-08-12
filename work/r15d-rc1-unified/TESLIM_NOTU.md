@@ -65,8 +65,22 @@ Cloudflare uygulama ZIP'inin SHA-256 değeri (`AVES_Saha_R15D_rc3_2_20260812.zip
 
 `927FFEE7607018182F33BB90ACB74CCB9BD768BF3B90FD5AD957AB49647C1C20`
 
-## Henüz yapılmadı
+## Deploy durumu
 
-Bu paket **Cloudflare Pages'e deploy edilmedi**. Deploy, ayrı bir onay ve şu sırayı gerektirir: preview/test alanında yayım → temiz cihaz, eski Service Worker'lı cihaz ve tamamen offline cihazda smoke test → mühendis/yönetici/teknik müdür test hesaplarıyla rol matrisi doğrulaması → kullanıcı kabulü → production.
+**R15D-rc3.2 production'a alındı** (12 Ağustos 2026, kullanıcı/Codex tarafında):
+- Cloudflare production commit: `45f2a66`
+- Canlı adres: https://saha.avesbelgelendirme.com.tr/
+- Statik kontroller: 143/143 başarılı, canlı konsol hatası yok, güvenlik/önbellek başlıkları doğrulandı.
+- Canlı Supabase: 1.019 toplam / 957 aktif / 62 pasif madde.
 
-Canlı Supabase'e rc3.2'nin veritabanı tarafı (`database/28_r15d_rc32_snapshot_inceleme_yetki.sql`) zaten uygulanmış durumda (bkz. `tests/SMOKE_TEST_REPORT_RC32.md`); uygulama (frontend) paketi henüz production alan adına yayımlanmadı.
+Deploy sonrası smoke testte bulunan bir sorun ayrıca düzeltildi ve bu repoya geri alındı:
+
+- **Service Worker "Şimdi güncelle" düğmesi takılı kalma hatası** — `sw.js`'nin `install` olayı, `app.js`'deki kullanıcı onaylı güncelleme akışıyla (mesaj tabanlı `SKIP_WAITING`) yarışan bir `self.skipWaiting()` çağrısı içeriyordu; yeni worker kullanıcı onayı beklemeden hemen etkinleşiyor, bu da "Şimdi güncelle" düğmesinin işlevsiz kalmasına yol açıyordu. Çağrı kaldırıldı; artık yeni worker yalnız kullanıcı "Şimdi güncelle" dediğinde etkinleşiyor. IndexedDB, açık denetimler ve aktarım bekleyen kayıtlar bu değişiklikten etkilenmedi. Statik test seti bu davranışı doğrulayacak şekilde güncellendi (143/143 geçiyor).
+
+Bu düzeltmeyle yeniden derlenen `release/AVES_Saha_R15D_rc3_2_20260812.zip`'in SHA-256'sı (zip meta verisi farklı olduğundan üretimdeki paketten farklı bir hash üretir, içerik aynıdır):
+
+`8290A01C7E154174852EA0B5816A5731CDBA460D0E69A5361ABCB8418357FF7E`
+
+Üretimde şu an yayında olan, kullanıcı tarafından derlenen paketin SHA-256'sı:
+
+`16AF07845CADA0803F2E6DE81C2BABFE881A4FD83D7FBAABFF0B050754021C49`

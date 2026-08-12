@@ -17,9 +17,10 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  // Yeni worker bekleme kilidinde kalmaz. Bu işlem açık sayfayı yenilemez ve
-  // IndexedDB/outbox kayıtlarına dokunmaz; yalnız sonraki açılışı hazırlar.
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // İlk kurulum kendiliğinden etkinleşir. Mevcut bir worker güncellenirken ise
+  // yenisi beklemede kalır; denetçi "Şimdi güncelle" dediğinde aşağıdaki mesaj
+  // işleyicisi skipWaiting() çağırır. Böylece güncelleme seçimi gerçekten çalışır.
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
 });
 
 self.addEventListener('message', (e) => {
