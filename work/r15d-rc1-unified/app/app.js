@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc3.6 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D — Kararlı offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.6';
+const APP_VERSION = 'R15D';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -529,7 +529,7 @@ const Sync = (() => {
     }, delay);
   }
 
-  const KUTUPHANE_VER = 10; // R15D-rc3.6: 81-71/81-73 fiziksel bölüm güvenlik eşlemesi
+  const KUTUPHANE_VER = 10; // R15D: 81-71/81-73 fiziksel bölüm güvenlik eşlemesi
   const surumAnahtari = (rows) => (rows || [])
     .slice()
     .sort((a,b) => (a.bolum || '').localeCompare(b.bolum || ''))

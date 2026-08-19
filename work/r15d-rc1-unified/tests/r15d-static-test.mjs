@@ -33,9 +33,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D-rc3.6', index.includes('R15D-rc3.6'));
-test('app R15D-rc3.6', app.includes("const APP_VERSION = 'R15D-rc3.6'"));
-test('service worker R15D-rc3.6 cache', sw.includes("aves-saha-r15d-rc3-6"));
+test('index kararlı R15D', index.includes('Denetim <b style="color:#EA0048">R15D</b>'));
+test('app kararlı R15D', app.includes("const APP_VERSION = 'R15D'"));
+test('service worker kararlı R15D cache', sw.includes("aves-saha-r15d-stable"));
+test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
 test('eksik veya bozuk fiziksel bölüm eşlemesi uygulamayı sessizce başlatmıyor',
@@ -136,7 +137,7 @@ test('ana belge ağ öncelikli ve çevrimdışı geri dönüşlü', sw.includes(
 test('ana belge ve service worker no-cache yayınlanıyor', headers.includes('/sw.js') && headers.includes('/index.html') && headers.includes('no-store, no-cache, must-revalidate'));
 test('yerel veritabanı hatası boş ekran bırakmıyor', app.includes('Uygulama yerel veritabanını açamadı'));
 test('güvenli cache kurtarma sayfası pakette', updateHtml.includes('AVES Saha güvenli güncelleme') && sw.includes("'./update.html', './update.js'"));
-test('kurtarma yeni sürümü silmeden önce doğruluyor', updateJs.includes("EXPECTED_BUILD = 'R15D-rc3.6'") && updateJs.indexOf('indexText.includes') < updateJs.indexOf('registration.unregister'));
+test('kurtarma yeni sürümü silmeden önce doğruluyor', updateJs.includes("EXPECTED_BUILD = 'R15D'") && updateJs.indexOf('indexText.includes') < updateJs.indexOf('registration.unregister'));
 test('kurtarma yalnız AVES cache ve service worker kaydını kaldırıyor', updateJs.includes("name.startsWith('aves-saha-')") && updateJs.includes('registration.unregister()'));
 test('kurtarma IndexedDB ve oturum verisini silmiyor', !updateJs.includes('deleteDatabase') && !updateJs.includes('localStorage.clear') && !updateJs.includes('sessionStorage.clear'));
 test('Tip 3/Tip 4 merdiven görseli pakette', fs.existsSync(path.join(appDir, 'referans-gorseller', 'G-PIT-LADDER-TYPE3-4-TR.svg')) && sw.includes('G-PIT-LADDER-TYPE3-4-TR.svg'));
@@ -162,7 +163,10 @@ test('51 hidrolik başlık hedefi var', hydraulicIds.length === 51);
 test('hidrolik başlıkların tamamı düzeltildi', hydraulicIds.every(id => byId.get(id)?.kontrol_basligi === 'Hidrolik Kontrol ve Testleri'));
 test('MAD-0611 özgül başlığını koruyor', byId.get('MAD-0611')?.kontrol_basligi === 'Hidrolik devre kapama vanası');
 test('dört MR koşulu düzeltildi', ['MAD-0460','MAD-0467','MAD-0486','MAD-0492'].every(id => byId.get(id)?.md_kosulu === 'MR'));
-test('MAD-0824 temel veri paketinde önceki kararla pasif', byId.get('MAD-0824')?.aktif === false);
+test('MAD-0824 kaynak doğrulaması sonrası temel veri paketinde aktif', byId.get('MAD-0824')?.aktif === true);
+test('form açıklaması olan altı satır temel veri paketinde pasif',
+  ['MAD-0499','MAD-0517','MAD-0682','MAD-0712','MAD-0946','MAD-1004']
+    .every(id => byId.get(id)?.aktif === false));
 test('MAD-0814 aktif', byId.get('MAD-0814')?.aktif === true);
 
 test('migration canlı saha satırı silmiyor', !/delete\s+from\s+public\.saha_kontrol/i.test(migration));

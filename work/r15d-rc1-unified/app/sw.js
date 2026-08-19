@@ -1,5 +1,5 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc3-6';
+const CACHE = 'aves-saha-r15d-stable';
 const ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png',
   './update.html', './update.js',

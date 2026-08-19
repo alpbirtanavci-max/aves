@@ -1,4 +1,4 @@
-/* AVES R15D-rc3.6 — canlı kütüphane geçişi için fiziksel bölüm güvenlik eşlemesi */
+/* AVES R15D — canlı kütüphane geçişi için fiziksel bölüm güvenlik eşlemesi */
 'use strict';
 
 (function exposePhysicalSectionMapping(root) {
