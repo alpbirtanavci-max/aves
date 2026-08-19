@@ -1,7 +1,7 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc3-3';
+const CACHE = 'aves-saha-r15d-rc3-6';
 const ASSETS = [
-  './', './index.html', './app.js', './manifest.json', './logo.png',
+  './', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png',
   './update.html', './update.js',
   './icon-192.png', './icon-512.png',
   './referans-gorseller/G-PIT-LADDER-TYPE3-4-TR.svg',

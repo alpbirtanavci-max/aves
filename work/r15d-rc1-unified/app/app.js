@@ -1,5 +1,5 @@
 /* ============================================================
-   AVES Saha Denetim R15D-rc3.3 — Offline-first uygulama çekirdeği
+   AVES Saha Denetim R15D-rc3.6 — Offline-first uygulama çekirdeği
    Katmanlar: DB (IndexedDB) → API (Supabase REST) → Sync → UI
    ============================================================ */
 'use strict';
@@ -9,55 +9,25 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.3';
+const APP_VERSION = 'R15D-rc3.6';
 const DB_VERSION = 3;
-const OFFLINE_CORE_ASSETS = ['./', './index.html', './app.js', './manifest.json', './logo.png'];
+const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
+
+if (typeof avesFizikselBolumUygula !== 'function' ||
+    typeof AVES_FIZIKSEL_BOLUM_ESLEMESI !== 'object' ||
+    Object.keys(AVES_FIZIKSEL_BOLUM_ESLEMESI).length !== 70) {
+  throw new Error('AVES fiziksel bölüm eşlemesi yüklenemedi');
+}
 
 // AVES saha checklist sonucu yalnız üçlüdür. "Kontrol edilemedi / Veri eksik"
 // denetim sonucu değildir; eski kayıtlar R15C geçişinde iç kontrol notuna taşınır.
 const DURUMLAR = ['Kontrol tamamlandı','Olumsuz bulgu','Uygulanmaz'];
 const DURUM_CSS = {'Kontrol tamamlandı':'ok','Olumsuz bulgu':'bad','Uygulanmaz':'na'};
 const DURUM_KISA = {'Kontrol tamamlandı':'✓ Uygun','Olumsuz bulgu':'✗ Uygun Değil','Uygulanmaz':'— Uygulanmaz'};
-const FOTO_KONTROL_LISTELERI = {
-  '01 - Kuyu Dibi': [
-    ['pit_genel','Kuyu dibi genel görünümü'],
-    ['pit_tamponlar','Kabin ve karşı ağırlık tamponları ile kaideleri'],
-    ['pit_tampon_etiket','Tampon etiketleri ve seri / belge numaraları'],
-    ['pit_siginma','Sığınma alanları ve işaretleri'],
-    ['pit_merdiven_stop','Merdiven, durdurma anahtarları ve kuyu dibi kumanda kutusu'],
-    ['pit_separator','Karşı ağırlık separatörü ve açıklıkları'],
-    ['pit_regulator','Hız regülatörü gergi tertibatı ve taşıyıcısı'],
-  ],
-  '02 - Kuyu Boyunca': [
-    ['kuyu_genel','Kuyu boyunca genel görünüm'],
-    ['kuyu_ray_konsol','Raylar, konsollar ve bağlantılar'],
-    ['kuyu_kapilar','Durak kapıları, kilitler ve kapı mekanizmaları'],
-    ['kuyu_kablolar','Kuyu tesisatı, kablolar ve sabitlemeler'],
-    ['kuyu_separator','Asansörler arası / hareketli parça ayırıcıları'],
-  ],
-  '03 - Kabin ve Kabin Üstü': [
-    ['kabin_ic','Kabin içi genel görünüm ve kumanda kaseti'],
-    ['kabin_ustu','Kabin üstü genel görünüm'],
-    ['kabin_korkuluk','Kabin üstü korkuluk ve güvenlik mesafeleri'],
-    ['kabin_siginma','Kabin üstü sığınma alanı ve işareti'],
-    ['kabin_kapi','Kabin kapısı, operatör ve koruma tertibatı'],
-    ['kabin_etiket','Kabin üstü bileşen etiketleri / seri numaraları'],
-  ],
-  '04 - Makine ve Şase': [
-    ['makine_genel','Makine alanı ve çalışma bölgesi genel görünümü'],
-    ['makine_sase','Makine şasesi, ankrajlar, kaynaklar ve bağlantılar'],
-    ['makine_tahrik','Tahrik makinesi, fren ve kasnaklar'],
-    ['makine_etiket','Makine, fren ve ilgili bileşen etiketleri / seri numaraları'],
-    ['makine_halat','Halatlar, uç bağlantıları ve askı düzeni'],
-    ['makine_pano','Kumanda panosu ve erişim alanı'],
-  ],
-  '05 - Elektrik ve Test': [
-    ['elektrik_pano','Elektrik panoları, koruma elemanları ve etiketler'],
-    ['elektrik_toprak','Topraklama ve kablo bağlantıları'],
-    ['elektrik_guvenlik','Güvenlik devreleri ve test düzeni'],
-    ['elektrik_kurtarma','Acil kurtarma ve haberleşme tertibatı'],
-    ['elektrik_test','Uygulanan testlerin düzeni / gösterge sonuçları'],
-  ],
+const FOTO_HATIRLATMALARI = {
+  '01 - Kuyu Dibi': 'Kabin ve karşı ağırlık tamponlarının etiket fotoğraflarını çekmeyi unutmayın.',
+  '03 - Kabin ve Kabin Üstü': 'Paraşüt fren ve kat kapılarının etiket fotoğraflarını çekmeyi unutmayın.',
+  '05 - Elektrik ve Test': 'Kumanda kartı etiketinin fotoğrafını çekmeyi unutmayın.',
 };
 // Ana durum butonlarının kopyası olan genel bulgu seçenekleri — Uygun Değil altında gösterilmez
 const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Belirgin kusur görülmedi','2.000 mm altında ve belirgin kusur yok','8.8 veya üzeri','Kontrol edilemedi','Uygulanmaz','Aranmaz','Diğer bulgu'];
@@ -559,7 +529,7 @@ const Sync = (() => {
     }, delay);
   }
 
-  const KUTUPHANE_VER = 9; // R15D: doğrulanmış ve atomik kütüphane yenilemesi
+  const KUTUPHANE_VER = 10; // R15D-rc3.6: 81-71/81-73 fiziksel bölüm güvenlik eşlemesi
   const surumAnahtari = (rows) => (rows || [])
     .slice()
     .sort((a,b) => (a.bolum || '').localeCompare(b.bolum || ''))
@@ -588,7 +558,9 @@ const Sync = (() => {
     if (have && ver === KUTUPHANE_VER && !force && !serverChanged) return;
     try {
       const rows = await API.selectPaged('madde_kutuphanesi', 'select=*&aktif=eq.true&order=sira_no.asc,madde_id.asc');
-      const temiz = rows.filter(r => r.madde_id !== 'MAD-1010');
+      const temiz = rows
+        .filter(r => r.madde_id !== 'MAD-1010')
+        .map(avesFizikselBolumUygula);
       const ids = temiz.map(r => r.madde_id);
       if (temiz.length < 900 || ids.some(id => !id) || new Set(ids).size !== ids.length) {
         throw new Error(`Kütüphane bütünlük kontrolü başarısız (${temiz.length} kayıt)`);
@@ -701,7 +673,7 @@ const Sync = (() => {
 const GECMIS_ALANLARI = {
   denetimler: [
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
-    'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash',
+    'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari',
   ],
   saha_kontrol: [
     'durum', 'denetci_gordu', 'bulgu_secenegi', 'diger_bulgu', 'aciklama',
@@ -812,6 +784,65 @@ const UI = (() => {
   let inspectionReadOnly = false;
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  const SERI_GRUPLARI = [
+    ['kabin_tamponlari', 'Kabin tamponu', '01 - Kuyu Dibi'],
+    ['karsi_agirlik_tamponlari', 'Karşı ağırlık tamponu', '01 - Kuyu Dibi'],
+    ['parasut_frenleri', 'Paraşüt fren / güvenlik tertibatı', '03 - Kabin ve Kabin Üstü'],
+    ['kat_kapilari', 'Kat kapısı', '03 - Kabin ve Kabin Üstü'],
+    ['regulatorler', 'Regülatör', '04 - Makine ve Şase'],
+    ['motorlar', 'Motor / tahrik makinesi', '04 - Makine ve Şase'],
+    ['kumanda_kartlari', 'Kumanda kartı', '05 - Elektrik ve Test'],
+  ];
+
+  function seriNumaralariNormalize(value) {
+    const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    const result = { schema_version: 1 };
+    for (const [key] of SERI_GRUPLARI) {
+      result[key] = Array.isArray(source[key])
+        ? source[key].map(item => ({
+          id: item && item.id ? item.id : crypto.randomUUID(),
+          seri_no: item && item.seri_no ? String(item.seri_no) : '',
+          ...(key === 'kat_kapilari' ? {
+            kat: item && item.kat ? String(item.kat) : '',
+            giris: item && item.giris ? String(item.giris) : '',
+          } : {}),
+        }))
+        : [];
+    }
+    return result;
+  }
+
+  function seriNumarasiSayisi(d) {
+    const data = seriNumaralariNormalize(d && d.seri_numaralari);
+    return SERI_GRUPLARI.reduce((sum, [key]) => sum + data[key].filter(item => item.seri_no.trim()).length, 0);
+  }
+
+  function seriGereksinimleri(d) {
+    const requirements = [
+      ['kabin_tamponlari', 'Kabin tamponu', 1],
+      ['parasut_frenleri', 'Paraşüt fren / güvenlik tertibatı', 1],
+      ['kat_kapilari', 'Kat kapıları', Math.max(1, Number(d && d.durak_sayisi) || 1)],
+      ['kumanda_kartlari', 'Kumanda kartı', 1],
+    ];
+    if (d && d.tahrik_tipi === 'Elektrikli') requirements.splice(1, 0, ['karsi_agirlik_tamponlari', 'Karşı ağırlık tamponu', 1]);
+    if (d && d.makine_dairesi_tipi === 'MRL') {
+      requirements.push(['regulatorler', 'Regülatör', 1], ['motorlar', 'Motor / tahrik makinesi', 1]);
+    }
+    return requirements;
+  }
+
+  function seriBeklenenMinimum(d) {
+    return seriGereksinimleri(d).reduce((sum, requirement) => sum + requirement[2], 0);
+  }
+
+  function seriEksikleri(d) {
+    const data = seriNumaralariNormalize(d && d.seri_numaralari);
+    return seriGereksinimleri(d).flatMap(([key, label, minimum]) => {
+      const count = data[key].filter(item => item.seri_no.trim()).length;
+      return count < minimum ? [`${label}: ${count}/${minimum}`] : [];
+    });
+  }
   // Eski kütüphane alan adları geriye uyumluluk için korunur. Denetçiye
   // gösterilen AVES yönlendirmelerinde sonuç dili resmî üçlü yapıya çevrilir.
   const resmiSonucDili = (s) => (s ?? '').toString()
@@ -1131,7 +1162,9 @@ const UI = (() => {
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
-      const lib = await DB.all('kutuphane');
+      // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
+      // olsa bile yeni denetim yanlış 08/09 özel bölümleriyle oluşturulmaz.
+      const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
       const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
       const kontrolProfil = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G
         ? KONTROL_PROFILLERI.TAM
@@ -1254,7 +1287,7 @@ const UI = (() => {
         butunluk_hash: null,
         butunluk_hesaplandi_at: null,
         offline_check: null,
-        foto_kontrol_durumlari: {},
+        seri_numaralari: { schema_version: 1 },
         olusturan_email: Profile.email,
         olusturan_ad: Profile.name,
         created_at: new Date().toISOString(),
@@ -1617,9 +1650,6 @@ const UI = (() => {
       const bd = all.filter(isFlowComplete).length;
       const bbad = all.filter(r => r.durum === 'Olumsuz bulgu').length;
       const bComplete = all.every(isFlowComplete);
-      const fotoListe = fotoKontrolListesi(b);
-      const fotoDurum = (d.foto_kontrol_durumlari || {})[b] || {};
-      const fotoSecili = fotoListe.filter(([id]) => fotoDurum.items && fotoDurum.items[id]).length;
       const locked = !freeMode && !reviewMode && currentCanEdit && lockActive;
       if (!freeMode && !reviewMode && currentCanEdit && b === firstIncompleteBolum) lockActive = true;
       if (!list.length) continue;
@@ -1660,7 +1690,7 @@ const UI = (() => {
       <div class="bolum ${isOpen?'open':''} ${locked?'locked':''}">
         <button class="bolum-head" data-b="${esc(b)}" data-locked="${locked?1:0}">
           <span class="btitle">${locked?'🔒 ':''}${bComplete?'✅ ':''}${esc(b)}</span>
-          <span class="bstat">${fotoDurum.kaydedildi_at ? `<span class="bphoto" title="Fotoğraf kontrol listesi">📷 ${fotoSecili}/${fotoListe.length}</span>` : ''}${bbad ? `<span class="bbadge">${bbad}</span>` : ''}<span class="bcount">${bd}/${all.length}</span><span class="chev"></span></span>
+          <span class="bstat">${bbad ? `<span class="bbadge">${bbad}</span>` : ''}<span class="bcount">${bd}/${all.length}</span><span class="chev"></span></span>
         </button>
         <div class="bolum-body">${bodyHtml}${freeMode ? '' : ''}</div>
       </div>`;
@@ -1672,6 +1702,7 @@ const UI = (() => {
     </div>` : ''}
     <div class="footbar">
       <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
+      <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
         ? (gozden ? 'Çalışmayı Tamamla' : 'Saha Kontrolünü Bitir')
         : 'Denetimi Bitir'}</button>` : ''}
@@ -1748,6 +1779,7 @@ const UI = (() => {
       renderDenetim();
     });
     document.getElementById('btnOzet').onclick = showOzet;
+    document.getElementById('btnSeriler').onclick = seriNumaralariGoster;
     const btnBitirGlobal = document.getElementById('btnBitirGlobal');
     if (btnBitirGlobal) btnBitirGlobal.onclick = async () => {
       const latestRows = (await DB.allByIndex('saha', 'byDenetim', currentDenetimId)).sort(siraKarsilastir);
@@ -1800,52 +1832,135 @@ const UI = (() => {
     return map[kod] || [];
   }
 
-  function fotoKontrolListesi(bolum) {
-    if (FOTO_KONTROL_LISTELERI[bolum]) return FOTO_KONTROL_LISTELERI[bolum];
-    if (bolum === '00 - Ön Kontrol' || bolum === '06 - Saha Kapanışı') return [];
-    return [
-      ['ek_genel', 'İlgili bölümün genel görünümü'],
-      ['ek_bilesen', 'Kontrol edilen özel bileşenler ve etiketleri'],
-      ['ek_test', 'Uygulanan fonksiyon / test düzeni'],
-    ];
+  function fotoHatirlatmaMetni(bolum, d) {
+    if (bolum === '04 - Makine ve Şase' && d.makine_dairesi_tipi === 'MRL') {
+      return 'Regülatör ve motor etiketlerinin fotoğraflarını çekmeyi unutmayın.';
+    }
+    return FOTO_HATIRLATMALARI[bolum] || null;
   }
 
   async function fotoKontrolUyarisi(bolum) {
-    const liste = fotoKontrolListesi(bolum);
-    if (!liste.length || !currentCanEdit) return true;
+    if (!currentCanEdit) return true;
     const d = await DB.get('denetimler', currentDenetimId);
-    const eski = ((d.foto_kontrol_durumlari || {})[bolum] || {}).items || {};
+    const mesaj = fotoHatirlatmaMetni(bolum, d);
+    if (!mesaj) return true;
     return new Promise(resolve => {
       const ov = document.createElement('div');
       ov.className = 'overlay';
-      ov.innerHTML = `<div class="modal">
+      ov.innerHTML = `<div class="modal reminder-modal">
         <button class="close" aria-label="Kapat">×</button>
-        <h3>📷 ${esc(bolum)} — fotoğraf kontrolü</h3>
-        <div class="photo-help">Fotoğraflar uygulamaya yüklenmez. AVES tarafından belirlenen harici kayıt yöntemiyle iletilmeden önce çekilen fotoğrafları kontrol edip işaretleyin. İşaretlenmeyen kalemler bölümün kapanmasını engellemez; kapanış özetinde eksik görünür.</div>
-        <div class="photo-list">${liste.map(([id, label]) => `<label class="photo-item"><input type="checkbox" data-photo="${esc(id)}" ${eski[id] ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('')}</div>
-        <button class="btn btn-ghost" id="photoBack" style="margin-bottom:8px">Listeye geri dön</button>
-        <button class="btn btn-primary" id="photoContinue">Kaydet ve devam et</button>
+        <h3>Fotoğraf hatırlatması</h3>
+        <div class="photo-help">${esc(mesaj)}</div>
+        <button class="btn btn-primary" id="photoContinue">Tamam, devam et</button>
       </div>`;
       document.body.appendChild(ov);
       let finished = false;
-      const finish = (value) => { if (finished) return; finished = true; ov.remove(); resolve(value); };
-      ov.querySelector('.close').onclick = () => finish(false);
-      ov.querySelector('#photoBack').onclick = () => finish(false);
-      ov.onclick = e => { if (e.target === ov) finish(false); };
-      ov.querySelector('#photoContinue').onclick = async () => {
-        const items = {};
-        ov.querySelectorAll('[data-photo]').forEach(el => { items[el.dataset.photo] = el.checked; });
-        d.foto_kontrol_durumlari = d.foto_kontrol_durumlari || {};
-        d.foto_kontrol_durumlari[bolum] = {
-          items,
-          kaydedildi_at: new Date().toISOString(),
-          kaydeden_email: Profile.email,
-        };
-        d.updated_at = new Date().toISOString();
-        await localWrite('denetimler', d, 'denetimler');
-        finish(true);
-      };
+      const finish = () => { if (finished) return; finished = true; ov.remove(); resolve(true); };
+      ov.querySelector('.close').onclick = finish;
+      ov.onclick = e => { if (e.target === ov) finish(); };
+      ov.querySelector('#photoContinue').onclick = finish;
     });
+  }
+
+  async function seriNumaralariGoster() {
+    const d = await DB.get('denetimler', currentDenetimId);
+    if (!d) return;
+    const canEdit = currentCanEdit;
+    const original = seriNumaralariNormalize(d.seri_numaralari);
+    const data = seriNumaralariNormalize(d.seri_numaralari);
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    const rowHTML = (key, item = {}) => {
+      const id = item.id || crypto.randomUUID();
+      const door = key === 'kat_kapilari';
+      return `<div class="serial-row ${door ? 'door' : ''}" data-serial-row data-serial-key="${esc(key)}" data-serial-id="${esc(id)}">
+        ${door ? `<input data-serial-prop="kat" placeholder="Kat / durak" value="${esc(item.kat || '')}" ${canEdit?'':'disabled'}>
+          <input data-serial-prop="giris" placeholder="Giriş (A/B)" value="${esc(item.giris || '')}" ${canEdit?'':'disabled'}>` : ''}
+        <input data-serial-prop="seri_no" placeholder="Seri numarası" value="${esc(item.seri_no || '')}" autocomplete="off" ${canEdit?'':'disabled'}>
+        ${canEdit ? '<button type="button" class="serial-remove" aria-label="Kaydı kaldır">×</button>' : ''}
+      </div>`;
+    };
+    const groupHTML = ([key, label, bolum]) => {
+      if ((key === 'regulatorler' || key === 'motorlar') && d.makine_dairesi_tipi !== 'MRL') return '';
+      const items = data[key].length ? data[key] : [{}];
+      return `<section class="serial-group" data-serial-group="${esc(key)}">
+        <div class="serial-group-head"><div><b>${esc(label)}</b><small>${esc(bolum)}</small></div>
+          ${canEdit ? `<button type="button" class="serial-add" data-serial-add="${esc(key)}">+ Ekle</button>` : ''}</div>
+        <div class="serial-rows">${items.map(item => rowHTML(key, item)).join('')}</div>
+      </section>`;
+    };
+    ov.innerHTML = `<div class="modal serial-modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Ekipman seri numaraları</h3>
+      <div class="photo-help">Bu ekran denetimin her aşamasından açılabilir. Bilgiler fotoğraflardan bağımsızdır ve çevrimdışı olarak cihazda saklanır.</div>
+      <div class="serial-groups">${SERI_GRUPLARI.map(groupHTML).join('')}</div>
+      ${canEdit ? '<button class="btn btn-primary" id="serialSave">Kaydet ve kapat</button>' : '<button class="btn btn-primary" id="serialClose">Kapat</button>'}
+    </div>`;
+    document.body.appendChild(ov);
+
+    const collect = () => {
+      // Ekranda gösterilmeyen koşullu grupları koru. Örneğin geçmişte MRL
+      // olarak kaydedilmiş regülatör/motor bilgileri, yapılandırma sonradan
+      // farklı görünse bile başka bir seri kaydı düzenlenirken silinmemeli.
+      const result = seriNumaralariNormalize(data);
+      ov.querySelectorAll('[data-serial-group]').forEach(group => {
+        result[group.dataset.serialGroup] = [];
+      });
+      ov.querySelectorAll('[data-serial-row]').forEach(row => {
+        const key = row.dataset.serialKey;
+        const value = { id: row.dataset.serialId };
+        row.querySelectorAll('[data-serial-prop]').forEach(input => { value[input.dataset.serialProp] = input.value.trim(); });
+        const keep = key === 'kat_kapilari' ? (value.seri_no || value.kat || value.giris) : value.seri_no;
+        if (keep) result[key].push(value);
+      });
+      return result;
+    };
+    const persist = async () => {
+      if (!canEdit) return;
+      const next = collect();
+      if (stableStringify(next) === stableStringify(original)) return;
+      d.seri_numaralari = next;
+      d.updated_at = new Date().toISOString();
+      await localWrite('denetimler', d, 'denetimler');
+      const button = document.getElementById('btnSeriler');
+      if (button) {
+        button.textContent = `Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}`;
+        button.classList.toggle('pending', seriEksikleri(d).length > 0);
+        button.classList.toggle('ready', seriEksikleri(d).length === 0);
+      }
+    };
+    let closing = false;
+    const close = async () => {
+      if (closing) return;
+      closing = true;
+      try {
+        await persist();
+        ov.remove();
+      } catch (error) {
+        closing = false;
+        toast('Seri numaraları cihazda kaydedilemedi; ekran açık bırakıldı');
+        console.error('Seri numarası kaydı başarısız', error);
+      }
+    };
+
+    ov.querySelectorAll('[data-serial-add]').forEach(button => button.onclick = () => {
+      const key = button.dataset.serialAdd;
+      ov.querySelector(`[data-serial-group="${key}"] .serial-rows`).insertAdjacentHTML('beforeend', rowHTML(key));
+    });
+    ov.addEventListener('click', e => {
+      const remove = e.target.closest('.serial-remove');
+      if (!remove) return;
+      const row = remove.closest('[data-serial-row]');
+      const rows = row.parentElement.querySelectorAll('[data-serial-row]');
+      if (rows.length > 1) row.remove();
+      else row.querySelectorAll('input').forEach(input => { input.value = ''; });
+    });
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = e => { if (e.target === ov) close(); };
+    const save = ov.querySelector('#serialSave');
+    if (save) save.onclick = close;
+    const closeButton = ov.querySelector('#serialClose');
+    if (closeButton) closeButton.onclick = () => ov.remove();
   }
 
   function gorselHTML(r) {
@@ -2380,7 +2495,7 @@ const UI = (() => {
     const sorted = rows.slice().sort(siraKarsilastir);
     const actors = [...new Set(sorted.map(row => row.son_degistiren_ad || row.son_degistiren_email).filter(Boolean))].sort();
     const summary = {
-      surum: 1,
+      surum: 2,
       denetim_id: d.id,
       durum: hedefDurum || d.denetim_durumu,
       madde_sayisi: sorted.length,
@@ -2395,6 +2510,8 @@ const UI = (() => {
       snapshot_kutuphane_hash: d.snapshot_kutuphane_hash || d.kutuphane_content_hash || null,
       snapshot_app_build_id: d.snapshot_app_build_id || d.app_build_id || APP_VERSION,
       denetimi_yapan: d.denetimi_yapan || null,
+      seri_numaralari: seriNumaralariNormalize(d.seri_numaralari),
+      seri_numarasi_kayit_sayisi: seriNumarasiSayisi(d),
       degistirenler: actors,
       satirlar: sorted.map(row => ({
         madde_id: row.madde_id,
@@ -2418,6 +2535,12 @@ const UI = (() => {
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
     if (bakilmadi.length) {
       toast(`${bakilmadi.length} sonuçsuz madde var`);
+      return;
+    }
+    const eksikSeriler = seriEksikleri(d);
+    if (eksikSeriler.length) {
+      toast(`Seri numarası kayıtlarında ${eksikSeriler.length} eksik grup var`);
+      await seriNumaralariGoster();
       return;
     }
     if (!canEditDenetim(d)) { toast('Bu çalışma üzerinde değişiklik yetkiniz yok'); return; }
@@ -2456,6 +2579,7 @@ const UI = (() => {
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
     const icNotlar = rows.filter(icKontrolNotuVar);
     const hazir = bakilmadi.length === 0;
+    const eksikSeriler = seriEksikleri(d);
     const durum = d.denetim_durumu || 'Devam Ediyor';
     const currentIntegrity = await butunlukOzetiHesapla(d, rows, durum);
     const integrityMatches = !!d.butunluk_hash && d.butunluk_hash === currentIntegrity.hash;
@@ -2490,13 +2614,10 @@ const UI = (() => {
       }).join('')}</button>`;
     const notlar = d.bolum_aciklamalari || {};
     const notEntries = Object.entries(notlar).filter(([,v]) => v);
-    const fotoEntries = [];
-    for (const [bolum, fotoDurum] of Object.entries(d.foto_kontrol_durumlari || {})) {
-      const liste = fotoKontrolListesi(bolum);
-      if (!liste.length || !fotoDurum.kaydedildi_at) continue;
-      const cekildi = liste.filter(([id]) => fotoDurum.items && fotoDurum.items[id]).length;
-      fotoEntries.push([bolum, cekildi, liste.length]);
-    }
+    const seriData = seriNumaralariNormalize(d.seri_numaralari);
+    const seriEntries = SERI_GRUPLARI.flatMap(([key, label]) => seriData[key]
+      .filter(item => item.seri_no)
+      .map(item => [label, item]));
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal">
@@ -2513,6 +2634,9 @@ const UI = (() => {
           ? `✓ Tüm yanıtlar cihazda · ${inspectionOutbox.length} işlem sunucu aktarımı bekliyor`
           : '✓ Tüm yanıtlar cihazda · Sunucuyla tamamen eşitlendi'}</div>
       ${kapanis}
+      <div class="oz-hazir ${eksikSeriler.length ? 'no' : 'ok'}">${eksikSeriler.length
+        ? `⚠ <b>${eksikSeriler.length} seri numarası grubu eksik:</b> ${esc(eksikSeriler.join(' · '))}`
+        : `✓ Seri numarası kayıtları tamamlandı (${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)})`}</div>
       <details class="compact-review" open>
         <summary>Tüm maddeler (${rows.length})</summary>
         <input class="searchbox compact-search" type="search" placeholder="Madde no, başlık veya kelime ara…">
@@ -2525,7 +2649,7 @@ const UI = (() => {
         </div>
         <div class="compact-list">${compactRows}</div>
       </details>
-      ${fotoEntries.length ? `<h4>Fotoğraf kontrol listeleri</h4>${fotoEntries.map(([b,c,t]) => `<div class="oz-item ${c===t?'ok':'warn'}"><b>${esc(b)}</b><div class="not">${c}/${t} fotoğraf türü çekildi olarak işaretlendi</div></div>`).join('')}` : ''}
+      ${seriEntries.length ? `<h4>Ekipman seri numaraları</h4>${seriEntries.map(([label,item]) => `<div class="oz-item"><b>${esc(label)}${item.kat ? ` · ${esc(item.kat)}${item.giris ? ` / ${esc(item.giris)}` : ''}` : ''}</b><div class="not">${esc(item.seri_no)}</div></div>`).join('')}` : ''}
       ${bakilmadi.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">BAKILMADI (${bakilmadi.length})</div>` + bakilmadi.slice(0,100).map(r => item(r,'warn')).join('') : ''}
       ${bad.length ? `<div style="font-size:12px;font-weight:700;color:var(--fuchsia);margin:12px 0 6px">UYGUN DEĞİL (${bad.length})</div>` + bad.map(r => item(r,'')).join('') : ''}
       ${icNotlar.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">İÇ KONTROL NOTU (${icNotlar.length})</div>` + icNotlar.map(r => `<div class="oz-item warn"><b>${esc(r.standart_madde_no || r.madde_id)} · ${esc(r.bolum)}</b>${esc(r.ic_kontrol_notu || 'Eski sürümden kalan iç kontrol kaydı')}</div>`).join('') : ''}
