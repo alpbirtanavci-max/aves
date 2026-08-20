@@ -1,6 +1,6 @@
 # ÜB.FR.38 R.04 Eşleme Raporu
 
-Durum: Pilot eşleme başladı; canlı kütüphane ve canlı denetimler değiştirilmedi.
+Durum: Beş fiziksel bölümün tamamı eşleme havuzuna alındı; ilk üç bölüm satır satır doğrulandı. Canlı kütüphane ve canlı denetimler değiştirilmedi.
 
 ## Kaynak ve kapsam
 
@@ -9,7 +9,7 @@ Durum: Pilot eşleme başladı; canlı kütüphane ve canlı denetimler değişt
 - Revizyon tarihi: `17.02.2026`
 - Resmî PDF: Google Drive dosya kimliği `1NqM263dcLGfRjwJsEmnxNKyT2TRGaPuR`
 - Sayfa sayısı: 40
-- Bu dilim: İş dosyası/temel asansör bilgileri, güvenlik bileşenleri, muayene öncesi 5 satır ve `01 - Kuyu Dibi` bölümündeki 82 uygulama maddesi
+- Kapsam: İş dosyası/temel asansör bilgileri, güvenlik bileşenleri, muayene öncesi 5 satır ve ÜB.FR.38 kaynaklı 453 uygulama maddesinin tamamı
 
 Resmî form metni bu repoya kopyalanmadı. Eşleme dosyasında yalnız alan yolları, madde kimlikleri, standart bentleri, kontrol başlıkları ve doğrulama işaretleri tutulur.
 
@@ -17,8 +17,12 @@ Resmî form metni bu repoya kopyalanmadı. Eşleme dosyasında yalnız alan yoll
 
 - Kütüphanede ÜB.FR.38 kaynaklı toplam 453 madde var.
 - Bunların 400'ünün resmî PDF'de normalize edilmiş metni birebir ve doğrulanabilir durumda.
-- Kuyu Dibi diliminde 82 adayın 46'sı resmî PDF'de tekil metin eşleşmesiyle yüksek güvenli bulundu.
-- 36 satır birleşik form satırı, metin sadeleştirmesi veya tekrarlanan metin nedeniyle insan kontrolüne ayrıldı.
+- `01 - Kuyu Dibi`: 82/82 doğrulandı.
+- `02 - Kuyu Boyunca`: 103/103 doğrulandı.
+- `03 - Kabin ve Kabin Üstü`: 45/45 doğrulandı.
+- `04 - Makine ve Şase`: 81 madde aday eşlemeye alındı; 75'i tekil resmî metin eşleşmesi, 6'sı bent/bağlam incelemesi bekliyor.
+- `05 - Elektrik ve Test`: 142 madde aday eşlemeye alındı; 129'u tekil resmî metin eşleşmesi, 13'ü bent/bağlam incelemesi bekliyor.
+- Toplam 230 madde satır satır doğrulandı; 204 tekil aday ve 19 bağlam incelemesi sıradaki doğrulama dilimidir.
 - `MAD-0001`–`MAD-0005`, resmî formdaki muayene öncesi 1–5 satırlarıyla sıra ve anlam bakımından eşleşiyor; fakat kütüphanede `kaynak_form_kodu` ve `kaynak_form_revizyonu` boş. Bu eksiklik eşleme dosyasında açıkça kaydedildi.
 
 ## Doğrudan doldurulabilen form alanları
@@ -70,8 +74,8 @@ Böylece ÜB.FR.38 daha sonra revize edilse bile geçmiş denetimin PDF/DOCX ç�
 
 ## Sonraki çalışma sırası
 
-1. İnceleme bekleyen 36 Kuyu Dibi eşleşmesini resmî form satırlarıyla tek tek kapat.
-2. ÜB.FR.38'in `02 - Kuyu Boyunca`, `03 - Kabin ve Kabin Üstü`, `04 - Makine ve Şase`, `05 - Elektrik ve Test` bölümlerini aynı yöntemle eşleştir.
+1. `04 - Makine ve Şase` bölümündeki 81 eşlemeyi kapat.
+2. `05 - Elektrik ve Test` bölümündeki 142 eşlemeyi kapat.
 3. Ölçüm değerlerinin formdaki “Ölçülen Değer” hücrelerine bağlanmasını ayrı bir katman olarak doğrula.
 4. ÜB.FR.39 R.02'ye geçmeden önce ÜB.FR.38 için eksik uygulama alanları hakkında ürün kararını netleştir.
 5. Eşleme tamamlanınca “Yazdır” menüsünün PDF ve DOCX üretim servisini geliştir; çevrimdışıyken yalnız uyarı göster.
