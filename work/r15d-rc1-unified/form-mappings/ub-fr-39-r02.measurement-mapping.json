@@ -21,13 +21,14 @@
   "summary": {
     "mapped_rows": 81,
     "structured_rows": 4,
-    "structured_fields": 17,
+    "structured_fields": 13,
     "legacy_rows": 77,
     "legacy_generic_label_rows": 47,
     "legacy_specific_label_rows": 30,
     "shared_measurement_block_rows": 2,
     "unresolved_rows": 0,
-    "measurement_mapping_count": 82
+    "measurement_mapping_count": 82,
+    "no_destination_fields": 4
   },
   "section_stats": [
     {
@@ -462,13 +463,6 @@
           "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_raylar_arasi"
         },
         {
-          "id": "kabin_karsi_agirlik_ray_arasi",
-          "label": "Kabin ana rayı–karşı ağırlık rayı arası",
-          "unit": "mm",
-          "type": "sayi",
-          "source_path": "saha_kontrol.olcum_degerleri.kabin_karsi_agirlik_ray_arasi"
-        },
-        {
           "id": "kabin_kilavuz_ray_tipi",
           "label": "Kabin kılavuz ray tipi",
           "unit": null,
@@ -481,20 +475,6 @@
           "unit": null,
           "type": "metin",
           "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_kilavuz_ray_tipi"
-        },
-        {
-          "id": "kabin_ray_kesit_olcusu",
-          "label": "Kabin rayı kesit ölçüsü / profil tanımı",
-          "unit": null,
-          "type": "metin",
-          "source_path": "saha_kontrol.olcum_degerleri.kabin_ray_kesit_olcusu"
-        },
-        {
-          "id": "karsi_agirlik_ray_kesit_olcusu",
-          "label": "Karşı ağırlık rayı kesit ölçüsü / profil tanımı",
-          "unit": null,
-          "type": "metin",
-          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_ray_kesit_olcusu"
         }
       ],
       "target": {
@@ -1370,13 +1350,6 @@
           "unit": null,
           "type": "secim",
           "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_acilma_yonu"
-        },
-        {
-          "id": "kat_kapisi_yangin_sinifi",
-          "label": "Kat kapısı yangına dayanım sınıfı",
-          "unit": null,
-          "type": "metin",
-          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
         },
         {
           "id": "kabin_genisligi",
@@ -2757,6 +2730,62 @@
       },
       "capture_quality": "legacy_generic_label",
       "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0008B",
+      "app_sira_no": 109,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin üstünde alınacak ray ve kuyu yerleşim ölçüleri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "kabin_karsi_agirlik_ray_arasi",
+          "label": "Kabin ana rayı–karşı ağırlık rayı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_karsi_agirlik_ray_arasi"
+        },
+        {
+          "id": "kabin_ray_kesit_olcusu",
+          "label": "Kabin rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_ray_kesit_olcusu"
+        },
+        {
+          "id": "karsi_agirlik_ray_kesit_olcusu",
+          "label": "Karşı ağırlık rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_ray_kesit_olcusu"
+        }
+      ],
+      "target": null,
+      "mapping_status": "no_destination_on_official_form",
+      "review_note": "Resmî ÜB.FR.38 R.04 / ÜB.FR.39 R.02 şablonlarının 'TEMEL KUYU TASARIM ÖLÇÜLERİ' tablosu doğrudan incelendi (word/document.xml). Bu tabloda bu alan için ayrı bir hücre yok; önceki 'doğrulandı' işareti hatalıydı. Uygulama bu alanı sahada toplamaya devam edebilir ama resmî form çıktısında gösterilecek bir hedefi yok.",
+      "reviewed_on": "2026-08-20"
+    },
+    {
+      "madde_id": "MAD-0008D",
+      "app_sira_no": 262,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin girişinde alınacak kat kapısı bilgileri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "kat_kapisi_yangin_sinifi",
+          "label": "Kat kapısı yangına dayanım sınıfı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        }
+      ],
+      "target": null,
+      "mapping_status": "no_destination_on_official_form",
+      "review_note": "Resmî ÜB.FR.38 R.04 / ÜB.FR.39 R.02 şablonlarının 'TEMEL KUYU TASARIM ÖLÇÜLERİ' tablosu doğrudan incelendi (word/document.xml). Bu tabloda bu alan için ayrı bir hücre yok; önceki 'doğrulandı' işareti hatalıydı. Uygulama bu alanı sahada toplamaya devam edebilir ama resmî form çıktısında gösterilecek bir hedefi yok.",
+      "reviewed_on": "2026-08-20"
     }
   ]
 }

@@ -10,7 +10,7 @@
       "docx_sha256": "dc2cc4b832ed227a684c7cb7c891830f59a795b5616da808ad5f730571d60a64",
       "pdf_sha256": "16382245b42112242b5eab1ac5ff3136d16cae132a6b0a3665a5c801529fac6b",
       "mapping_sha256": "8a6af5a789b9247e5b148a8f61a9d6b9326b174852f4ded39f2d2efa313d7501",
-      "measurement_mapping_sha256": "47b87cd689778d3b8a61205a64439206a27aba2aa1ec4e7101a134d1512c8bff",
+      "measurement_mapping_sha256": "b2375a0c1beaeba6e21136d0abca1d69d080f0f34c0135c4bc72e7553d4bb4a8",
       "result_values": {
         "Kontrol tamamlandı": "✓",
         "Olumsuz bulgu": "×",
@@ -10899,7 +10899,7 @@
       "docx_sha256": "4cf5288f1fc8dd471fa0149c84551cece99a26090d55a2d4a10bacb4bf19aa8b",
       "pdf_sha256": "b694853f6c610abb57590bbcd773bdaa6d834793f02657fd658c84e6de3803d5",
       "mapping_sha256": "ff42ff67dca88967db5c21e1a5928d68551e8efea95af4eecea3da2244a62964",
-      "measurement_mapping_sha256": "7629ea7cc476ee90f90439e2280f47d50d4f0cdcdb3c2ae40b5d354ee53ca4f3",
+      "measurement_mapping_sha256": "1ccfdc4fcbf2574507d9ea60595ebdffe2cc759c4b3fbbf7d0065965827c44e8",
       "result_values": {
         "Kontrol tamamlandı": "1",
         "Olumsuz bulgu": "2",
