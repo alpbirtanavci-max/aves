@@ -1,0 +1,3527 @@
+{
+  "schema_version": 1,
+  "mapping_status": "pilot_in_progress",
+  "form": {
+    "code": "ÜB.FR.39",
+    "revision": "R.02",
+    "publication_date": "05.01.2025",
+    "revision_date": "31.10.2025",
+    "title": "TS EN 81-1/2+A3 TEST VE KONTROL FORMU",
+    "official_pdf_drive_id": "1r_1R8YnIeHHAm6sbwaZVvA-Kz53tOxuG",
+    "official_pdf_pages": 22,
+    "docx_candidate_drive_id": "1VIm2HrFwk6MIHXcPGYkxt374QCVyMoIV",
+    "source_text_embedded": false
+  },
+  "rules": {
+    "historical_revision_lock": "Çıktı, denetim başlarken kilitlenen ÜB.FR.39 R.02 ile üretilir.",
+    "no_silent_fallback": "Eşleşmeyen alan veya satır tahmin edilmez.",
+    "automatic_form_selection": "Ana standart 81-1/2+A3 olduğunda form otomatik seçilir; ek standart listesi denetçiye serbest seçim olarak açılmaz.",
+    "measurement_device_exclusion": "Ölçüm cihazı ve kalibrasyon alanları otomatik doldurulmaz."
+  },
+  "header_mappings": [
+    {
+      "form_field": "Teknik Uzman Adı Soyadı",
+      "source": "denetimler.denetimi_yapan",
+      "status": "direct"
+    },
+    {
+      "form_field": "Müşteri Adı/Ünvanı",
+      "source": "denetimler.musteri_unvani",
+      "status": "direct"
+    },
+    {
+      "form_field": "Denetim Tarihi",
+      "source": "denetimler.denetim_tarihi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Denetim Asansörü Adresi",
+      "source": "denetimler.denetim_adresi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Dosya Numarası",
+      "source": "denetimler.dosya_no",
+      "status": "direct_nullable"
+    },
+    {
+      "form_field": "Uygulanabilir Ek Standartlar",
+      "source": "denetimler.ek_standartlar + zorunlu sistem katmanları",
+      "status": "derived_review_required"
+    },
+    {
+      "form_field": "Belgelendirme Kapsamı",
+      "source": "denetimler.denetim_turu + denetimler.kontrol_profili",
+      "status": "derived_review_required"
+    },
+    {
+      "form_field": "Modül Kapsamı",
+      "source": "denetimler.modul",
+      "status": "direct"
+    },
+    {
+      "form_field": "Tahrik Sistemi Tipi",
+      "source": "denetimler.tahrik_tipi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Seri Numarası",
+      "source": "denetimler.asansor_seri_no",
+      "status": "direct"
+    },
+    {
+      "form_field": "Askı Tipi",
+      "source": "denetimler.aski_tipi",
+      "status": "direct_nullable"
+    },
+    {
+      "form_field": "Beyan Yükü (Kg / İnsan Sayısı)",
+      "source": "denetimler.beyan_yuku_kg + denetimler.kapasite_kisi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Kat / Durak Sayısı",
+      "source": "denetimler.durak_sayisi",
+      "status": "partial_missing_floor_count"
+    },
+    {
+      "form_field": "Makine Dairesi Yeri",
+      "source": "denetimler.makine_dairesi_tipi",
+      "status": "derived_from_MR_MRL_review_required"
+    },
+    {
+      "form_field": "Beyan Hızı (m/sn)",
+      "source": "denetimler.beyan_hizi_ms",
+      "status": "direct"
+    },
+    {
+      "form_field": "Sınıfı",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_field": "Montaj Yılı",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_field": "Seyir Mesafesi (m)",
+      "source": null,
+      "status": "missing_in_app"
+    }
+  ],
+  "preinspection_mappings": [
+    {
+      "form_row_no": 1,
+      "madde_id": "MAD-0001",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ÜB.FR.39 R.02 bağlantısı tamamlanmalı."
+    },
+    {
+      "form_row_no": 2,
+      "madde_id": "MAD-0002",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ÜB.FR.39 R.02 bağlantısı tamamlanmalı."
+    },
+    {
+      "form_row_no": 3,
+      "madde_id": "MAD-0003",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ÜB.FR.39 R.02 bağlantısı tamamlanmalı."
+    },
+    {
+      "form_row_no": 4,
+      "madde_id": "MAD-0004",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ÜB.FR.39 R.02 bağlantısı tamamlanmalı."
+    }
+  ],
+  "checklist_scope": {
+    "total_candidates": 209,
+    "verified": 0,
+    "candidate_exact_unique": 182,
+    "review_required": 27,
+    "section_stats": [
+      {
+        "app_section": "01 - Kuyu Dibi",
+        "total": 21,
+        "candidate_exact_unique": 15,
+        "review_required": 6
+      },
+      {
+        "app_section": "02 - Kuyu Boyunca",
+        "total": 45,
+        "candidate_exact_unique": 42,
+        "review_required": 3
+      },
+      {
+        "app_section": "03 - Kabin ve Kabin Üstü",
+        "total": 28,
+        "candidate_exact_unique": 25,
+        "review_required": 3
+      },
+      {
+        "app_section": "04 - Makine ve Şase",
+        "total": 64,
+        "candidate_exact_unique": 50,
+        "review_required": 14
+      },
+      {
+        "app_section": "05 - Elektrik ve Test",
+        "total": 51,
+        "candidate_exact_unique": 50,
+        "review_required": 1
+      }
+    ]
+  },
+  "checklist_mappings": [
+    {
+      "madde_id": "MAD-0008E",
+      "app_sira_no": 8,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "A3 setinde kuyu dibi ve tampon temel ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri|3fd3c5be",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0089",
+      "app_sira_no": 89,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.4 a | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibi durdurma anahtarlarına erişim",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.4 a | ZA: 1.2.1, 4.2|ff6e0dff",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0090",
+      "app_sira_no": 90,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.4 b | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibi servis prizi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.4 b | ZA: 1.2.1, 4.2|325b592d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0091",
+      "app_sira_no": 91,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.4 c | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibi aydınlatma anahtarına erişim",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.4 c | ZA: 1.2.1, 4.2|62ec2b25",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0092",
+      "app_sira_no": 92,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.2 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibine güvenli erişim tertibatı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.2 | ZA: 1.2.1, 4.2|af0e8b0a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0093",
+      "app_sira_no": 93,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.1 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibi zemininin düzgünlüğü ve su yalıtımı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.1 | ZA: 1.2.1, 4.2|88fbf9e8",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0094",
+      "app_sira_no": 94,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Yangın Yön. M.53-1,2 | ZA: 1.5.6",
+      "kontrol_basligi": "Kuyu dibinde temizlik ve yanıcı madde kontrolü",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|55c6a8a2",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        4,
+        12
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0095",
+      "app_sira_no": 95,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Kuyuda asansör dışı donanım kontrolü",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.8 | ZA: 1.6, 4.2|ed4c5e2d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0096",
+      "app_sira_no": 96,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Ek D, D.2 İç Tes.Yön.M.57 | ZA: 1.6",
+      "kontrol_basligi": "Kuyu dibi koruyucu topraklama sürekliliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes.Yön.M.57 | ZA: 1.6|ad71d38a",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 3,
+      "candidate_pdf_pages": [
+        4,
+        12,
+        15
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0097",
+      "app_sira_no": 97,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.10 | ZA: 3.1",
+      "kontrol_basligi": "Kuyu dibi alarm ve iki yönlü haberleşme",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.10 | ZA: 3.1|f9c13b63",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        12
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0098",
+      "app_sira_no": 98,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.1 | ZA: 1.6",
+      "kontrol_basligi": "Karşı ağırlık ayırıcı bölmesinin ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.6.1 | ZA: 1.6|93499409",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0099",
+      "app_sira_no": 99,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "9.9.6.5 | ZA: 4.2",
+      "kontrol_basligi": "Hız regülatörü gergi makarasının korunması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9.6.5 | ZA: 4.2|3bd7fd71",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0100",
+      "app_sira_no": 100,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "8.3.2 | ZA: 4.2",
+      "kontrol_basligi": "Kabin tampon çarpma kirişinin uygunluğu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.3.2 | ZA: 4.2|2b06b067",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0101",
+      "app_sira_no": 101,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 a Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Eski standarda göre kuyu dibi güvenlik hacmi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.3 a Ek-I, 2.2 | ZA: 2.2|6ffa4375",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0102",
+      "app_sira_no": 102,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Mevcut binada eşdeğer kuyu dibi güvenliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 2.2 | ZA: 2.2|b0fb331e",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0103",
+      "app_sira_no": 103,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 b | ZA: 2.3",
+      "kontrol_basligi": "Eski standarda göre kuyu dibi düşey mesafeleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.3 b | ZA: 2.3|94212e61",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0104",
+      "app_sira_no": 104,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 c | ZA: 2.3",
+      "kontrol_basligi": "Kuyu dibi sabit parçaları ile kabin arasındaki mesafe",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.3.3 c | ZA: 2.3|52e6f4e2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0105",
+      "app_sira_no": 105,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "10.4.1.2 | ZA: 3.1",
+      "kontrol_basligi": "Poliüretan tamponun hız ve strok koşulu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.4.1.2 | ZA: 3.1|4251d648",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0106",
+      "app_sira_no": 106,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "10.4.3 | ZA: 3.1",
+      "kontrol_basligi": "Hidrolik tamponun güvenlik kontrolleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.4.3 | ZA: 3.1|9612f518",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0107",
+      "app_sira_no": 107,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "15.8 | ZA: 4.2",
+      "kontrol_basligi": "Tampon bilgi levhası",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.8 | ZA: 4.2|144817bc",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0108",
+      "app_sira_no": 108,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5 | ZA: 1.4",
+      "kontrol_basligi": "Kuyu altındaki erişilebilir hacimlerin korunması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.5 | ZA: 1.4|e30059df",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0214",
+      "app_sira_no": 214,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.6.1 | ZA: 1.2.3, 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.6.1 | ZA: 1.2.3, 2.1|b6cc015f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0215",
+      "app_sira_no": 215,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "Yangın Yön. M.53- (8) | ZA: 1.5.6",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Yangın Yön. M.53- (8) | ZA: 1.5.6|bfd080dc",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0216",
+      "app_sira_no": 216,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.3.2 Ek-I, 2.1 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.7.3.2 Ek-I, 2.1 | ZA: 2.1|0cc5b4f4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0217",
+      "app_sira_no": 217,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.4.1 Ek-I, 2.1 ve 2.3 | ZA: 2.1, 2.3",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.7.4.1 Ek-I, 2.1 ve 2.3 | ZA: 2.1, 2.3|13a3001d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0218",
+      "app_sira_no": 218,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "Ek-I, 2.3 | ZA: 2.3",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 2.3 | ZA: 2.3|f5e97c2d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0219",
+      "app_sira_no": 219,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.3.1.7 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.7.3.1.7 | ZA: 2.1|0bc84516",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0220",
+      "app_sira_no": 220,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.6.2 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.6.2 | ZA: 2.1|1e72732f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0221",
+      "app_sira_no": 221,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "12.12 | ZA: 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.12 | ZA: 4.2|c0ace4e7",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0222",
+      "app_sira_no": 222,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.1 | ZA: 1.2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.1 | ZA: 1.2.1|0dd5ecef",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0223",
+      "app_sira_no": 223,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.2.2 | ZA: 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|11.2.2 | ZA: 4.2|1e9f3d4c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0224",
+      "app_sira_no": 224,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.8 | ZA: 1.4",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.8 | ZA: 1.4|815063f4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0225",
+      "app_sira_no": 225,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.5.2.1.1.3 | ZA: 1.4, 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.5.2.1.1.3 | ZA: 1.4, 2.1|bdbfc9e0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0226",
+      "app_sira_no": 226,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.5.2.1.1.1 Ek-I, 4.1 | ZA: 4.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.5.2.1.1.1 Ek-I, 4.1 | ZA: 4.1|83107b8a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0227",
+      "app_sira_no": 227,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.1 Ek-I, 2.1 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.1 Ek-I, 2.1 | ZA: 2.1|9fe34b2c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0228",
+      "app_sira_no": 228,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.2.2/Yan. Y. M.53 Ek-I, 2.3/4.2 | ZA: 2.3, 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.2.2/Yan. Y. M.53 Ek-I, 2.3/4.2 | ZA: 2.3, 4.2|debeb06a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0229",
+      "app_sira_no": 229,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.3.1 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.3.1 | ZA: 2.1|bd58b931",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0230",
+      "app_sira_no": 230,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.2.2.1.2 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.2.2.1.2 | ZA: 1.2.1, 4.2|724905a1",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0231",
+      "app_sira_no": 231,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "15.5.3 | ZA: 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.5.3 | ZA: 4.2|3eda2726",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0233",
+      "app_sira_no": 233,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "10.5.2.3 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Sınır güvenlik kesicileri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.5.2.3 | ZA: 1.2.1 4.2|aee5ce74",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0234",
+      "app_sira_no": 234,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "Yangın Yön. M.62- (4) | ZA: 1.5.6",
+      "kontrol_basligi": "Kuyu havalandırma açıklığı ölçüsü",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Yangın Yön. M.62- (4) | ZA: 1.5.6|8809db5f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0235",
+      "app_sira_no": 235,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 a | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin ray uzunluğu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.1 a | ZA: 1.2.1 4.2|7b209053",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0236",
+      "app_sira_no": 236,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 b | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü-kuyu tavanı mesafesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.1 b | ZA: 1.2.1 4.2|4c1ae90f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0237",
+      "app_sira_no": 237,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 c | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü teçhizat ve kuyu tavanı arası mesafeler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.1 c | ZA: 1.2.1 4.2|1f2bead3",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0238",
+      "app_sira_no": 238,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 d Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Kuyu üstü sığınma boşluğu ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.1 d Ek-I, 2.2 | ZA: 2.2|038152ee",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0239",
+      "app_sira_no": 239,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Sığınma boşluğu sağlanamayan durumlarda alternatif önlem",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 2.2 | ZA: 2.2|b0fb331e",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0240",
+      "app_sira_no": 240,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.2 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Karşı ağırlık ray uzunluğu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.2 | ZA: 1.2.1 4.2|645c20b9",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0241",
+      "app_sira_no": 241,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.9 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Kuyu üstü aydınlatma seviyesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.9 | ZA: 1.6 4.2|877ecf8c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0242",
+      "app_sira_no": 242,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "13.5.1.3/13.5.3.5/13.5.2 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Kuyu içi elektrik tesisatı kesit ve montaj şartı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.5.1.3/13.5.3.5/13.5.2 | ZA: 1.6 4.2|c3f21a7f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0243",
+      "app_sira_no": 243,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.3.1.1 / Ek-I, 2.3 | ZA: 2.3",
+      "kontrol_basligi": "Durak kapısı kilitleme tertibatı derinliği ve topraklaması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.7.3.1.1 / Ek-I, 2.3 | ZA: 2.3|fa4cba16",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0244",
+      "app_sira_no": 244,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.4.3 | ZA: 1.4",
+      "kontrol_basligi": "Durak kapıları etek sacı ölçü ve dayanımı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.4.3 | ZA: 1.4|a1ca469c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0245",
+      "app_sira_no": 245,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.1 | ZA: 2.1",
+      "kontrol_basligi": "Kilit açılma bölgesi ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|7.7.1 | ZA: 2.1|74f19936",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0246",
+      "app_sira_no": 246,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.3 Ek-I, 4.3 | ZA: 4.3",
+      "kontrol_basligi": "Kabin-karşı ağırlık arası açıklık",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|11.3 Ek-I, 4.3 | ZA: 4.3|a2718c3a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0247",
+      "app_sira_no": 247,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "8.18.1 Ek-I, 4.3 | ZA: 4.3",
+      "kontrol_basligi": "Karşı ağırlık/dengeleme ağırlığı bloklarının sabitliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.18.1 Ek-I, 4.3 | ZA: 4.3|fb52b8df",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0248",
+      "app_sira_no": 248,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.4.2 | ZA: 1.4",
+      "kontrol_basligi": "Kabin girişi karşısındaki kuyu duvarı yüzeyi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.4.2 | ZA: 1.4|bc6aaa87",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        13
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0249",
+      "app_sira_no": 249,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.2.1 | ZA: 4.2",
+      "kontrol_basligi": "Kuyu iç yüzeyi ile kabin eşiği arası yatay açıklık",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|11.2.1 | ZA: 4.2|6b6d8f23",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0250",
+      "app_sira_no": 250,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.3.1.1 | ZA: 1.4",
+      "kontrol_basligi": "Kuyu duvarlarının mekanik dayanımı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.3.1.1 | ZA: 1.4|04db3638",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        14
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0251",
+      "app_sira_no": 251,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.8 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Kuyuda asansöre ait olmayan teçhizat bulunmaması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.8 | ZA: 1.6 4.2|16ed7e9a",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        4,
+        14
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0253",
+      "app_sira_no": 253,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.2.1 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Makine/makara dairesi geçiş yollarının aydınlatması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.2.1 | ZA: 1.2.1 4.2|8b55e86d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        14
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0254",
+      "app_sira_no": 254,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.2.1 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Makine/makara dairesine geçişin özel mekândan bağımsız olması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.2.1 | ZA: 1.2.1 4.2|f4cc4413",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        14
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0255",
+      "app_sira_no": 255,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.2.2 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Makine/makara mekânlarına merdivenle erişim",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.2.2 | ZA: 1.2.1 4.2|1e925e2b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        14
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0256",
+      "app_sira_no": 256,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.2.2 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Portatif dayama merdiveni şartları",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.2.2 | ZA: 1.2.1 4.2|2502498e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        14
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0258",
+      "app_sira_no": 258,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.3.4.1 | ZA: 1.4 4.2",
+      "kontrol_basligi": "Makine dairesi giriş kapısı ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.4.1 | ZA: 1.4 4.2|09f786e4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0259",
+      "app_sira_no": 259,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.3.4.3 Ek-I, 1.5.2 | ZA: 1.5.2",
+      "kontrol_basligi": "Makine dairesi giriş kapısı kilit tertibatı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.4.3 Ek-I, 1.5.2 | ZA: 1.5.2|0dfa7ac0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0260",
+      "app_sira_no": 260,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.3.6 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Makine dairesi havalandırmasında pis hava girişi olmaması",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.6 | ZA: 1.2.1 4.2|e0245e12",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0261",
+      "app_sira_no": 261,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "15.4.1 | ZA: 4.2",
+      "kontrol_basligi": "Makine dairesi giriş kapısı uyarı yazısı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.4.1 | ZA: 4.2|2e8e1f51",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0309",
+      "app_sira_no": 309,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.2.1 Ek-I, 1.2 ve 5.1 | ZA: 1.2 5.1",
+      "kontrol_basligi": "Kabin yük ve kişi sayısı levhası",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.2.1 Ek-I, 1.2 ve 5.1 | ZA: 1.2 5.1|cf33586e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0310",
+      "app_sira_no": 310,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.2.1 8.2.3 | ZA: 1.4 4.2",
+      "kontrol_basligi": "Kabin alanının beyan yüküne uygunluğu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.2.1 8.2.3 | ZA: 1.4 4.2|30f3f8e1",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0311",
+      "app_sira_no": 311,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.2.2 | ZA: 1.2 4.2",
+      "kontrol_basligi": "İmalatçı ve asansör kimlik bilgileri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.2.2 | ZA: 1.2 4.2|050629c0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0312",
+      "app_sira_no": 312,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.2.3.1 | ZA: 1.4 4.2",
+      "kontrol_basligi": "İmdat butonunun rengi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.2.3.1 | ZA: 1.4 4.2|4cc7086a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0313",
+      "app_sira_no": 313,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.2.4 | ZA: 1.4",
+      "kontrol_basligi": "Kabin kullanma talimatı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.2.4 | ZA: 1.4|3734c956",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0314",
+      "app_sira_no": 314,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.9 | ZA: 4.2",
+      "kontrol_basligi": "Kabin kat konum göstergesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.9 | ZA: 4.2|5cb75d05",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0315",
+      "app_sira_no": 315,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.8 | ZA: 1.4",
+      "kontrol_basligi": "Otomatik kapıda yeniden açma butonu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.8 | ZA: 1.4|ea0f1335",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0316",
+      "app_sira_no": 316,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "15.2.3.2 Ek-I, 1.6.2 | ZA: 1.6.2",
+      "kontrol_basligi": "Kabin kumanda butonlarının işlevleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.2.3.2 Ek-I, 1.6.2 | ZA: 1.6.2|ed1e708c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0317",
+      "app_sira_no": 317,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.16.1 Ek-I, 4.7 | ZA: 4.7",
+      "kontrol_basligi": "Kabin havalandırma açıklıkları",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.16.1 Ek-I, 4.7 | ZA: 4.7|410c2819",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0318",
+      "app_sira_no": 318,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "14.2.3 Ek-I, 4.5 | ZA: 4.5",
+      "kontrol_basligi": "Kabin ile kurtarma hizmeti arasında haberleşme",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.3 Ek-I, 4.5 | ZA: 4.5|8e2ca6c0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0319",
+      "app_sira_no": 319,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.17.1 Ek-I, 4.8 | ZA: 4.8",
+      "kontrol_basligi": "Kabin normal aydınlatma seviyesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.17.1 Ek-I, 4.8 | ZA: 4.8|fe02fcc2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0320",
+      "app_sira_no": 320,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.17.4/ 14.2.3 Ek-I, 4.8, 4.9 | ZA: 4.8 4.9",
+      "kontrol_basligi": "Kabin acil aydınlatma, alarm ve haberleşme beslemesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.17.4/ 14.2.3 Ek-I, 4.8, 4.9 | ZA: 4.8 4.9|db768efe",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0321",
+      "app_sira_no": 321,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "13.4 | ZA: 41",
+      "kontrol_basligi": "Ana ayırıcı kapalıyken kabin yardımcı devreleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.4 | ZA: 41|0e071574",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0322",
+      "app_sira_no": 322,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.3.2.1 Ek-I, 3.1 | ZA: 3.1",
+      "kontrol_basligi": "Kabin gövdesinin mekanik dayanımı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.3.2.1 Ek-I, 3.1 | ZA: 3.1|5f6a7c85",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0323",
+      "app_sira_no": 323,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "Ek-I, 3.1 | ZA: 3.1",
+      "kontrol_basligi": "Kabin kapısının güvenlik denetimi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 3.1 | ZA: 3.1|992d61c9",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0324",
+      "app_sira_no": 324,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.1.1 | ZA: 1.2",
+      "kontrol_basligi": "Kabin içi serbest yüksekliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.1.1 | ZA: 1.2|c123a05e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0325",
+      "app_sira_no": 325,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "Ek-I, 5.2 | ZA: 5.2",
+      "kontrol_basligi": "Otomatik kurtarma talimatı",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 5.2 | ZA: 5.2|6be63f2c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0326",
+      "app_sira_no": 326,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.4 | ZA: 1.4",
+      "kontrol_basligi": "Kabin koruma eteğinin ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.4 | ZA: 1.4|5fad57b5",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0355",
+      "app_sira_no": 355,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.15 / 14.2.1.3 / 14.2.2.1 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü durdurma tertibatının konumu",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.15 / 14.2.1.3 / 14.2.2.1 | ZA: 1.2.1 4.2|56b38bc2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0356",
+      "app_sira_no": 356,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "Yangın Yön. M.53-1,2 | ZA: 1.5.6",
+      "kontrol_basligi": "Kabin üstünde temizlik ve yanıcı madde kontrolü",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|55c6a8a2",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        4,
+        12
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0357",
+      "app_sira_no": 357,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.13.3 | ZA: 1.4.4 4.2",
+      "kontrol_basligi": "Kabin üstü korkuluğunun yapısı ve yüksekliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.13.3 | ZA: 1.4.4 4.2|e08bf2a6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0358",
+      "app_sira_no": 358,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.13.2 | ZA: 1.4.4 4.2",
+      "kontrol_basligi": "Kabin üstü çalışma alanının net ölçüleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.13.2 | ZA: 1.4.4 4.2|779995e3",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0359",
+      "app_sira_no": 359,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6",
+      "kontrol_basligi": "Kabin üstü koruyucu topraklama sürekliliği",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6|ad71d38a",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 3,
+      "candidate_pdf_pages": [
+        4,
+        12,
+        15
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0360",
+      "app_sira_no": 360,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "5.10 | ZA: 3.1",
+      "kontrol_basligi": "Kabin üstü alarm ve iki yönlü haberleşme",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.10 | ZA: 3.1|f9c13b63",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        12
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0361",
+      "app_sira_no": 361,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.15 / 14.2.1.3 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü bakım kumandasının işlevleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.15 / 14.2.1.3 | ZA: 1.2.1 4.2|0178fbc5",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0362",
+      "app_sira_no": 362,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.15 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü servis prizi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.15 | ZA: 1.2.1 4.2|b03d8430",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0363",
+      "app_sira_no": 363,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.13.4 | ZA: 1.4.4 4.2",
+      "kontrol_basligi": "Kabin üstü uyarı ve yön işaretleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|8.13.4 | ZA: 1.4.4 4.2|eb14f0bb",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0364",
+      "app_sira_no": 364,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "9.2.3.1,2 | ZA: 4.2",
+      "kontrol_basligi": "Kabin, karşı ağırlık ve palanga halatı bağlantıları",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.2.3.1,2 | ZA: 4.2|e8114fd4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        12
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0452",
+      "app_sira_no": 452,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.1.1/6.3.2/6.7.1.1 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.1.1/6.3.2/6.7.1.1 | ZA: 1.2.1, 4.2|c73c1374",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0453",
+      "app_sira_no": 453,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.1 | ZA: 1.1",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.1 | ZA: 1.1|e7206fdc",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0454",
+      "app_sira_no": 454,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.1.1 | ZA: 1.2.1",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.1.1 | ZA: 1.2.1|c2661f4d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0455",
+      "app_sira_no": 455,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Yangın Yön. M.53-1,2 | ZA: 1.5.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|995e4c91",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 3,
+      "candidate_pdf_pages": [
+        4,
+        12,
+        15
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0456",
+      "app_sira_no": 456,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6",
+      "kontrol_basligi": "Makine/makara dairesi topraklama sürekliliği (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6|ad71d38a",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 3,
+      "candidate_pdf_pages": [
+        4,
+        12,
+        15
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0457",
+      "app_sira_no": 457,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.4 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.4 | ZA: 1.2.1, 4.2|fd56d4ec",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0458",
+      "app_sira_no": 458,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.2 / 6.7.1.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.2 / 6.7.1.2.2 | ZA: 1.6, 4.2|7ad61470",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0459",
+      "app_sira_no": 459,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 / 6.7.1.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.1 / 6.7.1.2.2 | ZA: 1.6, 4.2|6380f7a8",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0460",
+      "app_sira_no": 460,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/makara dairesi pano önü açıklıkları (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.1 | ZA: 1.6, 4.2|0fd08188",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        15,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0461",
+      "app_sira_no": 461,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.2 | ZA: 1.6, 4.2|76bbf65c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        15
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0462",
+      "app_sira_no": 462,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.1 | ZA: 1.6, 4.2|df34ca6d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0463",
+      "app_sira_no": 463,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.5 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.5 | ZA: 1.6, 4.2|40d94d01",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0464",
+      "app_sira_no": 464,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.5 | ZA: 1.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.5 | ZA: 1.6|4a78430f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0465",
+      "app_sira_no": 465,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.6 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.6 | ZA: 1.6, 4.2|4db89689",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0466",
+      "app_sira_no": 466,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.8 | ZA: 1.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.8 | ZA: 1.6|4d22b85e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0467",
+      "app_sira_no": 467,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.7 | ZA: 1.6",
+      "kontrol_basligi": "Makine/makara dairesinde topraklı priz (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.7 | ZA: 1.6|d3559922",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0468",
+      "app_sira_no": 468,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.6.3.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.6.3.2 | ZA: 1.6, 4.2|ea34fdf3",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0469",
+      "app_sira_no": 469,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.6.3.2 / 6.4.9 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.6.3.2 / 6.4.9 | ZA: 1.6, 4.2|52501a57",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0470",
+      "app_sira_no": 470,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.7 | ZA: 1.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.7 | ZA: 1.6|2e5cc749",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0471",
+      "app_sira_no": 471,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "15.4.3 Ek-I, 6.2 | ZA: 6.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.4.3 Ek-I, 6.2 | ZA: 6.2|f686502e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0472",
+      "app_sira_no": 472,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Ek-I, 6.1 | ZA: 6.1",
+      "kontrol_basligi": "Makine/makara dairesinde güvenlik aksamı talimatları (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 6.1 | ZA: 6.1|e282c1d4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0473",
+      "app_sira_no": 473,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Ek-I, 6.2 | ZA: 6.2",
+      "kontrol_basligi": "Makine/makara dairesinde devre şemaları ve kayıt defteri (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 6.2 | ZA: 6.2|cbcde3ab",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0474",
+      "app_sira_no": 474,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.5.1.2 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.5.1.2 | ZA: 1.6.4|dd741abe",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0475",
+      "app_sira_no": 475,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.4.1 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.4.1 | ZA: 1.6.4|cd40aad9",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0476",
+      "app_sira_no": 476,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.4.2 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.4.2 Ek-I, 1.6.4 | ZA: 1.6.4|e61be805",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0477",
+      "app_sira_no": 477,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.1.2 / 13.5.3.1 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.1.2 / 13.5.3.1 Ek-I, 1.6.4 | ZA: 1.6.4|88ce1357",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0478",
+      "app_sira_no": 478,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "EN 60204 M. 7.2 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/makara dairesi kuvvet panosu hata akımı koruması (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|EN 60204 M. 7.2 Ek-I, 1.6.4 | ZA: 1.6.4|448877c0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0479",
+      "app_sira_no": 479,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.5.3.5 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.5.3.5 | ZA: 1.6.4|a9a29148",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        13,
+        16
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0480",
+      "app_sira_no": 480,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.1.2 / 13.5.3.1 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.1.2 / 13.5.3.1 Ek-I, 1.6.4 | ZA: 1.6.4|99ff6d19",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0481",
+      "app_sira_no": 481,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "EN 60204 M. 7.2 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/makara dairesi kumanda panosu hata akımı koruması (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|EN 60204 M. 7.2 Ek-I, 1.6.4 | ZA: 1.6.4|0d68aa8c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0482",
+      "app_sira_no": 482,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.5 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.5 Ek-I, 1.6.4 | ZA: 1.6.4|d7aa84d4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        16
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0483",
+      "app_sira_no": 483,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "12.5.2 Ek-I, 4.4 | ZA: 4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.2 Ek-I, 4.4 | ZA: 4.4|0b6f3c82",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0484",
+      "app_sira_no": 484,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "12.5.1 Ek-I, 4.4 | ZA: 4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.1 Ek-I, 4.4 | ZA: 4.4|0fbd1e63",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0485",
+      "app_sira_no": 485,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "15.4.3.1 | ZA: 6.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.4.3.1 | ZA: 6.2|e7fa34c9",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0486",
+      "app_sira_no": 486,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "14.2.2.1 | ZA: 6.2",
+      "kontrol_basligi": "Tahrik makinası yakınında durdurma tertibatı (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.2.1 | ZA: 6.2|992c81d3",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        17,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0487",
+      "app_sira_no": 487,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.7 Ek-I, 1.4.4 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.7 Ek-I, 1.4.4 | ZA: 1.4.4|8c10ee08",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0488",
+      "app_sira_no": 488,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.3 / 6.7.1.2.3 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.3.3.3 / 6.7.1.2.3 | ZA: 1.4.4|fbda30c4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0489",
+      "app_sira_no": 489,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.1.2 / 9.1.3 Ek-I, 1.3 | ZA: 1.3",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.1.2 / 9.1.3 Ek-I, 1.3 | ZA: 1.3|417cd419",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0490",
+      "app_sira_no": 490,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.2.1 | ZA: 1.3",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.2.1 | ZA: 1.3|a1870f9e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0491",
+      "app_sira_no": 491,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "12.5.1.2 | ZA: 4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.1.2 | ZA: 4.4|4528e6f7",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0492",
+      "app_sira_no": 492,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.6.2 | ZA: 1.4.2",
+      "kontrol_basligi": "Tahrik makinasının gözlenmesi ve hareket göstergeleri (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.6.2 | ZA: 1.4.2|3b698599",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        17,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0493",
+      "app_sira_no": 493,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "12.1 Ek-I, 1.5.1 | ZA: 1.5.1",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.1 Ek-I, 1.5.1 | ZA: 1.5.1|e10fec19",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0494",
+      "app_sira_no": 494,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.9.5 / 9.9.10 / 15.6 / Ek-I, 1.4.2 | ZA: 1.4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9.5 / 9.9.10 / 15.6 / Ek-I, 1.4.2 | ZA: 1.4.2|d98cf42c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0495",
+      "app_sira_no": 495,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Ek-I, 3.4 | ZA: 3.4",
+      "kontrol_basligi": "Hız regülatörü devreye girme hızı ile asansör hızı uyumu (81-1/2+A3)",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 3.4 | ZA: 3.4|871a6e1d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0496",
+      "app_sira_no": 496,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.9.6.3,4 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9.6.3,4 | ZA: 1.4.4|80893d0f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0497",
+      "app_sira_no": 497,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.9.11.2 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9.11.2 | ZA: 1.4.4|4b4fe258",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0498",
+      "app_sira_no": 498,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "14.2.1.4 | ZA: 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.1.4 | ZA: 4.2|65ceac3f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        17
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0500",
+      "app_sira_no": 500,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.1.2 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.1.2 | ZA: 1.2.1, 4.2|eb047aa3",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0501",
+      "app_sira_no": 501,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.6.3 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.6.3 | ZA: 1.6, 4.2|45af2f1b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0502",
+      "app_sira_no": 502,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "13.4.1.2 Ek-I, 1.6.4 | ZA: 1.6.4",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.4.1.2 Ek-I, 1.6.4 | ZA: 1.6.4|09c0f1a6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0503",
+      "app_sira_no": 503,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.9 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.9 | ZA: 1.6, 4.2|d3559922",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0504",
+      "app_sira_no": 504,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.10 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.10 | ZA: 1.6, 4.2|4a3fc648",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0505",
+      "app_sira_no": 505,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.3.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.3.2 | ZA: 1.6, 4.2|e324a5dc",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0506",
+      "app_sira_no": 506,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.9 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.9 | ZA: 1.6, 4.2|775bbe1b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0507",
+      "app_sira_no": 507,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.6.2 | ZA: 1.4.2, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.6.2 | ZA: 1.4.2, 4.2|3b698599",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        17,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0508",
+      "app_sira_no": 508,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 b | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.2.1 b | ZA: 1.6, 4.2|0fd08188",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        15,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0509",
+      "app_sira_no": 509,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.8 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.8 | ZA: 1.6, 4.2|a5c630e8",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0510",
+      "app_sira_no": 510,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "14.2.2.1 | ZA: 6.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.2.1 | ZA: 6.2|992c81d3",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        17,
+        18
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0511",
+      "app_sira_no": 511,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.1.3 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.1.3 | ZA: 1.2.1, 4.2|a398243e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0512",
+      "app_sira_no": 512,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.2.1 | ZA: 1.6, 4.2|313e8443",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0513",
+      "app_sira_no": 513,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 a | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.2.1 a | ZA: 1.6, 4.2|2a6f538e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0514",
+      "app_sira_no": 514,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.2.2 | ZA: 1.6, 4.2|0dbb89a0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0515",
+      "app_sira_no": 515,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.3.1 | ZA: 1.6, 4.2|d218b9d6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        18
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0516",
+      "app_sira_no": 516,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.7.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|6.4.7.1 | ZA: 1.6, 4.2|4976c939",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0660",
+      "app_sira_no": 660,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "14.1.1.1 j | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.1.1.1 j | ZA: 4.2|e40dbe70",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0661",
+      "app_sira_no": 661,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "14.1.1.1 d | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.1.1.1 d | ZA: 4.2|d05e49e2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0662",
+      "app_sira_no": 662,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.10.2 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.10.2 | ZA: 4.2|7885527a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0663",
+      "app_sira_no": 663,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "0.3.15 /13.3.6 Ek-I, 4.6 | ZA: 4.6",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|0.3.15 /13.3.6 Ek-I, 4.6 | ZA: 4.6|b7b2d886",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0664",
+      "app_sira_no": 664,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.12 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.12 | ZA: 4.2|406520e4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0665",
+      "app_sira_no": 665,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.11 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.11 | ZA: 4.2|6e9bf1d1",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0666",
+      "app_sira_no": 666,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "13.2.1.1,2 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.2.1.1,2 | ZA: 4.2|4a9f0d82",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0667",
+      "app_sira_no": 667,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "10.5.1 / 10.5.2.1 / 10.5.3.2 | ZA: 3.1",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.5.1 / 10.5.2.1 / 10.5.3.2 | ZA: 3.1|177cace9",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0668",
+      "app_sira_no": 668,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek-I, 3.3 | ZA: 3.1",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek-I, 3.3 | ZA: 3.1|7a7076b2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        19
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0669",
+      "app_sira_no": 669,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.3 / Ek D,D.2 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.3 / Ek D,D.2 | ZA: 1.6 4.2|b32c3976",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0670",
+      "app_sira_no": 670,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2 | ZA: 1.6",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 | ZA: 1.6|7fe2d5fd",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0671",
+      "app_sira_no": 671,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.6 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.6 | ZA: 4.2|522ff29d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0672",
+      "app_sira_no": 672,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2 | ZA: 1.6",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 | ZA: 1.6|b51e9703",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0673",
+      "app_sira_no": 673,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.4.2.4 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.4.2.4 | ZA: 4.2|ee681ed0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0674",
+      "app_sira_no": 674,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.4.2.1 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.4.2.1 | ZA: 4.2|4e485976",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0675",
+      "app_sira_no": 675,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "14.2.5 Ek-I, 1.4.1 | ZA: 1.4.1",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.5 Ek-I, 1.4.1 | ZA: 1.4.1|0f63be7e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0676",
+      "app_sira_no": 676,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.3 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.3 | ZA: 1.6 4.2|cc624915",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0677",
+      "app_sira_no": 677,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2 Ek-I, 3.2 | ZA: 1.6 3.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 Ek-I, 3.2 | ZA: 1.6 3.2|8992253b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0678",
+      "app_sira_no": 678,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.8.5.1 | ZA: 1.4.4",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.8.5.1 | ZA: 1.4.4|4c16de0e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0679",
+      "app_sira_no": 679,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.8.5.2 | ZA: 1.4.4",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.8.5.2 | ZA: 1.4.4|8c84a0b6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0680",
+      "app_sira_no": 680,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2 | ZA: 1.6",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2 | ZA: 1.6|31ec5a3d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0681",
+      "app_sira_no": 681,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "13.1.3 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|13.1.3 | ZA: 4.2|a9014c78",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        20
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0683",
+      "app_sira_no": 683,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.2.4.2 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.2.4.2 | ZA: 4.2|ed8d40c5",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0684",
+      "app_sira_no": 684,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.13 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.13 | ZA: 4.2|35b4f228",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0685",
+      "app_sira_no": 685,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.9 | ZA: 1.4.2, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9 | ZA: 1.4.2, 4.2|979eb77a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0686",
+      "app_sira_no": 686,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.2.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.2.3.1 | ZA: 1.6, 4.2|3014c3de",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0687",
+      "app_sira_no": 687,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "5.7.1.1 e | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|5.7.1.1 e | ZA: 1.2.1, 4.2|3d31e72b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0688",
+      "app_sira_no": 688,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.5.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.5.2 | ZA: 1.6, 4.2|3793fed2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0689",
+      "app_sira_no": 689,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.3.1.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.3.1.2 | ZA: 1.6, 4.2|8d3b045c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0690",
+      "app_sira_no": 690,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.3.3.3 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.3.3.3 | ZA: 1.6, 4.2|b019af24",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0691",
+      "app_sira_no": 691,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.4 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.4 | ZA: 1.6, 4.2|99cccbd0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0692",
+      "app_sira_no": 692,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.2 | ZA: 4.4",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.2 | ZA: 4.4|68c52937",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0693",
+      "app_sira_no": 693,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.7 / 15.18 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.7 / 15.18 | ZA: 4.2|16ed2a09",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0694",
+      "app_sira_no": 694,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.9.1.1 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.9.1.1 | ZA: 4.2|8daf181f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0695",
+      "app_sira_no": 695,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.9.1.3 12.9.1.4 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.9.1.3 12.9.1.4 | ZA: 4.2|096e9e9e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0696",
+      "app_sira_no": 696,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "15.15 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.15 | ZA: 1.6, 4.2|8f2e694e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0697",
+      "app_sira_no": 697,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "15.15 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.15 | ZA: 1.6, 4.2|b8e736ca",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0698",
+      "app_sira_no": 698,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "15.16 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|15.16 | ZA: 1.6, 4.2|ab77418e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0699",
+      "app_sira_no": 699,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.14 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.14 | ZA: 4.2|90540572",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0700",
+      "app_sira_no": 700,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "10.5.3.2 | ZA: 3.1",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.5.3.2 | ZA: 3.1|8ffc8217",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0701",
+      "app_sira_no": 701,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "10.5.2.3 | ZA: 3.1",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|10.5.2.3 | ZA: 3.1|96bc3dbe",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0702",
+      "app_sira_no": 702,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "14.2.1.5 a | ZA: 1.4.1, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|14.2.1.5 a | ZA: 1.4.1, 4.2|ec91cbe4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0703",
+      "app_sira_no": 703,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.8.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.8.1 | ZA: 1.6, 4.2|9c7042a0",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0704",
+      "app_sira_no": 704,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.8.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.8.2 | ZA: 1.6, 4.2|ed0bcd79",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        21
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0705",
+      "app_sira_no": 705,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.9.1 | ZA: 1.4.2, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|9.9.1 | ZA: 1.4.2, 4.2|98d25f46",
+      "match_method": "clause_and_source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0706",
+      "app_sira_no": 706,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.5.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.5.1 | ZA: 1.6, 4.2|24dba2ed",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0707",
+      "app_sira_no": 707,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2, t | ZA: 1.6",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2, t | ZA: 1.6|da39224c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0708",
+      "app_sira_no": 708,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.5.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.5.1 | ZA: 1.6, 4.2|e8528c05",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0709",
+      "app_sira_no": 709,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.5.3.2 | ZA: 4.4",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.5.3.2 | ZA: 4.4|af299535",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0710",
+      "app_sira_no": 710,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.9.3 | ZA: 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|12.9.3 | ZA: 4.2|86ded2da",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    },
+    {
+      "madde_id": "MAD-0711",
+      "app_sira_no": 711,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2, u | ZA: 1.6",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
+      "form_row_key": "UBFR39-R02|Ek D, D.2, u | ZA: 1.6|810e6f6c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        22
+      ],
+      "confidence": "high",
+      "mapping_status": "candidate_exact_unique"
+    }
+  ]
+}
