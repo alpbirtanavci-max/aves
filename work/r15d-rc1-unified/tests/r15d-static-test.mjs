@@ -24,6 +24,7 @@ const rc3GerekceMigration = fs.readFileSync(path.join(databaseDir, '25_r15d_rc3_
 const rc32Migration = fs.readFileSync(path.join(databaseDir, '28_r15d_rc32_snapshot_inceleme_yetki.sql'), 'utf8');
 const rc34SerialMigration = fs.readFileSync(path.join(databaseDir, '40_r15d_rc34_ekipman_seri_numaralari.sql'), 'utf8');
 const rc35SectionMigration = fs.readFileSync(path.join(databaseDir, '41_r15d_rc35_81_71_81_73_fiziksel_bolum_esleme.sql'), 'utf8');
+const rc37WorkflowMigration = fs.readFileSync(path.join(databaseDir, '42_r15d_rc37_yetki_takip_duzeltme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -33,9 +34,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index kararlı R15D', index.includes('Denetim <b style="color:#EA0048">R15D</b>'));
-test('app kararlı R15D', app.includes("const APP_VERSION = 'R15D'"));
-test('service worker kararlı R15D cache', sw.includes("aves-saha-r15d-stable"));
+test('index R15D rc3.7 test sürümü', index.includes('R15D-RC3.7 TEST'));
+test('app R15D rc3.7 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.7-test'"));
+test('service worker rc3.7 test cache', sw.includes("aves-saha-r15d-rc37-test"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -260,7 +261,19 @@ test('değişiklik geçmişi cihazda ve sunucuda tutuluyor', app.includes("'dene
 test('geçmiş kimliği oturum profilinden zorlanıyor', rc32Migration.includes('aves_gecmis_kimligini_dogrula') && rc32Migration.includes('new.degistiren_email := v_email'));
 test('teknik müdür istemcide yönetim yetkilisi değil', app.includes("get canManage() { return !!current && current.rol === 'yonetici'; }"));
 test('teknik müdür yeni denetim oluşturamıyor', app.includes("current.rol !== 'teknik_mudur'") && app.includes('Profile.canCreate'));
-test('teknik müdür veritabanında yalnız silme rolünde', rc32Migration.includes("kp.rol in ('yonetici','teknik_mudur')") && rc32Migration.includes("kp.rol = 'muhendis'"));
+test('mühendis yalnız kendi denetimini görür', rc37WorkflowMigration.includes('drop policy if exists "denetim okuma"') && rc37WorkflowMigration.includes('aves_denetim_gorebilir_mi(olusturan_email)') && rc37WorkflowMigration.includes("lower(coalesce(p_olusturan_email,'')) = public.aves_oturum_emaili()"));
+test('teknik müdür ve yönetici tüm denetimleri görür', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && rc37WorkflowMigration.includes('aves_tum_denetimleri_gorebilir_mi'));
+test('teknik müdür yeni denetim oluşturamaz', rc37WorkflowMigration.includes("kp.rol = 'yonetici'") && rc37WorkflowMigration.includes("kp.rol = 'muhendis'") && app.includes("current.rol !== 'teknik_mudur'"));
+test('teknik müdür iz bırakan düzeltme yapabilir', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && app.includes('duzeltmeNedeniSec'));
+test('tamamlanmış denetim iki modla açılıyor', app.includes('showTamamlananDenetimSecimi') && app.includes('Takip Denetimi') && app.includes('İnceleme'));
+test('takip yalnız Modül G ve bağımsız denetim kaydıdır', app.includes('kontrolProfili(d) === KONTROL_PROFILLERI.TAM') && app.includes('takipDenetimiOlustur') && rc37WorkflowMigration.includes("kontrol_profili = 'modul_g_tam'"));
+test('takip zinciri ve önceki sonuçlar korunuyor', rc37WorkflowMigration.includes('takip_ana_denetim_id') && rc37WorkflowMigration.includes('takip_kaynak_saha_kontrol_id') && app.includes('takip_onceki_durum'));
+test('düzeltme nedeni geçmiş olayına yazılıyor', app.includes('duzeltme_oturumu_id: context') && app.includes('duzeltme_nedeni: context') && rc37WorkflowMigration.includes('duzeltme_nedeni text'));
+test('düzeltme kimliği ve nedeni sunucuda doğrulanıyor', rc37WorkflowMigration.includes('new.duzeltme_oturumu_id := v_duzeltme_id') && rc37WorkflowMigration.includes('new.duzeltme_baslatan_email := v_email'));
+test('tamamlanmış denetim gerekçesiz düzeltmeye açılamıyor', rc37WorkflowMigration.includes('Tamamlanmış denetim yalnız gerekçeli düzeltme oturumuyla açılabilir'));
+test('takip zinciri olan ana denetim yanlışlıkla silinmiyor', rc37WorkflowMigration.includes('on delete restrict') && app.includes('zincirin ana kaydı silinemez'));
+test('rc3.7 migration canlı kayıt silmiyor veya toplu değiştirmiyor', !/^\s*(delete|update|truncate)\s+/mi.test(rc37WorkflowMigration));
+test('denetim listesinde tarih ve metin araması var', app.includes('id="listSearch"') && app.includes('id="listDate"') && app.includes('card.dataset.search'));
 test('denetim silme kimliği sunucu tetikleyicisinden yazılıyor', rc32Migration.includes('aves_denetim_silme_gecmisi') && rc32Migration.includes("before delete on public.denetimler"));
 test('snapshot alanları veritabanı tetikleyicisiyle kilitli', rc32Migration.includes('aves_snapshot_degisimini_engelle') && rc32Migration.includes('Denetim madde snapshot içeriği kilitlidir'));
 test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.includes('grant select, insert on public.denetim_degisim_gecmisi'));

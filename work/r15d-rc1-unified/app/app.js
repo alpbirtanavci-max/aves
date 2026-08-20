@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D';
+const APP_VERSION = 'R15D-rc3.7-test';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -392,6 +392,8 @@ const Profile = (() => {
     // Teknik müdür denetimleri inceler ve bütün denetimi silebilir; içerik,
     // cevap veya iş akışı üzerinde değişiklik yapamaz.
     get canManage() { return !!current && current.rol === 'yonetici'; },
+    get canSeeAllInspections() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
+    get canCorrectInspections() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
     get canCreate() { return !!current && current.rol !== 'teknik_mudur'; },
     get canDelete() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
   };
@@ -674,6 +676,8 @@ const GECMIS_ALANLARI = {
   denetimler: [
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
     'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari',
+    'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
+    'duzeltme_oturumu_id', 'duzeltme_nedeni', 'duzeltme_baslatildi_at',
   ],
   saha_kontrol: [
     'durum', 'denetci_gordu', 'bulgu_secenegi', 'diger_bulgu', 'aciklama',
@@ -698,6 +702,9 @@ async function gecmisKayitlariHazirla(table, arr, store, now) {
     // İlk checklist üretimi 1000 ayrı geçmiş satırı oluşturmaz; denetimin
     // oluşturulması tek olay olarak kaydedilir. Sonraki her cevap değişikliği izlenir.
     if (!before && table === 'saha_kontrol') continue;
+    const context = table === 'saha_kontrol'
+      ? await DB.get('denetimler', row.denetim_id)
+      : row;
     events.push({
       id: crypto.randomUUID(),
       denetim_id: table === 'saha_kontrol' ? row.denetim_id : row.id,
@@ -711,6 +718,8 @@ async function gecmisKayitlariHazirla(table, arr, store, now) {
       degistiren_rol: Profile.role || null,
       cihaz_id: await getDeviceId(),
       app_build_id: APP_VERSION,
+      duzeltme_oturumu_id: context && context.duzeltme_oturumu_id ? context.duzeltme_oturumu_id : null,
+      duzeltme_nedeni: context && context.duzeltme_nedeni ? context.duzeltme_nedeni : null,
       created_at: now,
     });
   }
@@ -782,6 +791,8 @@ const UI = (() => {
   let transitioningId = null;
   let currentCanEdit = false;
   let inspectionReadOnly = false;
+  let listSearch = '';
+  let listDateFilter = 'all';
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -856,8 +867,14 @@ const UI = (() => {
   };
   const siraKarsilastir = (a, b) => (a.sira_no - b.sira_no) || String(a.madde_id).localeCompare(String(b.madde_id), 'tr');
   const denetimSahibiMi = (d) => !!d && normEmail(d.olusturan_email) !== '' && normEmail(d.olusturan_email) === normEmail(Profile.email);
-  const canEditDenetim = (d) => !!d && d.denetim_durumu !== 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
-  const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canManage || denetimSahibiMi(d));
+  const denetimGorunebilirMi = (d) => !!d && (Profile.canSeeAllInspections || denetimSahibiMi(d));
+  const canEditDenetim = (d) => !!d && d.denetim_durumu !== 'Çalışma Tamamlandı' && (
+    Profile.isAdmin || denetimSahibiMi(d) ||
+    (Profile.isTechnicalManager && d.denetim_durumu === 'Gözden Geçirme' && normEmail(d.duzeltme_baslatan_email) === normEmail(Profile.email))
+  );
+  const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canCorrectInspections || denetimSahibiMi(d));
+  const canStartFollowup = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' &&
+    kontrolProfili(d) === KONTROL_PROFILLERI.TAM && Profile.canCreate && (Profile.isAdmin || denetimSahibiMi(d));
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
@@ -997,7 +1014,9 @@ const UI = (() => {
   async function showList() {
     currentView = 'list';
     currentDenetimId = null;
-    const denetimler = (await DB.all('denetimler')).sort((a,b) => (b.created_at||'').localeCompare(a.created_at||''));
+    const denetimler = (await DB.all('denetimler'))
+      .filter(denetimGorunebilirMi)
+      .sort((a,b) => (b.denetim_tarihi || b.created_at || '').localeCompare(a.denetim_tarihi || a.created_at || ''));
     const sahaAll = await DB.all('saha');
     const statsBy = {};
     const rowsBy = {};
@@ -1015,7 +1034,16 @@ const UI = (() => {
     app.innerHTML = `
     <div class="screen">
       <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
-      <div id="dlist">${denetimler.length ? '' : '<div class="empty">Henüz denetim yok.<br>Yeni denetim ile başlayın.</div>'}</div>
+      <div class="inspection-list-tools">
+        <input class="searchbox" id="listSearch" type="search" placeholder="Müşteri, adres, seri veya dosya no ara…" value="${esc(listSearch)}">
+        <div class="inspection-date-filter">
+          <label for="listDate">Denetim tarihi</label>
+          <input id="listDate" type="date" value="${listDateFilter === 'all' ? '' : esc(listDateFilter)}">
+          <button type="button" class="btn btn-ghost" id="listClear">Tümünü göster</button>
+        </div>
+      </div>
+      <div id="dlist">${denetimler.length ? '' : '<div class="empty">Görüntüleyebileceğiniz denetim yok.<br>Denetçiler yalnızca kendi denetimlerini görür.</div>'}</div>
+      <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     const dl = document.getElementById('dlist');
@@ -1027,10 +1055,14 @@ const UI = (() => {
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
       const card = document.createElement('button');
       card.className = 'dcard';
+      card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
+      card.dataset.date = d.denetim_tarihi || '';
       card.innerHTML = `
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
         <span class="ddate">${esc(d.denetim_tarihi || '')}</span></div>
         <div class="dmeta">${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${esc(standartOzeti(d))}</div>
+        ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
+        ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
         <div class="dstats">${st
           ? `<span class="pill total">${st.ok + st.bad + st.na}/${st.toplam}</span>
              <span class="pill ok">${st.ok} uygun</span>
@@ -1041,11 +1073,210 @@ const UI = (() => {
              <span class="pill cached">📱 cihazda</span>`
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
         <div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`;
-      card.onclick = () => showDenetim(d.id);
+      card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
       dl.appendChild(card);
     }
+    const applyListFilters = () => {
+      const query = listSearch.trim().toLocaleLowerCase('tr-TR');
+      let visible = 0;
+      dl.querySelectorAll('.dcard').forEach(card => {
+        const show = (!query || card.dataset.search.includes(query)) &&
+          (listDateFilter === 'all' || card.dataset.date === listDateFilter);
+        card.classList.toggle('hidden', !show);
+        if (show) visible++;
+      });
+      const noResult = document.getElementById('listNoResult');
+      if (noResult) noResult.classList.toggle('hidden', visible > 0 || denetimler.length === 0);
+    };
+    document.getElementById('listSearch').oninput = e => { listSearch = e.target.value; applyListFilters(); };
+    document.getElementById('listDate').onchange = e => { listDateFilter = e.target.value || 'all'; applyListFilters(); };
+    document.getElementById('listClear').onclick = () => {
+      listSearch = ''; listDateFilter = 'all';
+      document.getElementById('listSearch').value = '';
+      document.getElementById('listDate').value = '';
+      applyListFilters();
+    };
+    applyListFilters();
     const btnYeni = document.getElementById('btnYeni');
     if (btnYeni) btnYeni.onclick = showYeniForm;
+  }
+
+  function showTamamlananDenetimSecimi(d) {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal completed-choice">
+      <button class="close">×</button>
+      <h3>Tamamlanmış denetim</h3>
+      <div class="onay-box">
+        <div class="onay-satir"><span>Müşteri</span><b>${esc(d.musteri_unvani)}</b></div>
+        <div class="onay-satir"><span>Seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
+        <div class="onay-satir"><span>Tarih</span><b>${esc(d.denetim_tarihi || '')}</b></div>
+        <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
+      </div>
+      <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
+      ${canStartFollowup(d) ? '<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>Yalnız Modül G için, önceki sonuçlara bağlı yeni ve bağımsız bir denetim oluşturur.</span></button>' : ''}
+      ${kontrolProfili(d) !== KONTROL_PROFILLERI.TAM ? '<div class="photo-help">Takip denetimi yalnızca Modül G denetimlerinde kullanılabilir.</div>' : ''}
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = e => { if (e.target === ov) close(); };
+    ov.querySelector('#completedReview').onclick = () => { close(); showDenetim(d.id, true); };
+    const followup = ov.querySelector('#completedFollowup');
+    if (followup) followup.onclick = async () => {
+      if (!confirm('Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir Modül G takip denetimi oluşturulsun mu?')) return;
+      followup.disabled = true;
+      followup.querySelector('b').textContent = 'Takip hazırlanıyor…';
+      try {
+        const yeniId = await takipDenetimiOlustur(d);
+        close();
+        await showDenetim(yeniId, false, 'previous_bad');
+      } catch (error) {
+        followup.disabled = false;
+        followup.querySelector('b').textContent = 'Takip Denetimi';
+        toast(error.message || 'Takip denetimi oluşturulamadı');
+      }
+    };
+  }
+
+  function duzeltmeNedeniSec(d) {
+    const nedenler = ['Yanlış seçim düzeltmesi', 'Eksik bilgi tamamlama', 'Saha notu düzeltmesi'];
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal completed-choice">
+      <button class="close">×</button>
+      <h3>Düzeltme başlat</h3>
+      <div class="photo-help">Yapılan her değişiklik; kişi, tarih, eski değer ve yeni değerle birlikte geçmişte saklanacaktır.</div>
+      ${nedenler.map(neden => `<button type="button" class="mode-choice correction-reason" data-reason="${esc(neden)}"><b>${esc(neden)}</b></button>`).join('')}
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = e => { if (e.target === ov) close(); };
+    ov.querySelectorAll('[data-reason]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      const now = new Date().toISOString();
+      d.denetim_durumu = 'Gözden Geçirme';
+      d.duzeltme_oturumu_id = crypto.randomUUID();
+      d.duzeltme_nedeni = btn.dataset.reason;
+      d.duzeltme_baslatildi_at = now;
+      d.duzeltme_baslatan_email = Profile.email;
+      d.duzeltme_baslatan_ad = Profile.name;
+      d.calisma_tamamlandi_at = null;
+      d.butunluk_ozeti = null;
+      d.butunluk_hash = null;
+      d.butunluk_hesaplandi_at = null;
+      d.updated_at = now;
+      await localWrite('denetimler', d, 'denetimler');
+      close();
+      inspectionReadOnly = false;
+      toast('Denetim izlenebilir düzeltmeye açıldı');
+      await renderDenetim();
+    });
+  }
+
+  async function takipDenetimiOlustur(kaynak) {
+    if (!canStartFollowup(kaynak)) throw new Error('Takip denetimi oluşturma yetkiniz yok');
+    const kaynakRows = (await DB.allByIndex('saha', 'byDenetim', kaynak.id)).sort(siraKarsilastir);
+    if (!kaynakRows.length) throw new Error('Önceki denetimin maddeleri bu cihazda bulunmuyor');
+
+    const tumDenetimler = await DB.all('denetimler');
+    const anaId = kaynak.takip_ana_denetim_id || kaynak.id;
+    const mevcutSiralar = tumDenetimler
+      .filter(item => item.takip_ana_denetim_id === anaId)
+      .map(item => Number(item.takip_sira_no) || 0);
+    const takipSira = Math.max(0, ...mevcutSiralar) + 1;
+    const now = new Date().toISOString();
+    const d = {
+      id: crypto.randomUUID(),
+      dosya_no: kaynak.dosya_no || null,
+      musteri_unvani: kaynak.musteri_unvani,
+      denetim_adresi: kaynak.denetim_adresi,
+      asansor_seri_no: kaynak.asansor_seri_no,
+      modul: kaynak.modul,
+      denetim_turu: kaynak.denetim_turu,
+      kontrol_profili: kaynak.kontrol_profili,
+      ana_standart: kaynak.ana_standart,
+      ek_standartlar: kaynak.ek_standartlar || [],
+      bina_asansor_sayisi: kaynak.bina_asansor_sayisi || null,
+      kabin_giris_duzeni: kaynak.kabin_giris_duzeni || null,
+      kabin_kapi_acilma_tipi: kaynak.kabin_kapi_acilma_tipi || null,
+      tahrik_tipi: kaynak.tahrik_tipi,
+      makine_dairesi_tipi: kaynak.makine_dairesi_tipi,
+      beyan_yuku_kg: kaynak.beyan_yuku_kg || null,
+      beyan_hizi_ms: kaynak.beyan_hizi_ms || null,
+      kapasite_kisi: kaynak.kapasite_kisi || null,
+      durak_sayisi: kaynak.durak_sayisi || null,
+      aski_tipi: kaynak.aski_tipi || null,
+      denetimi_yapan: Profile.name,
+      denetim_tarihi: localDateISO(),
+      denetim_durumu: 'Devam Ediyor',
+      takip_ana_denetim_id: anaId,
+      takip_onceki_denetim_id: kaynak.id,
+      takip_sira_no: takipSira,
+      takip_onceki_seri_numaralari: seriNumaralariNormalize(kaynak.seri_numaralari),
+      saha_tamamlandi_at: null,
+      gozden_gecirme_at: null,
+      calisma_tamamlandi_at: null,
+      snapshot_kilitli_at: now,
+      snapshot_app_build_id: APP_VERSION,
+      snapshot_kutuphane_hash: kaynak.snapshot_kutuphane_hash || null,
+      snapshot_bolum_surumleri: kaynak.snapshot_bolum_surumleri || null,
+      snapshot_madde_sayisi: kaynak.snapshot_madde_sayisi || kaynakRows.length,
+      snapshot_madde_set_hash: kaynak.snapshot_madde_set_hash || null,
+      snapshot_content_hash: kaynak.snapshot_content_hash || null,
+      butunluk_ozeti: null,
+      butunluk_hash: null,
+      butunluk_hesaplandi_at: null,
+      seri_numaralari: { schema_version: 1 },
+      olusturan_email: Profile.email,
+      olusturan_ad: Profile.name,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const sonucAlanlari = new Set([
+      'id','denetim_id','durum','denetci_gordu','bulgu_secenegi','diger_bulgu','aciklama',
+      'olcu1_degeri','olcu2_degeri','olcum_degerleri','ic_kontrol_notu','gozden_gecirme_nedeni',
+      'gozden_gecirme_notu','guncelleyen_email','olusturan_email','olusturan_ad','son_degistiren_email',
+      'son_degistiren_ad','son_degistiren_rol','son_degistiren_at','created_at','updated_at'
+    ]);
+    const sahaRows = kaynakRows.map(eski => {
+      const yeni = {};
+      Object.entries(eski).forEach(([key, value]) => { if (!sonucAlanlari.has(key)) yeni[key] = value; });
+      return Object.assign(yeni, {
+        id: crypto.randomUUID(),
+        denetim_id: d.id,
+        takip_kaynak_saha_kontrol_id: eski.id,
+        takip_onceki_durum: effectiveDurum(eski),
+        takip_onceki_aciklama: eski.aciklama || null,
+        takip_onceki_bulgu_secenegi: eski.bulgu_secenegi || null,
+        takip_onceki_diger_bulgu: eski.diger_bulgu || null,
+        durum: eski.otomatik_uygulanmaz ? 'Uygulanmaz' : null,
+        otomatik_uygulanmaz: !!eski.otomatik_uygulanmaz,
+        denetci_gordu: false,
+        bulgu_secenegi: null,
+        diger_bulgu: null,
+        aciklama: null,
+        olcu1_degeri: null,
+        olcu2_degeri: null,
+        olcum_degerleri: {},
+        ic_kontrol_notu: null,
+        gozden_gecirme_nedeni: null,
+        gozden_gecirme_notu: null,
+        guncelleyen_email: Profile.email,
+        olusturan_email: Profile.email,
+        olusturan_ad: Profile.name,
+        updated_at: now,
+      });
+    });
+
+    await localWrite('denetimler', d, 'denetimler');
+    for (let i = 0; i < sahaRows.length; i += 200) {
+      await localWrite('saha_kontrol', sahaRows.slice(i, i + 200), 'saha');
+    }
+    toast(`T${takipSira} takip denetimi hazırlandı`);
+    return d.id;
   }
 
   /* ---- Yeni denetim ---- */
@@ -1478,11 +1709,17 @@ const UI = (() => {
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
   }
 
-  async function showDenetim(id) {
+  async function showDenetim(id, forceReadOnly = false, initialFilter = 'all') {
     currentView = 'inspection';
     currentDenetimId = id;
-    inspectionReadOnly = false;
-    filter = 'all'; search = ''; openBolums = new Set();
+    inspectionReadOnly = !!forceReadOnly;
+    filter = initialFilter; search = ''; openBolums = new Set();
+    const denetim = await DB.get('denetimler', id);
+    if (!denetimGorunebilirMi(denetim)) {
+      toast('Bu denetimi görüntüleme yetkiniz yok');
+      showList();
+      return;
+    }
     let rows = await DB.allByIndex('saha', 'byDenetim', id);
     const pending = await DB.outboxCount();
     if (navigator.onLine && pending === 0) {
@@ -1582,6 +1819,7 @@ const UI = (() => {
       if (filter === 'empty') return !r.durum || r.denetci_gordu === false;
       if (filter === 'bad') return r.durum === 'Olumsuz bulgu';
       if (filter === 'internal') return icKontrolNotuVar(r);
+      if (filter === 'previous_bad') return r.takip_onceki_durum === 'Olumsuz bulgu';
       return true;
     };
 
@@ -1624,6 +1862,7 @@ const UI = (() => {
       <input class="searchbox" id="srch" placeholder="Madde no veya kelime ara…" value="${esc(search)}">
       <div class="filters">
         <button class="chip ${filter==='all'?'on':''}" data-f="all">Tümü</button>
+        ${d.takip_onceki_denetim_id ? `<button class="chip ${filter==='previous_bad'?'on':''}" data-f="previous_bad">Önceki Uygun Değil</button>` : ''}
         <button class="chip ${filter==='empty'?'on':''}" data-f="empty">Bakılmadı</button>
         <button class="chip ${filter==='bad'?'on':''}" data-f="bad">Uygun Değil</button>
         ${icNot ? `<button class="chip ${filter==='internal'?'on':''}" data-f="internal">İç kontrol notu</button>` : ''}
@@ -1736,6 +1975,13 @@ const UI = (() => {
     const btnSil = document.getElementById('btnSil');
     if (btnSil) btnSil.onclick = async () => {
       if (!canDeleteDenetim(d)) { toast('Denetim silme yetkiniz yok'); return; }
+      const bagliTakipler = (await DB.all('denetimler')).filter(item =>
+        item.id !== d.id && (item.takip_onceki_denetim_id === d.id || item.takip_ana_denetim_id === d.id)
+      );
+      if (bagliTakipler.length) {
+        toast(`Bu denetime bağlı ${bagliTakipler.length} takip denetimi var; zincirin ana kaydı silinemez`);
+        return;
+      }
       if (!confirm(`"${d.musteri_unvani} · ${d.asansor_seri_no}" denetimi ve tüm maddeleri silinecek. Emin misiniz?`)) return;
       if (!confirm('Bu işlem geri alınamaz. Silinsin mi?')) return;
       const sahaRows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
@@ -1754,16 +2000,7 @@ const UI = (() => {
     const btnYenidenAc = document.getElementById('btnYenidenAc');
     if (btnYenidenAc) btnYenidenAc.onclick = async () => {
       if (!canReopenDenetim(d)) return;
-      if (!confirm('Bu çalışma Gözden Geçirme aşamasına yeniden açılsın mı?')) return;
-      d.denetim_durumu = 'Gözden Geçirme';
-      d.calisma_tamamlandi_at = null;
-      d.butunluk_ozeti = null;
-      d.butunluk_hash = null;
-      d.butunluk_hesaplandi_at = null;
-      d.updated_at = new Date().toISOString();
-      await localWrite('denetimler', d, 'denetimler');
-      toast('Çalışma gözden geçirmeye açıldı');
-      await renderDenetim();
+      duzeltmeNedeniSec(d);
     };
     document.getElementById('srch').oninput = (e) => { search = e.target.value.trim().toLowerCase(); renderDenetim(); };
     document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filter = c.dataset.f; renderDenetim(); });
@@ -2070,6 +2307,11 @@ const UI = (() => {
       ${rehberParca.saha ? `<div class="mguide saha-guide"><span>AVES SAHA REHBERİ</span>${esc(rehberParca.saha)}</div>` : ''}`}
       ${r.aranmaz_kosulu ? `<div class="aranmaz-note"><b>Uygulanmaz koşulu:</b> ${esc(uygulanmazKosuluMetni(r.aranmaz_kosulu))}</div>` : ''}
       ${r.otomatik_uygulanmaz && r.otomatik_gerekce ? `<div class="aranmaz-note"><b>Otomatik Uygulanmaz gerekçesi:</b> ${esc(r.otomatik_gerekce)}</div>` : ''}
+      ${r.takip_kaynak_saha_kontrol_id ? `<div class="followup-previous ${r.takip_onceki_durum === 'Olumsuz bulgu' ? 'bad' : ''}">
+        <b>Önceki denetim sonucu:</b> ${esc(DURUM_KISA[r.takip_onceki_durum] || r.takip_onceki_durum || 'Sonuç yok')}
+        ${r.takip_onceki_bulgu_secenegi ? `<span> · ${esc(r.takip_onceki_bulgu_secenegi)}</span>` : ''}
+        ${r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama ? `<small>${esc(r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama)}</small>` : ''}
+      </div>` : ''}
       ${gorselHTML(r)}
       ${olcumHTML(r)}
       ${icKontrolNotu ? `<div class="aranmaz-note"><b>İç kontrol notu:</b> ${esc(icKontrolNotu)}</div>` : ''}
@@ -2654,7 +2896,7 @@ const UI = (() => {
       ${bad.length ? `<div style="font-size:12px;font-weight:700;color:var(--fuchsia);margin:12px 0 6px">UYGUN DEĞİL (${bad.length})</div>` + bad.map(r => item(r,'')).join('') : ''}
       ${icNotlar.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">İÇ KONTROL NOTU (${icNotlar.length})</div>` + icNotlar.map(r => `<div class="oz-item warn"><b>${esc(r.standart_madde_no || r.madde_id)} · ${esc(r.bolum)}</b>${esc(r.ic_kontrol_notu || 'Eski sürümden kalan iç kontrol kaydı')}</div>`).join('') : ''}
       ${notEntries.length ? `<div style="font-size:12px;font-weight:700;color:var(--navy);margin:12px 0 6px">BÖLÜM AÇIKLAMALARI</div>` + notEntries.map(([b,v]) => `<div class="oz-item" style="border-left-color:var(--navy)"><b>${esc(b)}</b>${esc(v)}</div>`).join('') : ''}
-      ${history.length ? `<details class="compact-review"><summary>Değişiklik geçmişi (${history.length})</summary><div class="history-list">${history.slice(0,250).map(event => `<div class="history-row"><b>${esc(event.degistiren_ad || event.degistiren_email || 'Bilinmeyen kullanıcı')}</b><span>${esc(event.madde_id || (event.islem_turu === 'denetim_olusturma' ? 'Denetim oluşturuldu' : 'Denetim bilgisi'))}</span><small>${esc(event.degistiren_rol || '')} · ${event.created_at ? new Date(event.created_at).toLocaleString('tr-TR') : ''}</small></div>`).join('')}</div></details>` : ''}
+      ${history.length ? `<details class="compact-review"><summary>Değişiklik geçmişi (${history.length})</summary><div class="history-list">${history.slice(0,250).map(event => `<div class="history-row"><b>${esc(event.degistiren_ad || event.degistiren_email || 'Bilinmeyen kullanıcı')}</b><span>${esc(event.madde_id || (event.islem_turu === 'denetim_olusturma' ? 'Denetim oluşturuldu' : 'Denetim bilgisi'))}</span><small>${esc(event.degistiren_rol || '')} · ${event.created_at ? new Date(event.created_at).toLocaleString('tr-TR') : ''}${event.duzeltme_nedeni ? ` · Düzeltme: ${esc(event.duzeltme_nedeni)}` : ''}</small></div>`).join('')}</div></details>` : ''}
       ${!bad.length && !bakilmadi.length && !notEntries.length && !icNotlar.length ? '<div class="empty">Açık konu yok 🎉</div>' : ''}
       <button class="btn btn-ghost" id="ozKopya" style="margin-top:10px">Özeti panoya kopyala</button>
     </div>`;
