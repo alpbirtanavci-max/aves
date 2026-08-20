@@ -1,0 +1,2693 @@
+{
+  "schema_version": 1,
+  "mapping_status": "verified_complete",
+  "completed_on": "2026-08-20",
+  "form": {
+    "code": "ÜB.FR.39",
+    "revision": "R.02",
+    "official_pdf_drive_id": "1r_1R8YnIeHHAm6sbwaZVvA-Kz53tOxuG"
+  },
+  "source_tables": {
+    "inspection": "denetimler",
+    "checklist": "saha_kontrol"
+  },
+  "rules": {
+    "no_device_or_calibration_tracking": "Ölçüm cihazı ve kalibrasyon verisi bu aktarım katmanında tutulmaz veya üretilmez.",
+    "no_inference": "Boş ya da genel isimli eski alanlara teknik anlam tahmin edilmez.",
+    "no_value_no_output": "Kaydedilmiş değer yoksa resmî form hücresi boş bırakılır.",
+    "no_unit_conversion": "Birimler otomatik dönüştürülmez; denetimde kilitlenen birimle yazılır.",
+    "immutable_revision": "Bu eşleme yalnız ÜB.FR.39 R.02 şablonuyla kullanılır."
+  },
+  "summary": {
+    "mapped_rows": 81,
+    "structured_rows": 4,
+    "structured_fields": 17,
+    "legacy_rows": 77,
+    "legacy_generic_label_rows": 47,
+    "legacy_specific_label_rows": 30,
+    "shared_measurement_block_rows": 2,
+    "unresolved_rows": 0
+  },
+  "section_stats": [
+    {
+      "app_section": "01 - Kuyu Dibi",
+      "mapped_rows": 10
+    },
+    {
+      "app_section": "02 - Kuyu Boyunca",
+      "mapped_rows": 27
+    },
+    {
+      "app_section": "03 - Kabin ve Kabin Üstü",
+      "mapped_rows": 12
+    },
+    {
+      "app_section": "04 - Makine ve Şase",
+      "mapped_rows": 25
+    },
+    {
+      "app_section": "05 - Elektrik ve Test",
+      "mapped_rows": 7
+    }
+  ],
+  "measurement_mappings": [
+    {
+      "madde_id": "MAD-0008E",
+      "app_sira_no": 8,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "A3 setinde kuyu dibi ve tampon temel ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "structured",
+      "source_fields": [
+        {
+          "id": "a3_kuyu_dibi_yuksekligi",
+          "label": "Kuyu dibi yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.a3_kuyu_dibi_yuksekligi"
+        },
+        {
+          "id": "a3_kabin_tampon_yuksekligi",
+          "label": "Kabin tampon yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.a3_kabin_tampon_yuksekligi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "one_labeled_line_per_value",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0090",
+      "app_sira_no": 90,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.4 b | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kuyu dibi servis prizi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0096",
+      "app_sira_no": 96,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Ek D, D.2 İç Tes.Yön.M.57 | ZA: 1.6",
+      "kontrol_basligi": "Kuyu dibi koruyucu topraklama sürekliliği",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0098",
+      "app_sira_no": 98,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.1 | ZA: 1.6",
+      "kontrol_basligi": "Karşı ağırlık ayırıcı bölmesinin ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0101",
+      "app_sira_no": 101,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 a Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Eski standarda göre kuyu dibi güvenlik hacmi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "X",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "X",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0102",
+      "app_sira_no": 102,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Mevcut binada eşdeğer kuyu dibi güvenliği",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0103",
+      "app_sira_no": 103,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 b | ZA: 2.3",
+      "kontrol_basligi": "Eski standarda göre kuyu dibi düşey mesafeleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0104",
+      "app_sira_no": 104,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.7.3.3 c | ZA: 2.3",
+      "kontrol_basligi": "Kuyu dibi sabit parçaları ile kabin arasındaki mesafe",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0105",
+      "app_sira_no": 105,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "10.4.1.2 | ZA: 3.1",
+      "kontrol_basligi": "Poliüretan tamponun hız ve strok koşulu",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0106",
+      "app_sira_no": 106,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "10.4.3 | ZA: 3.1",
+      "kontrol_basligi": "Hidrolik tamponun güvenlik kontrolleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "cm strok mesafesi",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0008B",
+      "app_sira_no": 109,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin üstünde alınacak ray ve kuyu yerleşim ölçüleri",
+      "source_form_code": "ÜB.FR.38 / ÜB.FR.39",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "ray_kapi_arasi",
+          "label": "Kabin ana rayı–durak kapısı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.ray_kapi_arasi"
+        },
+        {
+          "id": "kabin_raylar_arasi",
+          "label": "Kabin ana rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_raylar_arasi"
+        },
+        {
+          "id": "karsi_agirlik_raylar_arasi",
+          "label": "Karşı ağırlık rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_raylar_arasi"
+        },
+        {
+          "id": "kabin_karsi_agirlik_ray_arasi",
+          "label": "Kabin ana rayı–karşı ağırlık rayı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_karsi_agirlik_ray_arasi"
+        },
+        {
+          "id": "kabin_kilavuz_ray_tipi",
+          "label": "Kabin kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_kilavuz_ray_tipi"
+        },
+        {
+          "id": "karsi_agirlik_kilavuz_ray_tipi",
+          "label": "Karşı ağırlık kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_kilavuz_ray_tipi"
+        },
+        {
+          "id": "kabin_ray_kesit_olcusu",
+          "label": "Kabin rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_ray_kesit_olcusu"
+        },
+        {
+          "id": "karsi_agirlik_ray_kesit_olcusu",
+          "label": "Karşı ağırlık rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_ray_kesit_olcusu"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "one_labeled_line_per_value",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0214",
+      "app_sira_no": 214,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.6.1 | ZA: 1.2.3, 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0216",
+      "app_sira_no": 216,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.3.2 Ek-I, 2.1 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0220",
+      "app_sira_no": 220,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.6.2 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Pencere boyutları",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "x",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0221",
+      "app_sira_no": 221,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "12.12 | ZA: 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Katta Durma Mesafesi",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0222",
+      "app_sira_no": 222,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.1 | ZA: 1.2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Paneller Arası Açıklık",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0223",
+      "app_sira_no": 223,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.2.2 | ZA: 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "yatay açıklık",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0226",
+      "app_sira_no": 226,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.5.2.1.1.1 Ek-I, 4.1 | ZA: 4.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "N",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0228",
+      "app_sira_no": 228,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.2.2/Yan. Y. M.53 Ek-I, 2.3/4.2 | ZA: 2.3, 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "E",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "Yapı yüksekliği",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0229",
+      "app_sira_no": 229,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.3.1 | ZA: 2.1",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0230",
+      "app_sira_no": 230,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.2.2.1.2 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Kabin Kapısı, Durak Kapıları ve Katlar",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0234",
+      "app_sira_no": 234,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "Yangın Yön. M.62- (4) | ZA: 1.5.6",
+      "kontrol_basligi": "Kuyu havalandırma açıklığı ölçüsü",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0235",
+      "app_sira_no": 235,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 a | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin ray uzunluğu",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0236",
+      "app_sira_no": 236,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 b | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü-kuyu tavanı mesafesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0237",
+      "app_sira_no": 237,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 c | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü teçhizat ve kuyu tavanı arası mesafeler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0238",
+      "app_sira_no": 238,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.1 d Ek-I, 2.2 | ZA: 2.2",
+      "kontrol_basligi": "Kuyu üstü sığınma boşluğu ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "üst güvenlik alanı ölçüleri",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0240",
+      "app_sira_no": 240,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.7.1.2 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Karşı ağırlık ray uzunluğu",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0241",
+      "app_sira_no": 241,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.9 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Kuyu üstü aydınlatma seviyesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0242",
+      "app_sira_no": 242,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "13.5.1.3/13.5.3.5/13.5.2 | ZA: 1.6 4.2",
+      "kontrol_basligi": "Kuyu içi elektrik tesisatı kesit ve montaj şartı",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0243",
+      "app_sira_no": 243,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.3.1.1 / Ek-I, 2.3 | ZA: 2.3",
+      "kontrol_basligi": "Durak kapısı kilitleme tertibatı derinliği ve topraklaması",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0244",
+      "app_sira_no": 244,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.4.3 | ZA: 1.4",
+      "kontrol_basligi": "Durak kapıları etek sacı ölçü ve dayanımı",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0245",
+      "app_sira_no": 245,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "7.7.1 | ZA: 2.1",
+      "kontrol_basligi": "Kilit açılma bölgesi ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0246",
+      "app_sira_no": 246,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.3 Ek-I, 4.3 | ZA: 4.3",
+      "kontrol_basligi": "Kabin-karşı ağırlık arası açıklık",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "mm",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0249",
+      "app_sira_no": 249,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "11.2.1 | ZA: 4.2",
+      "kontrol_basligi": "Kuyu iç yüzeyi ile kabin eşiği arası yatay açıklık",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0250",
+      "app_sira_no": 250,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "5.3.1.1 | ZA: 1.4",
+      "kontrol_basligi": "Kuyu duvarlarının mekanik dayanımı",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0256",
+      "app_sira_no": 256,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.2.2 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Portatif dayama merdiveni şartları",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0258",
+      "app_sira_no": 258,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "6.3.4.1 | ZA: 1.4 4.2",
+      "kontrol_basligi": "Makine dairesi giriş kapısı ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "genişlik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0008D",
+      "app_sira_no": 262,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin girişinde alınacak kat kapısı bilgileri",
+      "source_form_code": "ÜB.FR.38 / ÜB.FR.39",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "kat_kapisi_net_genisligi",
+          "label": "Kat kapısı net genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_genisligi"
+        },
+        {
+          "id": "kat_kapisi_net_yuksekligi",
+          "label": "Kat kapısı net yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_yuksekligi"
+        },
+        {
+          "id": "kat_kapisi_tipi",
+          "label": "Kat kapısının tipi",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_tipi"
+        },
+        {
+          "id": "kat_kapisi_acilma_yonu",
+          "label": "Kat kapısının açılma yönü",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_acilma_yonu"
+        },
+        {
+          "id": "kat_kapisi_yangin_sinifi",
+          "label": "Kat kapısı yangına dayanım sınıfı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "one_labeled_line_per_value",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0310",
+      "app_sira_no": 310,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.2.1 8.2.3 | ZA: 1.4 4.2",
+      "kontrol_basligi": "Kabin alanının beyan yüküne uygunluğu",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "structured",
+      "source_fields": [
+        {
+          "id": "kabin_net_genisligi",
+          "label": "Kabin net genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_net_genisligi"
+        },
+        {
+          "id": "kabin_net_derinligi",
+          "label": "Kabin net derinliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_net_derinligi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": null,
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "one_labeled_line_per_value",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0319",
+      "app_sira_no": 319,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.17.1 Ek-I, 4.8 | ZA: 4.8",
+      "kontrol_basligi": "Kabin normal aydınlatma seviyesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0322",
+      "app_sira_no": 322,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.3.2.1 Ek-I, 3.1 | ZA: 3.1",
+      "kontrol_basligi": "Kabin gövdesinin mekanik dayanımı",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0324",
+      "app_sira_no": 324,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.1.1 | ZA: 1.2",
+      "kontrol_basligi": "Kabin içi serbest yüksekliği",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0326",
+      "app_sira_no": 326,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.4 | ZA: 1.4",
+      "kontrol_basligi": "Kabin koruma eteğinin ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "boyu",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0355",
+      "app_sira_no": 355,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.15 / 14.2.1.3 / 14.2.2.1 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü durdurma tertibatının konumu",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Girişten uzaklık",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0357",
+      "app_sira_no": 357,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.13.3 | ZA: 1.4.4 4.2",
+      "kontrol_basligi": "Kabin üstü korkuluğunun yapısı ve yüksekliği",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "korkuluk yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "Duvara mesafe",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0358",
+      "app_sira_no": 358,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.13.2 | ZA: 1.4.4 4.2",
+      "kontrol_basligi": "Kabin üstü çalışma alanının net ölçüleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0359",
+      "app_sira_no": 359,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6",
+      "kontrol_basligi": "Kabin üstü koruyucu topraklama sürekliliği",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0362",
+      "app_sira_no": 362,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "8.15 | ZA: 1.2.1 4.2",
+      "kontrol_basligi": "Kabin üstü servis prizi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0364",
+      "app_sira_no": 364,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "9.2.3.1,2 | ZA: 4.2",
+      "kontrol_basligi": "Kabin, karşı ağırlık ve palanga halatı bağlantıları",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Klemens sayısı",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0456",
+      "app_sira_no": 456,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6",
+      "kontrol_basligi": "Makine/makara dairesi topraklama sürekliliği (81-1/2+A3)",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0457",
+      "app_sira_no": 457,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.4 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0458",
+      "app_sira_no": 458,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.2 / 6.7.1.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0459",
+      "app_sira_no": 459,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 / 6.7.1.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Çalışma alanı yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0460",
+      "app_sira_no": 460,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/makara dairesi pano önü açıklıkları (81-1/2+A3)",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0461",
+      "app_sira_no": 461,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0462",
+      "app_sira_no": 462,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0463",
+      "app_sira_no": 463,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.5 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0464",
+      "app_sira_no": 464,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.5 | ZA: 1.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0467",
+      "app_sira_no": 467,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.7 | ZA: 1.6",
+      "kontrol_basligi": "Makine/makara dairesinde topraklı priz (81-1/2+A3)",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0470",
+      "app_sira_no": 470,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.7 | ZA: 1.6",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0488",
+      "app_sira_no": 488,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.3.3.3 / 6.7.1.2.3 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0489",
+      "app_sira_no": 489,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.1.2 / 9.1.3 Ek-I, 1.3 | ZA: 1.3",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Halat çapı",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        },
+        {
+          "id": "olcu2",
+          "label": "Halat adedi",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu2_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0490",
+      "app_sira_no": 490,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.2.1 | ZA: 1.3",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Kasnak çapı / halat çapı oranı",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0496",
+      "app_sira_no": 496,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "9.9.6.3,4 | ZA: 1.4.4",
+      "kontrol_basligi": "Makine/Makara Dairesi",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Kasnak çapı / halat çapı oranı",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0501",
+      "app_sira_no": 501,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.6.3 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0503",
+      "app_sira_no": 503,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.9 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0506",
+      "app_sira_no": 506,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.9 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "lüks",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0508",
+      "app_sira_no": 508,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 b | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0510",
+      "app_sira_no": 510,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "14.2.2.1 | ZA: 6.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0511",
+      "app_sira_no": 511,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.1.3 | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0512",
+      "app_sira_no": 512,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "yükseklik",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0513",
+      "app_sira_no": 513,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.1 a | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0514",
+      "app_sira_no": 514,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.2.2 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0516",
+      "app_sira_no": 516,
+      "app_bolum": "04 - Makine ve Şase",
+      "standart_madde_no": "6.4.7.1 | ZA: 1.6, 4.2",
+      "kontrol_basligi": "Makine Kuyu İçerisinde",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0661",
+      "app_sira_no": 661,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "14.1.1.1 d | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0665",
+      "app_sira_no": 665,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "9.11 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0671",
+      "app_sira_no": 671,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "12.6 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0672",
+      "app_sira_no": 672,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2 | ZA: 1.6",
+      "kontrol_basligi": "Testler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0681",
+      "app_sira_no": 681,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "13.1.3 | ZA: 4.2",
+      "kontrol_basligi": "Testler",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Yalıtım direnci",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_specific_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0687",
+      "app_sira_no": 687,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "5.7.1.1 e | ZA: 1.2.1, 4.2",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
+    {
+      "madde_id": "MAD-0711",
+      "app_sira_no": 711,
+      "app_bolum": "05 - Elektrik ve Test",
+      "standart_madde_no": "Ek D, D.2, u | ZA: 1.6",
+      "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
+      "source_form_code": "ÜB.FR.39",
+      "source_mode": "legacy",
+      "source_fields": [
+        {
+          "id": "olcu1",
+          "label": "Ölçülen değer",
+          "unit": null,
+          "source_path": "saha_kontrol.olcu1_degeri"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "row_key_source": "ub-fr-39-r02.mapping.json",
+        "cell": "SAHA ÖLÇÜM DEĞERİ"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "preserve_source_order",
+        "generic_label_policy": "do_not_invent_meaning; official row provides context",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "capture_quality": "legacy_generic_label",
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    }
+  ]
+}
