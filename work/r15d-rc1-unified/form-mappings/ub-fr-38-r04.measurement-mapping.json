@@ -19,13 +19,14 @@
     "immutable_revision": "Bu eşleme yalnız ÜB.FR.38 R.04 şablonuyla kullanılır."
   },
   "summary": {
-    "mapped_rows": 292,
-    "structured_rows": 35,
-    "structured_fields": 84,
+    "mapped_rows": 294,
+    "structured_rows": 37,
+    "structured_fields": 97,
     "legacy_rows": 257,
     "legacy_generic_label_rows": 255,
     "legacy_specific_label_rows": 2,
-    "unresolved_rows": 0
+    "unresolved_rows": 0,
+    "shared_measurement_block_rows": 2
   },
   "measurement_mappings": [
     {
@@ -9287,6 +9288,139 @@
       },
       "capture_quality": "legacy_generic_label",
       "mapping_status": "verified_by_checklist_row_mapping"
+    },
+    {
+      "madde_id": "MAD-0008B",
+      "app_sira_no": 109,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin üstünde alınacak ray ve kuyu yerleşim ölçüleri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "ray_kapi_arasi",
+          "label": "Kabin ana rayı–durak kapısı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.ray_kapi_arasi"
+        },
+        {
+          "id": "kabin_raylar_arasi",
+          "label": "Kabin ana rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_raylar_arasi"
+        },
+        {
+          "id": "karsi_agirlik_raylar_arasi",
+          "label": "Karşı ağırlık rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_raylar_arasi"
+        },
+        {
+          "id": "kabin_karsi_agirlik_ray_arasi",
+          "label": "Kabin ana rayı–karşı ağırlık rayı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_karsi_agirlik_ray_arasi"
+        },
+        {
+          "id": "kabin_kilavuz_ray_tipi",
+          "label": "Kabin kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_kilavuz_ray_tipi"
+        },
+        {
+          "id": "karsi_agirlik_kilavuz_ray_tipi",
+          "label": "Karşı ağırlık kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_kilavuz_ray_tipi"
+        },
+        {
+          "id": "kabin_ray_kesit_olcusu",
+          "label": "Kabin rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_ray_kesit_olcusu"
+        },
+        {
+          "id": "karsi_agirlik_ray_kesit_olcusu",
+          "label": "Karşı ağırlık rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_ray_kesit_olcusu"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.38",
+        "revision": "R.04",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_shared_measurement_block"
+    },
+    {
+      "madde_id": "MAD-0008D",
+      "app_sira_no": 262,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin girişinde alınacak kat kapısı bilgileri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "kat_kapisi_net_genisligi",
+          "label": "Kat kapısı net genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_genisligi"
+        },
+        {
+          "id": "kat_kapisi_net_yuksekligi",
+          "label": "Kat kapısı net yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_yuksekligi"
+        },
+        {
+          "id": "kat_kapisi_tipi",
+          "label": "Kat kapısının tipi",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_tipi"
+        },
+        {
+          "id": "kat_kapisi_acilma_yonu",
+          "label": "Kat kapısının açılma yönü",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_acilma_yonu"
+        },
+        {
+          "id": "kat_kapisi_yangin_sinifi",
+          "label": "Kat kapısı yangına dayanım sınıfı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.38",
+        "revision": "R.04",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_shared_measurement_block"
     }
   ]
 }

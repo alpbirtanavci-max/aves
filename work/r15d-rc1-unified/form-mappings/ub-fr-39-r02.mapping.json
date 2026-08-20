@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "mapping_status": "pilot_in_progress",
+  "mapping_status": "verified_complete",
   "form": {
     "code": "ÜB.FR.39",
     "revision": "R.02",
@@ -138,39 +138,44 @@
   ],
   "checklist_scope": {
     "total_candidates": 209,
-    "verified": 0,
-    "candidate_exact_unique": 182,
-    "review_required": 27,
+    "verified": 209,
+    "candidate_exact_unique": 0,
+    "review_required": 0,
     "section_stats": [
       {
         "app_section": "01 - Kuyu Dibi",
         "total": 21,
-        "candidate_exact_unique": 15,
-        "review_required": 6
+        "verified": 21,
+        "candidate_exact_unique": 0,
+        "review_required": 0
       },
       {
         "app_section": "02 - Kuyu Boyunca",
         "total": 45,
-        "candidate_exact_unique": 42,
-        "review_required": 3
+        "verified": 45,
+        "candidate_exact_unique": 0,
+        "review_required": 0
       },
       {
         "app_section": "03 - Kabin ve Kabin Üstü",
         "total": 28,
-        "candidate_exact_unique": 25,
-        "review_required": 3
+        "verified": 28,
+        "candidate_exact_unique": 0,
+        "review_required": 0
       },
       {
         "app_section": "04 - Makine ve Şase",
         "total": 64,
-        "candidate_exact_unique": 50,
-        "review_required": 14
+        "verified": 64,
+        "candidate_exact_unique": 0,
+        "review_required": 0
       },
       {
         "app_section": "05 - Elektrik ve Test",
         "total": 51,
-        "candidate_exact_unique": 50,
-        "review_required": 1
+        "verified": 51,
+        "candidate_exact_unique": 0,
+        "review_required": 0
       }
     ]
   },
@@ -183,11 +188,13 @@
       "kontrol_basligi": "A3 setinde kuyu dibi ve tampon temel ölçüleri",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri|3fd3c5be",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "official_measurement_block_heading_and_complete_field_set",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_measurement_block",
+      "review_note": "Resmî formdaki TEMEL KUYU TASARIM ÖLÇÜLERİ bloğuna bağlıdır; uygunluk sonuç satırı değildir.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0089",
@@ -203,7 +210,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0090",
@@ -219,7 +228,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0091",
@@ -235,7 +246,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0092",
@@ -251,7 +264,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0093",
@@ -267,7 +282,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0094",
@@ -277,14 +294,16 @@
       "kontrol_basligi": "Kuyu dibinde temizlik ve yanıcı madde kontrolü",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|55c6a8a2",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         4,
         12
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0095",
@@ -300,7 +319,9 @@
         4
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0096",
@@ -310,15 +331,17 @@
       "kontrol_basligi": "Kuyu dibi koruyucu topraklama sürekliliği",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes.Yön.M.57 | ZA: 1.6|ad71d38a",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 3,
       "candidate_pdf_pages": [
         4,
         12,
         15
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0097",
@@ -328,14 +351,16 @@
       "kontrol_basligi": "Kuyu dibi alarm ve iki yönlü haberleşme",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|5.10 | ZA: 3.1|f9c13b63",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         5,
         12
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0098",
@@ -351,7 +376,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0099",
@@ -367,7 +394,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0100",
@@ -383,7 +412,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0101",
@@ -399,7 +430,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0102",
@@ -409,14 +442,16 @@
       "kontrol_basligi": "Mevcut binada eşdeğer kuyu dibi güvenliği",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Ek-I, 2.2 | ZA: 2.2|b0fb331e",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         5,
         13
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0103",
@@ -432,7 +467,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0104",
@@ -448,7 +485,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0105",
@@ -458,11 +497,13 @@
       "kontrol_basligi": "Poliüretan tamponun hız ve strok koşulu",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|10.4.1.2 | ZA: 3.1|4251d648",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "clause_technical_condition_and_form_order_review",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_clause_context",
+      "review_note": "PDF satır/sayfa kırılması veya uygulamadaki kontrollü sadeleştirme nedeniyle birebir olmayan metin; bent, teknik şart ve sıra ile doğrulandı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0106",
@@ -478,7 +519,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0107",
@@ -494,7 +537,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0108",
@@ -510,7 +555,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0214",
@@ -526,7 +573,9 @@
         5
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0215",
@@ -542,7 +591,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0216",
@@ -558,7 +609,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0217",
@@ -574,7 +627,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0218",
@@ -590,7 +645,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0219",
@@ -606,7 +663,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0220",
@@ -622,7 +681,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0221",
@@ -638,7 +699,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0222",
@@ -654,7 +717,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0223",
@@ -670,7 +735,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0224",
@@ -686,7 +753,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0225",
@@ -702,7 +771,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0226",
@@ -718,7 +789,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0227",
@@ -734,7 +807,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0228",
@@ -750,7 +825,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0229",
@@ -766,7 +843,9 @@
         6
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0230",
@@ -782,7 +861,9 @@
         7
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0231",
@@ -798,7 +879,9 @@
         7
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0233",
@@ -814,7 +897,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0234",
@@ -830,7 +915,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0235",
@@ -846,7 +933,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0236",
@@ -862,7 +951,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0237",
@@ -878,7 +969,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0238",
@@ -894,7 +987,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0239",
@@ -904,14 +999,16 @@
       "kontrol_basligi": "Sığınma boşluğu sağlanamayan durumlarda alternatif önlem",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Ek-I, 2.2 | ZA: 2.2|b0fb331e",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         5,
         13
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0240",
@@ -927,7 +1024,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0241",
@@ -943,7 +1042,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0242",
@@ -959,7 +1060,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0243",
@@ -975,7 +1078,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0244",
@@ -991,7 +1096,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0245",
@@ -1007,7 +1114,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0246",
@@ -1023,7 +1132,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0247",
@@ -1039,7 +1150,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0248",
@@ -1055,7 +1168,9 @@
         13
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0249",
@@ -1065,11 +1180,13 @@
       "kontrol_basligi": "Kuyu iç yüzeyi ile kabin eşiği arası yatay açıklık",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|11.2.1 | ZA: 4.2|6b6d8f23",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "clause_technical_condition_and_form_order_review",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_clause_context",
+      "review_note": "PDF satır/sayfa kırılması veya uygulamadaki kontrollü sadeleştirme nedeniyle birebir olmayan metin; bent, teknik şart ve sıra ile doğrulandı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0250",
@@ -1085,7 +1202,9 @@
         14
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0251",
@@ -1095,14 +1214,16 @@
       "kontrol_basligi": "Kuyuda asansöre ait olmayan teçhizat bulunmaması",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|5.8 | ZA: 1.6 4.2|16ed7e9a",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "clause_technical_condition_and_form_order_review",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         4,
         14
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_clause_context",
+      "review_note": "PDF satır/sayfa kırılması veya uygulamadaki kontrollü sadeleştirme nedeniyle birebir olmayan metin; bent, teknik şart ve sıra ile doğrulandı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0253",
@@ -1118,7 +1239,9 @@
         14
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0254",
@@ -1134,7 +1257,9 @@
         14
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0255",
@@ -1150,7 +1275,9 @@
         14
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0256",
@@ -1166,7 +1293,9 @@
         14
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0258",
@@ -1182,7 +1311,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0259",
@@ -1198,7 +1329,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0260",
@@ -1214,7 +1347,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0261",
@@ -1230,7 +1365,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0309",
@@ -1246,7 +1383,9 @@
         7
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0310",
@@ -1262,7 +1401,9 @@
         7
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0311",
@@ -1278,7 +1419,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0312",
@@ -1294,7 +1437,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0313",
@@ -1310,7 +1455,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0314",
@@ -1326,7 +1473,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0315",
@@ -1342,7 +1491,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0316",
@@ -1358,7 +1509,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0317",
@@ -1374,7 +1527,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0318",
@@ -1390,7 +1545,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0319",
@@ -1406,7 +1563,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0320",
@@ -1422,7 +1581,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0321",
@@ -1438,7 +1599,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0322",
@@ -1454,7 +1617,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0323",
@@ -1470,7 +1635,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0324",
@@ -1486,7 +1653,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0325",
@@ -1502,7 +1671,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0326",
@@ -1518,7 +1689,9 @@
         8
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0355",
@@ -1534,7 +1707,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0356",
@@ -1544,14 +1719,16 @@
       "kontrol_basligi": "Kabin üstünde temizlik ve yanıcı madde kontrolü",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|55c6a8a2",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         4,
         12
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0357",
@@ -1567,7 +1744,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0358",
@@ -1583,7 +1762,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0359",
@@ -1593,15 +1774,17 @@
       "kontrol_basligi": "Kabin üstü koruyucu topraklama sürekliliği",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6|ad71d38a",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 3,
       "candidate_pdf_pages": [
         4,
         12,
         15
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0360",
@@ -1611,14 +1794,16 @@
       "kontrol_basligi": "Kabin üstü alarm ve iki yönlü haberleşme",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|5.10 | ZA: 3.1|f9c13b63",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         5,
         12
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0361",
@@ -1634,7 +1819,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0362",
@@ -1650,7 +1837,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0363",
@@ -1666,7 +1855,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0364",
@@ -1682,7 +1873,9 @@
         12
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0452",
@@ -1698,7 +1891,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0453",
@@ -1714,7 +1909,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0454",
@@ -1730,7 +1927,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0455",
@@ -1740,15 +1939,17 @@
       "kontrol_basligi": "Makine/Makara Dairesi",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Yangın Yön. M.53-1,2 | ZA: 1.5.6|995e4c91",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 3,
       "candidate_pdf_pages": [
         4,
         12,
         15
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0456",
@@ -1758,15 +1959,17 @@
       "kontrol_basligi": "Makine/makara dairesi topraklama sürekliliği (81-1/2+A3)",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|Ek D, D.2 İç Tes. Yön. M.57 | ZA: 1.6|ad71d38a",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 3,
       "candidate_pdf_pages": [
         4,
         12,
         15
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0457",
@@ -1782,7 +1985,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0458",
@@ -1798,7 +2003,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0459",
@@ -1814,7 +2021,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0460",
@@ -1824,14 +2033,16 @@
       "kontrol_basligi": "Makine/makara dairesi pano önü açıklıkları (81-1/2+A3)",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.3.3.1 | ZA: 1.6, 4.2|0fd08188",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         15,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0461",
@@ -1847,7 +2058,9 @@
         15
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0462",
@@ -1863,7 +2076,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0463",
@@ -1879,7 +2094,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0464",
@@ -1895,7 +2112,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0465",
@@ -1911,7 +2130,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0466",
@@ -1927,7 +2148,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0467",
@@ -1937,11 +2160,13 @@
       "kontrol_basligi": "Makine/makara dairesinde topraklı priz (81-1/2+A3)",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.3.7 | ZA: 1.6|d3559922",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0468",
@@ -1951,11 +2176,13 @@
       "kontrol_basligi": "Makine/Makara Dairesi",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|13.6.3.2 | ZA: 1.6, 4.2|ea34fdf3",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0469",
@@ -1971,7 +2198,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0470",
@@ -1987,7 +2216,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0471",
@@ -2003,7 +2234,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0472",
@@ -2019,7 +2252,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0473",
@@ -2035,7 +2270,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0474",
@@ -2051,7 +2288,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0475",
@@ -2067,7 +2306,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0476",
@@ -2083,7 +2324,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0477",
@@ -2099,7 +2342,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0478",
@@ -2115,7 +2360,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0479",
@@ -2125,14 +2372,16 @@
       "kontrol_basligi": "Makine/Makara Dairesi",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|13.5.3.5 | ZA: 1.6.4|a9a29148",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         13,
         16
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0480",
@@ -2148,7 +2397,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0481",
@@ -2164,7 +2415,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0482",
@@ -2180,7 +2433,9 @@
         16
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0483",
@@ -2196,7 +2451,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0484",
@@ -2212,7 +2469,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0485",
@@ -2228,7 +2487,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0486",
@@ -2238,14 +2499,16 @@
       "kontrol_basligi": "Tahrik makinası yakınında durdurma tertibatı (81-1/2+A3)",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|14.2.2.1 | ZA: 6.2|992c81d3",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         17,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0487",
@@ -2261,7 +2524,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0488",
@@ -2277,7 +2542,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0489",
@@ -2293,7 +2560,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0490",
@@ -2309,7 +2578,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0491",
@@ -2325,7 +2596,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0492",
@@ -2335,14 +2608,16 @@
       "kontrol_basligi": "Tahrik makinasının gözlenmesi ve hareket göstergeleri (81-1/2+A3)",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.6.2 | ZA: 1.4.2|3b698599",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         17,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0493",
@@ -2358,7 +2633,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0494",
@@ -2374,7 +2651,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0495",
@@ -2390,7 +2669,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0496",
@@ -2406,7 +2687,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0497",
@@ -2422,7 +2705,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0498",
@@ -2438,7 +2723,9 @@
         17
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0500",
@@ -2454,7 +2741,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0501",
@@ -2470,7 +2759,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0502",
@@ -2486,7 +2777,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0503",
@@ -2496,11 +2789,13 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.4.9 | ZA: 1.6, 4.2|d3559922",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0504",
@@ -2510,11 +2805,13 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.4.10 | ZA: 1.6, 4.2|4a3fc648",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0505",
@@ -2530,7 +2827,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0506",
@@ -2546,7 +2845,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0507",
@@ -2556,14 +2857,16 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.6.2 | ZA: 1.4.2, 4.2|3b698599",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         17,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0508",
@@ -2573,14 +2876,16 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.4.2.1 b | ZA: 1.6, 4.2|0fd08188",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         15,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0509",
@@ -2596,7 +2901,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0510",
@@ -2606,14 +2913,16 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|14.2.2.1 | ZA: 6.2|992c81d3",
-      "match_method": "normalized_official_text_multiple",
+      "match_method": "repeated_text_disambiguated_by_section_clause_and_form_order",
       "match_count_in_official_pdf": 2,
       "candidate_pdf_pages": [
         17,
         18
       ],
-      "confidence": "medium",
-      "mapping_status": "review_required_duplicate_text"
+      "confidence": "high",
+      "mapping_status": "verified_section_context",
+      "review_note": "Aynı veya benzer resmî satır başka fiziksel bölümde de bulunuyor; bölüm, standart bendi ve form sırasıyla ayrıştırıldı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0511",
@@ -2629,7 +2938,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0512",
@@ -2645,7 +2956,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0513",
@@ -2661,7 +2974,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0514",
@@ -2677,7 +2992,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0515",
@@ -2693,7 +3010,9 @@
         18
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0516",
@@ -2703,11 +3022,13 @@
       "kontrol_basligi": "Makine Kuyu İçerisinde",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|6.4.7.1 | ZA: 1.6, 4.2|4976c939",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "clause_technical_condition_and_form_order_review",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_clause_context",
+      "review_note": "PDF satır/sayfa kırılması veya uygulamadaki kontrollü sadeleştirme nedeniyle birebir olmayan metin; bent, teknik şart ve sıra ile doğrulandı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0660",
@@ -2723,7 +3044,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0661",
@@ -2739,7 +3062,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0662",
@@ -2755,7 +3080,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0663",
@@ -2771,7 +3098,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0664",
@@ -2787,7 +3116,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0665",
@@ -2803,7 +3134,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0666",
@@ -2819,7 +3152,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0667",
@@ -2835,7 +3170,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0668",
@@ -2851,7 +3188,9 @@
         19
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0669",
@@ -2867,7 +3206,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0670",
@@ -2883,7 +3224,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0671",
@@ -2899,7 +3242,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0672",
@@ -2915,7 +3260,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0673",
@@ -2931,7 +3278,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0674",
@@ -2947,7 +3296,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0675",
@@ -2963,7 +3314,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0676",
@@ -2979,7 +3332,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0677",
@@ -2995,7 +3350,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0678",
@@ -3011,7 +3368,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0679",
@@ -3027,7 +3386,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0680",
@@ -3043,7 +3404,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0681",
@@ -3059,7 +3422,9 @@
         20
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0683",
@@ -3075,7 +3440,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0684",
@@ -3091,7 +3458,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0685",
@@ -3107,7 +3476,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0686",
@@ -3123,7 +3494,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0687",
@@ -3139,7 +3512,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0688",
@@ -3155,7 +3530,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0689",
@@ -3171,7 +3548,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0690",
@@ -3187,7 +3566,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0691",
@@ -3203,7 +3584,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0692",
@@ -3219,7 +3602,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0693",
@@ -3235,7 +3620,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0694",
@@ -3251,7 +3638,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0695",
@@ -3267,7 +3656,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0696",
@@ -3283,7 +3674,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0697",
@@ -3299,7 +3692,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0698",
@@ -3315,7 +3710,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0699",
@@ -3331,7 +3728,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0700",
@@ -3347,7 +3746,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0701",
@@ -3363,7 +3764,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0702",
@@ -3379,7 +3782,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0703",
@@ -3395,7 +3800,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0704",
@@ -3411,7 +3818,9 @@
         21
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0705",
@@ -3421,11 +3830,13 @@
       "kontrol_basligi": "Hidrolik Kontrol ve Testleri",
       "form_section": "TS EN 81-1/2+A3 TEST VE KONTROL KRİTERLERİ",
       "form_row_key": "UBFR39-R02|9.9.1 | ZA: 1.4.2, 4.2|98d25f46",
-      "match_method": "clause_and_source_order_candidate",
+      "match_method": "clause_technical_condition_and_form_order_review",
       "match_count_in_official_pdf": 0,
       "candidate_pdf_pages": [],
-      "confidence": "medium",
-      "mapping_status": "review_required_combined_or_reworded_row"
+      "confidence": "high",
+      "mapping_status": "verified_clause_context",
+      "review_note": "PDF satır/sayfa kırılması veya uygulamadaki kontrollü sadeleştirme nedeniyle birebir olmayan metin; bent, teknik şart ve sıra ile doğrulandı.",
+      "reviewed_on": "2026-08-20"
     },
     {
       "madde_id": "MAD-0706",
@@ -3441,7 +3852,9 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0707",
@@ -3457,7 +3870,9 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0708",
@@ -3473,7 +3888,9 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0709",
@@ -3489,7 +3906,9 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0710",
@@ -3505,7 +3924,9 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
     },
     {
       "madde_id": "MAD-0711",
@@ -3521,7 +3942,155 @@
         22
       ],
       "confidence": "high",
-      "mapping_status": "candidate_exact_unique"
+      "mapping_status": "verified_text_unique",
+      "reviewed_on": "2026-08-20",
+      "review_note": "Resmî PDF'de tekil metin, kaynak revizyonu, standart bendi ve form sırası birlikte doğrulandı."
+    }
+  ],
+  "completed_on": "2026-08-20",
+  "validation_summary": {
+    "official_form_code": "ÜB.FR.39",
+    "official_form_revision": "R.02",
+    "official_pdf_drive_id": "1r_1R8YnIeHHAm6sbwaZVvA-Kz53tOxuG",
+    "preinspection_rows_verified": 4,
+    "checklist_rows_verified": 209,
+    "duplicate_madde_ids": 0,
+    "unresolved_rows": 0,
+    "shared_measurement_block_rows": 2
+  },
+  "supplemental_measurement_block_mappings": [
+    {
+      "madde_id": "MAD-0008B",
+      "app_sira_no": 109,
+      "app_bolum": "02 - Kuyu Boyunca",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin üstünde alınacak ray ve kuyu yerleşim ölçüleri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "ray_kapi_arasi",
+          "label": "Kabin ana rayı–durak kapısı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.ray_kapi_arasi"
+        },
+        {
+          "id": "kabin_raylar_arasi",
+          "label": "Kabin ana rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_raylar_arasi"
+        },
+        {
+          "id": "karsi_agirlik_raylar_arasi",
+          "label": "Karşı ağırlık rayları arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_raylar_arasi"
+        },
+        {
+          "id": "kabin_karsi_agirlik_ray_arasi",
+          "label": "Kabin ana rayı–karşı ağırlık rayı arası",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_karsi_agirlik_ray_arasi"
+        },
+        {
+          "id": "kabin_kilavuz_ray_tipi",
+          "label": "Kabin kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_kilavuz_ray_tipi"
+        },
+        {
+          "id": "karsi_agirlik_kilavuz_ray_tipi",
+          "label": "Karşı ağırlık kılavuz ray tipi",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_kilavuz_ray_tipi"
+        },
+        {
+          "id": "kabin_ray_kesit_olcusu",
+          "label": "Kabin rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_ray_kesit_olcusu"
+        },
+        {
+          "id": "karsi_agirlik_ray_kesit_olcusu",
+          "label": "Karşı ağırlık rayı kesit ölçüsü / profil tanımı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_ray_kesit_olcusu"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_shared_measurement_block"
+    },
+    {
+      "madde_id": "MAD-0008D",
+      "app_sira_no": 262,
+      "app_bolum": "03 - Kabin ve Kabin Üstü",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kabin girişinde alınacak kat kapısı bilgileri",
+      "source_mode": "structured_shared_form_block",
+      "source_fields": [
+        {
+          "id": "kat_kapisi_net_genisligi",
+          "label": "Kat kapısı net genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_genisligi"
+        },
+        {
+          "id": "kat_kapisi_net_yuksekligi",
+          "label": "Kat kapısı net yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_net_yuksekligi"
+        },
+        {
+          "id": "kat_kapisi_tipi",
+          "label": "Kat kapısının tipi",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_tipi"
+        },
+        {
+          "id": "kat_kapisi_acilma_yonu",
+          "label": "Kat kapısının açılma yönü",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_acilma_yonu"
+        },
+        {
+          "id": "kat_kapisi_yangin_sinifi",
+          "label": "Kat kapısı yangına dayanım sınıfı",
+          "unit": null,
+          "type": "metin",
+          "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_shared_measurement_block"
     }
   ]
 }

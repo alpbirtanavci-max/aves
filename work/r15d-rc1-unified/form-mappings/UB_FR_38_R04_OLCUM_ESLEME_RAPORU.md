@@ -4,11 +4,13 @@ Durum: Tamamlandı. Ölçüm aktarımı, doğrulanmış checklist satır eşleme
 
 ## Kapsam
 
-- Ölçüm alanı bulunan form satırı: 292
-- Yapılandırılmış ölçüm satırı: 35
-- Yapılandırılmış ölçüm alanı: 84
+- Ölçüm alanı bulunan form satırı: 294
+- Yapılandırılmış ölçüm satırı: 37
+- Yapılandırılmış ölçüm alanı: 97
 - Eski tip ölçüm satırı: 257
 - Çözümlenmemiş ölçüm satırı: 0
+
+Bu sayıya her iki ana formun ortak Temel Kuyu Tasarım Ölçüleri kayıtları olan `MAD-0008B` ve `MAD-0008D` dahildir. Bu iki kayıt checklist sonuç satırı olarak değil, formun adlandırılmış üst ölçüm alanlarına aktarılır.
 
 ## Aktarım kuralı
 
