@@ -15,6 +15,11 @@ alter table public.denetimler
 
 -- Mevcut denetimler de bugünkü resmî revizyona bir kez bağlanır. Böylece
 -- ileride R.05/R.03 yayımlansa bile eski denetim yeni şablona sessizce geçmez.
+-- Kimlik tetikleyicisi yalnız uygulama JWT'siyle çalışır; SQL bakım oturumunda
+-- sahte son-kullanıcı yazmaması için yalnız backfill süresince kapatılır.
+-- Transaction başarısız olursa PostgreSQL tetikleyici durumunu da geri alır.
+alter table public.denetimler disable trigger trg_aves_denetim_kimligi;
+
 update public.denetimler
 set form_cikti_snapshot = jsonb_build_object(
   'schema_version',1,
@@ -42,6 +47,8 @@ set form_cikti_snapshot = jsonb_build_object(
     'measurement_mapping_sha256','7629ea7cc476ee90f90439e2280f47d50d4f0cdcdb3c2ae40b5d354ee53ca4f3'
   )))
 where ana_standart='81-1/2+A3' and form_cikti_snapshot='{}'::jsonb;
+
+alter table public.denetimler enable trigger trg_aves_denetim_kimligi;
 
 create or replace function public.aves_form_cikti_snapshot_kilitle()
 returns trigger
