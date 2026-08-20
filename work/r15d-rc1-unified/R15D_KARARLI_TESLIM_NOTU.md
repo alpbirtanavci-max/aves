@@ -28,9 +28,10 @@ Hazırlanma tarihi: 19 Ağustos 2026
 ## Doğrulama
 
 - JavaScript ve Service Worker sözdizimi kontrolleri geçti.
-- Statik/regresyon kontrolleri: 169/169 geçti.
+- Statik/regresyon kontrolleri: 171/171 geçti.
 - Canlı özel alan adı, uygulama kabuğu ve güvenlik eşleme dosyası hatasız yüklendi.
 - Yeni denetimde 08 ve 09 özel bölümlerinin oluşmadığı saha testiyle doğrulandı.
+- İnceleme Modu'ndaki sonuç ve bulgu butonları dokunmatik cihazlarda da salt okunur olduklarını açıkça gösterecek şekilde pasifleştirildi; seçilmiş sonuç görünür tutuldu.
 
 ## Tarihsel denetimler
 

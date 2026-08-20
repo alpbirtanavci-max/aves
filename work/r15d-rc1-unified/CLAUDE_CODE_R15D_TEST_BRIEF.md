@@ -23,7 +23,7 @@ node --check app/section-mapping.js
 node --check app/sw.js
 ```
 
-Beklenen sonuç: `170/170 kontrol geçti.`
+Beklenen sonuç: `171/171 kontrol geçti.`
 
 Yerel tarayıcı testi:
 

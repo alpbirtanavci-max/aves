@@ -158,6 +158,8 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .madde.s-na{background:var(--na-bg);}
 .madde.readonly input:disabled,.madde.readonly textarea:disabled{background:#F1F2F6;color:#53576A;opacity:1;}
 .madde.readonly button:disabled{cursor:not-allowed;}
+.madde.readonly .mst:disabled,.madde.readonly .bopt:disabled{opacity:.45;filter:grayscale(.55);box-shadow:none;}
+.madde.readonly .mst[class*="on-"]:disabled,.madde.readonly .bopt.on:disabled{opacity:.82;filter:none;}
 .mtop{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px;}
 .mtag{font-size:10px;font-weight:700;border-radius:5px;padding:2px 7px;}
 .mtag.yontem{background:#EAF0FB;color:var(--navy);}

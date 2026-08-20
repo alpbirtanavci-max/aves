@@ -61,6 +61,9 @@ test('ilerlemek için üçlü nihai sonuç gerekli', app.includes('const canAdva
 test('gözden geçirme alanları migration içinde', migration.includes('gozden_gecirme_nedeni text') && migration.includes('gozden_gecirme_notu text'));
 test('geçici işaret kapanış listesinden kaldırıldı', !app.includes('GÖZDEN GEÇİRMEYE BIRAKILDI'));
 test('salt okunur inceleme modu', app.includes('İnceleme Modu') && app.includes('inspectionReadOnly'));
+test('salt okunur sonuç ve bulgu butonları dokunmatik ekranda görsel olarak pasif',
+  index.includes('.madde.readonly .mst:disabled,.madde.readonly .bopt:disabled') &&
+  index.includes('.madde.readonly .mst[class*="on-"]:disabled,.madde.readonly .bopt.on:disabled'));
 test('kompakt tüm maddeler inceleme listesi', app.includes('Tüm maddeler (${rows.length})') && app.includes('compactRows'));
 test('inceleme modunda madde araması', app.includes('compact-search') && app.includes('haystack.includes(query)'));
 test('kompakt liste durum ve not/ölçüm filtreleri', app.includes('data-compact-filter="note"') && app.includes('data-compact-filter="measurement"'));
