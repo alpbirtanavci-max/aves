@@ -39,9 +39,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.1 test sürümü', index.includes('R15D-RC3.9.1 TEST'));
-test('app R15D rc3.9.1 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.1-test'"));
-test('service worker rc3.9.1 test cache', sw.includes("aves-saha-r15d-rc391-test"));
+test('index R15D rc3.9.2 test sürümü', index.includes('R15D-RC3.9.2 TEST'));
+test('app R15D rc3.9.2 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.2-test'"));
+test('service worker rc3.9.2 test cache', sw.includes("aves-saha-r15d-rc392-test"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -320,6 +320,9 @@ test('hazır bulgu, uygunsuzluk açıklaması ve madde notu kayıpsız birleşti
   formOutput.includes("selectedFinding !== 'Diğer bulgu'") &&
   formOutput.includes('parts.push(otherFinding)') &&
   formOutput.includes('parts.push(itemNote)'));
+test('PDF seri numaralari sigdiriliyor ve sessizce kesilemiyor',
+  formOutput.includes('const serialPdfOptions = { size:6, minSize:1.8, mustFit:true }') &&
+  formOutput.includes('options.mustFit && lines.length > max'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

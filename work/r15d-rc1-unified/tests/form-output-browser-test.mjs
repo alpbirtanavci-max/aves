@@ -50,7 +50,9 @@ try {
     kapasite_kisi:'13', durak_sayisi:'5', aski_tipi:'2:1', denetimi_yapan:'Test Denetçisi',
     denetim_tarihi:'2026-08-20', denetim_durumu:'Çalışma Tamamlandı', seri_numaralari:{
       kabin_tamponlari:[{seri_no:'KT-100'}], karsi_agirlik_tamponlari:[{seri_no:'KAT-200'}],
-      parasut_frenleri:[{seri_no:'PF-300'}], kat_kapilari:[{kat:'Z',giris:'A',seri_no:'KK-400'}],
+      parasut_frenleri:[{seri_no:'PF-300'}], kat_kapilari:Array.from({length:8},(_,index)=>({
+        kat:String(index), giris:index%2?'B':'A', seri_no:`KAPI-RC391-${String(index+1).padStart(2,'0')}-UZUN-SERI-DOGRULAMA`,
+      })),
       regulatorler:[{seri_no:'RG-500'}], motorlar:[{seri_no:'MT-600'}], kumanda_kartlari:[{seri_no:'KR-700'}],
     },
   };

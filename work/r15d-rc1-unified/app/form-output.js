@@ -291,8 +291,15 @@ const FormOutput = (() => {
     page.drawRectangle({ x:x0+0.6, y:height-y1+0.6, width:x1-x0-1.2, height:y1-y0-1.2, color:rgb(1,1,1) });
     let size = options.size || 6.4;
     let lines = wrap(font,text,size,x1-x0-pad*2);
-    while (lines.length * (size+1) > y1-y0-pad*2 && size > 4.2) { size -= .4; lines = wrap(font,text,size,x1-x0-pad*2); }
+    const minSize = options.minSize || 4.2;
+    while (lines.length * (size+1) > y1-y0-pad*2 && size > minSize) {
+      size = Math.max(minSize, size - .2);
+      lines = wrap(font,text,size,x1-x0-pad*2);
+    }
     const max = Math.max(1, Math.floor((y1-y0-pad*2)/(size+1)));
+    if (options.mustFit && lines.length > max) {
+      throw new Error('PDF seri numarası hücresine sığmadı; hiçbir kayıt kesilmeden çıktı durduruldu.');
+    }
     lines.slice(0,max).forEach((line,i) => page.drawText(line,{x:x0+pad,y:height-y0-pad-size-i*(size+1),size,font,color:rgb(0,0,0)}));
   }
   async function buildPdf(formKey, form, d, rows) {
@@ -318,9 +325,10 @@ const FormOutput = (() => {
       pdfCell(page,font,[fields.preinspection.result[0],vertical[0],fields.preinspection.result[1],vertical[1]],resultFor(form,row),{size:7});
       pdfCell(page,font,[fields.preinspection.notes[0],vertical[0],fields.preinspection.notes[1],vertical[1]],rowNotes(row),{size:5.8});
     });
-    Object.entries(fields.components.rows).forEach(([serialKey,vertical]) => pdfCell(pages[fields.components.page],font,[fields.components.serial[0],vertical[0],fields.components.serial[1],vertical[1]],serialText(d,serialKey),{size:6}));
-    Object.entries(fields.components.extra||{}).forEach(([serialKey,loc]) => pdfCell(pages[loc.page],font,loc.box,serialText(d,serialKey),{size:6}));
-    pdfCell(pages[fields.motor.page],font,fields.motor.box,serialText(d,'motorlar'),{size:6});
+    const serialPdfOptions = { size:6, minSize:1.8, mustFit:true };
+    Object.entries(fields.components.rows).forEach(([serialKey,vertical]) => pdfCell(pages[fields.components.page],font,[fields.components.serial[0],vertical[0],fields.components.serial[1],vertical[1]],serialText(d,serialKey),serialPdfOptions));
+    Object.entries(fields.components.extra||{}).forEach(([serialKey,loc]) => pdfCell(pages[loc.page],font,loc.box,serialText(d,serialKey),serialPdfOptions));
+    pdfCell(pages[fields.motor.page],font,fields.motor.box,serialText(d,'motorlar'),serialPdfOptions);
     const mv=measurementValues(rows,formKey); const shaftPage=pages[fields.shaft.page];
     Object.entries(fields.shaft.fields).forEach(([field,box]) => pdfCell(shaftPage,font,box,mv[field]||'',{size:6.2}));
     if (mv.karsi_agirlik_yeri && fields.shaft.counterPosition[mv.karsi_agirlik_yeri]) pdfCell(shaftPage,font,fields.shaft.counterPosition[mv.karsi_agirlik_yeri],'X',{size:8});
