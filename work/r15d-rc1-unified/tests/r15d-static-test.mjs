@@ -39,9 +39,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9 test sürümü', index.includes('R15D-RC3.9 TEST'));
-test('app R15D rc3.9 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9-test'"));
-test('service worker rc3.9 test cache', sw.includes("aves-saha-r15d-rc39-test"));
+test('index R15D rc3.9 kararlı sürümü', index.includes('R15D-RC3.9') && !index.includes('R15D-RC3.9 TEST'));
+test('app R15D rc3.9 kararlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9'"));
+test('service worker rc3.9 kararlı cache', sw.includes("aves-saha-r15d-rc39'"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
