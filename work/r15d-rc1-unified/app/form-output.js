@@ -150,6 +150,17 @@ const FormOutput = (() => {
     ].filter(Boolean).join('\n');
   }
 
+  function rowNotes(row) {
+    const parts = [];
+    const selectedFinding = value(row && row.bulgu_secenegi);
+    const otherFinding = value(row && row.diger_bulgu);
+    const itemNote = value(row && row.aciklama);
+    if (selectedFinding && selectedFinding !== 'Diğer bulgu') parts.push(selectedFinding);
+    if (otherFinding && !parts.includes(otherFinding)) parts.push(otherFinding);
+    if (itemNote && !parts.includes(itemNote)) parts.push(itemNote);
+    return parts.join('\n');
+  }
+
   function serialText(d, key) {
     const list = d.seri_numaralari && Array.isArray(d.seri_numaralari[key]) ? d.seri_numaralari[key] : [];
     return list.map(item => key === 'kat_kapilari'
@@ -248,13 +259,13 @@ const FormOutput = (() => {
     Object.entries(form.preinspection || {}).forEach(([id, loc]) => {
       const row = byId[id]; if (!row) return;
       setCell(xml,tables,loc.table,loc.row,loc.result_cell,resultFor(form,row));
-      setCell(xml,tables,loc.table,loc.row,loc.notes_cell,row.aciklama || '');
+      setCell(xml,tables,loc.table,loc.row,loc.notes_cell,rowNotes(row));
     });
     Object.entries(form.docx_rows).forEach(([id, loc]) => {
       const row = byId[id]; if (!row) return;
       setCell(xml,tables,loc.table,loc.row,loc.result_cell,resultFor(form,row));
       setCell(xml,tables,loc.table,loc.row,loc.measurement_cell,rowMeasurement(row));
-      setCell(xml,tables,loc.table,loc.row,loc.notes_cell,row.aciklama || '');
+      setCell(xml,tables,loc.table,loc.row,loc.notes_cell,rowNotes(row));
     });
     zip.file('word/document.xml', new XMLSerializer().serializeToString(xml));
     return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
@@ -305,7 +316,7 @@ const FormOutput = (() => {
     fields.preinspection.rows.forEach((vertical,index) => {
       const row=byId[preIds[index]]; if(!row) return; const page=pages[fields.preinspection.page];
       pdfCell(page,font,[fields.preinspection.result[0],vertical[0],fields.preinspection.result[1],vertical[1]],resultFor(form,row),{size:7});
-      pdfCell(page,font,[fields.preinspection.notes[0],vertical[0],fields.preinspection.notes[1],vertical[1]],row.aciklama||'',{size:5.8});
+      pdfCell(page,font,[fields.preinspection.notes[0],vertical[0],fields.preinspection.notes[1],vertical[1]],rowNotes(row),{size:5.8});
     });
     Object.entries(fields.components.rows).forEach(([serialKey,vertical]) => pdfCell(pages[fields.components.page],font,[fields.components.serial[0],vertical[0],fields.components.serial[1],vertical[1]],serialText(d,serialKey),{size:6}));
     Object.entries(fields.components.extra||{}).forEach(([serialKey,loc]) => pdfCell(pages[loc.page],font,loc.box,serialText(d,serialKey),{size:6}));
@@ -317,7 +328,7 @@ const FormOutput = (() => {
       const row=byId[id]; if(!row) return; const page=pages[loc.page];
       pdfCell(page,font,[loc.result[0],loc.y0,loc.result[1],loc.y1],resultFor(form,row),{size:7});
       pdfCell(page,font,[loc.measurement[0],loc.y0,loc.measurement[1],loc.y1],rowMeasurement(row),{size:5.6});
-      pdfCell(page,font,[loc.notes[0],loc.y0,loc.notes[1],loc.y1],row.aciklama||'',{size:5.6});
+      pdfCell(page,font,[loc.notes[0],loc.y0,loc.notes[1],loc.y1],rowNotes(row),{size:5.6});
     });
     return pdf.save();
   }
@@ -346,5 +357,5 @@ const FormOutput = (() => {
     return filename;
   }
 
-  return { createSnapshot, formsForInspection, build, download, rowMeasurement };
+  return { createSnapshot, formsForInspection, build, download, rowMeasurement, rowNotes };
 })();

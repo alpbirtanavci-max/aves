@@ -32,6 +32,17 @@ try {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${port}/test.html`);
+  const noteCases = await page.evaluate(() => [
+    FormOutput.rowNotes({diger_bulgu:'Ana uygunsuzluk açıklaması'}),
+    FormOutput.rowNotes({bulgu_secenegi:'Kapı kilidi çalışmıyor',aciklama:'Ek saha notu'}),
+    FormOutput.rowNotes({bulgu_secenegi:'Diğer bulgu',diger_bulgu:'Serbest bulgu',aciklama:'Tamamlayıcı not'}),
+  ]);
+  const expectedNoteCases = [
+    'Ana uygunsuzluk açıklaması',
+    'Kapı kilidi çalışmıyor\nEk saha notu',
+    'Serbest bulgu\nTamamlayıcı not',
+  ];
+  if (JSON.stringify(noteCases) !== JSON.stringify(expectedNoteCases)) throw new Error(`Bulgu notu birleştirme hatası: ${JSON.stringify(noteCases)}`);
   const fixture = {
     dosya_no:'AVES-TEST-001', musteri_unvani:'AVES TEST MÜŞTERİSİ', denetim_adresi:'İstanbul / Test Adresi',
     asansor_seri_no:'SN-TEST-2026', modul:'Modül G', ana_standart:'81-20', ek_standartlar:['81-72'],
@@ -49,7 +60,7 @@ try {
     {madde_id:'MAD-0008B',olcum_degerleri:{ray_kapi_arasi:'95',kabin_raylar_arasi:'1500',karsi_agirlik_raylar_arasi:'900',kabin_kilavuz_ray_tipi:'T90',karsi_agirlik_kilavuz_ray_tipi:'T50'}},
     {madde_id:'MAD-0008C',olcum_degerleri:{kabin_konsol_en_buyuk_aralik:'2200',kabin_patenleri_dusey_aralik:'3100',karsi_agirlik_konsol_en_buyuk_aralik:'2100',karsi_agirlik_patenleri_dusey_aralik:'2800'}},
     {madde_id:'MAD-0008D',olcum_degerleri:{kat_kapisi_net_genisligi:'900',kat_kapisi_net_yuksekligi:'2100',kat_kapisi_tipi:'Otomatik',kat_kapisi_acilma_yonu:'Merkezi',kabin_genisligi:'1400',kabin_derinligi:'1600'}},
-    {madde_id:'MAD-0017',durum:'Olumsuz bulgu',aciklama:'Test bulgusu',olcum_tanimlari:[{id:'x',etiket:'Ölçüm',birim:'mm'}],olcum_degerleri:{x:'125'}},
+    {madde_id:'MAD-0017',durum:'Olumsuz bulgu',diger_bulgu:'Test bulgusu XYZ123',olcum_tanimlari:[{id:'x',etiket:'Ölçüm',birim:'mm'}],olcum_degerleri:{x:'125'}},
     {madde_id:'MAD-0123',durum:'Uygulanmaz',aciklama:'Yapılandırma nedeniyle uygulanmaz.'},
   ];
   const cases = [

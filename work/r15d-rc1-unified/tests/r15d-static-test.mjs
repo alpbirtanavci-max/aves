@@ -39,9 +39,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9 kararlı sürümü', index.includes('R15D-RC3.9') && !index.includes('R15D-RC3.9 TEST'));
-test('app R15D rc3.9 kararlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9'"));
-test('service worker rc3.9 kararlı cache', sw.includes("aves-saha-r15d-rc39'"));
+test('index R15D rc3.9.1 test sürümü', index.includes('R15D-RC3.9.1 TEST'));
+test('app R15D rc3.9.1 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.1-test'"));
+test('service worker rc3.9.1 test cache', sw.includes("aves-saha-r15d-rc391-test"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -313,6 +313,13 @@ test('adlandırılmış ölçü migration mevcut saha cevaplarını değiştirmi
   rc39NamedMeasurementsMigration.includes("where madde_id='MAD-0008A'") && rc39NamedMeasurementsMigration.includes("where madde_id='MAD-0008D'") &&
   !/public\.saha_kontrol/i.test(rc39NamedMeasurementsMigration) && !/^\s*(delete|truncate)\s+/mi.test(rc39NamedMeasurementsMigration));
 test('temel kuyu ölçüleri PDF ve Word hücrelerine aktarılıyor', formOutput.includes('measurementValues(rows,formKey)') && formOutput.includes('fields.shaft.fields') && formOutput.includes('l.shaft'));
+test('uygunsuzluk açıklaması PDF ve Word not hücrelerine aktarılıyor',
+  formOutput.includes('const otherFinding = value(row && row.diger_bulgu)') &&
+  (formOutput.match(/rowNotes\(row\)/g) || []).length >= 5);
+test('hazır bulgu, uygunsuzluk açıklaması ve madde notu kayıpsız birleştiriliyor',
+  formOutput.includes("selectedFinding !== 'Diğer bulgu'") &&
+  formOutput.includes('parts.push(otherFinding)') &&
+  formOutput.includes('parts.push(itemNote)'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
