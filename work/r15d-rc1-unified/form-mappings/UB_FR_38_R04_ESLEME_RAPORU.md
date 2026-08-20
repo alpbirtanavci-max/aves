@@ -1,6 +1,6 @@
 # ÜB.FR.38 R.04 Eşleme Raporu
 
-Durum: Beş fiziksel bölümün tamamı eşleme havuzuna alındı; ilk üç bölüm satır satır doğrulandı. Canlı kütüphane ve canlı denetimler değiştirilmedi.
+Durum: Tamamlandı. Beş fiziksel bölümdeki 453 maddenin tamamı resmî ÜB.FR.38 R.04 ile satır satır doğrulandı. Canlı kütüphane ve canlı denetimler değiştirilmedi.
 
 ## Kaynak ve kapsam
 
@@ -20,9 +20,11 @@ Resmî form metni bu repoya kopyalanmadı. Eşleme dosyasında yalnız alan yoll
 - `01 - Kuyu Dibi`: 82/82 doğrulandı.
 - `02 - Kuyu Boyunca`: 103/103 doğrulandı.
 - `03 - Kabin ve Kabin Üstü`: 45/45 doğrulandı.
-- `04 - Makine ve Şase`: 81 madde aday eşlemeye alındı; 75'i tekil resmî metin eşleşmesi, 6'sı bent/bağlam incelemesi bekliyor.
-- `05 - Elektrik ve Test`: 142 madde aday eşlemeye alındı; 129'u tekil resmî metin eşleşmesi, 13'ü bent/bağlam incelemesi bekliyor.
-- Toplam 230 madde satır satır doğrulandı; 204 tekil aday ve 19 bağlam incelemesi sıradaki doğrulama dilimidir.
+- `04 - Makine ve Şase`: 81/81 doğrulandı.
+- `05 - Elektrik ve Test`: 142/142 doğrulandı.
+- Toplam 453/453 checklist maddesi ve 5/5 muayene öncesi satırı doğrulandı.
+- Mükerrer madde kimliği: 0.
+- Çözümlenmemiş eşleme: 0.
 - `MAD-0001`–`MAD-0005`, resmî formdaki muayene öncesi 1–5 satırlarıyla sıra ve anlam bakımından eşleşiyor; fakat kütüphanede `kaynak_form_kodu` ve `kaynak_form_revizyonu` boş. Bu eksiklik eşleme dosyasında açıkça kaydedildi.
 
 ## Doğrudan doldurulabilen form alanları
@@ -74,10 +76,9 @@ Böylece ÜB.FR.38 daha sonra revize edilse bile geçmiş denetimin PDF/DOCX ç�
 
 ## Sonraki çalışma sırası
 
-1. `04 - Makine ve Şase` bölümündeki 81 eşlemeyi kapat.
-2. `05 - Elektrik ve Test` bölümündeki 142 eşlemeyi kapat.
-3. Ölçüm değerlerinin formdaki “Ölçülen Değer” hücrelerine bağlanmasını ayrı bir katman olarak doğrula.
-4. ÜB.FR.39 R.02'ye geçmeden önce ÜB.FR.38 için eksik uygulama alanları hakkında ürün kararını netleştir.
-5. Eşleme tamamlanınca “Yazdır” menüsünün PDF ve DOCX üretim servisini geliştir; çevrimdışıyken yalnız uyarı göster.
+1. Ölçüm değerlerinin formdaki “Ölçülen Değer” hücrelerine bağlanmasını ayrı bir katman olarak doğrula.
+2. ÜB.FR.38 için eksik uygulama alanları hakkında ürün kararını netleştir.
+3. ÜB.FR.39 R.02 eşlemesine geç.
+4. Form eşlemeleri tamamlanınca “Yazdır” menüsünün PDF ve DOCX üretim servisini geliştir; çevrimdışıyken yalnız uyarı göster.
 
 Makine tarafından okunabilir kayıt: `form-mappings/ub-fr-38-r04.mapping.json`
