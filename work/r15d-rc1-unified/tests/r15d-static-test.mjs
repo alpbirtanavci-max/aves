@@ -25,6 +25,7 @@ const rc32Migration = fs.readFileSync(path.join(databaseDir, '28_r15d_rc32_snaps
 const rc34SerialMigration = fs.readFileSync(path.join(databaseDir, '40_r15d_rc34_ekipman_seri_numaralari.sql'), 'utf8');
 const rc35SectionMigration = fs.readFileSync(path.join(databaseDir, '41_r15d_rc35_81_71_81_73_fiziksel_bolum_esleme.sql'), 'utf8');
 const rc37WorkflowMigration = fs.readFileSync(path.join(databaseDir, '42_r15d_rc37_yetki_takip_duzeltme.sql'), 'utf8');
+const rc38TechnicalManagerMigration = fs.readFileSync(path.join(databaseDir, '43_r15d_rc38_teknik_mudur_denetim_olusturma.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -34,9 +35,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.7 test sürümü', index.includes('R15D-RC3.7 TEST'));
-test('app R15D rc3.7 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.7-test'"));
-test('service worker rc3.7 test cache', sw.includes("aves-saha-r15d-rc37-test"));
+test('index R15D rc3.8 test sürümü', index.includes('R15D-RC3.8 TEST'));
+test('app R15D rc3.8 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.8-test'"));
+test('service worker rc3.8 test cache', sw.includes("aves-saha-r15d-rc38-test"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -260,10 +261,13 @@ test('kapanış bütünlük özeti ve hash üretiyor', app.includes('async funct
 test('değişiklik geçmişi cihazda ve sunucuda tutuluyor', app.includes("'denetim_degisim_gecmisi'") && rc32Migration.includes('create table if not exists public.denetim_degisim_gecmisi'));
 test('geçmiş kimliği oturum profilinden zorlanıyor', rc32Migration.includes('aves_gecmis_kimligini_dogrula') && rc32Migration.includes('new.degistiren_email := v_email'));
 test('teknik müdür istemcide yönetim yetkilisi değil', app.includes("get canManage() { return !!current && current.rol === 'yonetici'; }"));
-test('teknik müdür yeni denetim oluşturamıyor', app.includes("current.rol !== 'teknik_mudur'") && app.includes('Profile.canCreate'));
+test('teknik müdür istemcide kendi denetimini oluşturabilir', app.includes("['yonetici','teknik_mudur','muhendis'].includes(current.rol)") && app.includes('Profile.canCreate'));
 test('mühendis yalnız kendi denetimini görür', rc37WorkflowMigration.includes('drop policy if exists "denetim okuma"') && rc37WorkflowMigration.includes('aves_denetim_gorebilir_mi(olusturan_email)') && rc37WorkflowMigration.includes("lower(coalesce(p_olusturan_email,'')) = public.aves_oturum_emaili()"));
 test('teknik müdür ve yönetici tüm denetimleri görür', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && rc37WorkflowMigration.includes('aves_tum_denetimleri_gorebilir_mi'));
-test('teknik müdür yeni denetim oluşturamaz', rc37WorkflowMigration.includes("kp.rol = 'yonetici'") && rc37WorkflowMigration.includes("kp.rol = 'muhendis'") && app.includes("current.rol !== 'teknik_mudur'"));
+test('teknik müdür sunucuda yalnız kendi adına denetim oluşturabilir',
+  rc38TechnicalManagerMigration.includes("kp.rol in ('muhendis','teknik_mudur')") &&
+  rc38TechnicalManagerMigration.includes("lower(coalesce(p_olusturan_email,'')) = public.aves_oturum_emaili()") &&
+  !/^\s*(delete|update|truncate)\s+/mi.test(rc38TechnicalManagerMigration));
 test('teknik müdür iz bırakan düzeltme yapabilir', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && app.includes('duzeltmeNedeniSec'));
 test('tamamlanmış denetim iki modla açılıyor', app.includes('showTamamlananDenetimSecimi') && app.includes('Takip Denetimi') && app.includes('İnceleme'));
 test('takip yalnız Modül G ve bağımsız denetim kaydıdır', app.includes('kontrolProfili(d) === KONTROL_PROFILLERI.TAM') && app.includes('takipDenetimiOlustur') && rc37WorkflowMigration.includes("kontrol_profili = 'modul_g_tam'"));

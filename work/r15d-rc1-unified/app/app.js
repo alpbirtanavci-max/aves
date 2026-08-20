@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.7-test';
+const APP_VERSION = 'R15D-rc3.8-test';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -389,12 +389,12 @@ const Profile = (() => {
     get role() { return current ? current.rol : 'muhendis'; },
     get isAdmin() { return !!current && current.rol === 'yonetici'; },
     get isTechnicalManager() { return !!current && current.rol === 'teknik_mudur'; },
-    // Teknik müdür denetimleri inceler ve bütün denetimi silebilir; içerik,
-    // cevap veya iş akışı üzerinde değişiklik yapamaz.
+    // Teknik müdür sahaya çıkıp kendi denetimini oluşturabilir; sistem içeriğini
+    // yönetemez. Tüm denetimleri görme, düzeltme ve silme yetkileri ayrıca tanımlıdır.
     get canManage() { return !!current && current.rol === 'yonetici'; },
     get canSeeAllInspections() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
     get canCorrectInspections() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
-    get canCreate() { return !!current && current.rol !== 'teknik_mudur'; },
+    get canCreate() { return !!current && ['yonetici','teknik_mudur','muhendis'].includes(current.rol); },
     get canDelete() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
   };
 })();
@@ -1281,7 +1281,7 @@ const UI = (() => {
 
   /* ---- Yeni denetim ---- */
   function showYeniForm() {
-    if (!Profile.canCreate) { toast('Teknik müdür yeni denetim oluşturamaz'); showList(); return; }
+    if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
     const seg = (id, opts, multi) => `<div class="segs" id="${id}">${opts.map(o =>
