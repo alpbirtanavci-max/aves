@@ -26,7 +26,8 @@
     "legacy_generic_label_rows": 47,
     "legacy_specific_label_rows": 30,
     "shared_measurement_block_rows": 2,
-    "unresolved_rows": 0
+    "unresolved_rows": 0,
+    "measurement_mapping_count": 82
   },
   "section_stats": [
     {
@@ -51,6 +52,63 @@
     }
   ],
   "measurement_mappings": [
+    {
+      "madde_id": "MAD-0008A",
+      "app_sira_no": 8,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kuyu dibinde alınacak temel yerleşim ölçüleri",
+      "source_mode": "structured",
+      "source_fields": [
+        {
+          "id": "kuyu_genisligi",
+          "label": "Kuyu genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kuyu_genisligi"
+        },
+        {
+          "id": "kuyu_derinligi",
+          "label": "Kuyu derinliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kuyu_derinligi"
+        },
+        {
+          "id": "karsi_agirlik_yeri",
+          "label": "Karşı ağırlığın kuyudaki yeri",
+          "unit": null,
+          "type": "secim",
+          "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_yeri"
+        },
+        {
+          "id": "kabin_tampon_yuksekligi",
+          "label": "Kabin tampon yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_tampon_yuksekligi"
+        },
+        {
+          "id": "kuyu_dibi_yuksekligi",
+          "label": "Kuyu dibi yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kuyu_dibi_yuksekligi"
+        }
+      ],
+      "target": {
+        "form_code": "ÜB.FR.39",
+        "revision": "R.02",
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
+      },
+      "serialization": {
+        "emit_only_present": true,
+        "multiple_values": "one_labeled_line_per_value",
+        "unit_policy": "preserve_captured_unit_no_automatic_conversion"
+      },
+      "mapping_status": "verified_by_form_and_checklist_mapping"
+    },
     {
       "madde_id": "MAD-0008E",
       "app_sira_no": 8,
@@ -79,7 +137,6 @@
         "form_code": "ÜB.FR.39",
         "revision": "R.02",
         "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
-        "row_key_source": "ub-fr-39-r02.mapping.json",
         "cell": "named_measurement_field"
       },
       "serialization": {
@@ -444,7 +501,6 @@
         "form_code": "ÜB.FR.39",
         "revision": "R.02",
         "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
-        "row_key_source": "ub-fr-39-r02.mapping.json",
         "cell": "named_measurement_field"
       },
       "serialization": {
@@ -1321,13 +1377,26 @@
           "unit": null,
           "type": "metin",
           "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        },
+        {
+          "id": "kabin_genisligi",
+          "label": "Kabin genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_genisligi"
+        },
+        {
+          "id": "kabin_derinligi",
+          "label": "Kabin derinliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_derinligi"
         }
       ],
       "target": {
         "form_code": "ÜB.FR.39",
         "revision": "R.02",
         "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
-        "row_key_source": "ub-fr-39-r02.mapping.json",
         "cell": "named_measurement_field"
       },
       "serialization": {

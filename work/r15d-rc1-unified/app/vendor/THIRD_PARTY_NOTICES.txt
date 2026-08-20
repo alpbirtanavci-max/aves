@@ -1,0 +1,8 @@
+AVES Saha form output runtime includes the following unmodified browser builds:
+
+- JSZip — MIT License — https://github.com/Stuk/jszip
+- pdf-lib — MIT License — https://github.com/Hopding/pdf-lib
+- @pdf-lib/fontkit — MIT License — https://github.com/Hopding/fontkit
+- DejaVu Sans — Bitstream Vera / DejaVu license — https://dejavu-fonts.github.io/
+
+These components are distributed under their respective upstream licenses.

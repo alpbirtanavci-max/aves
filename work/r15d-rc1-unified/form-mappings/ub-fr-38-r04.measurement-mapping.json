@@ -26,7 +26,8 @@
     "legacy_generic_label_rows": 255,
     "legacy_specific_label_rows": 2,
     "unresolved_rows": 0,
-    "shared_measurement_block_rows": 2
+    "shared_measurement_block_rows": 2,
+    "measurement_mapping_count": 294
   },
   "measurement_mappings": [
     {
@@ -57,13 +58,27 @@
           "unit": null,
           "type": "secim",
           "source_path": "saha_kontrol.olcum_degerleri.karsi_agirlik_yeri"
+        },
+        {
+          "id": "kabin_tampon_yuksekligi",
+          "label": "Kabin tampon yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_tampon_yuksekligi"
+        },
+        {
+          "id": "kuyu_dibi_yuksekligi",
+          "label": "Kuyu dibi yüksekliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kuyu_dibi_yuksekligi"
         }
       ],
       "target": {
         "form_code": "ÜB.FR.38",
         "revision": "R.04",
-        "row_key_source": "ub-fr-38-r04.mapping.json",
-        "cell": "ÖLÇÜLEN DEĞER"
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
       },
       "serialization": {
         "emit_only_present": true,
@@ -1730,8 +1745,8 @@
       "target": {
         "form_code": "ÜB.FR.38",
         "revision": "R.04",
-        "row_key_source": "ub-fr-38-r04.mapping.json",
-        "cell": "ÖLÇÜLEN DEĞER"
+        "section": "TEMEL KUYU TASARIM ÖLÇÜLERİ",
+        "cell": "named_measurement_field"
       },
       "serialization": {
         "emit_only_present": true,
@@ -9408,6 +9423,20 @@
           "unit": null,
           "type": "metin",
           "source_path": "saha_kontrol.olcum_degerleri.kat_kapisi_yangin_sinifi"
+        },
+        {
+          "id": "kabin_genisligi",
+          "label": "Kabin genişliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_genisligi"
+        },
+        {
+          "id": "kabin_derinligi",
+          "label": "Kabin derinliği",
+          "unit": "mm",
+          "type": "sayi",
+          "source_path": "saha_kontrol.olcum_degerleri.kabin_derinligi"
         }
       ],
       "target": {

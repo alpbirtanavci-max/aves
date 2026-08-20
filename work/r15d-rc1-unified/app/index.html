@@ -289,13 +289,14 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 .update-banner b{display:block;font-size:13px}.update-banner span{flex:1}.update-banner button{border:0;border-radius:8px;padding:8px 10px;font-weight:800;cursor:pointer;}
 .update-banner .update-now{background:var(--fuchsia);color:#fff}.update-banner .update-later{background:#fff;color:var(--navy);}
 .backlink{background:none;border:none;color:var(--navy);font-size:14px;font-weight:600;padding:0;margin-bottom:10px;display:inline-flex;align-items:center;gap:5px;}
+.print-form-list{display:grid;gap:8px;margin:10px 0 14px}.print-form-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px}.print-form-card b,.print-form-card small{display:block}.print-form-card b{font-size:13px;color:var(--navy)}.print-form-card small{font-size:11px;color:var(--muted);margin-top:3px}.print-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.print-actions .btn{font-size:13px}.print-pending{opacity:.58}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:9px;">
     <img src="logo.png" alt="AVES" style="height:26px;width:auto;display:block;">
-    <div class="sub" style="border-left:1px solid #3A3E7E;padding-left:9px;">Saha<br>Denetim <b style="color:#EA0048">R15D-RC3.8 TEST</b></div>
+    <div class="sub" style="border-left:1px solid #3A3E7E;padding-left:9px;">Saha<br>Denetim <b style="color:#EA0048">R15D-RC3.9 TEST</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
@@ -308,6 +309,10 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 <div class="toast" id="toast"></div>
 
 <script src="section-mapping.js"></script>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/pdf-lib.min.js"></script>
+<script src="vendor/fontkit.umd.min.js"></script>
+<script src="form-output.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

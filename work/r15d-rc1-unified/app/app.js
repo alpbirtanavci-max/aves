@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.8-test';
+const APP_VERSION = 'R15D-rc3.9-test';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -677,6 +677,7 @@ const GECMIS_ALANLARI = {
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
     'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari',
     'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
+    'form_cikti_snapshot',
     'duzeltme_oturumu_id', 'duzeltme_nedeni', 'duzeltme_baslatildi_at',
   ],
   saha_kontrol: [
@@ -1229,6 +1230,7 @@ const UI = (() => {
       butunluk_hash: null,
       butunluk_hesaplandi_at: null,
       seri_numaralari: { schema_version: 1 },
+      form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart),
       olusturan_email: Profile.email,
       olusturan_ad: Profile.name,
       created_at: now,
@@ -1519,6 +1521,7 @@ const UI = (() => {
         butunluk_hesaplandi_at: null,
         offline_check: null,
         seri_numaralari: { schema_version: 1 },
+        form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart),
         olusturan_email: Profile.email,
         olusturan_ad: Profile.name,
         created_at: new Date().toISOString(),
@@ -1830,6 +1833,7 @@ const UI = (() => {
         <div style="display:flex;gap:6px">
           ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
+          ${tamamlandi ? '<button class="delbtn" id="btnYazdir" title="Resmî formu PDF veya Word olarak hazırla">Yazdır</button>' : ''}
           ${canDeleteDenetim(d) ? '<button class="delbtn" id="btnSil" title="Denetimi sil">🗑 Sil</button>' : ''}
         </div>
       </div>
@@ -1973,6 +1977,46 @@ const UI = (() => {
       }
     };
     const btnSil = document.getElementById('btnSil');
+    const btnYazdir = document.getElementById('btnYazdir');
+    if (btnYazdir) btnYazdir.onclick = async () => {
+      if (!navigator.onLine) {
+        toast('Bu özellik yalnız çevrimiçiyken kullanılabilir. Denetim kaydınız cihazda korunuyor.');
+        return;
+      }
+      try {
+        const forms = await FormOutput.formsForInspection(d);
+        if (!forms.length) { toast('Bu denetim için resmî form tanımlı değil'); return; }
+        const ov = document.createElement('div');
+        ov.className = 'overlay';
+        ov.innerHTML = `<div class="modal">
+          <button class="close" aria-label="Kapat">×</button>
+          <h3>Yazdır</h3>
+          <div class="photo-help">Denetim verileri, denetim tarihinde kilitlenen resmî form revizyonuna aktarılır. Kaynak denetim kaydı değiştirilmez.</div>
+          <div class="print-form-list">${forms.map(form => `<div class="print-form-card ${form.available ? '' : 'print-pending'}">
+            <b>${esc(form.code)} · ${esc(form.revision)}</b>
+            <small>${form.legacy_inferred ? 'Eski denetim · ana standarda göre mevcut resmî revizyon' : 'Denetime kilitli revizyon'}${form.available ? '' : ` · ${esc(form.reason)}`}</small>
+          </div>`).join('')}</div>
+          <div class="print-actions">
+            <button class="btn btn-primary" data-print="pdf" ${forms.some(f => f.available) ? '' : 'disabled'}>PDF indir</button>
+            <button class="btn btn-ghost" data-print="docx" ${forms.some(f => f.available) ? '' : 'disabled'}>Word indir</button>
+          </div>
+        </div>`;
+        document.body.appendChild(ov);
+        const close = () => ov.remove();
+        ov.querySelector('.close').onclick = close;
+        ov.onclick = event => { if (event.target === ov) close(); };
+        ov.querySelectorAll('[data-print]').forEach(button => button.onclick = async () => {
+          const original = button.textContent; button.disabled = true; button.textContent = 'Hazırlanıyor…';
+          try {
+            const filename = await FormOutput.download(button.dataset.print, d, rows);
+            toast(`${filename} hazırlandı`);
+          } catch (error) {
+            console.error('Form çıktısı üretilemedi', error);
+            toast(error.message || 'Form çıktısı üretilemedi');
+          } finally { button.disabled = false; button.textContent = original; }
+        });
+      } catch (error) { toast(error.message || 'Yazdırma seçenekleri açılamadı'); }
+    };
     if (btnSil) btnSil.onclick = async () => {
       if (!canDeleteDenetim(d)) { toast('Denetim silme yetkiniz yok'); return; }
       const bagliTakipler = (await DB.all('denetimler')).filter(item =>

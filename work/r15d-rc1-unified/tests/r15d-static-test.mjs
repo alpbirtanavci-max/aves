@@ -16,6 +16,8 @@ const headers = fs.readFileSync(path.join(appDir, '_headers'), 'utf8');
 const updateHtml = fs.readFileSync(path.join(appDir, 'update.html'), 'utf8');
 const updateJs = fs.readFileSync(path.join(appDir, 'update.js'), 'utf8');
 const sectionMappingJs = fs.readFileSync(path.join(appDir, 'section-mapping.js'), 'utf8');
+const formOutput = fs.readFileSync(path.join(appDir, 'form-output.js'), 'utf8');
+const formManifest = JSON.parse(fs.readFileSync(path.join(appDir, 'form-assets', 'form-output-manifest.json'), 'utf8'));
 const migration = fs.readFileSync(path.join(databaseDir, '21_r15d_guvenli_gecis.sql'), 'utf8');
 const rc2Migration = fs.readFileSync(path.join(databaseDir, '22_r15d_rc2_saha_akisi_ve_kuyu_dibi.sql'), 'utf8');
 const rc3NullableMigration = fs.readFileSync(path.join(databaseDir, '23_r15d_rc3_saha_kontrol_nullable_kaynak_alanlari.sql'), 'utf8');
@@ -26,6 +28,8 @@ const rc34SerialMigration = fs.readFileSync(path.join(databaseDir, '40_r15d_rc34
 const rc35SectionMigration = fs.readFileSync(path.join(databaseDir, '41_r15d_rc35_81_71_81_73_fiziksel_bolum_esleme.sql'), 'utf8');
 const rc37WorkflowMigration = fs.readFileSync(path.join(databaseDir, '42_r15d_rc37_yetki_takip_duzeltme.sql'), 'utf8');
 const rc38TechnicalManagerMigration = fs.readFileSync(path.join(databaseDir, '43_r15d_rc38_teknik_mudur_denetim_olusturma.sql'), 'utf8');
+const rc39FormOutputMigration = fs.readFileSync(path.join(databaseDir, '44_r15d_rc39_form_cikti_snapshot.sql'), 'utf8');
+const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '45_r15d_rc39_form_adlandirilmis_olculer.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -35,9 +39,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.8 test sürümü', index.includes('R15D-RC3.8 TEST'));
-test('app R15D rc3.8 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.8-test'"));
-test('service worker rc3.8 test cache', sw.includes("aves-saha-r15d-rc38-test"));
+test('index R15D rc3.9 test sürümü', index.includes('R15D-RC3.9 TEST'));
+test('app R15D rc3.9 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9-test'"));
+test('service worker rc3.9 test cache', sw.includes("aves-saha-r15d-rc39-test"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -286,6 +290,28 @@ test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.inclu
 // bu, Uygun Değil'de anlamsız bir bulgu butonu ve açıklama kutusunun yalnız
 // "Diğer bulgu" tıklanınca açılması hatasına yol açıyordu.
 test('boş hazir_secenekler hayalet bulgu seçeneği üretmiyor', app.includes(".split('|').map(o => o.trim()).filter(Boolean)"));
+
+test('tamamlanmış denetimde Yazdır düğmesi var', app.includes('id="btnYazdir"') && app.includes("tamamlandi ? '<button class=\"delbtn\" id=\"btnYazdir\""));
+test('Yazdır çevrimdışı kullanılamaz ve yerel kaydı koruduğunu açıklar', app.includes('Bu özellik yalnız çevrimiçiyken kullanılabilir. Denetim kaydınız cihazda korunuyor.'));
+test('Yazdır PDF ve Word seçenekleri sunuyor', app.includes('data-print="pdf"') && app.includes('data-print="docx"'));
+test('form revizyonu yeni denetimde kilitleniyor', app.includes('form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart)'));
+test('takip denetimi ana kaydın kilitli form revizyonunu koruyor', app.includes('form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart)'));
+test('form snapshot migration veri silmiyor ve RLS değiştirmiyor', rc39FormOutputMigration.includes('form_cikti_snapshot jsonb') && !/^\s*(delete|truncate|drop policy|create policy)\s+/mi.test(rc39FormOutputMigration));
+test('mevcut denetimler form revizyonuna bir kez bağlanıyor', rc39FormOutputMigration.includes("where ana_standart='81-20' and form_cikti_snapshot='{}'::jsonb") && rc39FormOutputMigration.includes("where ana_standart='81-1/2+A3' and form_cikti_snapshot='{}'::jsonb"));
+test('kilitli resmî form snapshotı istemciden değiştirilemiyor', rc39FormOutputMigration.includes('trg_aves_form_cikti_snapshot_kilidi') && rc39FormOutputMigration.includes('Denetimin resmî form revizyonu kilitlidir'));
+test('resmî şablonlar SHA-256 ile doğrulanıyor', formOutput.includes('Resmî form şablonu bütünlük kontrolünden geçmedi') && formOutput.includes('crypto.subtle.digest'));
+test('geçmiş denetim yalnız aynı kilitli şablon ve eşlemeyle yazdırılıyor', formOutput.includes('current.mapping_sha256 !== item.mapping_sha256') && formOutput.includes('kilitli form revizyonu'));
+test('FR38 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_38_R04.validation.expected === 451 && formManifest.forms.UB_FR_38_R04.validation.docx_mapped === 451 && formManifest.forms.UB_FR_38_R04.validation.pdf_mapped === 451);
+test('FR39 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_39_R02.validation.expected === 208 && formManifest.forms.UB_FR_39_R02.validation.docx_mapped === 208 && formManifest.forms.UB_FR_39_R02.validation.pdf_mapped === 208);
+test('form çıktısında iç kontrol notu kullanılmıyor', !formOutput.includes('ic_kontrol_notu'));
+test('PDF/DOCX kitaplıkları uygulama paketinden yerel yükleniyor', index.includes('vendor/jszip.min.js') && index.includes('vendor/pdf-lib.min.js') && index.includes('vendor/fontkit.umd.min.js'));
+test('resmî temel kuyu tablosunun eksik dört alanı artık sahada tutuluyor',
+  ['kabin_tampon_yuksekligi','kuyu_dibi_yuksekligi'].every(id => byId.get('MAD-0008A').olcum_tanimlari.some(field => field.id === id)) &&
+  ['kabin_genisligi','kabin_derinligi'].every(id => byId.get('MAD-0008D').olcum_tanimlari.some(field => field.id === id)));
+test('adlandırılmış ölçü migration mevcut saha cevaplarını değiştirmiyor',
+  rc39NamedMeasurementsMigration.includes("where madde_id='MAD-0008A'") && rc39NamedMeasurementsMigration.includes("where madde_id='MAD-0008D'") &&
+  !/public\.saha_kontrol/i.test(rc39NamedMeasurementsMigration) && !/^\s*(delete|truncate)\s+/mi.test(rc39NamedMeasurementsMigration));
+test('temel kuyu ölçüleri PDF ve Word hücrelerine aktarılıyor', formOutput.includes('measurementValues(rows,formKey)') && formOutput.includes('fields.shaft.fields') && formOutput.includes('l.shaft'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
