@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.2';
+const APP_VERSION = 'R15D-rc3.9.3';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -510,7 +510,7 @@ const Sync = (() => {
     } finally {
       pushRunning = false;
       await updatePill();
-      if (typeof UI !== 'undefined' && UI.refresh) UI.refresh();
+      if (typeof UI !== 'undefined' && UI.refresh && UI.canRefreshSafely()) UI.refresh();
     }
     return allSent && (await DB.outboxCount()) === 0;
   }
@@ -644,7 +644,7 @@ const Sync = (() => {
     } finally {
       running = false;
       await updatePill();
-      if (UI.refresh) UI.refresh();
+      if (UI.refresh && UI.canRefreshSafely()) UI.refresh();
     }
     return completed;
   }
@@ -794,6 +794,8 @@ const UI = (() => {
   let inspectionReadOnly = false;
   let listSearch = '';
   let listDateFilter = 'all';
+  const pendingEditorWrites = new Set();
+  const editorDraftTimers = new Map();
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -2120,6 +2122,68 @@ const UI = (() => {
     return FOTO_HATIRLATMALARI[bolum] || null;
   }
 
+  function editorDraftKey(target) {
+    const item = target.closest('.madde');
+    if (!item) return null;
+    const field = target.dataset.olcumId || (target.matches('[data-diger]') ? 'diger_bulgu' : 'aciklama');
+    return `${item.dataset.id}:${field}`;
+  }
+
+  async function trackedEditorWrite(work) {
+    const promise = Promise.resolve(work);
+    pendingEditorWrites.add(promise);
+    try { return await promise; }
+    finally { pendingEditorWrites.delete(promise); }
+  }
+
+  function clearEditorDraft(target) {
+    const key = editorDraftKey(target);
+    const pending = key && editorDraftTimers.get(key);
+    if (pending) clearTimeout(pending);
+    if (key) editorDraftTimers.delete(key);
+  }
+
+  function scheduleEditorDraft(target) {
+    const key = editorDraftKey(target);
+    const item = target.closest('.madde');
+    if (!key || !item) return;
+    clearEditorDraft(target);
+    const snapshot = {
+      rowId: item.dataset.id,
+      measurementId: target.dataset.olcumId || null,
+      field: target.matches('[data-diger]') ? 'diger_bulgu' : (target.matches('[data-aciklama]') ? 'aciklama' : null),
+      value: target.value,
+    };
+    const timer = setTimeout(() => {
+      editorDraftTimers.delete(key);
+      trackedEditorWrite((async () => {
+        const row = await guncelSahaSatiri(snapshot.rowId);
+        if (!row || !currentCanEdit) return;
+        const value = snapshot.value.trim();
+        if (snapshot.measurementId) {
+          row.olcum_degerleri = row.olcum_degerleri && typeof row.olcum_degerleri === 'object' ? row.olcum_degerleri : {};
+          if (value) row.olcum_degerleri[snapshot.measurementId] = value;
+          else delete row.olcum_degerleri[snapshot.measurementId];
+          if (snapshot.measurementId === 'olcu1') row.olcu1_degeri = value || null;
+          if (snapshot.measurementId === 'olcu2') row.olcu2_degeri = value || null;
+        } else if (snapshot.field) {
+          row[snapshot.field] = value || null;
+        }
+        row.guncelleyen_email = API.email;
+        row.updated_at = new Date().toISOString();
+        await localWrite('saha_kontrol', row, 'saha');
+      })()).catch(error => console.warn('Alan taslağı cihazda saklanamadı:', error.message));
+    }, 700);
+    editorDraftTimers.set(key, timer);
+  }
+
+  async function flushEditorWrites() {
+    const active = document.activeElement;
+    if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id]')) active.blur();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    if (pendingEditorWrites.size) await Promise.all([...pendingEditorWrites]);
+  }
+
   async function fotoKontrolUyarisi(bolum) {
     if (!currentCanEdit) return true;
     const d = await DB.get('denetimler', currentDenetimId);
@@ -2418,6 +2482,10 @@ const UI = (() => {
   }
 
   function bindMaddeEvents() {
+    document.getElementById('bolums').addEventListener('input', (e) => {
+      if (!currentCanEdit) return;
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target);
+    });
     document.getElementById('bolums').addEventListener('click', async (e) => {
       const stepBtn = e.target.closest('[data-step]');
       if (stepBtn && !stepBtn.disabled) {
@@ -2486,6 +2554,7 @@ const UI = (() => {
       }
       const mEl = e.target.closest('.madde'); if (!mEl) return;
       const row = await guncelSahaSatiri(mEl.dataset.id);
+      clearEditorDraft(e.target);
       if (e.target.matches('[data-olcum-id]')) {
         const olcumId = e.target.dataset.olcumId;
         row.olcum_degerleri = row.olcum_degerleri && typeof row.olcum_degerleri === 'object' ? row.olcum_degerleri : {};
@@ -2496,18 +2565,22 @@ const UI = (() => {
         if (olcumId === 'olcu2') row.olcu2_degeri = value || null;
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
-        await localWrite('saha_kontrol', row, 'saha');
+        await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
         await uygulaOlcumeBagliAranmaz(row);
         await esikOnerisiGoster(row, olcumId, value);
         await renderDenetim();
         return;
       }
-      if (e.target.matches('[data-diger]')) row.diger_bulgu = e.target.value.trim() || null;
+      if (e.target.matches('[data-diger]')) {
+        row.diger_bulgu = e.target.value.trim() || null;
+        await trackedEditorWrite(save(row, mEl));
+        return;
+      }
       if (e.target.matches('[data-aciklama]')) {
         row.aciklama = e.target.value.trim() || null;
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
-        await localWrite('saha_kontrol', row, 'saha');
+        await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
         mEl.querySelector('[data-notbtn]').classList.toggle('has', !!row.aciklama);
         toast('Madde açıklaması kaydedildi');
         return; // açıklama tamamlanmayı etkilemez, otomatik geçiş tetiklenmez
@@ -2816,6 +2889,7 @@ const UI = (() => {
   }
 
   async function denetimDurumuDegistir(yeniDurum, overlay) {
+    await flushEditorWrites();
     const d = await DB.get('denetimler', currentDenetimId);
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
@@ -2995,10 +3069,15 @@ const UI = (() => {
     showLogin, afterLogin, showList,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
+    canRefreshSafely: () => {
+      const active = document.activeElement;
+      return !(active && active.matches && active.matches('input,textarea,select'));
+    },
     // Arka plan senkronu form doldurulurken tamamlanabilir. Yeni denetim
     // ekranını yeniden çizmek girilmiş alanları siler ve kullanıcıyı listeye
     // döndürür; bu yüzden yalnız veri listesi veya açık denetim yenilenir.
     refresh: () => {
+      if (!UI.canRefreshSafely()) return;
       if (currentView === 'inspection' && currentDenetimId) renderDenetim();
       else if (currentView === 'list') showList();
     },

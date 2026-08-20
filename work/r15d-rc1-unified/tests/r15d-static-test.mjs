@@ -30,6 +30,7 @@ const rc37WorkflowMigration = fs.readFileSync(path.join(databaseDir, '42_r15d_rc
 const rc38TechnicalManagerMigration = fs.readFileSync(path.join(databaseDir, '43_r15d_rc38_teknik_mudur_denetim_olusturma.sql'), 'utf8');
 const rc39FormOutputMigration = fs.readFileSync(path.join(databaseDir, '44_r15d_rc39_form_cikti_snapshot.sql'), 'utf8');
 const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '45_r15d_rc39_form_adlandirilmis_olculer.sql'), 'utf8');
+const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -39,9 +40,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.2 canlı sürümü', index.includes('R15D-RC3.9.2</b>'));
-test('app R15D rc3.9.2 canlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.2'"));
-test('service worker rc3.9.2 canlı cache', sw.includes("aves-saha-r15d-rc392'"));
+test('index R15D rc3.9.3 canlı sürümü', index.includes('R15D-RC3.9.3</b>'));
+test('app R15D rc3.9.3 canlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.3'"));
+test('service worker rc3.9.3 canlı cache', sw.includes("aves-saha-r15d-rc393'"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -117,7 +118,14 @@ test('yarıda kalan sending işlemleri yeniden deneniyor', app.includes("['pendi
 test('korunan outbox varken senkron tamamlandı sayılmıyor', app.includes("allSent && (await DB.outboxCount()) === 0"));
 test('forbidden kayıt sık yeniden deneme döngüsüne girmiyor', app.includes('const retryableItems = (await DB.outboxAll()).filter'));
 test('manuel senkron gerçek tamamlanma sonucunu gösteriyor', app.includes("completed ? 'Senkron tamamlandı'"));
-test('senkron sonrası denetim içi durum yeniden hesaplanıyor', app.includes("if (typeof UI !== 'undefined' && UI.refresh) UI.refresh()") && app.includes("currentView === 'inspection' && currentDenetimId"));
+test('senkron sonrası denetim içi durum güvenli olduğunda yeniden hesaplanıyor', app.includes('UI.canRefreshSafely()') && app.includes("currentView === 'inspection' && currentDenetimId"));
+test('aktif form alanı arka plan senkronuyla yeniden çizilmiyor',
+  app.includes('UI.canRefreshSafely()') && app.includes("active.matches('input,textarea,select')"));
+test('bulgu, madde notu ve ölçüm yazarken taslak cihazda gecikmeli saklanıyor',
+  app.includes("matches('[data-diger],[data-aciklama],[data-olcum-id]')") &&
+  app.includes('scheduleEditorDraft(e.target)') && app.includes('}, 700);'));
+test('denetim tamamlanmadan bekleyen alan yazımları bitiriliyor',
+  app.includes('async function flushEditorWrites()') && app.includes('await flushEditorWrites();'));
 test('eşzamanlı push tamamlandı sayılmıyor', app.includes('if (pushRunning) return false'));
 test('yeniden deneme artan bekleme kullanıyor', app.includes('const backoff = Math.min(60000'));
 test('senkron sonrası yalnız açık denetim listesi yenileniyor', app.includes("else if (currentView === 'list') showList()"));
@@ -279,6 +287,15 @@ test('takip zinciri ve önceki sonuçlar korunuyor', rc37WorkflowMigration.inclu
 test('düzeltme nedeni geçmiş olayına yazılıyor', app.includes('duzeltme_oturumu_id: context') && app.includes('duzeltme_nedeni: context') && rc37WorkflowMigration.includes('duzeltme_nedeni text'));
 test('düzeltme kimliği ve nedeni sunucuda doğrulanıyor', rc37WorkflowMigration.includes('new.duzeltme_oturumu_id := v_duzeltme_id') && rc37WorkflowMigration.includes('new.duzeltme_baslatan_email := v_email'));
 test('tamamlanmış denetim gerekçesiz düzeltmeye açılamıyor', rc37WorkflowMigration.includes('Tamamlanmış denetim yalnız gerekçeli düzeltme oturumuyla açılabilir'));
+test('düzeltme tamamlanırken sunucu kimliği ve zamanı korunuyor',
+  rc393CorrectionSyncMigration.includes('new.duzeltme_baslatildi_at := old.duzeltme_baslatildi_at') &&
+  rc393CorrectionSyncMigration.includes('new.duzeltme_baslatan_email := old.duzeltme_baslatan_email') &&
+  rc393CorrectionSyncMigration.includes('new.duzeltme_baslatan_ad := old.duzeltme_baslatan_ad'));
+test('düzeltme oturumu kimliği ve gerekçesi değiştirilemiyor',
+  rc393CorrectionSyncMigration.includes('new.duzeltme_oturumu_id is distinct from old.duzeltme_oturumu_id') &&
+  rc393CorrectionSyncMigration.includes('new.duzeltme_nedeni is distinct from old.duzeltme_nedeni'));
+test('rc3.9.3 migration veri ve RLS yapısını yıkıcı değiştirmiyor',
+  !/^\s*(delete|update|truncate|drop policy|create policy)\s+/mi.test(rc393CorrectionSyncMigration));
 test('takip zinciri olan ana denetim yanlışlıkla silinmiyor', rc37WorkflowMigration.includes('on delete restrict') && app.includes('zincirin ana kaydı silinemez'));
 test('rc3.7 migration canlı kayıt silmiyor veya toplu değiştirmiyor', !/^\s*(delete|update|truncate)\s+/mi.test(rc37WorkflowMigration));
 test('denetim listesinde tarih ve metin araması var', app.includes('id="listSearch"') && app.includes('id="listDate"') && app.includes('card.dataset.search'));
