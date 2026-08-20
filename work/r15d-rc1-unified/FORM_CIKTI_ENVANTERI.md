@@ -36,6 +36,14 @@ kaynak dosyalar değiştirilmeden incelenmiştir.
 Drive'da aynı dosyanın modül setlerinde ve arşiv klasörlerinde çok sayıda kopyası
 bulunmaktadır. Dosya değiştirilme tarihi tek başına güncel revizyon kanıtı değildir.
 
+### Belge kontrol uyuşmazlığı
+
+Ana Doküman Listesi satırında ÜB.TB.05 için `R.01 / 24.12.2025` görünürken,
+Drive'daki ÜB.TB.05 dosyasının kendi başlığında `R.02 / 31.03.2026` yazmaktadır.
+R.02 dosyası bu envanterde çalışma kaynağı olarak kullanılmıştır; ancak bu fark
+resmî doküman kontrolünde doğrulanmadan uygulamaya değişmez kural olarak
+sabitlenmemelidir.
+
 ## Checklist verisinden doğrudan beslenebilecek yürürlükteki formlar
 
 | Kod | Güncel revizyon | Amaç | İlk değerlendirme |
@@ -143,4 +151,3 @@ kullanıcıya teknik standart seçimi yaptırmaz.
 3. Formun kontrol satırlarını `MAD-xxxx` kimlikleriyle tek tek eşle.
 4. Çoklu madde birleşim kurallarını ayrı inceleme listesine al.
 5. Eşleme doğrulandıktan sonra çevrimiçi PDF/DOCX pilot üretimini geliştir.
-
