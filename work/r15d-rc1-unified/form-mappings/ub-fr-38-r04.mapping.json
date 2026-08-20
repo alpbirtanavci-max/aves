@@ -1,0 +1,1470 @@
+{
+  "schema_version": 1,
+  "mapping_status": "pilot_in_progress",
+  "form": {
+    "code": "ÜB.FR.38",
+    "revision": "R.04",
+    "publication_date": "05.01.2025",
+    "revision_date": "17.02.2026",
+    "title": "TS EN 81-20 TEST KONTROL FORMU",
+    "official_pdf_drive_id": "1NqM263dcLGfRjwJsEmnxNKyT2TRGaPuR",
+    "official_pdf_pages": 40,
+    "source_text_embedded": false
+  },
+  "rules": {
+    "historical_revision_lock": "Çıktı, denetim başlarken kilitlenen form kodu ve revizyonuna göre üretilir.",
+    "no_silent_fallback": "Alan veya satır eşleşmesi yoksa çıktı üreticisi boş/uyarı verir; başka alanı tahmin ederek doldurmaz.",
+    "automatic_form_selection": "Form seti denetim türü, ana standart ve asansör konfigürasyonundan türetilir; denetçiye ek standart listesi seçtirilmez.",
+    "measurement_device_exclusion": "Ölçüm cihazı ve kalibrasyon alanları uygulama tarafından otomatik doldurulmaz."
+  },
+  "header_mappings": [
+    {
+      "form_field": "Teknik Uzman/Denetçi Adı Soyadı",
+      "source": "denetimler.denetimi_yapan",
+      "status": "direct"
+    },
+    {
+      "form_field": "Müşteri Adı/Unvanı",
+      "source": "denetimler.musteri_unvani",
+      "status": "direct"
+    },
+    {
+      "form_field": "Denetim Tarihi",
+      "source": "denetimler.denetim_tarihi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Denetim Adresi",
+      "source": "denetimler.denetim_adresi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Dosya Numarası",
+      "source": "denetimler.dosya_no",
+      "status": "direct_nullable"
+    },
+    {
+      "form_field": "Belgelendirme Kapsamı",
+      "source": "denetimler.denetim_turu + denetimler.kontrol_profili",
+      "status": "derived_review_required"
+    },
+    {
+      "form_field": "Modül Kapsamı",
+      "source": "denetimler.modul",
+      "status": "direct"
+    },
+    {
+      "form_field": "Uygulanabilir Standartlar",
+      "source": "denetimler.ana_standart + denetimler.ek_standartlar + zorunlu sistem katmanları",
+      "status": "derived_review_required"
+    },
+    {
+      "form_field": "Tahrik Sistemi Tipi",
+      "source": "denetimler.tahrik_tipi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Seri Numarası",
+      "source": "denetimler.asansor_seri_no",
+      "status": "direct"
+    },
+    {
+      "form_field": "Askı Tipi",
+      "source": "denetimler.aski_tipi",
+      "status": "direct_nullable"
+    },
+    {
+      "form_field": "Beyan Yükü (Kg / İnsan Sayısı)",
+      "source": "denetimler.beyan_yuku_kg + denetimler.kapasite_kisi",
+      "status": "direct"
+    },
+    {
+      "form_field": "Kat / Durak Sayısı",
+      "source": "denetimler.durak_sayisi",
+      "status": "partial_missing_floor_count"
+    },
+    {
+      "form_field": "Makine Dairesi Yeri",
+      "source": "denetimler.makine_dairesi_tipi",
+      "status": "derived_from_MR_MRL_review_required"
+    },
+    {
+      "form_field": "Beyan Hızı (m/sn)",
+      "source": "denetimler.beyan_hizi_ms",
+      "status": "direct"
+    },
+    {
+      "form_field": "Sınıfı",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_field": "Montaj Yılı",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_field": "Seyir Mesafesi (m)",
+      "source": null,
+      "status": "missing_in_app"
+    }
+  ],
+  "component_mappings": [
+    {
+      "form_component": "PCB Kontrol Kartı",
+      "source": "denetimler.seri_numaralari.kumanda_kartlari[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Hız Regülatörü",
+      "source": "denetimler.seri_numaralari.regulatorler[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Kapı Kilitleme tertibatı",
+      "source": "denetimler.seri_numaralari.kat_kapilari[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Kabin Fren Tertibatı",
+      "source": "denetimler.seri_numaralari.parasut_frenleri[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Kabin Tamponu",
+      "source": "denetimler.seri_numaralari.kabin_tamponlari[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Karşı Ağırlık Tamponu",
+      "source": "denetimler.seri_numaralari.karsi_agirlik_tamponlari[*].seri_no",
+      "status": "serial_only_brand_model_missing"
+    },
+    {
+      "form_component": "Boru Kırılma Valfi",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_component": "UCM İzleyici / Algılayıcı / Durdurucu",
+      "source": null,
+      "status": "missing_in_app"
+    },
+    {
+      "form_component": "Motor / Makine",
+      "source": "denetimler.seri_numaralari.motorlar[*].seri_no",
+      "status": "serial_only_other_technical_fields_missing"
+    },
+    {
+      "form_component": "Hidrolik Pompa / Valf Grubu",
+      "source": null,
+      "status": "missing_in_app"
+    }
+  ],
+  "preinspection_mappings": [
+    {
+      "form_row_no": 1,
+      "madde_id": "MAD-0001",
+      "kontrol_basligi": "Yükler ve kalibrasyon belgeleri",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ayrı içerik migration'ında ÜB.FR.38 R.04 olarak tamamlanmalı."
+    },
+    {
+      "form_row_no": 2,
+      "madde_id": "MAD-0002",
+      "kontrol_basligi": "Sahada rehberlik eden personel",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ayrı içerik migration'ında ÜB.FR.38 R.04 olarak tamamlanmalı."
+    },
+    {
+      "form_row_no": 3,
+      "madde_id": "MAD-0003",
+      "kontrol_basligi": "İş güvenliği önlemleri",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ayrı içerik migration'ında ÜB.FR.38 R.04 olarak tamamlanmalı."
+    },
+    {
+      "form_row_no": 4,
+      "madde_id": "MAD-0004",
+      "kontrol_basligi": "Asansörün muayeneye hazır olması",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ayrı içerik migration'ında ÜB.FR.38 R.04 olarak tamamlanmalı."
+    },
+    {
+      "form_row_no": 5,
+      "madde_id": "MAD-0005",
+      "kontrol_basligi": "Başlangıç güvenlik kontrolü",
+      "mapping_status": "verified_by_form_order_and_intent",
+      "metadata_action": "Kaynak form kodu/revizyonu kütüphanede eksik; ayrı içerik migration'ında ÜB.FR.38 R.04 olarak tamamlanmalı."
+    }
+  ],
+  "checklist_scope": {
+    "app_section": "01 - Kuyu Dibi",
+    "total_candidates": 82,
+    "high_confidence": 46,
+    "review_required": 36
+  },
+  "checklist_mappings": [
+    {
+      "madde_id": "MAD-0006",
+      "app_sira_no": 6,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK-M-001",
+      "kontrol_basligi": "Tampon kaidesi güvenliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK-M-001|7f8500fb",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0008A",
+      "app_sira_no": 8,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri",
+      "kontrol_basligi": "Kuyu dibinde alınacak temel yerleşim ölçüleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|ÜB.FR.38 R.04 / ÜB.FR.39 R.02 — Temel Kuyu Tasarım Ölçüleri|73d1cfc2",
+      "match_method": "source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "low",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0009",
+      "app_sira_no": 9,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.5.1 d",
+      "kontrol_basligi": "Kuyu dibi aydınlatma anahtarının erişim mesafeleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.5.1 d|a920666b",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0010",
+      "app_sira_no": 10,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.2.2",
+      "kontrol_basligi": "Kuyu dibi erişim yolu aydınlatması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.2.2|6ac06f4e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0011",
+      "app_sira_no": 11,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.4.1 b",
+      "kontrol_basligi": "Kuyu dibi çalışma alanı aydınlatması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.4.1 b|b051b2aa",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0012",
+      "app_sira_no": 12,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.4.1 c",
+      "kontrol_basligi": "Kuyunun genel aydınlatılması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.4.1 c|954748a4",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0013",
+      "app_sira_no": 13,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.5.1 a 1",
+      "kontrol_basligi": "Kuyu dibi derinliği ve sığ kuyu dibi durdurma anahtarı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.5.1 a 1|70996dae",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0014",
+      "app_sira_no": 14,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.5.1 a 2",
+      "kontrol_basligi": "Derin kuyu dibinde iki durdurma anahtarının konumu",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.5.1 a 2|c145e4da",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0015",
+      "app_sira_no": 15,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.5.1 a 3",
+      "kontrol_basligi": "Ayrı kuyu dibi erişim kapısındaki durdurma anahtarı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.5.1 a 3|521eb0b6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0016",
+      "app_sira_no": 16,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.11.1",
+      "kontrol_basligi": "Kuyu dibi durdurma anahtarının yapısı ve işareti",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.11.1|1839e90f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        3
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0017",
+      "app_sira_no": 17,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.2.4 a; 5.2.3.2 a; 5.2.3.3",
+      "kontrol_basligi": "Derin kuyu dibi için ayrı erişim kapısı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.2.4 a; 5.2.3.2 a; 5.2.3.3|012acfed",
+      "match_method": "source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "low",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0018",
+      "app_sira_no": 18,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.2.4 b",
+      "kontrol_basligi": "Kuyu dibine erişim yönteminin seçimi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.2.4 b|360bc456",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0019",
+      "app_sira_no": 19,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.2.4",
+      "kontrol_basligi": "Kuyu dibi merdiveninin depolama ve hareket güvenliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.2.4|59a01058",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0020",
+      "app_sira_no": 20,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Kuyu dibi merdiveninin sabitlenmesi ve dayanımı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|49ffa536",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0021",
+      "app_sira_no": 21,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Hareketli veya katlanabilir merdivenin elle taşınabilirliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|fc6d418c",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0022",
+      "app_sira_no": 22,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Kuyu dibi merdiveninin malzemesi ve korozyon koruması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|addf8fe5",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0023",
+      "app_sira_no": 23,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdivenin durak eşiği üzerindeki tutunma yüksekliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|fa141c34",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0024",
+      "app_sira_no": 24,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdiven dikmelerinin kavrama kesiti",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|a78f02f2",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0025",
+      "app_sira_no": 25,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdiven basamağının kesiti ve kaymazlığı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|f8ea8ee8",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0026",
+      "app_sira_no": 26,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdiven basamaklarının net genişliği ve aralığı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|41a9c339",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0027",
+      "app_sira_no": 27,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Düşey merdivende basamak arkası net mesafe",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|43b8505f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0028",
+      "app_sira_no": 28,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdivenin muhafaza konumunda durak girişine uzaklığı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|7db1f098",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0029",
+      "app_sira_no": 29,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdivenin çalışma konumunda erişim mesafesi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|0dbdaab6",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0030",
+      "app_sira_no": 30,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "EK F",
+      "kontrol_basligi": "Merdivenin ilk basamağının durak eşiğine göre konumu",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|EK F|59ec8161",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0031",
+      "app_sira_no": 31,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.2.2",
+      "kontrol_basligi": "Merdiven erişim alanının aydınlatılması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.2.2|23a25163",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0032",
+      "app_sira_no": 32,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.3.9.3.5",
+      "kontrol_basligi": "Kuyu dibinden durak kapısı kilidinin güvenli açılması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.3.9.3.5|8b9f4589",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0033",
+      "app_sira_no": 33,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.5.1 b",
+      "kontrol_basligi": "Kuyu dibi muayene kumandasının sığınma alanından erişimi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.5.1 b|ccf82754",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        4
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0034",
+      "app_sira_no": 34,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.1.2 a",
+      "kontrol_basligi": "Muayene anahtarının güvenli yapısı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.1.2 a|f5810d52",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        4,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0035",
+      "app_sira_no": 35,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.2.4 a",
+      "kontrol_basligi": "NORMAL ve KONTROL konum işaretleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.2.4 a|574494e4",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        4,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0036",
+      "app_sira_no": 36,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.1.2 b",
+      "kontrol_basligi": "Muayene kumandasında YUKARI ve AŞAĞI yön butonları",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.1.2 b|43fc5755",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0037",
+      "app_sira_no": 37,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.1.2 d",
+      "kontrol_basligi": "Muayene kumandasının durdurma aygıtı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.1.2 d|474e5a0c",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0038",
+      "app_sira_no": 38,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.1.2 c",
+      "kontrol_basligi": "Muayene kumandası ÇALIŞTIR butonu",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.1.2 c|b11c875c",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0039",
+      "app_sira_no": 39,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.1.3",
+      "kontrol_basligi": "Muayene kumandasının dokunmaya karşı koruması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.1.3|6b61bbdc",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0040",
+      "app_sira_no": 40,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.2.1 i",
+      "kontrol_basligi": "Birden fazla muayene kumandasının eş zamanlı çalışması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.2.1 i|cbaff441",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        13
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0041",
+      "app_sira_no": 41,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.10.7.2",
+      "kontrol_basligi": "Kuyu dibi servis prizi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.10.7.2|83e2f22f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0042",
+      "app_sira_no": 42,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.6",
+      "kontrol_basligi": "Kuyu dibinde mahsur kalma alarmı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.6|57820178",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        14
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0043",
+      "app_sira_no": 43,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.2.1 e",
+      "kontrol_basligi": "Muayene hızının üst sınırı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.2.1 e|ac4ac203",
+      "match_method": "normalized_official_text_multiple",
+      "match_count_in_official_pdf": 2,
+      "candidate_pdf_pages": [
+        5,
+        14
+      ],
+      "confidence": "medium",
+      "mapping_status": "review_required_duplicate_text"
+    },
+    {
+      "madde_id": "MAD-0044",
+      "app_sira_no": 44,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.12.1.5.2.1 f",
+      "kontrol_basligi": "Dar çalışma alanında muayene hızının üst sınırı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.12.1.5.2.1 f|1d8ac184",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0045",
+      "app_sira_no": 45,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.1 b, c, d",
+      "kontrol_basligi": "Karşı ağırlık ayırıcı bölmesinin başlangıcı ve boyutları",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.1 b, c, d|0391f40e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0046",
+      "app_sira_no": 46,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.1 e",
+      "kontrol_basligi": "Karşı ağırlık rayı ile kuyu duvarı arasındaki açıklığın korunması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.1 e|f8b3ebda",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0047",
+      "app_sira_no": 47,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.1 g",
+      "kontrol_basligi": "Karşı ağırlık ayırıcı bölmesinin rijitliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.1 g|f96ff72e",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0048",
+      "app_sira_no": 48,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.7.1",
+      "kontrol_basligi": "Karşı ağırlık–tampon azami açıklık işareti",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.7.1|5e7e1c07",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        5
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0049",
+      "app_sira_no": 49,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.1 a; TS EN ISO 13857:2019, 4.2.4.1",
+      "kontrol_basligi": "Delikli karşı ağırlık ayırıcı bölmesinde açıklık ve güvenlik mesafesi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.1 a; TS EN ISO 13857:2019, 4.2.4.1|de83faeb",
+      "match_method": "source_order_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "low",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0050",
+      "app_sira_no": 50,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.4",
+      "kontrol_basligi": "Kuyunun altındaki erişilebilir hacimlerin korunması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.4|d4d24e45",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0051",
+      "app_sira_no": 51,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.1",
+      "kontrol_basligi": "Kabin ve karşı ağırlık tamponları, açıklıkları ve kaideleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.1|b14489e5",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0052",
+      "app_sira_no": 52,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.2.1.1.1",
+      "kontrol_basligi": "Doğrusal enerji biriktiren tamponun kullanılabilir stroku",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.2.1.1.1|2c640768",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0053",
+      "app_sira_no": 53,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.5",
+      "kontrol_basligi": "Enerji biriktiren tamponun hız kapsamı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.5|60904ae7",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0054",
+      "app_sira_no": 54,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.2.2.1",
+      "kontrol_basligi": "Enerji dağıtan tamponun kullanılabilir stroku",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.2.2.1|c1827477",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0055",
+      "app_sira_no": 55,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.2.2.2",
+      "kontrol_basligi": "Azaltılmış hızla hesaplanan tampon strokunun alt sınırı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.2.2.2|05ca623a",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0056",
+      "app_sira_no": 56,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.6; 5.8.2.2.4",
+      "kontrol_basligi": "Enerji dağıtan tamponun geri dönüş güvenlik kontağı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.6; 5.8.2.2.4|6fe26f96",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0057",
+      "app_sira_no": 57,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.2.1.2.2",
+      "kontrol_basligi": "Doğrusal olmayan tamponda %90 sıkışma referansı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.2.1.2.2|17bb520a",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0058",
+      "app_sira_no": 58,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.5",
+      "kontrol_basligi": "Doğrusal olmayan enerji biriktiren tamponun hız kapsamı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.5|9968714c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0059",
+      "app_sira_no": 59,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.7",
+      "kontrol_basligi": "Tamponun EN 81-50 doğrulaması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.7|95b4a0e1",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0060",
+      "app_sira_no": 60,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.8.1.8",
+      "kontrol_basligi": "Tampon bilgi plakası",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.8.1.8|1a45a964",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0061",
+      "app_sira_no": 61,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.6.1 d",
+      "kontrol_basligi": "Germesiz dengeleme araçlarının kılavuzlanması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.6.1 d|570ac986",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0062",
+      "app_sira_no": 62,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.6.1 a",
+      "kontrol_basligi": "3,0 m/s ve altındaki hızlarda dengeleme aracı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.6.1 a|22513f07",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0063",
+      "app_sira_no": 63,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.6.1 b",
+      "kontrol_basligi": "3,0 m/s üzerindeki hızlarda dengeleme halatı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.6.1 b|0ddbc546",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0064",
+      "app_sira_no": 64,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.6.1 c",
+      "kontrol_basligi": "3,5 m/s üzerindeki hızlarda geri tepme koruması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.6.1 c|7f942763",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0065",
+      "app_sira_no": 65,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.6.2 c",
+      "kontrol_basligi": "Dengeleme halatı makarası çap oranı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.6.2 c|eb8579d5",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0066",
+      "app_sira_no": 66,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.2",
+      "kontrol_basligi": "Aynı kuyudaki asansörler arasında ayırıcı bölme",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.2|4da7f9ec",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0067",
+      "app_sira_no": 67,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.2",
+      "kontrol_basligi": "Delikli ayırıcı bölmede güvenlik mesafeleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.2|cfd1e9a3",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        6
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0068",
+      "app_sira_no": 68,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.2",
+      "kontrol_basligi": "Asansörler arası ayırıcı bölmenin dayanımı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.2|9c59565e",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0069",
+      "app_sira_no": 69,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.2.1",
+      "kontrol_basligi": "Asansörler arası ayırıcı bölmenin alt bölüm yüksekliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.2.1|1f4bce69",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0070",
+      "app_sira_no": 70,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.5.2.2",
+      "kontrol_basligi": "Yakın hareketli parçalar arasında tam boy ayırıcı bölme",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.5.2.2|adfb29f5",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0071",
+      "app_sira_no": 71,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.5.7.1",
+      "kontrol_basligi": "Hız regülatörü gergi makarasının koruması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.5.7.1|4a19ad28",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0072",
+      "app_sira_no": 72,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.2.2.1.3",
+      "kontrol_basligi": "Hız regülatörü halatının gerdirilmesi ve kılavuzlanması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.6.2.2.1.3|14d1d555",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0073",
+      "app_sira_no": 73,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.2.2.1.3",
+      "kontrol_basligi": "Hız regülatörü halatının standardı ve güvenlik katsayısı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.6.2.2.1.3|5a2aea31",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0074",
+      "app_sira_no": 74,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.2.2.1.6",
+      "kontrol_basligi": "Hız regülatörü halatı gevşeme ve kopma güvenliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.6.2.2.1.6|54959e8e",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0075",
+      "app_sira_no": 75,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.6.2.2.1.3",
+      "kontrol_basligi": "Hız regülatörü halatı makarası çap oranı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.6.2.2.1.3|1b98ab43",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0076",
+      "app_sira_no": 76,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.8.1",
+      "kontrol_basligi": "Kuyu dibi sığınma alanı işareti",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.8.1|530f9b31",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0077",
+      "app_sira_no": 77,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.8.1",
+      "kontrol_basligi": "Kuyu dibi sığınma alanının tipi, sayısı ve net ölçüleri",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.8.1|8cd2cdc9",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0078",
+      "app_sira_no": 78,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "Ek-I, 2.2",
+      "kontrol_basligi": "Standart kuyu dibi sığınma alanı sağlanmadığında teknik dosya doğrulaması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|Ek-I, 2.2|313d4f23",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0079",
+      "app_sira_no": 79,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.8.2",
+      "kontrol_basligi": "Kuyu dibi zemini ile kabinin en alt parçaları arasındaki genel düşey açıklık",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.8.2|21e596f2",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        7
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0080",
+      "app_sira_no": 80,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.8.2",
+      "kontrol_basligi": "Kabin eteği/kapı altındaki 100 mm açıklık istisnası",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.8.2|634f5568",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0081",
+      "app_sira_no": 81,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.5.8.2",
+      "kontrol_basligi": "Ray çevresindeki kabin altı parçalarının güvenlik açıklığı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.5.8.2|d0d3024c",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0082",
+      "app_sira_no": 82,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.4.5.1",
+      "kontrol_basligi": "Kabin koruma eteğinin genişliği ve alt pahı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.4.5.1|c6a59f0e",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0083",
+      "app_sira_no": 83,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.4.5.1",
+      "kontrol_basligi": "Kabin koruma eteği yüzündeki çıkıntılar",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.4.5.1|36d72f32",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0084",
+      "app_sira_no": 84,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.4.5.2",
+      "kontrol_basligi": "Kabin koruma eteğinin düşey bölüm yüksekliği",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.4.5.2|89636f5d",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0085",
+      "app_sira_no": 85,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.4.5.3",
+      "kontrol_basligi": "Kabin koruma eteğinin mekanik dayanımı",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.4.5.3|bda4a504",
+      "match_method": "standard_clause_candidate",
+      "match_count_in_official_pdf": 0,
+      "candidate_pdf_pages": [],
+      "confidence": "medium",
+      "mapping_status": "review_required_combined_or_reworded_row"
+    },
+    {
+      "madde_id": "MAD-0086",
+      "app_sira_no": 86,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.4.7.6",
+      "kontrol_basligi": "Kabin altı kasnak ve dişli koruması",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.4.7.6|1137316f",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0087",
+      "app_sira_no": 87,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.2.1.9",
+      "kontrol_basligi": "Kuyu dibi yüzeylerinin uygunluğu",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.2.1.9|01a1ca88",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        8
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    },
+    {
+      "madde_id": "MAD-0088",
+      "app_sira_no": 88,
+      "app_bolum": "01 - Kuyu Dibi",
+      "standart_madde_no": "5.11.2.2.1",
+      "kontrol_basligi": "Kuyu dibi güvenlik kontaklarının koruma derecesi",
+      "form_section": "TS EN 81-20 SAHA TEST VE KONTROL KRİTERLERİ / KUYU ALT BOŞLUĞU DEĞERLENDİRME KRİTERLERİ",
+      "form_row_key": "UBFR38-R04|5.11.2.2.1|46647d39",
+      "match_method": "normalized_official_text_unique",
+      "match_count_in_official_pdf": 1,
+      "candidate_pdf_pages": [
+        9
+      ],
+      "confidence": "high",
+      "mapping_status": "verified_text_unique"
+    }
+  ]
+}
