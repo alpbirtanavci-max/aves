@@ -41,6 +41,7 @@ const rc394FragmanMigration = fs.readFileSync(path.join(databaseDir, '53_r15d_rc
 const rc394ErisilebilirlikMigration = fs.readFileSync(path.join(databaseDir, '54_r15d_rc394_ub_fr_43_erisilebilirlik_netlestirme.sql'), 'utf8');
 const rc394KapMigration = fs.readFileSync(path.join(databaseDir, '55_r15d_rc394_kap01_kap02_pasiflestirme.sql'), 'utf8');
 const rc394KabinTipiMigration = fs.readFileSync(path.join(databaseDir, '56_r15d_rc394_kabin_tipi_tek_secim.sql'), 'utf8');
+const rc394SenkronMigration = fs.readFileSync(path.join(databaseDir, '57_r15d_rc394_kutuphane_senkron_dosyadan_canliya.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -181,7 +182,7 @@ test('birebir tekrar eden saha rehberleri temizleniyor', rc2Migration.includes("
 test('kontrol olmayan form satırları pasifleştiriliyor', ['MAD-0809','MAD-0817','MAD-0825','MAD-0888','MAD-1004'].every(id => rc2Migration.includes(id)));
 test('MAD-0824 kaynak dalı rc2 içinde geri açılıyor', /set\s+aktif\s*=\s*true[\s\S]*where\s+madde_id\s*=\s*'MAD-0824'/i.test(rc2Migration));
 
-test('kütüphane toplamı 1018', library.length === 1018);
+test('kütüphane toplamı 1019', library.length === 1019);
 test('MAD-0561 başlığı Testler', byId.get('MAD-0561')?.kontrol_basligi === 'Testler');
 const hydraulicIds = library
   .filter(row => row.madde_id >= 'MAD-0562' && row.madde_id <= 'MAD-0613' && row.madde_id !== 'MAD-0611')
@@ -425,6 +426,10 @@ test('Tip 1-5 asgari boyut maddeleri kabin tipi seçimine otomatik bağlı', ['M
 }));
 test('MAD-0929/MAD-0997 artık kendi başlarına kabin tipi sormuyor, MAD-0923e yönlendiriyor', !byId.get('MAD-0929').olcu1_adi && byId.get('MAD-0929').olcum_tanimlari.length === 0 && /Kabin tipi seçimi/.test(byId.get('MAD-0929').denetci_yonlendirmesi) && !byId.get('MAD-0997').olcu1_adi && byId.get('MAD-0997').olcum_tanimlari.length === 0 && /Kabin tipi seçimi/.test(byId.get('MAD-0997').denetci_yonlendirmesi));
 test('rc3.9.4 kabin tipi migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KabinTipiMigration));
+
+// Dosya/canlı senkron raporu (kullanıcı onayıyla, ekleme-esaslı).
+test('kütüphanede MAD-1010 (KAP-06) canlıdan çekildi', byId.has('MAD-1010') && byId.get('MAD-1010').standart_madde_no === 'KAP-06' && byId.get('MAD-1010').aktif === false);
+test('rc3.9.4 senkron migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394SenkronMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
