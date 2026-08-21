@@ -38054,7 +38054,7 @@
     "esik_operator": null,
     "aranmaz_kosulu": null,
     "gorsel_referansi": null,
-    "aktif": true,
+    "aktif": false,
     "olcum_tanimlari": [],
     "otomatik_aranmaz_kurali": null,
     "denetim_profilleri": [
@@ -38090,7 +38090,7 @@
     "esik_operator": null,
     "aranmaz_kosulu": null,
     "gorsel_referansi": null,
-    "aktif": true,
+    "aktif": false,
     "olcum_tanimlari": [],
     "otomatik_aranmaz_kurali": null,
     "denetim_profilleri": [

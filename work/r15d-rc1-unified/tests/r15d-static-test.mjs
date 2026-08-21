@@ -39,6 +39,7 @@ const rc394TitleFixMigration = fs.readFileSync(path.join(databaseDir, '51_r15d_r
 const rc394KategoriMigration = fs.readFileSync(path.join(databaseDir, '52_r15d_rc394_kategori1_kategori2_netlestirme.sql'), 'utf8');
 const rc394FragmanMigration = fs.readFileSync(path.join(databaseDir, '53_r15d_rc394_icerik_netlestirme_ub_fr_38.sql'), 'utf8');
 const rc394ErisilebilirlikMigration = fs.readFileSync(path.join(databaseDir, '54_r15d_rc394_ub_fr_43_erisilebilirlik_netlestirme.sql'), 'utf8');
+const rc394KapMigration = fs.readFileSync(path.join(databaseDir, '55_r15d_rc394_kap01_kap02_pasiflestirme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -406,6 +407,12 @@ test('kapı açma/kapama butonu maddeleri artık sembolü açıklıyor', /ISO 70
 test('dokunmatik ekran/erişilebilirlik butonu/büyük boy tuş takımı maddeleri opsiyonel bileşen olarak açıklanıp Uygulanmaz gerekçesi kazandı',
   ['MAD-1001', 'MAD-1002', 'MAD-1003'].every(id => byId.get(id).aranmaz_kosulu && byId.get(id).kontrol_basligi !== 'Diğer Kontroller'));
 test('rc3.9.4 erişilebilirlik netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394ErisilebilirlikMigration));
+
+// KAP-01/KAP-02 (saha geri bildirimi #42): uygulamanın kendi eksik-madde
+// takibiyle mükerrer, kendine referanslı kapanış maddeleri pasifleştirildi.
+test('KAP-01/KAP-02 gereksiz kapanış maddeleri pasifleştirildi', !byId.get('MAD-1005').aktif && !byId.get('MAD-1006').aktif);
+test('diğer saha kapanışı maddeleri (KAP-03/04/05) aktif kalıyor', byId.get('MAD-1007').aktif && byId.get('MAD-1008').aktif && byId.get('MAD-1009').aktif);
+test('rc3.9.4 KAP-01/02 migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KapMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
