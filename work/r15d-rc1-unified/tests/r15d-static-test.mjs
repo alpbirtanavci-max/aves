@@ -373,6 +373,9 @@ test('rc3.9.4 mükerrer birleştirme migration veri silmiyor ve pasifleştirmiyo
 test('"Kapı ve kuyu duvarları" kalıtsal başlığı artık hiçbir aktif maddede kalmadı',
   library.filter(r => r.aktif && (r.kontrol_basligi || '').trim() === 'Kapı ve kuyu duvarları').length === 0);
 test('rc3.9.4 başlık düzeltme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394TitleFixMigration));
+test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
+  app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
+  !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

@@ -32,66 +32,6 @@ const FOTO_HATIRLATMALARI = {
 // Ana durum butonlarının kopyası olan genel bulgu seçenekleri — Uygun Değil altında gösterilmez
 const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Belirgin kusur görülmedi','2.000 mm altında ve belirgin kusur yok','8.8 veya üzeri','Kontrol edilemedi','Uygulanmaz','Aranmaz','Diğer bulgu'];
 
-// Eski DOCX çıkarımında bu ifadeler çok sayıda farklı maddeye bölüm başlığı
-// olarak yazılmıştı. Bunlar tek başına bir kontrol maddesini tarif etmez.
-// Ekranda böyle bir başlıkla karşılaşıldığında gerçek resmi metin ana başlık
-// yapılır; resmi kaynak henüz eşlenmemişse mevcut saha metni öne alınır.
-const GENEL_KONTROL_BASLIKLARI = new Set([
-  'Kuyu dibi servis prizi',
-  'Kabin üstündeki bakım kumandası',
-  'Kabin üstü',
-  'Korkuluk',
-  'Kabin üstü sığınma alanları ve güvenlik mesafeleri',
-  'Güvenlik tertibatı',
-  'Askı halatları ve bağlantıları',
-  'Kat kapısı kilitleme tertibatı',
-  'Karşı ağırlık',
-  'Raylar',
-  'Kapı ve kuyu duvarları',
-  'Kabin Kapısı, Durak Kapıları ve Katlar',
-  'Kuyu Üst Boşluğu ve Kuyu İçi',
-  'Makine Ve Makara Dairesine Erişim',
-  'Kabin normal aydınlatma seviyesi',
-  'Makine/Makara Dairesi',
-  'Makine Kuyu İçerisinde',
-  'PTC',
-  'MOTOR HAREKET SÜRESİ SINIRLAYICI',
-  'SINIR GÜVENLİK KESİCİLERİ',
-  'AŞIRI YÜK',
-  'İSTENMEYEN KABİN HAREKETİNE KARŞI KORUMA (UCM)',
-  'TAHRİK YETENEĞİ KONTROLÜ',
-  'MAKİNE-MOTOR FREN SETİ TESTİ',
-  'YALITIM DİRENCİ TESTİ',
-  'GÜVENLİK TERTİBATI TESTİ',
-  'KASNAK KANALLARI KONTROLÜ',
-  'Testler',
-  'Hidrolik Kontrol ve Testleri',
-  'Ortam/bina gereklilikleri',
-  'Merdivenler',
-  'Kabinde kurtarma prosedürleri',
-  'Tahrik makinesi ve ilgili donanım',
-  'Kumanda sistemleri',
-  'Aşama 1',
-  'Çift girişli kabin',
-  'Kabin ve durak kumandaları',
-  'İtfaiye hizmeti haberleşme sistemi',
-  'Kuyu Mahfazası',
-  'Havalandırma',
-  'Durak ve kabin kapıları',
-  'Kabin',
-  'Alarm',
-  'Diğer Kontroller',
-  'Çağırma aracı',
-  'Yasak işareti',
-  'Durak ve kabin kapı kontrolleri',
-  'Kabin kumanda panellerinin yerleri',
-  'Kat ve durak butonları',
-  'Kabin içi donanımlar',
-].map(value => value.toLocaleLowerCase('tr-TR')));
-
-function genelKontrolBasligiMi(value) {
-  return GENEL_KONTROL_BASLIKLARI.has((value || '').trim().toLocaleLowerCase('tr-TR'));
-}
 
 const DENETIM_TURLERI = {
   MODUL_G: 'Modül G - Birim Doğrulaması',
@@ -2393,20 +2333,13 @@ const UI = (() => {
     const rehberResmiyleAyni = metinlerAyni(resmiMetin, rehber);
     const hamRehberParca = resmiMetin ? { ana: '', saha: rehberResmiyleAyni ? '' : rehber } : splitRehber(rehber);
     const kaynakEtiketi = [r.kaynak_form_kodu, r.kaynak_form_revizyonu].filter(Boolean).join(' ');
-    const kesikBaslik = /…|\.\.\.$/.test(baslik.trim());
-    const genelBaslik = genelKontrolBasligiMi(baslik);
-    const resmiMetinAnaBaslik = !!resmiMetin && (kesikBaslik || genelBaslik);
-    const rehberAnaBaslik = !resmiMetin && genelBaslik && !!hamRehberParca.ana;
-    const gosterilenBaslik = resmiMetinAnaBaslik
-      ? resmiMetin
-      : rehberAnaBaslik
-        ? hamRehberParca.ana
-        : baslik;
-    const gosterilenResmiMetin = resmiMetinAnaBaslik ? '' : resmiMetin;
-    const rehberParca = {
-      ana: rehberAnaBaslik ? '' : hamRehberParca.ana,
-      saha: hamRehberParca.saha,
-    };
+    // Başlık kısa/kalıtsal görünse bile kalın gösterilen alan hep başlıktır;
+    // resmi metin ve rehber gövdesi hep normal punto ile ayrı gösterilir.
+    // Böylece uzun bir resmi madde metni yanlışlıkla tek bir kalın blok
+    // olarak basılmaz (göz yorması ve okunabilirlik sorununa yol açardı).
+    const gosterilenBaslik = baslik;
+    const gosterilenResmiMetin = resmiMetin;
+    const rehberParca = hamRehberParca;
     return `
     <div class="madde ${cls} ${isComplete(r)?'done':''} ${currentCanEdit?'':'readonly'}" data-id="${r.id}">
       <div class="mtop">
