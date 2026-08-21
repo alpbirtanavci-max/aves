@@ -32,6 +32,7 @@ const rc39FormOutputMigration = fs.readFileSync(path.join(databaseDir, '44_r15d_
 const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '45_r15d_rc39_form_adlandirilmis_olculer.sql'), 'utf8');
 const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
+const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -349,6 +350,12 @@ test('seri no sayacı grup bazlı, kat kapısı durak sayısına bağlı değil'
 test('kabin koruma eteği maddelerinden açı ölçümü kaldırıldı', rc394FeedbackMigration.includes("'kabin_etegi_alt_pah_acisi'") && rc394FeedbackMigration.includes("'kabin_etegi_cikinti_pah_acisi'") && !byId.get('MAD-0082').olcum_tanimlari.some(f => f.id === 'kabin_etegi_alt_pah_acisi') && !byId.get('MAD-0083').olcum_tanimlari.some(f => f.id === 'kabin_etegi_cikinti_pah_acisi'));
 test('konsol/paten ölçülerinde zorunlu mm birimi kaldırıldı', byId.get('MAD-0008C').olcum_tanimlari.filter(f => ['kabin_konsol_en_buyuk_aralik','karsi_agirlik_konsol_en_buyuk_aralik','kabin_patenleri_dusey_aralik','karsi_agirlik_patenleri_dusey_aralik'].includes(f.id)).every(f => !f.birim));
 test('rc3.9.4 saha geri bildirimi migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394FeedbackMigration));
+
+test('kapı koruyucu aygıtı maddelerinde yanıltıcı Uygulanmaz muafiyeti kaldırıldı',
+  !byId.get('MAD-0293').aranmaz_kosulu && !byId.get('MAD-0294').aranmaz_kosulu &&
+  byId.get('MAD-0293').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir') &&
+  byId.get('MAD-0294').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir'));
+test('rc3.9.4 koruyucu aygıt migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394GuardDeviceMigration));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
