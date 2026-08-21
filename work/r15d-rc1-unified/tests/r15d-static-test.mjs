@@ -33,6 +33,7 @@ const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '4
 const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
+const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -356,6 +357,10 @@ test('kapı koruyucu aygıtı maddelerinde yanıltıcı Uygulanmaz muafiyeti kal
   byId.get('MAD-0293').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir') &&
   byId.get('MAD-0294').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir'));
 test('rc3.9.4 koruyucu aygıt migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394GuardDeviceMigration));
+
+test('kapı/kuyu maddeleri Elektrik ve Test bölümünden Kuyu Boyunca\'ya taşındı',
+  ['MAD-0649','MAD-0652','MAD-0655','MAD-0656','MAD-0659'].every(id => byId.get(id).bolum === '02 - Kuyu Boyunca'));
+test('rc3.9.4 bölüm düzeltme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394SectionFixMigration));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
