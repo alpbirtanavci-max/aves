@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.3';
+const APP_VERSION = 'R15D-rc3.9.4';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -827,16 +827,20 @@ const UI = (() => {
     return result;
   }
 
+  // Sayaç ve eksik listesi ana ekipman GRUBU bazında tutulur (kaç ayrı parça
+  // türü, kaç durak/kat sayısı değil). Bir grup için tek bir seri no girilmesi
+  // yeterlidir; kat kapısı gibi çok sayıda kayıt alınabilen gruplarda ek
+  // kayıtlar (her kat için ayrı satır) denetçinin isteğine bağlı kalır.
   function seriNumarasiSayisi(d) {
     const data = seriNumaralariNormalize(d && d.seri_numaralari);
-    return SERI_GRUPLARI.reduce((sum, [key]) => sum + data[key].filter(item => item.seri_no.trim()).length, 0);
+    return seriGereksinimleri(d).filter(([key]) => data[key].some(item => item.seri_no.trim())).length;
   }
 
   function seriGereksinimleri(d) {
     const requirements = [
       ['kabin_tamponlari', 'Kabin tamponu', 1],
       ['parasut_frenleri', 'Paraşüt fren / güvenlik tertibatı', 1],
-      ['kat_kapilari', 'Kat kapıları', Math.max(1, Number(d && d.durak_sayisi) || 1)],
+      ['kat_kapilari', 'Kat kapısı', 1],
       ['kumanda_kartlari', 'Kumanda kartı', 1],
     ];
     if (d && d.tahrik_tipi === 'Elektrikli') requirements.splice(1, 0, ['karsi_agirlik_tamponlari', 'Karşı ağırlık tamponu', 1]);
@@ -847,14 +851,14 @@ const UI = (() => {
   }
 
   function seriBeklenenMinimum(d) {
-    return seriGereksinimleri(d).reduce((sum, requirement) => sum + requirement[2], 0);
+    return seriGereksinimleri(d).length;
   }
 
   function seriEksikleri(d) {
     const data = seriNumaralariNormalize(d && d.seri_numaralari);
-    return seriGereksinimleri(d).flatMap(([key, label, minimum]) => {
-      const count = data[key].filter(item => item.seri_no.trim()).length;
-      return count < minimum ? [`${label}: ${count}/${minimum}`] : [];
+    return seriGereksinimleri(d).flatMap(([key, label]) => {
+      const dolu = data[key].some(item => item.seri_no.trim());
+      return dolu ? [] : [`${label}: eksik`];
     });
   }
   // Eski kütüphane alan adları geriye uyumluluk için korunur. Denetçiye
@@ -1948,6 +1952,7 @@ const UI = (() => {
     <div class="footbar">
       <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
       <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
+      ${inspectionReadOnly && normaldeDuzenleyebilir ? '<button class="btn btn-finish ready" id="btnDenetimeDon">↩ Denetime Geri Dön</button>' : ''}
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
         ? (gozden ? 'Çalışmayı Tamamla' : 'Saha Kontrolünü Bitir')
         : 'Denetimi Bitir'}</button>` : ''}
@@ -1964,6 +1969,8 @@ const UI = (() => {
     document.getElementById('back').onclick = showList;
     const btnDuzenlemeyeDon = document.getElementById('btnDuzenlemeyeDon');
     if (btnDuzenlemeyeDon) btnDuzenlemeyeDon.onclick = () => { inspectionReadOnly = false; renderDenetim(); };
+    const btnDenetimeDon = document.getElementById('btnDenetimeDon');
+    if (btnDenetimeDon) btnDenetimeDon.onclick = () => { inspectionReadOnly = false; renderDenetim(); };
     const btnSahayaHazirla = document.getElementById('btnSahayaHazirla');
     if (btnSahayaHazirla) btnSahayaHazirla.onclick = async () => {
       btnSahayaHazirla.disabled = true;
@@ -2895,6 +2902,9 @@ const UI = (() => {
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
     if (bakilmadi.length) {
       toast(`${bakilmadi.length} sonuçsuz madde var`);
+      search = '';
+      filter = 'empty';
+      await renderDenetim();
       return;
     }
     const eksikSeriler = seriEksikleri(d);
@@ -2924,7 +2934,10 @@ const UI = (() => {
     d.updated_at = now;
     await localWrite('denetimler', d, 'denetimler');
     if (overlay) overlay.remove();
-    await renderDenetim();
+    // Çalışma Tamamlandı sahanın son adımıdır; denetçiyi otomatik olarak
+    // denetim listesine döndürür. Gözden Geçirme aşaması aynı ekranda kalır.
+    if (yeniDurum === 'Çalışma Tamamlandı') showList();
+    else await renderDenetim();
   }
 
   async function showOzet() {

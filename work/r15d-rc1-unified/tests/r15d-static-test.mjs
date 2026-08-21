@@ -31,6 +31,7 @@ const rc38TechnicalManagerMigration = fs.readFileSync(path.join(databaseDir, '43
 const rc39FormOutputMigration = fs.readFileSync(path.join(databaseDir, '44_r15d_rc39_form_cikti_snapshot.sql'), 'utf8');
 const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '45_r15d_rc39_form_adlandirilmis_olculer.sql'), 'utf8');
 const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
+const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -40,9 +41,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.3 canlı sürümü', index.includes('R15D-RC3.9.3</b>'));
-test('app R15D rc3.9.3 canlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.3'"));
-test('service worker rc3.9.3 canlı cache', sw.includes("aves-saha-r15d-rc393'"));
+test('index R15D rc3.9.4 canlı sürümü', index.includes('R15D-RC3.9.4</b>'));
+test('app R15D rc3.9.4 canlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.4'"));
+test('service worker rc3.9.4 canlı cache', sw.includes("aves-saha-r15d-rc394'"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -340,6 +341,14 @@ test('hazır bulgu, uygunsuzluk açıklaması ve madde notu kayıpsız birleşti
 test('PDF seri numaralari sigdiriliyor ve sessizce kesilemiyor',
   formOutput.includes('const serialPdfOptions = { size:6, minSize:1.8, mustFit:true }') &&
   formOutput.includes('options.mustFit && lines.length > max'));
+
+test('çalışma tamamlanınca denetim listesine dönülüyor', app.includes("if (yeniDurum === 'Çalışma Tamamlandı') showList();"));
+test('bitirirken eksik madde varsa doğrudan filtrelenip gösteriliyor', app.includes("filter = 'empty';\n      await renderDenetim();"));
+test('inceleme modunda düzenlenebilir denetimde belirgin geri dön butonu var', app.includes('id="btnDenetimeDon"') && app.includes("inspectionReadOnly && normaldeDuzenleyebilir"));
+test('seri no sayacı grup bazlı, kat kapısı durak sayısına bağlı değil', app.includes("['kat_kapilari', 'Kat kapısı', 1]") && app.includes('seriGereksinimleri(d).filter(([key]) => data[key].some(item => item.seri_no.trim())).length'));
+test('kabin koruma eteği maddelerinden açı ölçümü kaldırıldı', rc394FeedbackMigration.includes("'kabin_etegi_alt_pah_acisi'") && rc394FeedbackMigration.includes("'kabin_etegi_cikinti_pah_acisi'") && !byId.get('MAD-0082').olcum_tanimlari.some(f => f.id === 'kabin_etegi_alt_pah_acisi') && !byId.get('MAD-0083').olcum_tanimlari.some(f => f.id === 'kabin_etegi_cikinti_pah_acisi'));
+test('konsol/paten ölçülerinde zorunlu mm birimi kaldırıldı', byId.get('MAD-0008C').olcum_tanimlari.filter(f => ['kabin_konsol_en_buyuk_aralik','karsi_agirlik_konsol_en_buyuk_aralik','kabin_patenleri_dusey_aralik','karsi_agirlik_patenleri_dusey_aralik'].includes(f.id)).every(f => !f.birim));
+test('rc3.9.4 saha geri bildirimi migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394FeedbackMigration));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
