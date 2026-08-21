@@ -35,6 +35,7 @@ const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_r
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
+const rc394TitleFixMigration = fs.readFileSync(path.join(databaseDir, '51_r15d_rc394_kapi_kuyu_duvarlari_baslik_ozellestir.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -368,6 +369,10 @@ test('yalıtım direnci maddeleri ikisi de aktif kalıyor (resmi PDF ayrı kutul
 test('rc3.9.4 mükerrer birleştirme migration veri silmiyor ve pasifleştirmiyor',
   !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394DuplicateMergeMigration) &&
   !/aktif\s*=\s*false/i.test(rc394DuplicateMergeMigration));
+
+test('"Kapı ve kuyu duvarları" kalıtsal başlığı artık hiçbir aktif maddede kalmadı',
+  library.filter(r => r.aktif && (r.kontrol_basligi || '').trim() === 'Kapı ve kuyu duvarları').length === 0);
+test('rc3.9.4 başlık düzeltme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394TitleFixMigration));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
