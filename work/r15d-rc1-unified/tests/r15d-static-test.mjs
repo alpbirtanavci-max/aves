@@ -36,6 +36,7 @@ const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
 const rc394TitleFixMigration = fs.readFileSync(path.join(databaseDir, '51_r15d_rc394_kapi_kuyu_duvarlari_baslik_ozellestir.sql'), 'utf8');
+const rc394KategoriMigration = fs.readFileSync(path.join(databaseDir, '52_r15d_rc394_kategori1_kategori2_netlestirme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -237,6 +238,7 @@ test('81-71 aktif madde sayısı 39 olarak korunuyor', active8171.length === 39)
 test('81-73 aktif madde sayısı 31 olarak korunuyor', active8173.length === 31);
 test('81-71 ve 81-73 özel bölümlerinde aktif madde kalmıyor',
   [...active8171, ...active8173].every(row => !forbiddenSpecialSections.has(row.bolum)));
+
 const simulatedOldLiveLibrary = [...active8171, ...active8173].map(row => ({
   ...row,
   bolum: row.standart_grubu === '81-71'
@@ -373,6 +375,20 @@ test('rc3.9.4 mükerrer birleştirme migration veri silmiyor ve pasifleştirmiyo
 test('"Kapı ve kuyu duvarları" kalıtsal başlığı artık hiçbir aktif maddede kalmadı',
   library.filter(r => r.aktif && (r.kontrol_basligi || '').trim() === 'Kapı ve kuyu duvarları').length === 0);
 test('rc3.9.4 başlık düzeltme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394TitleFixMigration));
+
+// Kategori 1 / Kategori 2 (TS EN 81-71) karşılıklı dışlayıcı maddelerinde
+// denetçiye hangi kategoriye özgü olduğu ve karşı kategoride "Uygulanmaz"
+// olacağı açıkça anlatılıyor mu (saha geri bildirimi: içerik belirsizdi).
+const kategoriK1Only = ['MAD-0872', 'MAD-0878'];
+const kategoriK2Only = ['MAD-0855', 'MAD-0859', 'MAD-0863', 'MAD-0864', 'MAD-0865', 'MAD-0866', 'MAD-0873', 'MAD-0876', 'MAD-0877', 'MAD-0879', 'MAD-0881'];
+test('Kategori 1/2 tanımlayıcı maddeleri (MAD-0847/MAD-0848) kategori belirleme talimatı içeriyor',
+  /kuyu mahfaza tipini belirleyin/.test(byId.get('MAD-0847').denetci_yonlendirmesi || '') &&
+  /kuyu mahfaza tipini belirleyin/.test(byId.get('MAD-0848').denetci_yonlendirmesi || ''));
+test('Kategori 1 maddelerinde Kategori 2 için Uygulanmaz gerekçesi tanımlı',
+  kategoriK1Only.every(id => /Kategori 2/.test(byId.get(id).aranmaz_kosulu || '')));
+test('Kategori 2 maddelerinde Kategori 1 için Uygulanmaz gerekçesi tanımlı',
+  kategoriK2Only.every(id => /Kategori 1/.test(byId.get(id).aranmaz_kosulu || '')));
+test('rc3.9.4 Kategori 1/2 netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KategoriMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
