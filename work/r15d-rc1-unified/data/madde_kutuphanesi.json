@@ -7483,7 +7483,7 @@
     "kaynak_turu": "Standart / ÜB.FR.38",
     "standart_madde_no": "5.3.8.1",
     "kontrol_basligi": "Kilit açılma bölgesi genişliği",
-    "denetci_yonlendirmesi": "Kilit açılma bölgesi en fazla 0,20 m, otomatik durak-kabin kapılarında en fazla 0,35 m",
+    "denetci_yonlendirmesi": "Kilit açılma bölgesi, kabin durak seviyesindeyken durak kapısının kilidinin açılabildiği düşey aralıktır. Bu aralığın kat seviyesinin üstünde ve altında en fazla 0,20 m (otomatik açılıp kapanan durak-kabin kapılarında en fazla 0,35 m) olduğunu kumanda/tahrik ayarlarından veya sahada seviye kontrolüyle doğrulayın.",
     "yontem_kodu": "A,B,E",
     "dogrulama_yontemi": "Görsel + Test + Talimat/İşaret",
     "hazir_secenekler": null,
@@ -15802,7 +15802,7 @@
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "Devre şemaları, bakım, muayene ve tamir için talimatlar ve kayıt defteri",
+    "resmi_madde_metni": "Devre şemaları, bakım, muayene ve tamir için talimatlar ve kayıt defteri bulunmalıdır.",
     "kaynak_form_kodu": "ÜB.FR.38",
     "kaynak_form_revizyonu": "R.04",
     "kaynak_form_tablo_no": 11,
@@ -15982,7 +15982,7 @@
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "Kabin aydınlatması ve prizi ve makine dairesi aydınlatması sigortaları",
+    "resmi_madde_metni": "Kabin aydınlatması, kabin prizi ve makine dairesi aydınlatması devreleri ayrı sigortalarla korunmalıdır.",
     "kaynak_form_kodu": "ÜB.FR.38",
     "kaynak_form_revizyonu": "R.04",
     "kaynak_form_tablo_no": 11,
@@ -18374,7 +18374,7 @@
     "kaynak_turu": "Standart / ÜB.FR.39",
     "standart_madde_no": "Ek-I, 6.2 | ZA: 6.2",
     "kontrol_basligi": "Makine/makara dairesinde devre şemaları ve kayıt defteri (81-1/2+A3)",
-    "denetci_yonlendirmesi": "Devre şemaları, bakım, muayene ve tamir için talimatlar ve kayıt defteri",
+    "denetci_yonlendirmesi": "Devre şemaları, bakım/muayene/tamir talimatları ve kayıt defterinin makine dairesinde veya erişilebilir bir noktada bulunduğunu kontrol edin.",
     "yontem_kodu": "A,E",
     "dogrulama_yontemi": "Görsel + Talimat/İşaret",
     "hazir_secenekler": null,
@@ -18394,7 +18394,7 @@
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "Devre şemaları, bakım, muayene ve tamir için talimatlar ve kayıt defteri",
+    "resmi_madde_metni": "Devre şemaları, bakım, muayene ve tamir için talimatlar ve kayıt defteri bulunmalıdır.",
     "kaynak_form_kodu": "ÜB.FR.39",
     "kaynak_form_revizyonu": "R.02",
     "kaynak_form_tablo_no": 12,
@@ -21202,7 +21202,7 @@
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "Aşağıdaki hususlar asansörün kendiliğinden tehlikeli çalışmasına neden olmamalı; - Topraklama ile ilgili yalıtım arızası",
+    "resmi_madde_metni": "Topraklama ile ilgili bir yalıtım arızası, asansörün kendiliğinden tehlikeli bir şekilde çalışmasına neden olmamalıdır.",
     "kaynak_form_kodu": "ÜB.FR.38",
     "kaynak_form_revizyonu": "R.04",
     "kaynak_form_tablo_no": 11,
@@ -21555,7 +21555,7 @@
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "(Kanallarda aşınma olup olmadığı, halatların kanala tam oturup oturmadığı vb.)",
+    "resmi_madde_metni": "Tahrik kasnağı kanallarının durumu kontrol edilmelidir (kanallarda aşınma olup olmadığı, halatların kanala tam oturup oturmadığı vb.).",
     "kaynak_form_kodu": "ÜB.FR.38",
     "kaynak_form_revizyonu": "R.04",
     "kaynak_form_tablo_no": 11,
@@ -24230,7 +24230,7 @@
   {
     "madde_id": "MAD-0635",
     "sira_no": 635,
-    "bolum": "05 - Elektrik ve Test",
+    "bolum": "04 - Makine ve Şase",
     "standart_grubu": "81-20",
     "kaynak_turu": "Standart / ÜB.FR.38",
     "standart_madde_no": "5.2.3.2 b",
@@ -24302,12 +24302,12 @@
   {
     "madde_id": "MAD-0637",
     "sira_no": 637,
-    "bolum": "05 - Elektrik ve Test",
+    "bolum": "04 - Makine ve Şase",
     "standart_grubu": "81-20",
     "kaynak_turu": "Standart / ÜB.FR.38",
     "standart_madde_no": "5.2.3.2 c",
     "kontrol_basligi": "Makine veya makara dairesi giriş kapağının net ölçüleri",
-    "denetci_yonlendirmesi": "Makine/makara dairesi giriş kapağı varsa, en az 0,80 x 0,80 m net geçişi sağlamalı ve karşı ağırlıkla dengelenmiş olmalıdır.",
+    "denetci_yonlendirmesi": "Makine/makara dairesi giriş kapağı (yerden erişilen, kapak tipi geçiş) varsa en az 0,80 x 0,80 m net geçiş sağladığını ölçün. \"Karşı ağırlıkla dengelenmiş\" ifadesi, kapağın kendiliğinden çarpıp kapanmaması veya ağırlığından dolayı zor açılmaması için bir karşı ağırlık/yay mekanizmasıyla dengelenmiş olması gerektiği anlamına gelir; bu mekanizmanın mevcut ve çalışır durumda olduğunu kontrol edin.",
     "yontem_kodu": "A,C,E",
     "dogrulama_yontemi": "Görsel + Ölçüm + Talimat/İşaret",
     "hazir_secenekler": null,
@@ -24338,7 +24338,7 @@
   {
     "madde_id": "MAD-0638",
     "sira_no": 638,
-    "bolum": "05 - Elektrik ve Test",
+    "bolum": "04 - Makine ve Şase",
     "standart_grubu": "81-20",
     "kaynak_turu": "Standart / ÜB.FR.38",
     "standart_madde_no": "5.2.3.2 d",

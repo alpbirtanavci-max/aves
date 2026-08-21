@@ -37,6 +37,7 @@ const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
 const rc394TitleFixMigration = fs.readFileSync(path.join(databaseDir, '51_r15d_rc394_kapi_kuyu_duvarlari_baslik_ozellestir.sql'), 'utf8');
 const rc394KategoriMigration = fs.readFileSync(path.join(databaseDir, '52_r15d_rc394_kategori1_kategori2_netlestirme.sql'), 'utf8');
+const rc394FragmanMigration = fs.readFileSync(path.join(databaseDir, '53_r15d_rc394_icerik_netlestirme_ub_fr_38.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -389,6 +390,14 @@ test('Kategori 1 maddelerinde Kategori 2 için Uygulanmaz gerekçesi tanımlı',
 test('Kategori 2 maddelerinde Kategori 1 için Uygulanmaz gerekçesi tanımlı',
   kategoriK2Only.every(id => /Kategori 1/.test(byId.get(id).aranmaz_kosulu || '')));
 test('rc3.9.4 Kategori 1/2 netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KategoriMigration));
+
+// ÜB.FR.38 kaynaklı fragman/parça halindeki resmi_madde_metni alanları tam
+// cümleye tamamlandı (saha geri bildirimi #5, #24, #25, #28, #29, #30).
+test('kilit açılma bölgesi maddesi artık açıklanıyor', /kilidinin açılabildiği düşey aralık/.test(byId.get('MAD-0179').denetci_yonlendirmesi || ''));
+test('devre şemaları/kayıt defteri maddeleri tam cümle', byId.get('MAD-0401').resmi_madde_metni.endsWith('bulunmalıdır.') && byId.get('MAD-0473').resmi_madde_metni.endsWith('bulunmalıdır.'));
+test('kasnak kanalları maddesi artık tam cümle', byId.get('MAD-0560').resmi_madde_metni.startsWith('Tahrik kasnağı kanallarının durumu kontrol edilmelidir'));
+test('makine/makara dairesi kapı ölçüleri maddeleri (5.2.3.2 a-d) aynı bölümde', ['MAD-0376','MAD-0635','MAD-0637','MAD-0638'].every(id => byId.get(id).bolum === '04 - Makine ve Şase'));
+test('rc3.9.4 fragman netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394FragmanMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
