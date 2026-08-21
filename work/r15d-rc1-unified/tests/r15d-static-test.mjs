@@ -38,6 +38,7 @@ const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_
 const rc394TitleFixMigration = fs.readFileSync(path.join(databaseDir, '51_r15d_rc394_kapi_kuyu_duvarlari_baslik_ozellestir.sql'), 'utf8');
 const rc394KategoriMigration = fs.readFileSync(path.join(databaseDir, '52_r15d_rc394_kategori1_kategori2_netlestirme.sql'), 'utf8');
 const rc394FragmanMigration = fs.readFileSync(path.join(databaseDir, '53_r15d_rc394_icerik_netlestirme_ub_fr_38.sql'), 'utf8');
+const rc394ErisilebilirlikMigration = fs.readFileSync(path.join(databaseDir, '54_r15d_rc394_ub_fr_43_erisilebilirlik_netlestirme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -398,6 +399,13 @@ test('devre şemaları/kayıt defteri maddeleri tam cümle', byId.get('MAD-0401'
 test('kasnak kanalları maddesi artık tam cümle', byId.get('MAD-0560').resmi_madde_metni.startsWith('Tahrik kasnağı kanallarının durumu kontrol edilmelidir'));
 test('makine/makara dairesi kapı ölçüleri maddeleri (5.2.3.2 a-d) aynı bölümde', ['MAD-0376','MAD-0635','MAD-0637','MAD-0638'].every(id => byId.get(id).bolum === '04 - Makine ve Şase'));
 test('rc3.9.4 fragman netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394FragmanMigration));
+
+// ÜB.FR.43 (TS EN 81-70 erişilebilirlik) maddeleri artık açıklamalı
+// (saha geri bildirimi #16, #17, #20, #21, #22).
+test('kapı açma/kapama butonu maddeleri artık sembolü açıklıyor', /ISO 7000-2864/.test(byId.get('MAD-0978').denetci_yonlendirmesi || '') && /ISO 7000-2863/.test(byId.get('MAD-0979').denetci_yonlendirmesi || ''));
+test('dokunmatik ekran/erişilebilirlik butonu/büyük boy tuş takımı maddeleri opsiyonel bileşen olarak açıklanıp Uygulanmaz gerekçesi kazandı',
+  ['MAD-1001', 'MAD-1002', 'MAD-1003'].every(id => byId.get(id).aranmaz_kosulu && byId.get(id).kontrol_basligi !== 'Diğer Kontroller'));
+test('rc3.9.4 erişilebilirlik netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394ErisilebilirlikMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
