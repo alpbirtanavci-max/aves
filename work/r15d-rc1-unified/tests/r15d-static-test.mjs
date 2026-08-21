@@ -40,6 +40,7 @@ const rc394KategoriMigration = fs.readFileSync(path.join(databaseDir, '52_r15d_r
 const rc394FragmanMigration = fs.readFileSync(path.join(databaseDir, '53_r15d_rc394_icerik_netlestirme_ub_fr_38.sql'), 'utf8');
 const rc394ErisilebilirlikMigration = fs.readFileSync(path.join(databaseDir, '54_r15d_rc394_ub_fr_43_erisilebilirlik_netlestirme.sql'), 'utf8');
 const rc394KapMigration = fs.readFileSync(path.join(databaseDir, '55_r15d_rc394_kap01_kap02_pasiflestirme.sql'), 'utf8');
+const rc394KabinTipiMigration = fs.readFileSync(path.join(databaseDir, '56_r15d_rc394_kabin_tipi_tek_secim.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -413,6 +414,17 @@ test('rc3.9.4 erişilebilirlik netleştirme migration veri silmiyor', !/^\s*(del
 test('KAP-01/KAP-02 gereksiz kapanış maddeleri pasifleştirildi', !byId.get('MAD-1005').aktif && !byId.get('MAD-1006').aktif);
 test('diğer saha kapanışı maddeleri (KAP-03/04/05) aktif kalıyor', byId.get('MAD-1007').aktif && byId.get('MAD-1008').aktif && byId.get('MAD-1009').aktif);
 test('rc3.9.4 KAP-01/02 migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KapMigration));
+
+// Kabin tipi seçimi (saha geri bildirimi #14, #15, #19): tek seçim noktası
+// kabin bölümünün başında (MAD-0923), diğer tip-özel maddeler otomatik bağlı.
+test('app.js kural motoru metinsel icerir/icermez operatörlerini destekliyor', app.includes("rule.operator === 'icerir'") && app.includes("rule.operator === 'icermez'"));
+test('MAD-0923 gerçek bir kabin tipi seçici içeriyor', byId.get('MAD-0923').olcum_tanimlari.some(d => d.id === 'kabin_tipi_secimi' && d.tur === 'secim' && d.secenekler.length === 5));
+test('Tip 1-5 asgari boyut maddeleri kabin tipi seçimine otomatik bağlı', ['MAD-0924','MAD-0925','MAD-0926','MAD-0927','MAD-0928'].every((id, i) => {
+  const rule = byId.get(id).otomatik_aranmaz_kurali;
+  return rule && rule.paylasimli_anahtar === 'kabin_tipi_secimi' && rule.operator === 'icermez' && rule.deger === `Tip ${i + 1}`;
+}));
+test('MAD-0929/MAD-0997 artık kendi başlarına kabin tipi sormuyor, MAD-0923e yönlendiriyor', !byId.get('MAD-0929').olcu1_adi && byId.get('MAD-0929').olcum_tanimlari.length === 0 && /Kabin tipi seçimi/.test(byId.get('MAD-0929').denetci_yonlendirmesi) && !byId.get('MAD-0997').olcu1_adi && byId.get('MAD-0997').olcum_tanimlari.length === 0 && /Kabin tipi seçimi/.test(byId.get('MAD-0997').denetci_yonlendirmesi));
+test('rc3.9.4 kabin tipi migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394KabinTipiMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
   !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));

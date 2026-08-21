@@ -34602,8 +34602,8 @@
     "standart_grubu": "81-70",
     "kaynak_turu": "Standart / ÜB.FR.43",
     "standart_madde_no": "Genel şart",
-    "kontrol_basligi": "Kabin genişliği ve derinliği ölçüm tanımları",
-    "denetci_yonlendirmesi": "Kabin tipi, sayısı ve boyutları -Kabin genişliği, kabinin yapı duvarlarının iç yüzeyleri arasındaki, ön girişe paralel olarak ölçülen yatay mesafe olarak tanımlanır. -Kabin derinliği, kabinin yapı duvarlarının iç yüzeyleri arasındaki, genişliğe dik olarak ölçülen yatay mesafe olarak tanımlanır.",
+    "kontrol_basligi": "Kabin tipi seçimi",
+    "denetci_yonlendirmesi": "Bu bölümdeki tip-bağımlı maddeler (asgari boyutlar, geri hareket görüş desteği, el tutamağı, serbest giriş açıklığı vb.) burada seçtiğiniz kabin tipine göre değerlendirilir. Aşağıdan sahadaki kabinin tipini seçin: Tip 1 — genişlik 1000 mm, derinlik 1300 mm (450 kg); refakatsiz tekerlekli sandalye kullanıcısı; yalnız tip 2 kurulumuna imkân vermeyen mevcut binalarda. Tip 2 — genişlik 1100 mm, derinlik 1400 mm (630 kg); tekerlekli sandalye kullanıcısı + refakatçi; yeni binalarda asgari tip. Tip 3 — genişlik 1100 mm, derinlik 2100 mm (1000 kg); C sınıfı tekerlekli sandalye + sedye taşıma; kamusal alanlar. Tip 4 — genişlik 1600/derinlik 1400 mm veya genişlik 1400/derinlik 1600 mm (1000 kg); tekerlekli sandalyenin kabin içinde dönebildiği tip; bitişik duvarlı kapılarda asgari. Tip 5 — genişlik 2000/derinlik 1400 mm veya genişlik 1400/derinlik 2000 mm (1275 kg); tekerlekli sandalyenin döndüğü, birkaç yolcu daha alan en büyük tip.",
     "yontem_kodu": null,
     "dogrulama_yontemi": null,
     "hazir_secenekler": null,
@@ -34618,12 +34618,27 @@
     "aranmaz_kosulu": null,
     "gorsel_referansi": null,
     "aktif": true,
-    "olcum_tanimlari": [],
+    "olcum_tanimlari": [
+      {
+        "id": "kabin_tipi_secimi",
+        "tur": "secim",
+        "etiket": "Kabin tipi",
+        "secenekler": [
+          "Tip 1",
+          "Tip 2",
+          "Tip 3",
+          "Tip 4",
+          "Tip 5"
+        ],
+        "paylasimli_anahtar": "kabin_tipi_secimi",
+        "referans_metni": "Bu bölümdeki diğer tip-bağımlı maddeler bu seçime göre otomatik değerlendirilir."
+      }
+    ],
     "otomatik_aranmaz_kurali": null,
     "denetim_profilleri": [
       "modul_g_tam"
     ],
-    "resmi_madde_metni": "Kabin tipi, sayısı ve boyutları -Kabin genişliği, kabinin yapı duvarlarının iç yüzeyleri arasındaki, ön girişe paralel olarak ölçülen yatay mesafe olarak tanımlanır. -Kabin derinliği, kabinin yapı duvarlarının iç yüzeyleri arasındaki, genişliğe dik olarak ölçülen yatay mesafe olarak tanımlanır.",
+    "resmi_madde_metni": "Kabin tipi, sayısı ve boyutları. Kabin genişliği: kabinin yapı duvarlarının iç yüzeyleri arasındaki, ön girişe paralel ölçülen yatay mesafe. Kabin derinliği: kabinin yapı duvarlarının iç yüzeyleri arasındaki, genişliğe dik ölçülen yatay mesafe.",
     "kaynak_form_kodu": "ÜB.FR.43",
     "kaynak_form_revizyonu": "R.04",
     "kaynak_form_tablo_no": null,
@@ -34655,7 +34670,11 @@
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
-    "otomatik_aranmaz_kurali": null,
+    "otomatik_aranmaz_kurali": {
+      "paylasimli_anahtar": "kabin_tipi_secimi",
+      "operator": "icermez",
+      "deger": "Tip 1"
+    },
     "denetim_profilleri": [
       "modul_g_tam"
     ],
@@ -34691,7 +34710,11 @@
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
-    "otomatik_aranmaz_kurali": null,
+    "otomatik_aranmaz_kurali": {
+      "paylasimli_anahtar": "kabin_tipi_secimi",
+      "operator": "icermez",
+      "deger": "Tip 2"
+    },
     "denetim_profilleri": [
       "modul_g_tam"
     ],
@@ -34727,7 +34750,11 @@
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
-    "otomatik_aranmaz_kurali": null,
+    "otomatik_aranmaz_kurali": {
+      "paylasimli_anahtar": "kabin_tipi_secimi",
+      "operator": "icermez",
+      "deger": "Tip 3"
+    },
     "denetim_profilleri": [
       "modul_g_tam"
     ],
@@ -34763,7 +34790,11 @@
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
-    "otomatik_aranmaz_kurali": null,
+    "otomatik_aranmaz_kurali": {
+      "paylasimli_anahtar": "kabin_tipi_secimi",
+      "operator": "icermez",
+      "deger": "Tip 4"
+    },
     "denetim_profilleri": [
       "modul_g_tam"
     ],
@@ -34799,7 +34830,11 @@
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
-    "otomatik_aranmaz_kurali": null,
+    "otomatik_aranmaz_kurali": {
+      "paylasimli_anahtar": "kabin_tipi_secimi",
+      "operator": "icermez",
+      "deger": "Tip 5"
+    },
     "denetim_profilleri": [
       "modul_g_tam"
     ],
@@ -34819,11 +34854,11 @@
     "kaynak_turu": "Standart / ÜB.FR.43",
     "standart_madde_no": "5.3.2.3. | ZA: 1.2",
     "kontrol_basligi": "Tip 1, 2 ve 3 kabinlerde geri hareket görüş desteği",
-    "denetci_yonlendirmesi": "1., 2. ve 3. tip kabinler için, geri geri giderken yolcuların arkalarındaki engelleri gözleyebilmeleri için bir aygıt kurulmalıdır.",
+    "denetci_yonlendirmesi": "1., 2. ve 3. tip kabinlerde geçerlidir (kabinin tipini bu bölümün başındaki \"Kabin tipi seçimi\" maddesinden görün). Geri geri giderken yolcuların arkalarındaki engelleri gözleyebilmeleri için bir aygıt (ör. ayna) kurulduğunu kontrol edin.",
     "yontem_kodu": "A",
     "dogrulama_yontemi": "Görsel",
     "hazir_secenekler": null,
-    "olcu1_adi": "Kabin Tipi",
+    "olcu1_adi": null,
     "olcu1_birimi": null,
     "olcu2_adi": null,
     "olcu2_birimi": null,
@@ -35082,7 +35117,7 @@
     "kaynak_turu": "Standart / ÜB.FR.43",
     "standart_madde_no": "(devam)",
     "kontrol_basligi": "Durak ve kabin kapı kontrolleri",
-    "denetci_yonlendirmesi": "Serbest giriş açıklığı Net açıklık genişliği asgari, Tip 1 kabinler için 800 mm, Tip 2, Tip 3 ve Tip 4 kabinler için 900 mm ve Tip 5 kabinler için 1100 mm olmalıdır. Mevcut binalarda net açıklık genişliği Tip 2 kabinler için asgari 800 mm olmalıdır.",
+    "denetci_yonlendirmesi": "Kabinin tipini bu bölümün başındaki \"Kabin tipi seçimi\" maddesinden görün. Asgari net açıklık genişliği tipe göre değişir: Tip 1 için 800 mm, Tip 2/3/4 için 900 mm, Tip 5 için 1100 mm (mevcut binalarda Tip 2 için asgari 800 mm kabul edilir). Uygulama yalnız 800 mm’lik ortak tabanı otomatik kontrol eder; Tip 2 ve üzerinde gerçek eşiğin 900/1100 mm olduğunu siz doğrulayın.",
     "yontem_kodu": "C",
     "dogrulama_yontemi": "Ölçüm",
     "hazir_secenekler": null,
@@ -37609,11 +37644,11 @@
     "kaynak_turu": "Standart / ÜB.FR.43",
     "standart_madde_no": "(devam)",
     "kontrol_basligi": "Kabin içi donanımlar",
-    "denetci_yonlendirmesi": "1, 2 ve 3. tip kabinler için, eğer kabin giriş genişliğini kısıtlayacaksa, el tutamağı karşıdaki yan duvara monte edilebilir. 4 ve 5. tip kabinler için karşıdaki yan duvara veya arka duvara ikinci bir el tutamağı monte edilmelidir.",
+    "denetci_yonlendirmesi": "Kabinin tipini bu bölümün başındaki \"Kabin tipi seçimi\" maddesinden görün. Tip 1, 2 ve 3’te, giriş genişliği kısıtlanacaksa el tutamağı yalnız karşı yan duvara monte edilebilir. Tip 4 ve 5’te karşı yan duvara veya arka duvara ikinci bir el tutamağı monte edilmiş olmalıdır.",
     "yontem_kodu": "A,C",
     "dogrulama_yontemi": "Görsel + Ölçüm",
     "hazir_secenekler": null,
-    "olcu1_adi": "Kabin Tipi",
+    "olcu1_adi": null,
     "olcu1_birimi": null,
     "olcu2_adi": null,
     "olcu2_birimi": null,

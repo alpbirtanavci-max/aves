@@ -2530,6 +2530,10 @@ const UI = (() => {
   }
 
   function kuralSaglanir(value, rule) {
+    // Metinsel eşleşme (ör. kabin tipi seçimi gibi sayısal olmayan ortak
+    // değerler) — sayısal ayrıştırmadan önce kontrol edilir.
+    if (rule.operator === 'icerir') return String(value).includes(String(rule.deger));
+    if (rule.operator === 'icermez') return !String(value).includes(String(rule.deger));
     const n = Number(String(value).replace(',', '.'));
     const limit = Number(rule.deger);
     if (!Number.isFinite(n) || !Number.isFinite(limit)) return false;
