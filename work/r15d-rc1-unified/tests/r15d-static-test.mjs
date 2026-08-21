@@ -34,6 +34,7 @@ const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
+const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -361,6 +362,12 @@ test('rc3.9.4 koruyucu aygıt migration veri silmiyor', !/^\s*(delete|update\s+p
 test('kapı/kuyu maddeleri Elektrik ve Test bölümünden Kuyu Boyunca\'ya taşındı',
   ['MAD-0649','MAD-0652','MAD-0655','MAD-0656','MAD-0659'].every(id => byId.get(id).bolum === '02 - Kuyu Boyunca'));
 test('rc3.9.4 bölüm düzeltme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394SectionFixMigration));
+test('yalıtım direnci maddeleri ikisi de aktif kalıyor (resmi PDF ayrı kutular)',
+  byId.get('MAD-0548').aktif === true && byId.get('MAD-0549').aktif === true &&
+  byId.get('MAD-0548').olcu1_birimi === 'MΩ' && byId.get('MAD-0548').esik_deger === 0.5);
+test('rc3.9.4 mükerrer birleştirme migration veri silmiyor ve pasifleştirmiyor',
+  !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394DuplicateMergeMigration) &&
+  !/aktif\s*=\s*false/i.test(rc394DuplicateMergeMigration));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
