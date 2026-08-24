@@ -52,7 +52,7 @@ with r(madde_id, kontrol_basligi, denetci_yonlendirmesi) as (values
 update public.madde_kutuphanesi m
 set denetci_yonlendirmesi = r.denetci_yonlendirmesi,
     kontrol_basligi = coalesce(r.kontrol_basligi, m.kontrol_basligi)
-from r15d_rc395_yangin_rehberi r
+from r
 where m.madde_id = r.madde_id;
 
 update public.kutuphane_bolum_surumleri
