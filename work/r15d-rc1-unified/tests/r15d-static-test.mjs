@@ -42,6 +42,7 @@ const rc394ErisilebilirlikMigration = fs.readFileSync(path.join(databaseDir, '54
 const rc394KapMigration = fs.readFileSync(path.join(databaseDir, '55_r15d_rc394_kap01_kap02_pasiflestirme.sql'), 'utf8');
 const rc394KabinTipiMigration = fs.readFileSync(path.join(databaseDir, '56_r15d_rc394_kabin_tipi_tek_secim.sql'), 'utf8');
 const rc394SenkronMigration = fs.readFileSync(path.join(databaseDir, '57_r15d_rc394_kutuphane_senkron_dosyadan_canliya.sql'), 'utf8');
+const rc395ToparlamaMigration = fs.readFileSync(path.join(databaseDir, '58_r15d_rc395_saha_geri_bildirimi_toparlama.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
@@ -51,9 +52,9 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.4 canlı sürümü', index.includes('R15D-RC3.9.4</b>'));
-test('app R15D rc3.9.4 canlı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.4'"));
-test('service worker rc3.9.4 canlı cache', sw.includes("aves-saha-r15d-rc394'"));
+test('index R15D rc3.9.5 aday sürümü', index.includes('R15D-RC3.9.5</b>'));
+test('app R15D rc3.9.5 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.5'"));
+test('service worker rc3.9.5 cache', sw.includes("aves-saha-r15d-rc395'"));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -354,7 +355,10 @@ test('PDF seri numaralari sigdiriliyor ve sessizce kesilemiyor',
   formOutput.includes('options.mustFit && lines.length > max'));
 
 test('çalışma tamamlanınca denetim listesine dönülüyor', app.includes("if (yeniDurum === 'Çalışma Tamamlandı') showList();"));
-test('bitirirken eksik madde varsa doğrudan filtrelenip gösteriliyor', app.includes("filter = 'empty';\n      await renderDenetim();"));
+test('bitirirken eksik madde varsa doğrudan ilk eksik madde gösteriliyor',
+  app.includes('const firstPending = latestRows.find(r => !isFlowComplete(r));') &&
+  app.includes('openBolums = new Set([firstPending.bolum]);') &&
+  app.includes('await rememberPosition(firstPending.bolum, firstPending.id);'));
 test('inceleme modunda düzenlenebilir denetimde belirgin geri dön butonu var', app.includes('id="btnDenetimeDon"') && app.includes("inspectionReadOnly && normaldeDuzenleyebilir"));
 test('seri no sayacı grup bazlı, kat kapısı durak sayısına bağlı değil', app.includes("['kat_kapilari', 'Kat kapısı', 1]") && app.includes('seriGereksinimleri(d).filter(([key]) => data[key].some(item => item.seri_no.trim())).length'));
 test('kabin koruma eteği maddelerinden açı ölçümü kaldırıldı', rc394FeedbackMigration.includes("'kabin_etegi_alt_pah_acisi'") && rc394FeedbackMigration.includes("'kabin_etegi_cikinti_pah_acisi'") && !byId.get('MAD-0082').olcum_tanimlari.some(f => f.id === 'kabin_etegi_alt_pah_acisi') && !byId.get('MAD-0083').olcum_tanimlari.some(f => f.id === 'kabin_etegi_cikinti_pah_acisi'));
@@ -432,7 +436,32 @@ test('kütüphanede MAD-1010 (KAP-06) canlıdan çekildi', byId.has('MAD-1010') 
 test('rc3.9.4 senkron migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394SenkronMigration));
 test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font düzeltmesi)',
   app.includes('const gosterilenBaslik = baslik;') && app.includes('const gosterilenResmiMetin = resmiMetin;') &&
-  !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi'));
+  !app.includes('GENEL_KONTROL_BASLIKLARI') && !app.includes('genelKontrolBasligiMi') &&
+  index.includes('.mrequirement{font-size:13.5px;font-weight:400;'));
+
+// rc3.9.5: gerçek saha denetiminde kalan içerik ve seri numarası açıkları.
+const yanginGeriCagirmaIds = ['MAD-0891','MAD-0897','MAD-0907','MAD-0909','MAD-0910','MAD-0911','MAD-0914','MAD-0915','MAD-0916','MAD-0917','MAD-0920'];
+test('kuyu boyunca uzun düşey ölçülerin tamamı metre cinsinden tutuluyor',
+  byId.get('MAD-0008F').olcum_tanimlari.length === 4 &&
+  byId.get('MAD-0008F').olcum_tanimlari.every(field => field.birim === 'm'));
+test('kabin eteği rehberi denetçiden açı ölçümü istemiyor',
+  /yalnız alt pahın yatay izdüşümünü ölçün/.test(byId.get('MAD-0082').denetci_yonlendirmesi || '') &&
+  /Açı sahada ölçüm alanı olarak kaydedilmez/.test(byId.get('MAD-0082').denetci_yonlendirmesi || ''));
+test('yangında asansörü kullanmayınız maddesinin başlığı ve resmi şartı birbirini tekrar etmiyor',
+  byId.get('MAD-0209').kontrol_basligi !== byId.get('MAD-0209').resmi_madde_metni &&
+  /uyarı işareti bulunmalıdır\.$/.test(byId.get('MAD-0209').resmi_madde_metni || ''));
+test('EN 81-73 yangın maddelerinde belirlenmiş sahanlık denetçiye açıklanıyor',
+  yanginGeriCagirmaIds.every(id => /projede önceden tanımlanmış yangın geri çağırma katıdır/.test(byId.get(id).denetci_yonlendirmesi || '')));
+test('hidrolik asansörde valf grubu ve boru kırılma valfi seri numarası isteniyor',
+  app.includes("['hidrolik_valf_grubu', 'Hidrolik valf grubu', 1]") &&
+  app.includes("['boru_kirilma_valfleri', 'Boru kırılma valfi', 1]") &&
+  app.includes("d.tahrik_tipi === 'Hidrolik'"));
+test('rc3.9.5 migration denetim cevaplarına, RLS politikalarına ve veri silme işlemlerine dokunmuyor',
+  !/public\.saha_kontrol/i.test(rc395ToparlamaMigration) &&
+  !/^\s*(delete|truncate|drop\s+policy|create\s+policy)\s+/mi.test(rc395ToparlamaMigration));
+test('rc3.9.5 migration ölçüm kimliklerini koruyarak metre birimini güncelliyor',
+  ['seyir_mesafesi','toplam_kuyu_yuksekligi','son_kat_yuksekligi','toplam_kuyu_ray_boyu'].every(id => rc395ToparlamaMigration.includes(`'${id}'`)) &&
+  rc395ToparlamaMigration.includes("jsonb_set(item.value, '{birim}', '\"m\"'::jsonb, true)"));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

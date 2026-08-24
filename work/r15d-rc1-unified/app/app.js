@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.4';
+const APP_VERSION = 'R15D-rc3.9.5';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
 
@@ -747,6 +747,8 @@ const UI = (() => {
     ['regulatorler', 'Regülatör', '04 - Makine ve Şase'],
     ['motorlar', 'Motor / tahrik makinesi', '04 - Makine ve Şase'],
     ['kumanda_kartlari', 'Kumanda kartı', '05 - Elektrik ve Test'],
+    ['hidrolik_valf_grubu', 'Hidrolik valf grubu', '04 - Makine ve Şase'],
+    ['boru_kirilma_valfleri', 'Boru kırılma valfi', '04 - Makine ve Şase'],
   ];
 
   function seriNumaralariNormalize(value) {
@@ -786,6 +788,12 @@ const UI = (() => {
     if (d && d.tahrik_tipi === 'Elektrikli') requirements.splice(1, 0, ['karsi_agirlik_tamponlari', 'Karşı ağırlık tamponu', 1]);
     if (d && d.makine_dairesi_tipi === 'MRL') {
       requirements.push(['regulatorler', 'Regülatör', 1], ['motorlar', 'Motor / tahrik makinesi', 1]);
+    }
+    if (d && d.tahrik_tipi === 'Hidrolik') {
+      requirements.push(
+        ['hidrolik_valf_grubu', 'Hidrolik valf grubu', 1],
+        ['boru_kirilma_valfleri', 'Boru kırılma valfi', 1],
+      );
     }
     return requirements;
   }
