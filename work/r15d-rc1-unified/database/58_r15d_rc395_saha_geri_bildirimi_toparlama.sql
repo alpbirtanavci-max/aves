@@ -36,13 +36,7 @@ update public.madde_kutuphanesi
 set resmi_madde_metni = 'Asansörün yanında, yangın sırasında asansörün kullanılmaması gerektiğini bildiren ve duraklardan kolayca görülebilen uygun bir uyarı işareti bulunmalıdır.'
 where madde_id = 'MAD-0209';
 
-create temporary table r15d_rc395_yangin_rehberi (
-  madde_id text primary key,
-  kontrol_basligi text,
-  denetci_yonlendirmesi text not null
-) on commit drop;
-
-insert into r15d_rc395_yangin_rehberi values
+with r(madde_id, kontrol_basligi, denetci_yonlendirmesi) as (values
 ('MAD-0891', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Kumanda sisteminde bu yangın geri çağırma katına karşılık gelen giriş sinyalinin tanımlı olduğunu ve çağırma işlevinin bu kata yönlendiğini kontrol edin.'),
 ('MAD-0897', 'Yangın geri çağırma kumandasının yeri', '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Elle çağırma aygıtının bina yönetim merkezinde veya yangın geri çağırma katında bulunduğunu doğrulayın.'),
 ('MAD-0907', 'Durakta bekleyen asansörün yangın geri çağırma katına hareketi', '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Asansör başka bir durakta bekliyorsa kapılarının kapanıp ara duraklarda durmadan yangın geri çağırma katına gittiğini; kapılar kapanana kadar kabinde işitsel sinyal verildiğini test edin.'),
@@ -53,8 +47,8 @@ insert into r15d_rc395_yangin_rehberi values
 ('MAD-0915', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Yangın geri çağırma katında kapı bekleme süresi 20 saniyeyi aştığında kapıların kapanıp asansörün hizmet dışı bırakıldığını test edin.'),
 ('MAD-0916', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Yangın geri çağırma katında kapı açma ve acil durum alarm butonlarının çalışır durumda kaldığını doğrulayın.'),
 ('MAD-0917', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Yangın geri çağırma katından verilen kat çağrısının, itfaiye personelinin kabini kontrol edebilmesi için kapıları en fazla 20 saniye açık tuttuğunu test edin.'),
-('MAD-0920', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Elle açılan kapılı asansörün yangın geri çağırma katında hizmet dışı kaldığını, kapıların açılabildiğini ve sesli/görsel tahliye uyarısının verildiğini test edin.');
-
+('MAD-0920', null, '“Belirlenmiş sahanlık/durak”, yangın sinyali geldiğinde asansörün otomatik olarak geri çağrılacağı, projede önceden tanımlanmış yangın geri çağırma katıdır. Elle açılan kapılı asansörün yangın geri çağırma katında hizmet dışı kaldığını, kapıların açılabildiğini ve sesli/görsel tahliye uyarısının verildiğini test edin.')
+)
 update public.madde_kutuphanesi m
 set denetci_yonlendirmesi = r.denetci_yonlendirmesi,
     kontrol_basligi = coalesce(r.kontrol_basligi, m.kontrol_basligi)
