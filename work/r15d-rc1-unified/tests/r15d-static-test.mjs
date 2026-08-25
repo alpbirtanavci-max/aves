@@ -11,6 +11,7 @@ const databaseDir = path.join(root, 'database');
 
 const app = fs.readFileSync(path.join(appDir, 'app.js'), 'utf8');
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
+const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
 const index = fs.readFileSync(path.join(appDir, 'index.html'), 'utf8');
 const headers = fs.readFileSync(path.join(appDir, '_headers'), 'utf8');
 const updateHtml = fs.readFileSync(path.join(appDir, 'update.html'), 'utf8');
@@ -52,9 +53,12 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.5 aday sürümü', index.includes('R15D-RC3.9.5</b>'));
-test('app R15D rc3.9.5 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.5'"));
-test('service worker rc3.9.5 cache', sw.includes("aves-saha-r15d-rc395'"));
+test('index R15D rc3.9.6 aday sürümü', index.includes('R15D-RC3.9.6</b>'));
+test('app R15D rc3.9.6 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.6'"));
+test('service worker rc3.9.6 cache', sw.includes("aves-saha-r15d-rc396'"));
+test('uygulama manifesti rc3.9.6 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.6"'));
+test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
+test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));

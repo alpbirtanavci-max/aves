@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AVES Saha Güncelleme</title>
   <style>
-    :root{font-family:Inter,system-ui,sans-serif;color:#20234f;background:#f5f6fa}
+    :root{font-family:Aptos,'Segoe UI Variable Text','Segoe UI',Roboto,Arial,sans-serif;color:#1a1c2e;background:#f5f6f8}
     body{margin:0;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box}
-    main{width:min(520px,100%);background:#fff;border-radius:16px;padding:24px;box-shadow:0 12px 38px rgba(20,23,67,.15)}
-    img{height:34px}h1{font-size:20px;margin:18px 0 8px}p{line-height:1.5;color:#545873}
-    .status{margin-top:16px;padding:12px;border-radius:10px;background:#eef3ff;font-weight:700}
+    main{width:min(520px,100%);background:#fff;border:1px solid #daddE6;border-top:3px solid #ea0048;border-radius:10px;padding:28px;box-shadow:0 8px 24px rgba(22,24,64,.12)}
+    img{height:34px}h1{font-size:21px;letter-spacing:-.015em;margin:20px 0 8px;color:#20235b}p{line-height:1.55;color:#5d6175}
+    .status{margin-top:18px;padding:13px;border-radius:6px;background:#eef3ff;font-weight:700}
     .error{background:#fff0f0;color:#9b2525}.ok{background:#e8f7ef;color:#12643d}
-    button{border:0;border-radius:9px;background:#ea0048;color:#fff;font-weight:800;padding:11px 14px;cursor:pointer}
+    button{min-height:44px;border:0;border-radius:6px;background:#ea0048;color:#fff;font:700 14px/1.2 inherit;padding:11px 16px;cursor:pointer;box-shadow:0 2px 5px rgba(234,0,72,.17)}
+    button:focus-visible{outline:3px solid rgba(234,0,72,.18);outline-offset:2px}
+    @media(max-width:560px){body{padding:12px}main{padding:24px 20px}}
   </style>
 </head>
 <body>
