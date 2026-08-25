@@ -11,7 +11,12 @@ const CONFIG = {
 
 const APP_VERSION = 'R15D-rc3.9.6';
 const DB_VERSION = 3;
-const OFFLINE_CORE_ASSETS = ['./', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png'];
+const OFFLINE_CORE_ASSETS = [
+  './', './index.html', './section-mapping.js', './app.js', './manifest.json',
+  './logo.png', './aves-logo-white.png',
+  './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
+  './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
+];
 
 if (typeof avesFizikselBolumUygula !== 'function' ||
     typeof AVES_FIZIKSEL_BOLUM_ESLEMESI !== 'object' ||
@@ -921,8 +926,8 @@ const UI = (() => {
     document.getElementById('btnLogout').classList.add('hidden');
     app.innerHTML = `
     <div class="login-wrap"><div class="login-card">
-      <img src="logo.png" alt="AVES" style="height:34px;margin-bottom:14px;filter:drop-shadow(0 0 1px rgba(0,0,0,.1))"><h1>Giriş</h1>
-      <p>AVES saha denetim hesabınızla giriş yapın.</p>
+      <div class="login-kicker">AVES Saha Denetim</div><h1>Hoş geldiniz</h1>
+      <p>AVES saha denetim hesabınızla devam edin.</p>
       ${err ? `<div class="err">${esc(err)}</div>` : ''}
       <div class="field"><label>E-posta</label><input id="lgEmail" type="email" autocomplete="username" autocapitalize="off"></div>
       <div class="field"><label>Şifre</label><input id="lgPass" type="password" autocomplete="current-password"></div>
@@ -1782,9 +1787,9 @@ const UI = (() => {
 
     let html = `
     <div class="screen" style="padding-bottom:0">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="inspection-toolbar">
         <button class="backlink" id="back">‹ Denetimler</button>
-        <div style="display:flex;gap:6px">
+        <div class="inspection-actions">
           ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${tamamlandi ? '<button class="delbtn" id="btnYazdir" title="Resmî formu PDF veya Word olarak hazırla">Yazdır</button>' : ''}
@@ -1797,8 +1802,9 @@ const UI = (() => {
           ? 'Çalışma tamamlandı · Yalnız denetimin sahibi veya yönetici yeniden düzenlemeye açabilir.'
           : 'Salt okunur · Teknik müdür maddeleri inceleyebilir ve bütün denetimi silebilir; içerik veya sonuç değiştiremez.')}</div>`}
       <div class="det-head">
-        <div class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</div>
-        <div class="dmeta">${esc(d.denetim_adresi || '')} · ${esc(standartOzeti(d))}</div>
+        <div class="inspection-eyebrow">${esc(standartOzeti(d))}</div>
+        <div class="dtitle">${esc(d.musteri_unvani)}</div>
+        <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)}${d.denetim_adresi ? ` · ${esc(d.denetim_adresi)}` : ''}</div>
         ${d.denetimi_yapan ? `<div class="dmeta" style="margin-top:2px"><b>Denetimi yapan:</b> ${esc(d.denetimi_yapan)}</div>` : ''}
         ${d.bina_asansor_sayisi || d.kabin_giris_duzeni || d.kabin_kapi_acilma_tipi ? `<div class="dmeta" style="margin-top:2px"><b>Yerleşim:</b> ${esc([
           d.bina_asansor_sayisi ? `${d.bina_asansor_sayisi} asansör` : null,

@@ -8,6 +8,10 @@
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <style>
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 600;font-display:swap;src:url('fonts/Inter-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400 600;font-display:swap;src:url('fonts/Inter-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:400 600;font-display:swap;src:url('fonts/Montserrat-latin-ext.woff2') format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;}
+@font-face{font-family:'Montserrat';font-style:normal;font-weight:400 600;font-display:swap;src:url('fonts/Montserrat-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
 :root{
   --navy:#20235B; --navy-dk:#161840; --navy-lt:#3A3E7E;
   --fuchsia:#EA0048; --fuchsia-bg:#FDE8EF;
@@ -16,7 +20,8 @@
   --na:#6C7280; --na-bg:#EDEEF1;
   --ink:#1A1C2E; --muted:#6E7186;
   --paper:#F3F4F8; --panel:#FFFFFF; --line:#E1E3EC;
-  --sans:Aptos,'Segoe UI Variable Text','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --sans:'Inter','Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --heading:'Montserrat','Inter','Segoe UI',Arial,sans-serif;
   --mono:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',monospace;
   --radius-sm:6px; --radius-md:8px; --radius-lg:10px;
   --shadow-card:0 1px 2px rgba(22,24,64,.05),0 5px 18px rgba(22,24,64,.035);
@@ -402,12 +407,57 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .mstates{gap:5px;}
   .footbar{padding-left:10px;padding-right:10px;gap:6px;}
 }
+
+/* ===== AVES iOS ESİNTİLİ DENETİM DİLİ ===== */
+.login-card h1,.list-head h2,.det-head .dtitle,.mtitle,.modal h3,.bolum-head .btitle,.stepcount{font-family:var(--heading);font-weight:600;}
+.btn,.btn-new,.backlink,.stepbtn,.stickynav button,.footbar .btn,.seg{font-family:var(--heading);font-weight:500;}
+.login-kicker{font-family:var(--heading);font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--fuchsia);margin-bottom:12px;}
+.login-card h1{font-size:28px;letter-spacing:-.025em;margin-bottom:8px;}
+.inspection-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:11px;}
+.inspection-actions{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;}
+.inspection-toolbar .backlink{min-height:40px;margin:0;padding:0 12px;border:1px solid #C9CBD6;border-radius:9px;background:#fff;color:var(--navy);box-shadow:0 1px 2px rgba(22,24,64,.04);white-space:nowrap;}
+.inspection-toolbar .backlink:hover{background:#F7F7FA;border-color:#AEB1C1;}
+.inspection-toolbar .delbtn{margin:0;min-height:38px;padding:7px 10px;background:#fff;}
+.inspection-eyebrow{font-size:10.5px;line-height:1.3;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px;}
+.det-head .dtitle{font-size:20px;line-height:1.25;letter-spacing:-.02em;}
+.det-head{background:#fff;border-radius:13px;}
+.bolum{border-radius:13px;}
+.bolum.open{box-shadow:0 5px 18px rgba(22,24,64,.055);}
+.madde{background:#fff;}
+.madde.s-ok,.madde.s-bad,.madde.s-warn,.madde.s-na{background:#fff;}
+.madde.s-ok{box-shadow:inset 3px 0 0 var(--ok);}
+.madde.s-bad{box-shadow:inset 3px 0 0 var(--fuchsia);}
+.madde.s-na{box-shadow:inset 3px 0 0 var(--na);}
+.mtitle{font-size:16px;line-height:1.35;letter-spacing:-.012em;}
+.mrequirement{font-size:13.5px;line-height:1.58;color:#343646;}
+.mguide.saha-guide{margin:12px 0;background:#F2F2F7;border-left:3px solid var(--navy);padding:11px 12px;border-radius:7px;}
+.mstates{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0;border:1px solid #CBCDDA;border-radius:10px;overflow:hidden;background:#fff;}
+.mst{border:0;border-right:1px solid #CBCDDA;border-radius:0;min-height:48px;padding:7px 4px;background:#fff;color:#454758;}
+.mst.on-ok{background:var(--navy);border-color:#CBCDDA;color:#fff;}
+.mst.on-bad{background:var(--fuchsia);border-color:#CBCDDA;color:#fff;}
+.mst.on-na{background:var(--na);border-color:#CBCDDA;color:#fff;}
+.notbtn{width:44px;border:0;border-radius:0;background:#fff;}
+.notbtn.has{border:0;}
+.footbar{background:rgba(255,255,255,.94);backdrop-filter:blur(12px);}
+.footbar .btn{border-radius:10px;min-height:46px;}
+.btn-ozet{background:#fff;color:var(--navy);border:1px solid #C9CBD6;}
+.btn-serial{background:#fff;}
+.btn-finish{background:#fff;}
+.btn-finish.ready{background:var(--navy);}
+@media(max-width:560px){
+  .inspection-toolbar{align-items:flex-start;}
+  .inspection-actions{gap:5px;}
+  .inspection-toolbar .delbtn{font-size:10.5px;padding:6px 8px;}
+  .det-head .dtitle{font-size:19px;}
+  .mstates{grid-template-columns:1fr 1fr 1fr 42px;}
+  .mst{font-size:11px;}
+}
 </style>
 </head>
 <body>
 <div class="topbar">
   <div class="brand-lockup">
-    <img src="logo.png" alt="AVES">
+    <img src="aves-logo-white.png" alt="AVES">
     <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.6</b></div>
   </div>
   <div class="spacer"></div>

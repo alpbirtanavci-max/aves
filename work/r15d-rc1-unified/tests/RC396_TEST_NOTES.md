@@ -4,7 +4,9 @@
 
 - AVES lacivert ve fuşya kimliği korunarak arayüz geometrisi sadeleştirildi.
 - Buton, form alanı, kart, bölüm, modal ve durum bileşenleri tutarlı 6–10 px köşe sistemiyle düzenlendi.
-- Tipografi sırası Aptos / Segoe UI Variable / Segoe UI / Roboto olarak kurumsallaştırıldı.
+- Gövde ve uzun saha metinlerinde Inter; başlık ve önemli eylemlerde Montserrat kullanıldı. Her iki font uygulama paketine yerel olarak eklendi; çevrimdışı kullanımda dış kaynağa ihtiyaç duymaz.
+- Giriş ekranındaki kutu görünümündeki eski logo kaldırıldı; temiz metinsel AVES karşılaması oluşturuldu.
+- Denetim ekranı iPhone benzeri net bir bilgi hiyerarşisine alındı: belirgin kutulu `Denetimler` dönüşü, standart özeti, müşteri başlığı, seri/adres satırı ve tek parça sonuç seçicisi.
 - Klavye odak görünürlüğü, en az 44–46 px ana dokunma alanları ve mobil taşma kontrolü korundu.
 - Telefon giriş ekranında form ile bilgilendirme metninin yan yana sıkışmasına neden olan eski yerleşim hatası giderildi.
 - Güvenli güncelleme ekranı aynı tasarım diline alındı.
@@ -19,7 +21,7 @@
 ## Doğrulama
 
 - JavaScript ve Service Worker sözdizimi kontrolleri geçti.
-- Statik/regresyon paketi: 258/258 geçti.
+- Statik/regresyon paketi: 263/263 geçti.
 - FR.38 ve FR.39 PDF/DOCX üretimi hatasız tamamlandı.
 - 390 x 844 telefon görünümünde yatay taşma yok; giriş kartı 366 px kullanılabilir genişlikte ve ana düğme 46 px yüksekliğinde.
 - 1280 x 800 masaüstü görünümünde giriş kartı 420 px genişlikte ortalandı.

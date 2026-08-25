@@ -1,7 +1,9 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
 const CACHE = 'aves-saha-r15d-rc396';
 const ASSETS = [
-  './', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png',
+  './', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png', './aves-logo-white.png',
+  './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
+  './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
   './form-output.js', './vendor/jszip.min.js', './vendor/pdf-lib.min.js', './vendor/fontkit.umd.min.js',
   './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf',
   './update.html', './update.js',
