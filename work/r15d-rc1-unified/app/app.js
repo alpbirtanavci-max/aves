@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.7.1';
+const APP_VERSION = 'R15D-rc3.9.8';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -42,11 +42,13 @@ const DENETIM_TURLERI = {
   MODUL_G: 'Modül G - Birim Doğrulaması',
   MODUL_E: 'Modül E - Gözetim Saha Teyidi',
   MODUL_H1: 'Modül H1 - Gözetim Saha Teyidi',
+  MODUL_B: 'Modül B - AB Tip İncelemesi',
 };
 const KONTROL_PROFILLERI = {
   TAM: 'modul_g_tam',
   SAHA_TEYIDI_E: 'saha_teyidi_e',
   SAHA_TEYIDI_H1: 'saha_teyidi_h1',
+  MODUL_B: 'modul_b_tip_inceleme',
 };
 
 /* ================= IndexedDB ================= */
@@ -834,7 +836,8 @@ const UI = (() => {
   );
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canCorrectInspections || denetimSahibiMi(d));
   const canStartFollowup = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' &&
-    kontrolProfili(d) === KONTROL_PROFILLERI.TAM && Profile.canCreate && (Profile.isAdmin || denetimSahibiMi(d));
+    (kontrolProfili(d) === KONTROL_PROFILLERI.TAM || kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B) &&
+    Profile.canCreate && (Profile.isAdmin || denetimSahibiMi(d));
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
@@ -876,7 +879,7 @@ const UI = (() => {
   }
 
   function maddeKontrolProfilineUygun(m, profil) {
-    if (profil === KONTROL_PROFILLERI.TAM) return true;
+    if (profil === KONTROL_PROFILLERI.TAM || profil === KONTROL_PROFILLERI.MODUL_B) return true;
     const profiller = Array.isArray(m.denetim_profilleri) ? m.denetim_profilleri : [];
     return profiller.includes(profil);
   }
@@ -1074,8 +1077,8 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
       <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
-      ${canStartFollowup(d) ? '<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>Yalnız Modül G için, önceki sonuçlara bağlı yeni ve bağımsız bir denetim oluşturur.</span></button>' : ''}
-      ${kontrolProfili(d) !== KONTROL_PROFILLERI.TAM ? '<div class="photo-help">Takip denetimi yalnızca Modül G denetimlerinde kullanılabilir.</div>' : ''}
+      ${canStartFollowup(d) ? '<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>Yalnız Modül G ve Modül B için, önceki sonuçlara bağlı yeni ve bağımsız bir denetim oluşturur.</span></button>' : ''}
+      ${(kontrolProfili(d) !== KONTROL_PROFILLERI.TAM && kontrolProfili(d) !== KONTROL_PROFILLERI.MODUL_B) ? '<div class="photo-help">Takip denetimi yalnızca Modül G ve Modül B denetimlerinde kullanılabilir.</div>' : ''}
     </div>`;
     document.body.appendChild(ov);
     const close = () => ov.remove();
@@ -1084,7 +1087,7 @@ const UI = (() => {
     ov.querySelector('#completedReview').onclick = () => { close(); showDenetim(d.id, true); };
     const followup = ov.querySelector('#completedFollowup');
     if (followup) followup.onclick = async () => {
-      if (!confirm('Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir Modül G takip denetimi oluşturulsun mu?')) return;
+      if (!confirm('Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir takip denetimi oluşturulsun mu?')) return;
       followup.disabled = true;
       followup.querySelector('b').textContent = 'Takip hazırlanıyor…';
       try {
@@ -1156,6 +1159,8 @@ const UI = (() => {
       modul: kaynak.modul,
       denetim_turu: kaynak.denetim_turu,
       kontrol_profili: kaynak.kontrol_profili,
+      ana_tip: kaynak.ana_tip || null,
+      tip_varyant_kodu: kaynak.tip_varyant_kodu || null,
       ana_standart: kaynak.ana_standart,
       ek_standartlar: kaynak.ek_standartlar || [],
       bina_asansor_sayisi: kaynak.bina_asansor_sayisi || null,
@@ -1261,8 +1266,14 @@ const UI = (() => {
           <div class="field full"><label for="fAdres">Adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
-      <div class="form-card"><h3>Denetim türü *</h3>${seg('sDenetimTuru', [DENETIM_TURLERI.MODUL_G,DENETIM_TURLERI.MODUL_E,DENETIM_TURLERI.MODUL_H1])}
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 ise AVES gözetim form setlerine bağlı saha teyidi akışıdır.</p>
+      <div class="form-card"><h3>Denetim türü *</h3>${seg('sDenetimTuru', [DENETIM_TURLERI.MODUL_G,DENETIM_TURLERI.MODUL_E,DENETIM_TURLERI.MODUL_H1,DENETIM_TURLERI.MODUL_B])}
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 AVES gözetim form setlerine bağlı saha teyidi akışıdır; Modül B ise TS EN 81-20 üzerinden yürüyen AB Tip İncelemesi'dir.</p>
+      </div>
+      <div class="form-card" id="modulBCard" style="display:none"><h3>AB Tip İncelemesi kimliği *</h3>
+        <div class="grid2">
+          <div class="field full"><label for="fAnaTip">Ana Tip *</label><input id="fAnaTip" autocomplete="off"></div>
+          <div class="field full"><label for="fTipVaryantKodu">Tip Varyant Kodu *</label><input id="fTipVaryantKodu" autocomplete="off"></div>
+        </div>
       </div>
       <div class="form-card" id="standartCard"><h3>Ana standart *</h3>
         <div class="segs" id="sAna">
@@ -1315,6 +1326,8 @@ const UI = (() => {
     function uygulaDenetimTuru() {
       const sahaTeyidi = single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ||
         single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1;
+      const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
+      document.getElementById('modulBCard').style.display = modulB ? '' : 'none';
       const standartButonlari = [...document.querySelectorAll('#sAna .seg')];
       if (sahaTeyidi) {
         single.sAna = '81-20';
@@ -1324,6 +1337,14 @@ const UI = (() => {
         });
         document.getElementById('standartAciklama').textContent =
           'AVES Modül E/H1 gözetim form setinde saha teyidi TS EN 81-20 üzerinden yürür. Standart denetçi tarafından değiştirilemez.';
+      } else if (modulB) {
+        single.sAna = '81-20';
+        standartButonlari.forEach(b => {
+          b.classList.toggle('on', b.dataset.v === '81-20');
+          b.disabled = true;
+        });
+        document.getElementById('standartAciklama').textContent =
+          'Modül B (AB Tip İncelemesi) yalnız TS EN 81-20 üzerinden yürür. Standart denetçi tarafından değiştirilemez.';
       } else {
         single.sAna = null;
         standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = false; });
@@ -1341,10 +1362,14 @@ const UI = (() => {
       const hiz = parseFloat(document.getElementById('fHiz').value) || null;
       const kapasite = parseInt(document.getElementById('fKapasite').value) || null;
       const binaAsansorSayisi = parseInt(document.getElementById('fBinaAsansorSayisi').value) || null;
+      const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
+      const anaTip = modulB ? document.getElementById('fAnaTip').value.trim() : null;
+      const tipVaryantKodu = modulB ? document.getElementById('fTipVaryantKodu').value.trim() : null;
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
       if (!musteri || !seri) { toast('Müşteri ünvanı ve seri no zorunlu'); return; }
       if (!adres) { toast('Adres zorunlu'); return; }
       if (!single.sDenetimTuru) { toast('Denetim türünü seçin'); return; }
+      if (modulB && (!anaTip || !tipVaryantKodu)) { toast('Ana Tip ve Tip Varyant Kodu zorunlu'); return; }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
       if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
@@ -1362,7 +1387,9 @@ const UI = (() => {
         ? KONTROL_PROFILLERI.TAM
         : single.sDenetimTuru === DENETIM_TURLERI.MODUL_E
           ? KONTROL_PROFILLERI.SAHA_TEYIDI_E
-          : KONTROL_PROFILLERI.SAHA_TEYIDI_H1;
+          : single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1
+            ? KONTROL_PROFILLERI.SAHA_TEYIDI_H1
+            : KONTROL_PROFILLERI.MODUL_B;
       const tahmini = lib.filter(m =>
         m.aktif && secili.has(m.standart_grubu) && maddeKontrolProfilineUygun(m, kontrolProfil)
       ).length;
@@ -1377,7 +1404,9 @@ const UI = (() => {
         denetimTuru: single.sDenetimTuru,
         kontrolProfili: kontrolProfil,
         modul: single.sDenetimTuru === DENETIM_TURLERI.MODUL_G ? 'Modül G' :
-          single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ? 'Modül E' : 'Modül H1',
+          single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ? 'Modül E' :
+            single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1 ? 'Modül H1' : 'Modül B',
+        anaTip, tipVaryantKodu,
         anaStandart: single.sAna,
         ekStandartlar,
         binaAsansorSayisi,
@@ -1405,7 +1434,10 @@ const UI = (() => {
         ${satir('Seri no', f.seri)}
         ${satir('Denetim türü', f.denetimTuru)}
         ${satir('Kontrol profili', f.kontrolProfili === KONTROL_PROFILLERI.TAM ? 'Tam saha kontrolü' :
-          f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_E ? 'Modül E saha teyidi' : 'Modül H1 saha teyidi')}
+          f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_E ? 'Modül E saha teyidi' :
+            f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_H1 ? 'Modül H1 saha teyidi' : 'Modül B AB Tip İncelemesi')}
+        ${satir('Ana Tip', f.anaTip)}
+        ${satir('Tip Varyant Kodu', f.tipVaryantKodu)}
         ${satir('Ana standart', f.anaStandart)}
         ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
         ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
@@ -1444,6 +1476,8 @@ const UI = (() => {
         modul: f.modul,
         denetim_turu: f.denetimTuru,
         kontrol_profili: f.kontrolProfili,
+        ana_tip: f.anaTip || null,
+        tip_varyant_kodu: f.tipVaryantKodu || null,
         ana_standart: f.anaStandart,
         ek_standartlar: f.ekStandartlar,
         bina_asansor_sayisi: f.binaAsansorSayisi,
@@ -1805,6 +1839,7 @@ const UI = (() => {
         <div class="inspection-eyebrow">${esc(standartOzeti(d))}</div>
         <div class="dtitle">${esc(d.musteri_unvani)}</div>
         <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)}${d.denetim_adresi ? ` · ${esc(d.denetim_adresi)}` : ''}</div>
+        ${d.ana_tip || d.tip_varyant_kodu ? `<div class="dmeta" style="margin-top:2px"><b>Tip:</b> ${esc([d.ana_tip, d.tip_varyant_kodu].filter(Boolean).join(' · '))}</div>` : ''}
         ${d.denetimi_yapan ? `<div class="dmeta" style="margin-top:2px"><b>Denetimi yapan:</b> ${esc(d.denetimi_yapan)}</div>` : ''}
         ${d.bina_asansor_sayisi || d.kabin_giris_duzeni || d.kabin_kapi_acilma_tipi ? `<div class="dmeta" style="margin-top:2px"><b>Yerleşim:</b> ${esc([
           d.bina_asansor_sayisi ? `${d.bina_asansor_sayisi} asansör` : null,

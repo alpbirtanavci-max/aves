@@ -33,6 +33,7 @@ const rc39FormOutputMigration = fs.readFileSync(path.join(databaseDir, '44_r15d_
 const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '45_r15d_rc39_form_adlandirilmis_olculer.sql'), 'utf8');
 const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
+const rc398ModulBMigration = fs.readFileSync(path.join(databaseDir, '64_r15d_rc398_modul_b_ab_tip_incelemesi.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -58,10 +59,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.7.1 düzeltme sürümü', index.includes('R15D-RC3.9.7.1</b>'));
-test('app R15D rc3.9.7.1 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.7.1'"));
-test('service worker rc3.9.7.1 cache', sw.includes("aves-saha-r15d-rc3971'"));
-test('uygulama manifesti rc3.9.7.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.7.1"'));
+test('index R15D rc3.9.8 düzeltme sürümü', index.includes('R15D-RC3.9.8</b>'));
+test('app R15D rc3.9.8 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.8'"));
+test('service worker rc3.9.8 cache', sw.includes("aves-saha-r15d-rc398'"));
+test('uygulama manifesti rc3.9.8 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.8"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -523,6 +524,24 @@ test('JSON ve CSV rc3.9.7 doğrulama düzeltmelerini birlikte taşıyor',
   !libraryCsv.includes('halat_sarim_acisi') &&
   libraryCsv.includes('Kuyu dibi derinliği 2500 mm’den fazlaysa bu madde otomatik olarak Uygulanmaz işaretlenir.') &&
   libraryCsv.includes('Eksiklik varsa madde açıklamasına yazın.'));
+
+test('Modül B denetim türü ve kontrol profili tanımlı',
+  app.includes("MODUL_B: 'Modül B - AB Tip İncelemesi'") &&
+  app.includes("MODUL_B: 'modul_b_tip_inceleme'"));
+test('Modül B madde profili TAM gibi davranıyor (yeni madde eklenmedi)',
+  /if \(profil === KONTROL_PROFILLERI\.TAM \|\| profil === KONTROL_PROFILLERI\.MODUL_B\) return true;/.test(app));
+test('Modül B için takip denetimi açık',
+  app.includes('kontrolProfili(d) === KONTROL_PROFILLERI.TAM || kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B') &&
+  rc398ModulBMigration.includes("kontrol_profili in ('modul_g_tam','modul_b_tip_inceleme')"));
+test('Modül B formu ana tip / tip varyant kodu alanlarını zorunlu tutuyor',
+  app.includes('id="fAnaTip"') && app.includes('id="fTipVaryantKodu"') &&
+  app.includes("if (modulB && (!anaTip || !tipVaryantKodu)) { toast('Ana Tip ve Tip Varyant Kodu zorunlu'); return; }"));
+test('rc3.9.8 Modül B migration madde verisini değiştirmiyor, yalnız denetimler şemasını genişletiyor',
+  !/delete\s+from/i.test(rc398ModulBMigration) &&
+  !/update\s+public\.madde_kutuphanesi/i.test(rc398ModulBMigration) &&
+  rc398ModulBMigration.includes('modul_b_tip_inceleme') &&
+  rc398ModulBMigration.includes('add column if not exists ana_tip') &&
+  rc398ModulBMigration.includes('add column if not exists tip_varyant_kodu'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
