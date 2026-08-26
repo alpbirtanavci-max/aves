@@ -53,10 +53,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.6 aday sürümü', index.includes('R15D-RC3.9.6</b>'));
-test('app R15D rc3.9.6 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.6'"));
-test('service worker rc3.9.6 cache', sw.includes("aves-saha-r15d-rc396'"));
-test('uygulama manifesti rc3.9.6 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.6"'));
+test('index R15D rc3.9.7-a1 test sürümü', index.includes('R15D-RC3.9.7-A1</b>'));
+test('app R15D rc3.9.7-a1 test sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.7-a1'"));
+test('service worker rc3.9.7-a1 cache', sw.includes("aves-saha-r15d-rc397a1'"));
+test('uygulama manifesti rc3.9.7-a1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.7-a1"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -423,7 +423,10 @@ test('rc3.9.4 fragman netleştirme migration veri silmiyor', !/^\s*(delete|updat
 
 // ÜB.FR.43 (TS EN 81-70 erişilebilirlik) maddeleri artık açıklamalı
 // (saha geri bildirimi #16, #17, #20, #21, #22).
-test('kapı açma/kapama butonu maddeleri artık sembolü açıklıyor', /ISO 7000-2864/.test(byId.get('MAD-0978').denetci_yonlendirmesi || '') && /ISO 7000-2863/.test(byId.get('MAD-0979').denetci_yonlendirmesi || ''));
+test('kapı açma/kapama butonu maddeleri sembolü doğrudan ana maddede açıklıyor',
+  /ISO 7000-2864/.test(byId.get('MAD-0978').resmi_madde_metni || '') &&
+  /ISO 7000-2863/.test(byId.get('MAD-0979').resmi_madde_metni || '') &&
+  !byId.get('MAD-0978').denetci_yonlendirmesi && !byId.get('MAD-0979').denetci_yonlendirmesi);
 test('dokunmatik ekran/erişilebilirlik butonu/büyük boy tuş takımı maddeleri opsiyonel bileşen olarak açıklanıp Uygulanmaz gerekçesi kazandı',
   ['MAD-1001', 'MAD-1002', 'MAD-1003'].every(id => byId.get(id).aranmaz_kosulu && byId.get(id).kontrol_basligi !== 'Diğer Kontroller'));
 test('rc3.9.4 erişilebilirlik netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394ErisilebilirlikMigration));
@@ -454,7 +457,7 @@ test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font 
   index.includes('.mrequirement{font-size:13.5px;font-weight:400;'));
 
 // rc3.9.5: gerçek saha denetiminde kalan içerik ve seri numarası açıkları.
-const yanginGeriCagirmaIds = ['MAD-0891','MAD-0897','MAD-0907','MAD-0909','MAD-0910','MAD-0911','MAD-0914','MAD-0915','MAD-0916','MAD-0917','MAD-0920'];
+const yanginGeriCagirmaIds = ['MAD-0891','MAD-0897','MAD-0907','MAD-0911','MAD-0914','MAD-0915','MAD-0916','MAD-0917','MAD-0920'];
 test('kuyu boyunca uzun düşey ölçülerin tamamı metre cinsinden tutuluyor',
   byId.get('MAD-0008F').olcum_tanimlari.length === 4 &&
   byId.get('MAD-0008F').olcum_tanimlari.every(field => field.birim === 'm'));
@@ -466,6 +469,20 @@ test('yangında asansörü kullanmayınız maddesinin başlığı ve resmi şart
   /uyarı işareti bulunmalıdır\.$/.test(byId.get('MAD-0209').resmi_madde_metni || ''));
 test('EN 81-73 yangın maddelerinde belirlenmiş sahanlık denetçiye açıklanıyor',
   yanginGeriCagirmaIds.every(id => /projede önceden tanımlanmış yangın geri çağırma katıdır/.test(byId.get(id).denetci_yonlendirmesi || '')));
+test('kullanıcının gereksiz bulduğu yangın geri çağırma rehberleri kaldırılıyor',
+  !byId.get('MAD-0909').denetci_yonlendirmesi && !byId.get('MAD-0910').denetci_yonlendirmesi && !byId.get('MAD-0913').denetci_yonlendirmesi);
+test('kabin tipi ve 81-71 kategori maddeleri ortak çizelge kullanıyor',
+  /G-8170-KABIN-TIPLERI-TR\.svg/.test(byId.get('MAD-0923').gorsel_referansi || '') &&
+  /G-8171-KATEGORI-TR\.svg/.test(byId.get('MAD-0855').gorsel_referansi || ''));
+test('kumanda paneli tarafı üç anlaşılır seçenekle seçiliyor',
+  ['MAD-0961','MAD-0962','MAD-0964'].every(id => {
+    const defs = byId.get(id).olcum_tanimlari || [];
+    return defs.length === 1 && JSON.stringify(defs[0].secenekler) === JSON.stringify(['Girişte sağ','Girişte sol','Arka duvar']);
+  }));
+test('MR/MRL aydınlatma ve genel etiket maddeleri tüm tahrik düzenlerinde uygulanıyor',
+  ['MAD-0389','MAD-0390','MAD-0394','MAD-0404'].every(id => !byId.get(id).md_kosulu));
+test('MR ve MRL taşıma maddeleri birbirinden ayrılıyor',
+  byId.get('MAD-0411').md_kosulu === 'MR' && byId.get('MAD-0434').md_kosulu === 'MRL');
 test('hidrolik asansörde valf grubu ve boru kırılma valfi seri numarası isteniyor',
   app.includes("['hidrolik_valf_grubu', 'Hidrolik valf grubu', 1]") &&
   app.includes("['boru_kirilma_valfleri', 'Boru kırılma valfi', 1]") &&
