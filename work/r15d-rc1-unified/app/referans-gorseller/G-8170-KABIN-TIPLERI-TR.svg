@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="920" viewBox="0 0 1400 920" role="img" aria-labelledby="title desc">
+  <title id="title">TS EN 81-70 kabin tipi açıklamaları</title>
+  <desc id="desc">Kabin tiplerinin net ölçü, beyan yükü ve kullanım amacı karşılaştırması.</desc>
+  <rect width="1400" height="920" fill="#f6f7fb"/>
+  <text x="55" y="68" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#20235b">Kabin tipi açıklamaları</text>
+  <text x="55" y="108" font-family="Arial, sans-serif" font-size="21" fill="#5c6075">Tipi gerçek net kabin ölçüleri, kapı düzeni ve kullanım amacına göre seçin. Beyan yükü tek başına belirleyici değildir.</text>
+  <rect x="45" y="145" width="1310" height="650" rx="18" fill="#fff" stroke="#c9cbd6" stroke-width="3"/>
+  <rect x="45" y="145" width="1310" height="82" rx="18" fill="#20235b"/>
+  <text x="75" y="198" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#fff">Tip</text>
+  <text x="190" y="198" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#fff">Asgari net ölçü (G × D)</text>
+  <text x="575" y="198" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#fff">Formdaki yük</text>
+  <text x="790" y="198" font-family="Arial, sans-serif" font-size="23" font-weight="700" fill="#fff">Kullanım özeti</text>
+  <g font-family="Arial, sans-serif" font-size="22" fill="#343646">
+    <text x="75" y="288" font-weight="700">Tip 1</text><text x="190" y="288">1000 × 1300 mm</text><text x="575" y="288">450 kg</text><text x="790" y="272">Refakatsiz tekerlekli sandalye;</text><text x="790" y="305">yalnız Tip 2 mümkün olmayan mevcut bina</text>
+    <text x="75" y="400" font-weight="700">Tip 2</text><text x="190" y="400">1100 × 1400 mm</text><text x="575" y="400">630 kg</text><text x="790" y="400">Tekerlekli sandalye + refakatçi</text>
+    <text x="75" y="512" font-weight="700">Tip 3</text><text x="190" y="512">1100 × 2100 mm</text><text x="575" y="512">1000 kg</text><text x="790" y="496">C sınıfı tekerlekli sandalye;</text><text x="790" y="529">sedye ve kamusal kullanım</text>
+    <text x="75" y="624" font-weight="700">Tip 4</text><text x="190" y="608">1600 × 1400 mm</text><text x="190" y="641">veya 1400 × 1600 mm</text><text x="575" y="624">1000 kg</text><text x="790" y="608">Kabin içinde dönüş;</text><text x="790" y="641">bitişik kapılı düzende asgari tip</text>
+    <text x="75" y="736" font-weight="700">Tip 5</text><text x="190" y="720">2000 × 1400 mm</text><text x="190" y="753">veya 1400 × 2000 mm</text><text x="575" y="736">1275 kg</text><text x="790" y="720">Kabin içinde dönüş ve</text><text x="790" y="753">birden fazla ek yolcu</text>
+  </g>
+  <g stroke="#e1e3eb" stroke-width="2"><line x1="45" y1="339" x2="1355" y2="339"/><line x1="45" y1="451" x2="1355" y2="451"/><line x1="45" y1="563" x2="1355" y2="563"/><line x1="45" y1="675" x2="1355" y2="675"/></g>
+  <rect x="55" y="820" width="1290" height="60" rx="12" fill="#fff4e4" stroke="#e8c86d" stroke-width="2"/>
+  <text x="82" y="858" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#765000">800 kg kabin: Yük değerinden tip çıkarmayın; net ölçüleri ve kullanım düzenini çizelgeyle karşılaştırın.</text>
+</svg>

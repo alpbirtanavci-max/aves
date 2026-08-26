@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">TS EN 81-71 kategori açıklamaları</title>
+  <desc id="desc">Kategori 1 ve Kategori 2 asansörlerin kuyu mahfazasına göre ayrımı.</desc>
+  <rect width="1200" height="620" fill="#f6f7fb"/>
+  <text x="60" y="72" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#20235b">Kategori açıklamaları</text>
+  <text x="60" y="112" font-family="Arial, sans-serif" font-size="22" fill="#5c6075">Kategori, kuyu mahfazasının yapısına göre belirlenir.</text>
+  <rect x="60" y="155" width="510" height="370" rx="22" fill="#fff" stroke="#c9cbd6" stroke-width="3"/>
+  <text x="100" y="215" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#20235b">Kategori 1</text>
+  <text x="100" y="260" font-family="Arial, sans-serif" font-size="25" fill="#343646">Kuyu kısmi mahfazalıdır.</text>
+  <line x1="100" y1="292" x2="530" y2="292" stroke="#e1e3eb" stroke-width="2"/>
+  <text x="100" y="338" font-family="Arial, sans-serif" font-size="23" fill="#343646">• Açık veya kısmen kapalı kuyu</text>
+  <text x="100" y="382" font-family="Arial, sans-serif" font-size="23" fill="#343646">• Mahfaza yüksekliği ayrıca ölçülür</text>
+  <text x="100" y="426" font-family="Arial, sans-serif" font-size="23" fill="#343646">• Kategori 2’ye özel maddeler uygulanmaz</text>
+  <rect x="630" y="155" width="510" height="370" rx="22" fill="#fff" stroke="#c9cbd6" stroke-width="3"/>
+  <text x="670" y="215" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#20235b">Kategori 2</text>
+  <text x="670" y="260" font-family="Arial, sans-serif" font-size="25" fill="#343646">Kuyu tam mahfazalıdır.</text>
+  <line x1="670" y1="292" x2="1100" y2="292" stroke="#e1e3eb" stroke-width="2"/>
+  <text x="670" y="338" font-family="Arial, sans-serif" font-size="23" fill="#343646">• Kuyu bütünüyle kapalıdır</text>
+  <text x="670" y="382" font-family="Arial, sans-serif" font-size="23" fill="#343646">• İzinsiz giriş hükümleri aranır</text>
+  <text x="670" y="426" font-family="Arial, sans-serif" font-size="23" fill="#343646">• Kategori 1’e özel maddeler uygulanmaz</text>
+  <text x="60" y="575" font-family="Arial, sans-serif" font-size="20" fill="#6c7280">Seçimi yalnız kategoriye bağlı maddelerin uygulanabilirliğini belirlemek için kullanın.</text>
+</svg>
