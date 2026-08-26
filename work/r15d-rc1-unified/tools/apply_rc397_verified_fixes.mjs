@@ -94,12 +94,18 @@ for (const id of ['MAD-0026','MAD-0027']) set(id, 'aranmaz_kosulu', null);
 for (const id of ['MAD-0028','MAD-0029','MAD-0030','MAD-0031']) Object.assign(requireRow(id), {denetci_yonlendirmesi:null, aranmaz_kosulu:null});
 
 const suspension = requireRow('MAD-0008H');
-if (!Array.isArray(suspension.olcum_tanimlari) || !suspension.olcum_tanimlari.some(def => def.id === 'halat_sarim_acisi')) {
-  throw new Error('MAD-0008H halat_sarim_acisi alanı kaynak kütüphanede bulunamadı');
-}
+if (!Array.isArray(suspension.olcum_tanimlari)) throw new Error('MAD-0008H ölçüm tanımları geçersiz');
 suspension.olcum_tanimlari = suspension.olcum_tanimlari.filter(def => def.id !== 'halat_sarim_acisi');
 suspension.denetci_yonlendirmesi = 'Makine alanında halat ve kasnak bilgilerini etiket, kumpas/şerit metre ve erişilebilir yerleşim üzerinden kaydedin. En güvenli erişilebilir noktayı kullanın; değerleri tahmin etmeyin. Halat sarım açısını sahada ölçmeyin; yalnız onaylı teknik dosya veya yerleşim çizimi üzerinden kontrol edin. Eksiklik varsa madde açıklamasına yazın.';
 set('MAD-0018', 'aranmaz_kosulu', 'Kuyu dibi derinliği 2500 mm’den fazlaysa bu madde otomatik olarak Uygulanmaz işaretlenir.');
+for (const id of ['MAD-0046','MAD-0047']) set(id, 'aranmaz_kosulu', null);
+Object.assign(requireRow('MAD-0049'), {
+  olcum_tanimlari: [],
+  olcu1_adi: null,
+  olcu1_birimi: null,
+  olcu2_adi: null,
+  olcu2_birimi: null,
+});
 set('MAD-1000', 'denetci_yonlendirmesi', "TS EN 81-70'e göre: tuş takımı genişliği en fazla 120 mm, yüksekliği en fazla 160 mm olmalı; butonlar arası mesafe 5-15 mm. Rakamlar kabartma OLMAMALI (kazınmış olabilir); Braille kullanılmaz. Çıkış katı (yıldız) sembolü ve eksi işareti kabartma olmalı. '5' rakamlı butonda tek bir kabartma nokta bulunmalı (körler için dokunsal referans). Genel şartlar: aktif alan en az 490 mm² (yaklaşık 20 mm çap), çalıştırma kuvveti 2,5-5,0 N, sembol yüksekliği 15-40 mm kabartma. Uygulamadaki mevcut ölçüm alanlarına sahada alınabilen temel boyutları yazın. Diğer kriterleri kontrol edin; eksiklik varsa madde açıklamasına yazın.");
 set('MAD-1001', 'denetci_yonlendirmesi', "TS EN 81-70'e göre dokunmatik ekranlar koşullu izinlidir: ekran en az 300 cd/m² parlaklık sağlamalı, dokunma alanları ve semboller çevresiyle kontrastlı olmalı; sembol yüksekliği 15-40 mm, butonlar arası mesafe en az 5 mm olmalıdır. Ekranın yanında veya altında bir erişilebilirlik butonu bulunmalı; bu butona basıldığında katların sırayla sesli anons edilip ikinci bir basışla seçilebildiğini test edin. Bu madde yalnız kabinde dokunmatik ekran varsa doldurulur. Uygulamadaki mevcut ölçüm alanlarına sahada alınabilen temel boyutları yazın. Diğer kriterleri kontrol edin; eksiklik varsa madde açıklamasına yazın.");
 set('MAD-1002', 'denetci_yonlendirmesi', "TS EN 81-70'e göre erişilebilirlik butonu, tuş takımı veya dokunmatik ekranın yanında, tercihen altında bulunmalı ve uluslararası 'Engelliler için Erişim' sembolüyle (ISO 4190-5 Tablo C.1 No.10) işaretlenmelidir. Aktive edildiğinde sesli anons başlatmalı, çağrıyı uygun kabine yönlendirmeli veya kapının açık kalma süresini uzatmalıdır. Bu madde yalnız ayrı bir erişilebilirlik butonu varsa doldurulur. Uygulamadaki mevcut ölçüm alanına butonun yerden yüksekliğini yazın. Diğer kriterleri kontrol edin; eksiklik varsa madde açıklamasına yazın.");

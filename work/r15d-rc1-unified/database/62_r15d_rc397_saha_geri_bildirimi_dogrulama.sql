@@ -14,11 +14,11 @@ declare
 begin
   select count(*) into v_count
   from public.madde_kutuphanesi
-  where madde_id in ('MAD-0008H','MAD-0018','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
+  where madde_id in ('MAD-0008H','MAD-0018','MAD-0046','MAD-0047','MAD-0049','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
     and aktif is true;
 
-  if v_count <> 6 then
-    raise exception 'rc3.9.7 doğrulama hedeflerinden biri eksik (%/6 bulundu)', v_count;
+  if v_count <> 9 then
+    raise exception 'rc3.9.7 doğrulama hedeflerinden biri eksik (%/9 bulundu)', v_count;
   end if;
 end
 $$;
@@ -36,6 +36,22 @@ where madde_id = 'MAD-0008H';
 update public.madde_kutuphanesi
 set aranmaz_kosulu = 'Kuyu dibi derinliği 2500 mm’den fazlaysa bu madde otomatik olarak Uygulanmaz işaretlenir.'
 where madde_id = 'MAD-0018';
+
+-- Kullanıcı kararı: bu iki maddede ayrıca Uygulanmaz koşulu gösterilmez.
+-- Tahrik koşulu veya otomatik kural eklenmez.
+update public.madde_kutuphanesi
+set aranmaz_kosulu = null
+where madde_id in ('MAD-0046','MAD-0047');
+
+-- Kullanıcı kararı: delikli separatör maddesi görsel olarak değerlendirilir;
+-- ayrıca saha ölçüm alanı gösterilmez. Madde metni ve diğer alanlar korunur.
+update public.madde_kutuphanesi
+set olcum_tanimlari = '[]'::jsonb,
+    olcu1_adi = null,
+    olcu1_birimi = null,
+    olcu2_adi = null,
+    olcu2_birimi = null
+where madde_id = 'MAD-0049';
 
 update public.madde_kutuphanesi
 set denetci_yonlendirmesi = 'TS EN 81-70''e göre: tuş takımı genişliği en fazla 120 mm, yüksekliği en fazla 160 mm olmalı; butonlar arası mesafe 5-15 mm. Rakamlar kabartma OLMAMALI (kazınmış olabilir); Braille kullanılmaz. Çıkış katı (yıldız) sembolü ve eksi işareti kabartma olmalı. ''5'' rakamlı butonda tek bir kabartma nokta bulunmalı (körler için dokunsal referans). Genel şartlar: aktif alan en az 490 mm² (yaklaşık 20 mm çap), çalıştırma kuvveti 2,5-5,0 N, sembol yüksekliği 15-40 mm kabartma. Uygulamadaki mevcut ölçüm alanlarına sahada alınabilen temel boyutları yazın. Diğer kriterleri kontrol edin; eksiklik varsa madde açıklamasına yazın.'
@@ -58,12 +74,12 @@ set surum = surum + 1, updated_at = now()
 where bolum in (
   select distinct bolum
   from public.madde_kutuphanesi
-  where madde_id in ('MAD-0008H','MAD-0018','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
+  where madde_id in ('MAD-0008H','MAD-0018','MAD-0046','MAD-0047','MAD-0049','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
 );
 
 commit;
 
 select madde_id, kontrol_basligi, denetci_yonlendirmesi, aranmaz_kosulu, olcum_tanimlari
 from public.madde_kutuphanesi
-where madde_id in ('MAD-0008H','MAD-0018','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
+where madde_id in ('MAD-0008H','MAD-0018','MAD-0046','MAD-0047','MAD-0049','MAD-1000','MAD-1001','MAD-1002','MAD-1003')
 order by madde_id;

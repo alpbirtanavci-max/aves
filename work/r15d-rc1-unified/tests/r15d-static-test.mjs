@@ -504,6 +504,12 @@ test('halat sarım açısı sahada ölçüm alanı değil',
 test('MAD-0018 otomatik Uygulanmaz kararı görünür gerekçesini koruyor',
   byId.get('MAD-0018').otomatik_aranmaz_kurali?.paylasimli_anahtar === 'kuyu_dibi_derinligi' &&
   /otomatik olarak Uygulanmaz işaretlenir/.test(byId.get('MAD-0018').aranmaz_kosulu || ''));
+test('karşı ağırlık maddeleri kullanıcı kararına göre sadeleştirildi',
+  !byId.get('MAD-0046').aranmaz_kosulu &&
+  !byId.get('MAD-0047').aranmaz_kosulu &&
+  byId.get('MAD-0049').olcum_tanimlari.length === 0 &&
+  byId.get('MAD-0045').olcum_tanimlari.length === 4 &&
+  !byId.get('MAD-0048').aranmaz_kosulu);
 test('TS EN 81-70 rehberleri eksikliği açıklamaya yazdırıyor, sahada tutulmayan ölçüyü kaydetmeyi istemiyor',
   ['MAD-1000','MAD-1001','MAD-1002','MAD-1003'].every(id => {
     const guide = byId.get(id).denetci_yonlendirmesi || '';

@@ -2063,7 +2063,7 @@
     "md_kosulu": null,
     "esik_deger": null,
     "esik_operator": null,
-    "aranmaz_kosulu": "Karşı ağırlık veya dengeleme ağırlığı bulunmuyorsa Aranmaz.",
+    "aranmaz_kosulu": null,
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [
@@ -2108,7 +2108,7 @@
     "md_kosulu": null,
     "esik_deger": null,
     "esik_operator": null,
-    "aranmaz_kosulu": "Karşı ağırlık veya dengeleme ağırlığı bulunmuyorsa Aranmaz.",
+    "aranmaz_kosulu": null,
     "gorsel_referansi": null,
     "aktif": true,
     "olcum_tanimlari": [],
@@ -2183,38 +2183,7 @@
     "aranmaz_kosulu": "Karşı ağırlık ayırıcı bölmesi deliksizse veya karşı ağırlık/dengeleme ağırlığı yoksa Aranmaz.",
     "gorsel_referansi": "G-ISO13857-C4 — Delik ölçüsü / güvenlik mesafesi tablosu",
     "aktif": true,
-    "olcum_tanimlari": [
-      {
-        "id": "separator_delik_bicimi",
-        "etiket": "Açıklık biçimi",
-        "birim": null,
-        "tur": "secim",
-        "secenekler": [
-          "Yarık",
-          "Kare",
-          "Dairesel",
-          "Düzensiz"
-        ],
-        "referans_metni": "Güvenlik mesafesi tablosunda doğru sütunu seçmek için kaydedilir.",
-        "kaynak": "TS EN ISO 13857:2019"
-      },
-      {
-        "id": "separator_en_buyuk_aciklik",
-        "etiket": "Açıklığın en büyük ölçüsü",
-        "birim": "mm",
-        "tur": "sayi",
-        "referans_metni": "TS EN ISO 13857:2019 Çizelge 4’e göre değerlendirilir",
-        "kaynak": "TS EN 81-20:2020"
-      },
-      {
-        "id": "separator_hareketli_parca_mesafesi",
-        "etiket": "Açıklık–hareketli parça en kısa mesafesi",
-        "birim": "mm",
-        "tur": "sayi",
-        "referans_metni": "TS EN ISO 13857:2019 Çizelge 4’e göre değerlendirilir",
-        "kaynak": "TS EN 81-20:2020"
-      }
-    ],
+    "olcum_tanimlari": [],
     "otomatik_aranmaz_kurali": null,
     "denetim_profilleri": [
       "modul_g_tam"
