@@ -11,6 +11,7 @@ const databaseDir = path.join(root, 'database');
 
 const app = fs.readFileSync(path.join(appDir, 'app.js'), 'utf8');
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
+const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
 const index = fs.readFileSync(path.join(appDir, 'index.html'), 'utf8');
 const headers = fs.readFileSync(path.join(appDir, '_headers'), 'utf8');
 const updateHtml = fs.readFileSync(path.join(appDir, 'update.html'), 'utf8');
@@ -52,9 +53,19 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.5 aday sürümü', index.includes('R15D-RC3.9.5</b>'));
-test('app R15D rc3.9.5 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.5'"));
-test('service worker rc3.9.5 cache', sw.includes("aves-saha-r15d-rc395'"));
+test('index R15D rc3.9.6 aday sürümü', index.includes('R15D-RC3.9.6</b>'));
+test('app R15D rc3.9.6 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.6'"));
+test('service worker rc3.9.6 cache', sw.includes("aves-saha-r15d-rc396'"));
+test('uygulama manifesti rc3.9.6 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.6"'));
+test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
+test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
+test('Inter ve Montserrat çevrimdışı paketleniyor',
+  index.includes("font-family:'Inter'") && index.includes("font-family:'Montserrat'") &&
+  ['Inter-latin-ext.woff2','Inter-latin.woff2','Montserrat-latin-ext.woff2','Montserrat-latin.woff2'].every(name =>
+    fs.existsSync(path.join(appDir, 'fonts', name)) && sw.includes(`'./fonts/${name}'`)));
+test('giriş ekranında kutulu logo yerine AVES kurumsal başlığı var', app.includes('<div class="login-kicker">AVES Saha Denetim</div>') && !app.includes('<img src="logo.png" alt="AVES" style="height:34px'));
+test('denetim geri dönüşü belirgin gezinme çubuğunda', app.includes('<div class="inspection-toolbar">') && index.includes('.inspection-toolbar .backlink'));
+test('madde sonuçları tek segmentli kontrol olarak stilleniyor', index.includes('.mstates{display:grid;grid-template-columns:1fr 1fr 1fr auto'));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
   index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
@@ -91,6 +102,9 @@ test('Sahaya Hazırla item-set hash kaydı', app.includes('expected_item_set_has
 test('Sahaya Hazırla kütüphane manifestini doğruluyor', app.includes('manifest.count === library.length'));
 test('Sahaya Hazırla yerel yazma testi yapıyor', app.includes('offline_probe_'));
 test('Sahaya Hazırla uygulama kabuğunu cache içinde doğruluyor', app.includes('OFFLINE_CORE_ASSETS') && app.includes('caches.match'));
+test('Sahaya Hazırla kurumsal fontları ve AVES logosunu da doğruluyor',
+  ['aves-logo-white.png','Inter-latin-ext.woff2','Inter-latin.woff2','Montserrat-latin-ext.woff2','Montserrat-latin.woff2']
+    .every(name => app.includes(name)));
 test('Sahaya Hazırla kullanıcı yetkisi doğrulamasını arıyor', app.includes('profile_verified_at'));
 test('çevrimdışı hazırlık durumu açıkça görünür', app.includes('Çevrimdışı çalışmaya hazır') && app.includes('Çevrimdışı çalışmaya hazır değil'));
 test('çevrimdışı hazırlık cihaz bazında tutuluyor', app.includes('offline_ready_${d.id}') && app.includes('marker.device_id !== await getDeviceId()'));
