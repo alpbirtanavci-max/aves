@@ -342,7 +342,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn-primary,.stickynav .sn-next{box-shadow:0 2px 5px rgba(22,24,64,.16);}
 .btn-primary:hover,.stickynav .sn-next:hover{background:var(--navy-dk);}
 .btn-new{min-height:42px;padding:10px 17px;box-shadow:0 2px 5px rgba(234,0,72,.17);}
-.btn-new:hover,.btn-ozet:hover{background:#CF003F;}
+.btn-new:hover{background:#CF003F;}
+@media (hover:hover) and (pointer:fine){
+  .btn-ozet:hover{background:#F5F6FA;color:var(--navy);border-color:#AEB2C2;}
+}
 .btn-ghost:hover,.stepbtn:hover,.stickynav .sn-prev:hover{background:#F7F7FA;border-color:#C8CBD7;}
 
 .login-card,.dcard,.inspection-list-tools,.form-card,.det-head,.bolum,.onay-box,.serial-group,.print-form-card,.completed-choice .mode-choice{
@@ -458,7 +461,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.7</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.7.1</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">

@@ -1,5 +1,5 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc397';
+const CACHE = 'aves-saha-r15d-rc3971';
 const ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json', './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
@@ -17,7 +17,9 @@ const ASSETS = [
   './referans-gorseller/G-8120-C7.png',
   './referans-gorseller/G-8120-S6.png',
   './referans-gorseller/G-8120-S7.png',
-  './referans-gorseller/G-ISO13857-C4.png'
+  './referans-gorseller/G-ISO13857-C4.png',
+  './referans-gorseller/G-8170-KABIN-TIPLERI-TR.svg',
+  './referans-gorseller/G-8171-KATEGORI-TR.svg'
 ];
 
 self.addEventListener('install', (e) => {

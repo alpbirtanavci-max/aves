@@ -44,7 +44,12 @@ const rc394KapMigration = fs.readFileSync(path.join(databaseDir, '55_r15d_rc394_
 const rc394KabinTipiMigration = fs.readFileSync(path.join(databaseDir, '56_r15d_rc394_kabin_tipi_tek_secim.sql'), 'utf8');
 const rc394SenkronMigration = fs.readFileSync(path.join(databaseDir, '57_r15d_rc394_kutuphane_senkron_dosyadan_canliya.sql'), 'utf8');
 const rc395ToparlamaMigration = fs.readFileSync(path.join(databaseDir, '58_r15d_rc395_saha_geri_bildirimi_toparlama.sql'), 'utf8');
+const rc397Migration59 = fs.readFileSync(path.join(databaseDir, '59_r15d_rc397_ekran_fotografi_denetimi_1.sql'), 'utf8');
+const rc397Migration60 = fs.readFileSync(path.join(databaseDir, '60_r15d_rc397_saha_geri_bildirimi_2.sql'), 'utf8');
+const rc397Migration61 = fs.readFileSync(path.join(databaseDir, '61_r15d_rc397_kuyu_dibi_rehber_temizligi.sql'), 'utf8');
+const rc397Migration62 = fs.readFileSync(path.join(databaseDir, '62_r15d_rc397_saha_geri_bildirimi_dogrulama.sql'), 'utf8');
 const library = JSON.parse(fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.json'), 'utf8'));
+const libraryCsv = fs.readFileSync(path.join(dataDir, 'madde_kutuphanesi.csv'), 'utf8');
 const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
 vm.createContext(sectionMappingContext);
@@ -53,10 +58,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.7 aday sürümü', index.includes('R15D-RC3.9.7</b>'));
-test('app R15D rc3.9.7 aday sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.7'"));
-test('service worker rc3.9.7 cache', sw.includes("aves-saha-r15d-rc397'"));
-test('uygulama manifesti rc3.9.7 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.7"'));
+test('index R15D rc3.9.7.1 düzeltme sürümü', index.includes('R15D-RC3.9.7.1</b>'));
+test('app R15D rc3.9.7.1 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.7.1'"));
+test('service worker rc3.9.7.1 cache', sw.includes("aves-saha-r15d-rc3971'"));
+test('uygulama manifesti rc3.9.7.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.7.1"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -200,10 +205,13 @@ test('MAD-0824 kaynak dalı rc2 içinde geri açılıyor', /set\s+aktif\s*=\s*tr
 test('kütüphane toplamı 1019', library.length === 1019);
 test('MAD-0561 başlığı Testler', byId.get('MAD-0561')?.kontrol_basligi === 'Testler');
 const hydraulicIds = library
-  .filter(row => row.madde_id >= 'MAD-0562' && row.madde_id <= 'MAD-0613' && row.madde_id !== 'MAD-0611')
+  .filter(row => row.madde_id >= 'MAD-0562' && row.madde_id <= 'MAD-0613' && !['MAD-0570','MAD-0611'].includes(row.madde_id))
   .map(row => row.madde_id);
-test('51 hidrolik başlık hedefi var', hydraulicIds.length === 51);
+test('50 genel hidrolik başlık hedefi var', hydraulicIds.length === 50);
 test('hidrolik başlıkların tamamı düzeltildi', hydraulicIds.every(id => byId.get(id)?.kontrol_basligi === 'Hidrolik Kontrol ve Testleri'));
+test('MAD-0570 yanlış hidrolik başlığından ve tahrik koşulundan ayrıldı',
+  byId.get('MAD-0570')?.kontrol_basligi === 'Kabin en üst konumunda kılavuz ray ilave hareket seyri' &&
+  byId.get('MAD-0570')?.tahrik_kosulu == null);
 test('MAD-0611 özgül başlığını koruyor', byId.get('MAD-0611')?.kontrol_basligi === 'Hidrolik devre kapama vanası');
 test('dört MR koşulu düzeltildi', ['MAD-0460','MAD-0467','MAD-0486','MAD-0492'].every(id => byId.get(id)?.md_kosulu === 'MR'));
 test('MAD-0824 kaynak doğrulaması sonrası temel veri paketinde aktif', byId.get('MAD-0824')?.aktif === true);
@@ -381,8 +389,9 @@ test('rc3.9.4 saha geri bildirimi migration veri silmiyor', !/^\s*(delete|update
 
 test('kapı koruyucu aygıtı maddelerinde yanıltıcı Uygulanmaz muafiyeti kaldırıldı',
   !byId.get('MAD-0293').aranmaz_kosulu && !byId.get('MAD-0294').aranmaz_kosulu &&
-  byId.get('MAD-0293').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir') &&
-  byId.get('MAD-0294').denetci_yonlendirmesi.includes('Uygun Değil olarak işaretlenmelidir'));
+  /25 ila 1600 mm/.test(byId.get('MAD-0293').resmi_madde_metni || '') &&
+  /asgari 50 mm/.test(byId.get('MAD-0294').resmi_madde_metni || '') &&
+  !byId.get('MAD-0293').denetci_yonlendirmesi && !byId.get('MAD-0294').denetci_yonlendirmesi);
 test('rc3.9.4 koruyucu aygıt migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394GuardDeviceMigration));
 
 test('kapı/kuyu maddeleri Elektrik ve Test bölümünden Kuyu Boyunca\'ya taşındı',
@@ -423,7 +432,10 @@ test('rc3.9.4 fragman netleştirme migration veri silmiyor', !/^\s*(delete|updat
 
 // ÜB.FR.43 (TS EN 81-70 erişilebilirlik) maddeleri artık açıklamalı
 // (saha geri bildirimi #16, #17, #20, #21, #22).
-test('kapı açma/kapama butonu maddeleri artık sembolü açıklıyor', /ISO 7000-2864/.test(byId.get('MAD-0978').denetci_yonlendirmesi || '') && /ISO 7000-2863/.test(byId.get('MAD-0979').denetci_yonlendirmesi || ''));
+test('kapı açma/kapama butonu sembolleri resmi madde metninde, mükerrer rehber yok',
+  /ISO 7000-2864/.test(byId.get('MAD-0978').resmi_madde_metni || '') &&
+  /ISO 7000-2863/.test(byId.get('MAD-0979').resmi_madde_metni || '') &&
+  !byId.get('MAD-0978').denetci_yonlendirmesi && !byId.get('MAD-0979').denetci_yonlendirmesi);
 test('dokunmatik ekran/erişilebilirlik butonu/büyük boy tuş takımı maddeleri opsiyonel bileşen olarak açıklanıp Uygulanmaz gerekçesi kazandı',
   ['MAD-1001', 'MAD-1002', 'MAD-1003'].every(id => byId.get(id).aranmaz_kosulu && byId.get(id).kontrol_basligi !== 'Diğer Kontroller'));
 test('rc3.9.4 erişilebilirlik netleştirme migration veri silmiyor', !/^\s*(delete|update\s+public\.saha_kontrol|truncate)\s+/mi.test(rc394ErisilebilirlikMigration));
@@ -454,7 +466,7 @@ test('kalın başlık her zaman kısa, resmi metin her zaman normal punto (font 
   index.includes('.mrequirement{font-size:13.5px;font-weight:400;'));
 
 // rc3.9.5: gerçek saha denetiminde kalan içerik ve seri numarası açıkları.
-const yanginGeriCagirmaIds = ['MAD-0891','MAD-0897','MAD-0907','MAD-0909','MAD-0910','MAD-0911','MAD-0914','MAD-0915','MAD-0916','MAD-0917','MAD-0920'];
+const yanginGeriCagirmaIds = ['MAD-0891','MAD-0897','MAD-0907','MAD-0911','MAD-0914','MAD-0915','MAD-0916','MAD-0917','MAD-0920'];
 test('kuyu boyunca uzun düşey ölçülerin tamamı metre cinsinden tutuluyor',
   byId.get('MAD-0008F').olcum_tanimlari.length === 4 &&
   byId.get('MAD-0008F').olcum_tanimlari.every(field => field.birim === 'm'));
@@ -476,6 +488,41 @@ test('rc3.9.5 migration denetim cevaplarına, RLS politikalarına ve veri silme 
 test('rc3.9.5 migration ölçüm kimliklerini koruyarak metre birimini güncelliyor',
   ['seyir_mesafesi','toplam_kuyu_yuksekligi','son_kat_yuksekligi','toplam_kuyu_ray_boyu'].every(id => rc395ToparlamaMigration.includes(`'${id}'`)) &&
   rc395ToparlamaMigration.includes("jsonb_set(item.value, '{birim}', '\"m\"'::jsonb, true)"));
+
+// rc3.9.7 doğrulaması: testler canlı migration sonucuyla aynı kaynak kütüphaneyi okur.
+test('rc3.9.7 migrationları geçmiş denetim cevaplarını ve RLS politikalarını değiştirmiyor',
+  [rc397Migration59, rc397Migration60, rc397Migration61, rc397Migration62].every(sql =>
+    !/public\.saha_kontrol/i.test(sql) &&
+    !/^\s*(delete|truncate|drop\s+policy|create\s+policy)\s+/mi.test(sql)));
+test('İnceleme Modu düğmesi dokunmatik hover durumunda kırmızıya dönmüyor',
+  !index.includes('.btn-new:hover,.btn-ozet:hover') &&
+  index.includes('@media (hover:hover) and (pointer:fine)') &&
+  index.includes('.btn-ozet:hover{background:#F5F6FA'));
+test('halat sarım açısı sahada ölçüm alanı değil',
+  !byId.get('MAD-0008H').olcum_tanimlari.some(field => field.id === 'halat_sarim_acisi') &&
+  /yalnız onaylı teknik dosya veya yerleşim çizimi üzerinden kontrol edin/.test(byId.get('MAD-0008H').denetci_yonlendirmesi || ''));
+test('MAD-0018 otomatik Uygulanmaz kararı görünür gerekçesini koruyor',
+  byId.get('MAD-0018').otomatik_aranmaz_kurali?.paylasimli_anahtar === 'kuyu_dibi_derinligi' &&
+  /otomatik olarak Uygulanmaz işaretlenir/.test(byId.get('MAD-0018').aranmaz_kosulu || ''));
+test('TS EN 81-70 rehberleri eksikliği açıklamaya yazdırıyor, sahada tutulmayan ölçüyü kaydetmeyi istemiyor',
+  ['MAD-1000','MAD-1001','MAD-1002','MAD-1003'].every(id => {
+    const guide = byId.get(id).denetci_yonlendirmesi || '';
+    return /Kontrol edin; eksiklik varsa madde açıklamasına yazın\.$/i.test(guide) &&
+      !/Bu ölçüleri ölçüp kaydedin/i.test(guide);
+  }));
+test('81-70 ve 81-71 açıklama çizelgeleri temel çevrimdışı pakette',
+  ['G-8170-KABIN-TIPLERI-TR.svg','G-8171-KATEGORI-TR.svg'].every(name =>
+    fs.existsSync(path.join(appDir, 'referans-gorseller', name)) && sw.includes(`'./referans-gorseller/${name}'`)));
+test('rc3.9.7 kaynak kütüphanesi migration 59-62 sonuçlarıyla eşleşiyor',
+  !byId.get('MAD-0909').denetci_yonlendirmesi &&
+  !byId.get('MAD-0910').denetci_yonlendirmesi &&
+  byId.get('MAD-0961').olcum_tanimlari.some(field => field.id === 'kumanda_paneli_bulundugu_taraf') &&
+  byId.get('MAD-0570').tahrik_kosulu == null &&
+  !byId.get('MAD-0028').denetci_yonlendirmesi && !byId.get('MAD-0028').aranmaz_kosulu);
+test('JSON ve CSV rc3.9.7 doğrulama düzeltmelerini birlikte taşıyor',
+  !libraryCsv.includes('halat_sarim_acisi') &&
+  libraryCsv.includes('Kuyu dibi derinliği 2500 mm’den fazlaysa bu madde otomatik olarak Uygulanmaz işaretlenir.') &&
+  libraryCsv.includes('Eksiklik varsa madde açıklamasına yazın.'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
