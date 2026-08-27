@@ -35,6 +35,7 @@ const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
 const rc398ModulBMigration = fs.readFileSync(path.join(databaseDir, '64_r15d_rc398_modul_b_ab_tip_incelemesi.sql'), 'utf8');
 const rc399ModulBTakipMigration = fs.readFileSync(path.join(databaseDir, '65_r15d_rc399_modul_b_takip_muayenesi.sql'), 'utf8');
+const rc3910EkStandartlarMigration = fs.readFileSync(path.join(databaseDir, '66_r15d_rc3910_ek_standartlar_81_21_22_28_77.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -60,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.9 düzeltme sürümü', index.includes('R15D-RC3.9.9</b>'));
-test('app R15D rc3.9.9 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.9'"));
-test('service worker rc3.9.9 cache', sw.includes("aves-saha-r15d-rc399'"));
-test('uygulama manifesti rc3.9.9 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.9"'));
+test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.10</b>'));
+test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.10'"));
+test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3910'"));
+test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.10"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -204,7 +205,7 @@ test('birebir tekrar eden saha rehberleri temizleniyor', rc2Migration.includes("
 test('kontrol olmayan form satırları pasifleştiriliyor', ['MAD-0809','MAD-0817','MAD-0825','MAD-0888','MAD-1004'].every(id => rc2Migration.includes(id)));
 test('MAD-0824 kaynak dalı rc2 içinde geri açılıyor', /set\s+aktif\s*=\s*true[\s\S]*where\s+madde_id\s*=\s*'MAD-0824'/i.test(rc2Migration));
 
-test('kütüphane toplamı 1019', library.length === 1019);
+test('kütüphane toplamı 1083', library.length === 1083);
 test('MAD-0561 başlığı Testler', byId.get('MAD-0561')?.kontrol_basligi === 'Testler');
 const hydraulicIds = library
   .filter(row => row.madde_id >= 'MAD-0562' && row.madde_id <= 'MAD-0613' && !['MAD-0570','MAD-0611'].includes(row.madde_id))
@@ -557,6 +558,22 @@ test('rc3.9.8 Modül B migration madde verisini değiştirmiyor, yalnız denetim
   rc398ModulBMigration.includes('modul_b_tip_inceleme') &&
   rc398ModulBMigration.includes('add column if not exists ana_tip') &&
   rc398ModulBMigration.includes('add column if not exists tip_varyant_kodu'));
+
+test('rc3.9.10 ek standart migrationı 64 yeni madde ekliyor, mevcut satırlara dokunmuyor',
+  !/delete\s+from/i.test(rc3910EkStandartlarMigration) &&
+  !/update\s+public\.madde_kutuphanesi/i.test(rc3910EkStandartlarMigration) &&
+  (rc3910EkStandartlarMigration.match(/^\s*\('MAD-10\d\d',/gm) || []).length === 64 &&
+  ['81-21','81-22','81-28','81-77'].every(sg => rc3910EkStandartlarMigration.includes(`'${sg}'`)));
+test('yeni denetim formunda çoklu seçilebilir ek standart kartı var',
+  app.includes('id="ekStandartlarCard"') && app.includes('id="sEkStandartlar"') &&
+  app.includes("data-v=\"81-21\"") && app.includes("data-v=\"81-22\"") &&
+  app.includes("data-v=\"81-28\"") && app.includes("data-v=\"81-77\""));
+test('ek standart seçimi birden fazla değeri aynı anda tutabiliyor (tekli seçim değil)',
+  app.includes('ekStandartlarSecim: new Set()') &&
+  app.includes('single.ekStandartlarSecim.delete(v)') &&
+  app.includes('single.ekStandartlarSecim.add(v)'));
+test('ek standart kartı saha teyidi (Modül E/H1) profilinde gizleniyor',
+  app.includes("document.getElementById('ekStandartlarCard').style.display = sahaTeyidi ? 'none' : ''"));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
