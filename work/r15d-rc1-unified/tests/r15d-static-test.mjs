@@ -34,6 +34,7 @@ const rc39NamedMeasurementsMigration = fs.readFileSync(path.join(databaseDir, '4
 const rc393CorrectionSyncMigration = fs.readFileSync(path.join(databaseDir, '46_r15d_rc393_duzeltme_oturumu_senkronu.sql'), 'utf8');
 const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_rc394_saha_geri_bildirimi_icerik.sql'), 'utf8');
 const rc398ModulBMigration = fs.readFileSync(path.join(databaseDir, '64_r15d_rc398_modul_b_ab_tip_incelemesi.sql'), 'utf8');
+const rc399ModulBTakipMigration = fs.readFileSync(path.join(databaseDir, '65_r15d_rc399_modul_b_takip_muayenesi.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -59,10 +60,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.8 düzeltme sürümü', index.includes('R15D-RC3.9.8</b>'));
-test('app R15D rc3.9.8 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.8'"));
-test('service worker rc3.9.8 cache', sw.includes("aves-saha-r15d-rc398'"));
-test('uygulama manifesti rc3.9.8 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.8"'));
+test('index R15D rc3.9.9 düzeltme sürümü', index.includes('R15D-RC3.9.9</b>'));
+test('app R15D rc3.9.9 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.9'"));
+test('service worker rc3.9.9 cache', sw.includes("aves-saha-r15d-rc399'"));
+test('uygulama manifesti rc3.9.9 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.9"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -318,7 +319,10 @@ test('teknik müdür sunucuda yalnız kendi adına denetim oluşturabilir',
   !/^\s*(delete|update|truncate)\s+/mi.test(rc38TechnicalManagerMigration));
 test('teknik müdür iz bırakan düzeltme yapabilir', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && app.includes('duzeltmeNedeniSec'));
 test('tamamlanmış denetim iki modla açılıyor', app.includes('showTamamlananDenetimSecimi') && app.includes('Takip Denetimi') && app.includes('İnceleme'));
-test('takip yalnız Modül G ve bağımsız denetim kaydıdır', app.includes('kontrolProfili(d) === KONTROL_PROFILLERI.TAM') && app.includes('takipDenetimiOlustur') && rc37WorkflowMigration.includes("kontrol_profili = 'modul_g_tam'"));
+test('Modül G takibi açık, Modül B takibi koşullu ve bağımsız denetim kaydıdır',
+  app.includes('if (profil === KONTROL_PROFILLERI.TAM) return true;') &&
+  app.includes('takipDenetimiOlustur') &&
+  app.includes("profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows)"));
 test('takip zinciri ve önceki sonuçlar korunuyor', rc37WorkflowMigration.includes('takip_ana_denetim_id') && rc37WorkflowMigration.includes('takip_kaynak_saha_kontrol_id') && app.includes('takip_onceki_durum'));
 test('düzeltme nedeni geçmiş olayına yazılıyor', app.includes('duzeltme_oturumu_id: context') && app.includes('duzeltme_nedeni: context') && rc37WorkflowMigration.includes('duzeltme_nedeni text'));
 test('düzeltme kimliği ve nedeni sunucuda doğrulanıyor', rc37WorkflowMigration.includes('new.duzeltme_oturumu_id := v_duzeltme_id') && rc37WorkflowMigration.includes('new.duzeltme_baslatan_email := v_email'));
@@ -531,8 +535,19 @@ test('Modül B denetim türü ve kontrol profili tanımlı',
 test('Modül B madde profili TAM gibi davranıyor (yeni madde eklenmedi)',
   /if \(profil === KONTROL_PROFILLERI\.TAM \|\| profil === KONTROL_PROFILLERI\.MODUL_B\) return true;/.test(app));
 test('Modül B için takip denetimi açık',
-  app.includes('kontrolProfili(d) === KONTROL_PROFILLERI.TAM || kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B') &&
+  app.includes('if (profil === KONTROL_PROFILLERI.TAM) return true;') &&
+  app.includes('profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows)') &&
   rc398ModulBMigration.includes("kontrol_profili in ('modul_g_tam','modul_b_tip_inceleme')"));
+test('Modül B takip muayenesi yalnız önceki uygunsuzluklar varsa açılıyor',
+  app.includes("rows.some(row => effectiveDurum(row) === 'Olumsuz bulgu')") &&
+  rc399ModulBTakipMigration.includes("kaynak_madde.durum = 'Olumsuz bulgu'") &&
+  rc399ModulBTakipMigration.includes("onceki.kontrol_profili,'') = 'modul_b_tip_inceleme'"));
+test('Modül B takip muayenesi ÜB.FR.53 kapsamındaki uygunsuzluk satırlarıyla sınırlı',
+  app.includes("kaynakRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu')") &&
+  app.includes('ÜB.FR.53 kapsamındaki'));
+test('Modül B açıklaması ana form ile uygulanabilir ek standartları ayırıyor',
+  app.includes('Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür.') &&
+  app.includes('ilgili ek standart maddeleri ayrıca uygulanır'));
 test('Modül B formu ana tip / tip varyant kodu alanlarını zorunlu tutuyor',
   app.includes('id="fAnaTip"') && app.includes('id="fTipVaryantKodu"') &&
   app.includes("if (modulB && (!anaTip || !tipVaryantKodu)) { toast('Ana Tip ve Tip Varyant Kodu zorunlu'); return; }"));

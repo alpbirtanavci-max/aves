@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.8';
+const APP_VERSION = 'R15D-rc3.9.9';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -835,9 +835,16 @@ const UI = (() => {
     (Profile.isTechnicalManager && d.denetim_durumu === 'Gözden Geçirme' && normEmail(d.duzeltme_baslatan_email) === normEmail(Profile.email))
   );
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canCorrectInspections || denetimSahibiMi(d));
-  const canStartFollowup = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' &&
-    (kontrolProfili(d) === KONTROL_PROFILLERI.TAM || kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B) &&
-    Profile.canCreate && (Profile.isAdmin || denetimSahibiMi(d));
+  const canStartFollowup = (d, rows = null) => {
+    if (!d || d.denetim_durumu !== 'Çalışma Tamamlandı' || !Profile.canCreate ||
+        (!Profile.isAdmin && !denetimSahibiMi(d))) return false;
+    const profil = kontrolProfili(d);
+    if (profil === KONTROL_PROFILLERI.TAM) return true;
+    // ÜB.FR.53, Modül B takip muayenesini ilk muayenede tespit edilen
+    // uygunsuzlukların mevcut durumunun doğrulanması olarak tanımlar.
+    return profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows) &&
+      rows.some(row => effectiveDurum(row) === 'Olumsuz bulgu');
+  };
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
@@ -1036,7 +1043,7 @@ const UI = (() => {
              <span class="pill cached">📱 cihazda</span>`
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
         <div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`;
-      card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
+      card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
       dl.appendChild(card);
     }
     const applyListFilters = () => {
@@ -1064,7 +1071,20 @@ const UI = (() => {
     if (btnYeni) btnYeni.onclick = showYeniForm;
   }
 
-  function showTamamlananDenetimSecimi(d) {
+  async function showTamamlananDenetimSecimi(d, rows = []) {
+    let tamamlananRows = rows;
+    if (!tamamlananRows.length && navigator.onLine) {
+      try {
+        await Sync.pullSaha(d.id);
+        tamamlananRows = (await DB.allByIndex('saha', 'byDenetim', d.id)).sort(siraKarsilastir);
+      } catch (_) {
+        // İnceleme seçeneği çevrimdışıyken de kullanılabilsin; takip kararı
+        // kaynak maddeler cihaza indikten sonra görünür olacaktır.
+      }
+    }
+    const modulBTakipUygunsuzlukSayisi = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
+      ? tamamlananRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu').length
+      : 0;
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal completed-choice">
@@ -1077,7 +1097,8 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
       <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
-      ${canStartFollowup(d) ? '<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>Yalnız Modül G ve Modül B için, önceki sonuçlara bağlı yeni ve bağımsız bir denetim oluşturur.</span></button>' : ''}
+      ${canStartFollowup(d, tamamlananRows) ? `<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B ? `ÜB.FR.53 kapsamındaki ${modulBTakipUygunsuzlukSayisi} uygunsuzluğu yeniden doğrulamak için bağlı takip muayenesi oluşturur.` : 'Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.'}</span></button>` : ''}
+      ${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B && !modulBTakipUygunsuzlukSayisi ? '<div class="photo-help">Bu Modül B denetiminde takip muayenesine aktarılacak uygunsuzluk bulunmuyor.</div>' : ''}
       ${(kontrolProfili(d) !== KONTROL_PROFILLERI.TAM && kontrolProfili(d) !== KONTROL_PROFILLERI.MODUL_B) ? '<div class="photo-help">Takip denetimi yalnızca Modül G ve Modül B denetimlerinde kullanılabilir.</div>' : ''}
     </div>`;
     document.body.appendChild(ov);
@@ -1087,7 +1108,10 @@ const UI = (() => {
     ov.querySelector('#completedReview').onclick = () => { close(); showDenetim(d.id, true); };
     const followup = ov.querySelector('#completedFollowup');
     if (followup) followup.onclick = async () => {
-      if (!confirm('Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir takip denetimi oluşturulsun mu?')) return;
+      const takipMesaji = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
+        ? `İlk muayenedeki ${modulBTakipUygunsuzlukSayisi} uygunsuzluk ÜB.FR.53 mantığıyla takip muayenesine aktarılsın mı? Önceki denetim değiştirilmeyecek.`
+        : 'Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir takip denetimi oluşturulsun mu?';
+      if (!confirm(takipMesaji)) return;
       followup.disabled = true;
       followup.querySelector('b').textContent = 'Takip hazırlanıyor…';
       try {
@@ -1139,9 +1163,17 @@ const UI = (() => {
   }
 
   async function takipDenetimiOlustur(kaynak) {
-    if (!canStartFollowup(kaynak)) throw new Error('Takip denetimi oluşturma yetkiniz yok');
     const kaynakRows = (await DB.allByIndex('saha', 'byDenetim', kaynak.id)).sort(siraKarsilastir);
     if (!kaynakRows.length) throw new Error('Önceki denetimin maddeleri bu cihazda bulunmuyor');
+    if (!canStartFollowup(kaynak, kaynakRows)) {
+      throw new Error(kontrolProfili(kaynak) === KONTROL_PROFILLERI.MODUL_B
+        ? 'Modül B takip muayenesi için önceki denetimde en az bir uygunsuzluk bulunmalıdır'
+        : 'Takip denetimi oluşturma yetkiniz yok');
+    }
+    const modulBTakip = kontrolProfili(kaynak) === KONTROL_PROFILLERI.MODUL_B;
+    const takipKaynakRows = modulBTakip
+      ? kaynakRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu')
+      : kaynakRows;
 
     const tumDenetimler = await DB.all('denetimler');
     const anaId = kaynak.takip_ana_denetim_id || kaynak.id;
@@ -1187,9 +1219,9 @@ const UI = (() => {
       snapshot_app_build_id: APP_VERSION,
       snapshot_kutuphane_hash: kaynak.snapshot_kutuphane_hash || null,
       snapshot_bolum_surumleri: kaynak.snapshot_bolum_surumleri || null,
-      snapshot_madde_sayisi: kaynak.snapshot_madde_sayisi || kaynakRows.length,
-      snapshot_madde_set_hash: kaynak.snapshot_madde_set_hash || null,
-      snapshot_content_hash: kaynak.snapshot_content_hash || null,
+      snapshot_madde_sayisi: null,
+      snapshot_madde_set_hash: null,
+      snapshot_content_hash: null,
       butunluk_ozeti: null,
       butunluk_hash: null,
       butunluk_hesaplandi_at: null,
@@ -1207,7 +1239,7 @@ const UI = (() => {
       'gozden_gecirme_notu','guncelleyen_email','olusturan_email','olusturan_ad','son_degistiren_email',
       'son_degistiren_ad','son_degistiren_rol','son_degistiren_at','created_at','updated_at'
     ]);
-    const sahaRows = kaynakRows.map(eski => {
+    const sahaRows = takipKaynakRows.map(eski => {
       const yeni = {};
       Object.entries(eski).forEach(([key, value]) => { if (!sonucAlanlari.has(key)) yeni[key] = value; });
       return Object.assign(yeni, {
@@ -1236,6 +1268,13 @@ const UI = (() => {
         updated_at: now,
       });
     });
+    const takipItemIds = sahaRows.map(row => row.madde_id).sort();
+    const takipContentManifest = sahaRows
+      .map(row => ({ madde_id: row.madde_id, hash: row.snapshot_madde_hash || null }))
+      .sort((a,b) => a.madde_id.localeCompare(b.madde_id, 'tr'));
+    d.snapshot_madde_sayisi = sahaRows.length;
+    d.snapshot_madde_set_hash = await sha256Hex(takipItemIds.join('|'));
+    d.snapshot_content_hash = await sha256Hex(stableStringify(takipContentManifest));
 
     await localWrite('denetimler', d, 'denetimler');
     for (let i = 0; i < sahaRows.length; i += 200) {
@@ -1267,7 +1306,7 @@ const UI = (() => {
         </div>
       </div>
       <div class="form-card"><h3>Denetim türü *</h3>${seg('sDenetimTuru', [DENETIM_TURLERI.MODUL_G,DENETIM_TURLERI.MODUL_E,DENETIM_TURLERI.MODUL_H1,DENETIM_TURLERI.MODUL_B])}
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 AVES gözetim form setlerine bağlı saha teyidi akışıdır; Modül B ise TS EN 81-20 üzerinden yürüyen AB Tip İncelemesi'dir.</p>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 AVES gözetim form setlerine bağlı saha teyidi akışıdır; Modül B ise ana saha formu ÜB.FR.38 olan AB Tip İncelemesi'dir.</p>
       </div>
       <div class="form-card" id="modulBCard" style="display:none"><h3>AB Tip İncelemesi kimliği *</h3>
         <div class="grid2">
@@ -1344,7 +1383,7 @@ const UI = (() => {
           b.disabled = true;
         });
         document.getElementById('standartAciklama').textContent =
-          'Modül B (AB Tip İncelemesi) yalnız TS EN 81-20 üzerinden yürür. Standart denetçi tarafından değiştirilemez.';
+          'Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür. Asansörün tasarım ve kullanım özelliklerine göre ilgili ek standart maddeleri ayrıca uygulanır; ana standart denetçi tarafından değiştirilemez.';
       } else {
         single.sAna = null;
         standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = false; });
