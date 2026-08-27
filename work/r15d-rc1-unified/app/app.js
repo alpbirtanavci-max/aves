@@ -893,7 +893,11 @@ const UI = (() => {
     const gruplar = [d.ana_standart];
     if (d.ana_standart === '81-20') gruplar.push('81-70 (zorunlu)');
     gruplar.push('81-71 (zorunlu)', '81-73 (zorunlu)');
-    gruplar.push(...(d.ek_standartlar || []).map(g => g === '81-72' ? '81-72 (İtfaiyeci)' : g));
+    const ekStandartEtiketleri = {
+      '81-72': '81-72 (İtfaiyeci)', '81-21': '81-21 (Mevcut Bina)', '81-22': '81-22 (Eğik Düzlem)',
+      '81-28': '81-28 (Uzaktan Alarm)', '81-77': '81-77 (Sismik)',
+    };
+    gruplar.push(...(d.ek_standartlar || []).map(g => ekStandartEtiketleri[g] || g));
     return gruplar.filter(Boolean).join(' + ');
   }
 
@@ -1307,13 +1311,22 @@ const UI = (() => {
         </div>
         <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71) ve yangın anında davranış (TS EN 81-73) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
       </div>
+      <div class="form-card" id="ekStandartlarCard"><h3>Diğer Ek Standartlar</h3>
+        <div class="segs" id="sEkStandartlar">
+          <button type="button" class="seg" data-v="81-21">TS EN 81-21 — Mevcut Bina</button>
+          <button type="button" class="seg" data-v="81-22">TS EN 81-22 — Eğik Düzlem</button>
+          <button type="button" class="seg" data-v="81-28">TS EN 81-28 — Uzaktan Alarm</button>
+          <button type="button" class="seg" data-v="81-77">TS EN 81-77 — Sismik Durum</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Asansörün durumuna uyan ek standartları seçin (birden fazlası seçilebilir, hiçbiri zorunlu değildir).</p>
+      </div>
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>
     </div>`;
     document.getElementById('back').onclick = showList;
 
     // seçim davranışı
-    const single = { sItfaiyeci: 'hayir' };
+    const single = { sItfaiyeci: 'hayir', ekStandartlarSecim: new Set() };
     ['sDenetimTuru','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         const b = e.target.closest('.seg'); if (!b) return;
@@ -1322,12 +1335,23 @@ const UI = (() => {
         if (id === 'sDenetimTuru') uygulaDenetimTuru();
       });
     });
+    // Ek standartlar: birden fazlası seçilebilir, birbirini kapatmaz.
+    document.getElementById('sEkStandartlar').addEventListener('click', (e) => {
+      const b = e.target.closest('.seg'); if (!b) return;
+      const v = b.dataset.v;
+      if (single.ekStandartlarSecim.has(v)) { single.ekStandartlarSecim.delete(v); b.classList.remove('on'); }
+      else { single.ekStandartlarSecim.add(v); b.classList.add('on'); }
+    });
 
     function uygulaDenetimTuru() {
       const sahaTeyidi = single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ||
         single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1;
       const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
       document.getElementById('modulBCard').style.display = modulB ? '' : 'none';
+      // Ek standartlar yalnız tam saha kontrolünde (Modül G/B) anlamlıdır; saha teyidi
+      // (E/H1) profili için maddeKontrolProfilineUygun bu satırları zaten filtreler.
+      document.getElementById('ekStandartlarCard').style.display = sahaTeyidi ? 'none' : '';
+      if (sahaTeyidi) { single.ekStandartlarSecim.clear(); document.querySelectorAll('#sEkStandartlar .seg').forEach(b => b.classList.remove('on')); }
       const standartButonlari = [...document.querySelectorAll('#sAna .seg')];
       if (sahaTeyidi) {
         single.sAna = '81-20';
@@ -1378,7 +1402,10 @@ const UI = (() => {
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
 
-      const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
+      const ekStandartlar = [
+        ...(single.sItfaiyeci === 'evet' ? ['81-72'] : []),
+        ...single.ekStandartlarSecim,
+      ];
       // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
       // olsa bile yeni denetim yanlış 08/09 özel bölümleriyle oluşturulmaz.
       const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
@@ -1442,6 +1469,7 @@ const UI = (() => {
         ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
         ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
         ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
+        ${satir('Diğer ek standartlar', f.ekStandartlar.filter(g => g !== '81-72').join(' + ') || null)}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}
         ${satir('Kapı açılma biçimi', f.kabinKapiAcilmaTipi)}
