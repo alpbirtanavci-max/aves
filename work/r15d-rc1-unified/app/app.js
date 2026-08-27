@@ -1350,14 +1350,14 @@ const UI = (() => {
         </div>
         <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71) ve yangın anında davranış (TS EN 81-73) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
       </div>
-      <div class="form-card" id="ekStandartlarCard"><h3>Diğer Ek Standartlar</h3>
+      <div class="form-card" id="ekStandartlarCard"><h3>Saha Durumu</h3>
         <div class="segs" id="sEkStandartlar">
-          <button type="button" class="seg" data-v="81-21">TS EN 81-21 — Mevcut Bina</button>
-          <button type="button" class="seg" data-v="81-22">TS EN 81-22 — Eğik Düzlem</button>
-          <button type="button" class="seg" data-v="81-28">TS EN 81-28 — Uzaktan Alarm</button>
-          <button type="button" class="seg" data-v="81-77">TS EN 81-77 — Sismik Durum</button>
+          <button type="button" class="seg" data-v="81-21">Mevcut binada yeni asansör mü?</button>
+          <button type="button" class="seg" data-v="81-22">Eğik düzlem asansörü mü?</button>
+          <button type="button" class="seg" data-v="81-28">Uzaktan alarm sistemi kapsamında mı?</button>
+          <button type="button" class="seg" data-v="81-77">Sismik tasarım gereksinimi var mı?</button>
         </div>
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Asansörün durumuna uyan ek standartları seçin (birden fazlası seçilebilir, hiçbiri zorunlu değildir).</p>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Aşağıdaki durumlardan asansöre uyanları seçin (birden fazlası seçilebilir, hiçbiri zorunlu değildir); ilgili standart (TS EN 81-21/22/28/77) checklist'e otomatik eklenir.</p>
       </div>
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>
@@ -1508,7 +1508,9 @@ const UI = (() => {
         ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
         ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
         ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
-        ${satir('Diğer ek standartlar', f.ekStandartlar.filter(g => g !== '81-72').join(' + ') || null)}
+        ${satir('Diğer ek standartlar', f.ekStandartlar.filter(g => g !== '81-72').map(g => ({
+          '81-21': 'Mevcut bina', '81-22': 'Eğik düzlem', '81-28': 'Uzaktan alarm', '81-77': 'Sismik tasarım',
+        }[g] || g)).join(' + ') || null)}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}
         ${satir('Kapı açılma biçimi', f.kabinKapiAcilmaTipi)}
