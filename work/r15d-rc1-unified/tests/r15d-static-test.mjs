@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.10</b>'));
-test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.10'"));
-test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3910'"));
-test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.10"'));
+test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.11</b>'));
+test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.11'"));
+test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3911'"));
+test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.11"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -564,16 +564,9 @@ test('rc3.9.10 ek standart migrationı 64 yeni madde ekliyor, mevcut satırlara 
   !/update\s+public\.madde_kutuphanesi/i.test(rc3910EkStandartlarMigration) &&
   (rc3910EkStandartlarMigration.match(/^\s*\('MAD-10\d\d',/gm) || []).length === 64 &&
   ['81-21','81-22','81-28','81-77'].every(sg => rc3910EkStandartlarMigration.includes(`'${sg}'`)));
-test('yeni denetim formunda çoklu seçilebilir ek standart kartı var',
-  app.includes('id="ekStandartlarCard"') && app.includes('id="sEkStandartlar"') &&
-  app.includes("data-v=\"81-21\"") && app.includes("data-v=\"81-22\"") &&
-  app.includes("data-v=\"81-28\"") && app.includes("data-v=\"81-77\""));
-test('ek standart seçimi birden fazla değeri aynı anda tutabiliyor (tekli seçim değil)',
-  app.includes('ekStandartlarSecim: new Set()') &&
-  app.includes('single.ekStandartlarSecim.delete(v)') &&
-  app.includes('single.ekStandartlarSecim.add(v)'));
-test('ek standart kartı saha teyidi (Modül E/H1) profilinde gizleniyor',
-  app.includes("document.getElementById('ekStandartlarCard').style.display = sahaTeyidi ? 'none' : ''"));
+test('81-21/22/28/77 seçim yaptırmadan otomatik checklist e ekleniyor (81-71/73 ile aynı kalıp)',
+  /const gruplar = new Set\(\[\s*'Genel', anaStandart, '81-71', '81-73', '81-21', '81-22', '81-28', '81-77',/.test(app) &&
+  !app.includes('ekStandartlarCard') && !app.includes('sEkStandartlar'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
