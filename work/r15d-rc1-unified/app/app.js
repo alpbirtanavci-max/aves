@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.11';
+const APP_VERSION = 'R15D-rc3.9.12';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1034,7 +1034,7 @@ const UI = (() => {
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
       const card = document.createElement('button');
       card.className = 'dcard';
-      card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
+      card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
       card.dataset.date = d.denetim_tarihi || '';
       card.innerHTML = `
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
@@ -1194,6 +1194,7 @@ const UI = (() => {
     const d = {
       id: crypto.randomUUID(),
       dosya_no: kaynak.dosya_no || null,
+      asansor_kimlik_no: kaynak.asansor_kimlik_no || null,
       musteri_unvani: kaynak.musteri_unvani,
       denetim_adresi: kaynak.denetim_adresi,
       asansor_seri_no: kaynak.asansor_seri_no,
@@ -1311,6 +1312,7 @@ const UI = (() => {
           <div class="field full"><label for="fMusteri">Müşteri ünvanı *</label><input id="fMusteri" autocomplete="organization"></div>
           <div class="field"><label for="fSeri">Asansör seri no *</label><input id="fSeri" autocomplete="off"></div>
           <div class="field"><label for="fDosya">Dosya no</label><input id="fDosya" autocomplete="off"></div>
+          <div class="field"><label for="fKimlikNo">Asansör kimlik no</label><input id="fKimlikNo" autocomplete="off"></div>
           <div class="field full"><label for="fAdres">Adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
@@ -1345,7 +1347,7 @@ const UI = (() => {
           <div class="field"><label>Beyan yükü (kg) *</label><input id="fYuk" type="number" inputmode="numeric"></div>
           <div class="field"><label>Beyan hızı (m/s) *</label><input id="fHiz" type="number" step="0.01" inputmode="decimal"></div>
           <div class="field"><label>Kapasite (kişi) *</label><input id="fKapasite" type="number" inputmode="numeric"></div>
-          <div class="field"><label>Durak sayısı</label><input id="fDurak" type="number" inputmode="numeric"></div>
+          <div class="field"><label>Durak sayısı *</label><input id="fDurak" type="number" inputmode="numeric"></div>
         </div>
       </div>
       <div class="form-card"><h3>İtfaiyeci Asansörü</h3>
@@ -1409,6 +1411,8 @@ const UI = (() => {
       const yuk = parseInt(document.getElementById('fYuk').value) || null;
       const hiz = parseFloat(document.getElementById('fHiz').value) || null;
       const kapasite = parseInt(document.getElementById('fKapasite').value) || null;
+      const durak = parseInt(document.getElementById('fDurak').value) || null;
+      const kimlikNo = document.getElementById('fKimlikNo').value.trim() || null;
       const binaAsansorSayisi = parseInt(document.getElementById('fBinaAsansorSayisi').value) || null;
       const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
       const anaTip = modulB ? document.getElementById('fAnaTip').value.trim() : null;
@@ -1425,6 +1429,7 @@ const UI = (() => {
       if (!single.sTahrik) { toast('Tahrik tipi seçin'); return; }
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
+      if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
       // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
@@ -1449,6 +1454,7 @@ const UI = (() => {
       const formVals = {
         muhendis, musteri, seri, adres,
         dosya: document.getElementById('fDosya').value.trim() || null,
+        kimlikNo,
         denetimTuru: single.sDenetimTuru,
         kontrolProfili: kontrolProfil,
         modul: single.sDenetimTuru === DENETIM_TURLERI.MODUL_G ? 'Modül G' :
@@ -1463,7 +1469,7 @@ const UI = (() => {
         tahrik: single.sTahrik,
         md: single.sMD,
         yuk, hiz, kapasite,
-        durak: parseInt(document.getElementById('fDurak').value) || null,
+        durak,
         aski: single.sAski || null,
       };
       showOnayEkrani(formVals, tahmini);
@@ -1480,6 +1486,7 @@ const UI = (() => {
         ${satir('Mühendis', f.muhendis)}
         ${satir('Müşteri', f.musteri)}
         ${satir('Seri no', f.seri)}
+        ${satir('Asansör kimlik no', f.kimlikNo)}
         ${satir('Denetim türü', f.denetimTuru)}
         ${satir('Kontrol profili', f.kontrolProfili === KONTROL_PROFILLERI.TAM ? 'Tam saha kontrolü' :
           f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_E ? 'Modül E saha teyidi' :
@@ -1521,6 +1528,7 @@ const UI = (() => {
         musteri_unvani: f.musteri,
         denetim_adresi: f.adres,
         asansor_seri_no: f.seri,
+        asansor_kimlik_no: f.kimlikNo,
         modul: f.modul,
         denetim_turu: f.denetimTuru,
         kontrol_profili: f.kontrolProfili,
@@ -1887,6 +1895,7 @@ const UI = (() => {
         <div class="inspection-eyebrow">${esc(standartOzeti(d))}</div>
         <div class="dtitle">${esc(d.musteri_unvani)}</div>
         <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)}${d.denetim_adresi ? ` · ${esc(d.denetim_adresi)}` : ''}</div>
+        ${d.asansor_kimlik_no ? `<div class="dmeta" style="margin-top:2px"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${d.ana_tip || d.tip_varyant_kodu ? `<div class="dmeta" style="margin-top:2px"><b>Tip:</b> ${esc([d.ana_tip, d.tip_varyant_kodu].filter(Boolean).join(' · '))}</div>` : ''}
         ${d.denetimi_yapan ? `<div class="dmeta" style="margin-top:2px"><b>Denetimi yapan:</b> ${esc(d.denetimi_yapan)}</div>` : ''}
         ${d.bina_asansor_sayisi || d.kabin_giris_duzeni || d.kabin_kapi_acilma_tipi ? `<div class="dmeta" style="margin-top:2px"><b>Yerleşim:</b> ${esc([

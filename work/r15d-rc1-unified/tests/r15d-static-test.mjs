@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.11</b>'));
-test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.11'"));
-test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3911'"));
-test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.11"'));
+test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.12</b>'));
+test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.12'"));
+test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3912'"));
+test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.12"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -567,6 +567,14 @@ test('rc3.9.10 ek standart migrationı 64 yeni madde ekliyor, mevcut satırlara 
 test('81-21/22/28/77 seçim yaptırmadan otomatik checklist e ekleniyor (81-71/73 ile aynı kalıp)',
   /const gruplar = new Set\(\[\s*'Genel', anaStandart, '81-71', '81-73', '81-21', '81-22', '81-28', '81-77',/.test(app) &&
   !app.includes('ekStandartlarCard') && !app.includes('sEkStandartlar'));
+
+test('durak sayısı yeni denetim formunda zorunlu',
+  app.includes('<label>Durak sayısı *</label>') &&
+  app.includes("if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }"));
+test('asansör kimlik no alanı opsiyonel olarak formda ve kayıtta var',
+  app.includes('id="fKimlikNo"') && !app.includes('for="fKimlikNo">Asansör kimlik no *') &&
+  app.includes('asansor_kimlik_no: f.kimlikNo') &&
+  app.includes('asansor_kimlik_no: kaynak.asansor_kimlik_no || null'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
