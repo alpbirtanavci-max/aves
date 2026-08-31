@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.16 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.16</b>'));
-test('app R15D rc3.9.16 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.16'"));
-test('service worker rc3.9.16 cache', sw.includes("aves-saha-r15d-rc3916'"));
-test('uygulama manifesti rc3.9.16 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.16"'));
+test('index R15D rc3.9.17 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.17</b>'));
+test('app R15D rc3.9.17 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.17'"));
+test('service worker rc3.9.17 cache', sw.includes("aves-saha-r15d-rc3917'"));
+test('uygulama manifesti rc3.9.17 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.17"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
