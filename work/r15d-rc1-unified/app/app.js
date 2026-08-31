@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.15';
+const APP_VERSION = 'R15D-rc3.9.16';
 const DB_VERSION = 4;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -746,6 +746,7 @@ const UI = (() => {
   const app = document.getElementById('app');
   let currentDenetimId = null;
   let fotografSayilari = new Map();
+  let fotografBekleyenSayisi = 0;
 
   async function fotografOnbellekYenile(denetimId) {
     if (navigator.onLine && API.loggedIn) {
@@ -761,6 +762,7 @@ const UI = (() => {
     const all = await DB.allByIndex('fotograflar', 'byDenetim', denetimId);
     fotografSayilari = new Map();
     all.filter(f => !f.deleted_at).forEach(f => fotografSayilari.set(f.saha_kontrol_id, (fotografSayilari.get(f.saha_kontrol_id) || 0) + 1));
+    fotografBekleyenSayisi = all.filter(f => f.sync_status === 'pending').length;
   }
 
   async function fotografSikistir(file) {
@@ -794,8 +796,13 @@ const UI = (() => {
   async function bekleyenFotograflariYukle() {
     if (!navigator.onLine) return;
     const all = await DB.all('fotograflar');
+    let degisti = false;
     for (const foto of all.filter(f => f.sync_status === 'pending' && f.blob)) {
-      try { await fotografYukle(foto); } catch (error) { console.warn('Fotoğraf daha sonra yeniden yüklenecek', error); }
+      try { await fotografYukle(foto); degisti = true; } catch (error) { console.warn('Fotoğraf daha sonra yeniden yüklenecek', error); }
+    }
+    if (degisti && currentDenetimId) {
+      await fotografOnbellekYenile(currentDenetimId);
+      await refreshSyncState();
     }
   }
 
@@ -2041,10 +2048,10 @@ const UI = (() => {
         <div class="offline-ready ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready
           ? '✓ Bu cihaz çevrimdışı çalışmaya hazır'
           : '⚠ Bu cihaz çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
-        <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}" id="localSyncState">${protectedSync
+        <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length || fotografBekleyenSayisi ? 'pending' : 'ok')}" id="localSyncState">${protectedSync
           ? `⚠ ${protectedSync} işlem cihazda korumada · ${conflictSync ? 'Çakışma veya yetki' : 'Yetki'} incelemesi gerekiyor`
-          : waitingSync
-            ? `✓ Cihaza kaydedildi · ${waitingSync} işlem sunucu aktarımı bekliyor`
+          : waitingSync || fotografBekleyenSayisi
+            ? `✓ Cihaza kaydedildi · ${[waitingSync ? `${waitingSync} işlem` : null, fotografBekleyenSayisi ? `${fotografBekleyenSayisi} fotoğraf` : null].filter(Boolean).join(', ')} sunucu aktarımı bekliyor`
             : '✓ Cihaz ve sunucu eşit · Bekleyen işlem yok'}</div>
         <div class="progressbar"><div style="width:${rows.length ? done/rows.length*100 : 0}%"></div></div>
         <div class="pnums"><span>${done} / ${rows.length} madde</span><span>${bad} uygun değil${bakilmadiSayisi ? ` · ${bakilmadiSayisi} bakılmadı` : ''}</span></div>
@@ -2278,11 +2285,11 @@ const UI = (() => {
     const conflictSync = inspectionOutbox.filter(item => item.sync_status === 'conflict').length;
     const protectedSync = inspectionOutbox.filter(item => ['forbidden','conflict'].includes(item.sync_status)).length;
     const waitingSync = inspectionOutbox.length - protectedSync;
-    element.className = `local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}`;
+    element.className = `local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length || fotografBekleyenSayisi ? 'pending' : 'ok')}`;
     element.textContent = protectedSync
       ? `⚠ ${protectedSync} işlem cihazda korumada · ${conflictSync ? 'Çakışma veya yetki' : 'Yetki'} incelemesi gerekiyor`
-      : waitingSync
-        ? `✓ Cihaza kaydedildi · ${waitingSync} işlem sunucu aktarımı bekliyor`
+      : waitingSync || fotografBekleyenSayisi
+        ? `✓ Cihaza kaydedildi · ${[waitingSync ? `${waitingSync} işlem` : null, fotografBekleyenSayisi ? `${fotografBekleyenSayisi} fotoğraf` : null].filter(Boolean).join(', ')} sunucu aktarımı bekliyor`
         : '✓ Cihaz ve sunucu eşit · Bekleyen işlem yok';
   }
 
