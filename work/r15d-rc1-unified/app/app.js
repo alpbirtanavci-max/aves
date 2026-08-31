@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.12';
+const APP_VERSION = 'R15D-rc3.9.13';
 const DB_VERSION = 3;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1040,6 +1040,7 @@ const UI = (() => {
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
         <span class="ddate">${esc(d.denetim_tarihi || '')}</span></div>
         <div class="dmeta">${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${esc(standartOzeti(d))}</div>
+        ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
         ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
         <div class="dstats">${st
@@ -1505,6 +1506,7 @@ const UI = (() => {
         ${satir('Beyan yükü', f.yuk ? f.yuk + ' kg' : null)}
         ${satir('Beyan hızı', f.hiz ? f.hiz + ' m/s' : null)}
         ${satir('Kapasite', f.kapasite ? f.kapasite + ' kişi' : null)}
+        ${satir('Durak sayısı', f.durak)}
         ${satir('Oluşturulacak madde', tahmini + ' madde')}
       </div>
       <button class="btn btn-ghost" id="onDuzelt" style="margin-bottom:8px">‹ Bilgileri düzelt</button>

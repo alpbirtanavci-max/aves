@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.10 düzeltme sürümü', index.includes('R15D-RC3.9.12</b>'));
-test('app R15D rc3.9.10 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.12'"));
-test('service worker rc3.9.10 cache', sw.includes("aves-saha-r15d-rc3912'"));
-test('uygulama manifesti rc3.9.10 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.12"'));
+test('index R15D rc3.9.13 düzeltme sürümü', index.includes('R15D-RC3.9.13</b>'));
+test('app R15D rc3.9.13 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.13'"));
+test('service worker rc3.9.13 cache', sw.includes("aves-saha-r15d-rc3913'"));
+test('uygulama manifesti rc3.9.13 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.13"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -575,6 +575,10 @@ test('asansör kimlik no alanı opsiyonel olarak formda ve kayıtta var',
   app.includes('id="fKimlikNo"') && !app.includes('for="fKimlikNo">Asansör kimlik no *') &&
   app.includes('asansor_kimlik_no: f.kimlikNo') &&
   app.includes('asansor_kimlik_no: kaynak.asansor_kimlik_no || null'));
+test('durak sayısı başlangıç onay ekranında gösteriliyor',
+  app.includes("satir('Durak sayısı', f.durak)"));
+test('asansör kimlik no denetim liste kartında gösteriliyor',
+  app.includes('<b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
