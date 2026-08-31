@@ -9,8 +9,8 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.13';
-const DB_VERSION = 3;
+const APP_VERSION = 'R15D-rc3.9.14';
+const DB_VERSION = 4;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
@@ -36,6 +36,16 @@ const FOTO_HATIRLATMALARI = {
 };
 // Ana durum butonlarının kopyası olan genel bulgu seçenekleri — Uygun Değil altında gösterilmez
 const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Belirgin kusur görülmedi','2.000 mm altında ve belirgin kusur yok','8.8 veya üzeri','Kontrol edilemedi','Uygulanmaz','Aranmaz','Diğer bulgu'];
+// Yalnız montajın genel görünümünün kayıt altına alınacağı kritik konular.
+// Uygulama fotoğrafı yorumlamaz ve fotoğraf sayısına sınır koymaz.
+const KRITIK_FOTOGRAF_MADDELERI = new Set([
+  'MAD-0006', // tampon kaidesi
+  'MAD-0072', // regülatör alt makara / gergi tertibatı
+  'MAD-0110', // kabin ve karşı ağırlık ray konsolları
+  'MAD-0111', // kat kapısı üst/alt taşıyıcı bağlantıları
+  'MAD-0162', 'MAD-0364', // MRL 2:1 askı ve halat bağlantıları
+  'MAD-0366', 'MAD-0368', 'MAD-0369', // makine şasesi
+]);
 
 
 const DENETIM_TURLERI = {
@@ -78,6 +88,11 @@ const DB = (() => {
         } else {
           const h = e.target.transaction.objectStore('gecmis');
           if (!h.indexNames.contains('byDenetim')) h.createIndex('byDenetim', 'denetim_id');
+        }
+        if (!d.objectStoreNames.contains('fotograflar')) {
+          const f = d.createObjectStore('fotograflar', { keyPath: 'id' });
+          f.createIndex('byDenetim', 'denetim_id');
+          f.createIndex('byMadde', 'saha_kontrol_id');
         }
       };
       req.onsuccess = () => { db = req.result; res(); };
@@ -283,7 +298,7 @@ const API = (() => {
     }
   }
 
-  return { loadSession, login, logout, select, selectPaged, upsert, del,
+  return { loadSession, login, logout, select, selectPaged, upsert, del, authFetch,
     get email() { return session ? session.email : null; },
     get loggedIn() { return !!session; } };
 })();
@@ -730,6 +745,119 @@ async function localWrite(table, rows, store) {
 const UI = (() => {
   const app = document.getElementById('app');
   let currentDenetimId = null;
+  let fotografSayilari = new Map();
+
+  async function fotografOnbellekYenile(denetimId) {
+    if (navigator.onLine && API.loggedIn) {
+      try {
+        const remote = await API.select('denetim_fotograflari', `select=*&denetim_id=eq.${denetimId}&order=created_at.asc`);
+        const local = await DB.allByIndex('fotograflar', 'byDenetim', denetimId);
+        const pending = local.filter(f => f.sync_status === 'pending');
+        await DB.replaceByIndex('fotograflar', 'byDenetim', denetimId, [...remote, ...pending.filter(p => !remote.some(r => r.id === p.id))]);
+      } catch (error) {
+        console.warn('Fotoğraf listesi çevrimdışı kopyadan gösteriliyor', error);
+      }
+    }
+    const all = await DB.allByIndex('fotograflar', 'byDenetim', denetimId);
+    fotografSayilari = new Map();
+    all.filter(f => !f.deleted_at).forEach(f => fotografSayilari.set(f.saha_kontrol_id, (fotografSayilari.get(f.saha_kontrol_id) || 0) + 1));
+  }
+
+  async function fotografSikistir(file) {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('Fotoğraf sıkıştırılamadı')), 'image/jpeg', .82));
+    return { blob, width: canvas.width, height: canvas.height };
+  }
+
+  async function fotografYukle(foto) {
+    if (!navigator.onLine || !foto.blob) return false;
+    const upload = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, {
+      method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'false' }, body: foto.blob,
+    });
+    if (!upload.ok && upload.status !== 409) throw new Error(`Fotoğraf yüklenemedi (${upload.status})`);
+    const meta = { ...foto, blob: undefined, sync_status: undefined };
+    await API.upsert('denetim_fotograflari', meta);
+    foto.blob = undefined;
+    foto.sync_status = 'synced';
+    await DB.put('fotograflar', foto);
+    return true;
+  }
+
+  async function bekleyenFotograflariYukle() {
+    if (!navigator.onLine) return;
+    const all = await DB.all('fotograflar');
+    for (const foto of all.filter(f => f.sync_status === 'pending' && f.blob)) {
+      try { await fotografYukle(foto); } catch (error) { console.warn('Fotoğraf daha sonra yeniden yüklenecek', error); }
+    }
+  }
+
+  async function fotografBlob(foto) {
+    if (foto.blob) return foto.blob;
+    const resp = await API.authFetch(`/storage/v1/object/authenticated/denetim-fotograflari/${foto.object_path}`, { method: 'GET' });
+    if (!resp.ok) throw new Error(`Fotoğraf açılamadı (${resp.status})`);
+    return resp.blob();
+  }
+
+  async function fotografGalerisi(row) {
+    let fotograflar = (await DB.allByIndex('fotograflar', 'byMadde', row.id)).filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    const ciz = async () => {
+      ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
+        <h3>Madde fotoğrafları <span class="photo-total">${fotograflar.length}</span></h3>
+        <p class="photo-help">İstediğiniz kadar fotoğraf çekebilir veya galeriden seçebilirsiniz. Uygulama fotoğrafları yorumlamaz.</p>
+        <div class="photo-grid"></div>
+        ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden></label>` : ''}
+      </div>`;
+      const grid = ov.querySelector('.photo-grid');
+      for (const foto of fotograflar) {
+        const card = document.createElement('div'); card.className = 'photo-card';
+        try {
+          const url = URL.createObjectURL(await fotografBlob(foto));
+          card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}`;
+          card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
+          const remove = card.querySelector('.photo-remove');
+          if (remove) remove.onclick = async () => {
+            if (!confirm('Bu fotoğraf kaldırılsın mı?')) return;
+            if (foto.sync_status !== 'pending') {
+              const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
+              if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Fotoğraf kaldırılamadı (${storageDelete.status})`);
+              await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+            }
+            await DB.del('fotograflar', foto.id);
+            fotograflar = fotograflar.filter(f => f.id !== foto.id);
+            await ciz();
+          };
+        } catch { card.innerHTML = '<div class="photo-error">Fotoğraf çevrimdışı açılamadı</div>'; }
+        grid.appendChild(card);
+      }
+      ov.querySelector('.close').onclick = async () => { ov.remove(); await renderDenetim(); };
+      const input = ov.querySelector('input[type=file]');
+      if (input) input.onchange = async () => {
+        const files = [...input.files];
+        if (!files.length) return;
+        toast(`${files.length} fotoğraf hazırlanıyor…`);
+        for (const file of files) {
+          const { blob, width, height } = await fotografSikistir(file);
+          const id = crypto.randomUUID();
+          const foto = { id, denetim_id: currentDenetimId, saha_kontrol_id: row.id, madde_id: row.madde_id,
+            object_path: `${currentDenetimId}/${row.madde_id}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: blob.size,
+            width, height, created_by: API.email, created_at: new Date().toISOString(), blob, sync_status: 'pending' };
+          await DB.put('fotograflar', foto);
+          try { await fotografYukle(foto); } catch (error) { console.warn(error); }
+          fotograflar.push(foto);
+        }
+        await ciz();
+      };
+    };
+    document.body.appendChild(ov); await ciz();
+  }
   let currentView = 'login';
   let filter = 'all';
   let search = '';
@@ -1840,6 +1968,8 @@ const UI = (() => {
   async function renderDenetim() {
     const d = await DB.get('denetimler', currentDenetimId);
     if (!d) { showList(); return; }
+    await fotografOnbellekYenile(currentDenetimId);
+    bekleyenFotograflariYukle();
     const normaldeDuzenleyebilir = canEditDenetim(d);
     currentCanEdit = normaldeDuzenleyebilir && !inspectionReadOnly;
     const rows = (await guncelKutuphaneMetadatasi(
@@ -2439,6 +2569,8 @@ const UI = (() => {
     const resmiMetin = r.resmi_madde_metni || '';
     const ayni = metinlerAyni(baslik, rehber);
     const rehberResmiyleAyni = metinlerAyni(resmiMetin, rehber);
+    const fotografli = KRITIK_FOTOGRAF_MADDELERI.has(r.madde_id);
+    const fotografSayisi = fotografSayilari.get(r.id) || 0;
     const hamRehberParca = resmiMetin ? { ana: '', saha: rehberResmiyleAyni ? '' : rehber } : splitRehber(rehber);
     const kaynakEtiketi = [r.kaynak_form_kodu, r.kaynak_form_revizyonu].filter(Boolean).join(' ');
     // Başlık kısa/kalıtsal görünse bile kalın gösterilen alan hep başlıktır;
@@ -2469,6 +2601,7 @@ const UI = (() => {
         ${r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama ? `<small>${esc(r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama)}</small>` : ''}
       </div>` : ''}
       ${gorselHTML(r)}
+      ${fotografli ? `<button class="photo-btn ${fotografSayisi ? 'has' : ''}" data-photo-btn type="button" title="Madde fotoğrafları"><span>📷</span> Fotoğraflar${fotografSayisi ? ` <b>${fotografSayisi}</b>` : ''}</button>` : ''}
       ${olcumHTML(r)}
       ${icKontrolNotu ? `<div class="aranmaz-note"><b>İç kontrol notu:</b> ${esc(icKontrolNotu)}</div>` : ''}
       <div class="mstates" style="margin-top:9px">
@@ -2545,6 +2678,11 @@ const UI = (() => {
       const mEl = e.target.closest('.madde'); if (!mEl) return;
       const id = mEl.dataset.id;
       const row = await guncelSahaSatiri(id);
+      const photoBtn = e.target.closest('[data-photo-btn]');
+      if (photoBtn) {
+        await fotografGalerisi(row);
+        return;
+      }
       if (!currentCanEdit) {
         toast('Bu denetim salt okunur');
         return;

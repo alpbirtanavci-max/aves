@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.13 düzeltme sürümü', index.includes('R15D-RC3.9.13</b>'));
-test('app R15D rc3.9.13 düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.13'"));
-test('service worker rc3.9.13 cache', sw.includes("aves-saha-r15d-rc3913'"));
-test('uygulama manifesti rc3.9.13 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.13"'));
+test('index R15D rc3.9.14 fotoğraf sürümü', index.includes('R15D-RC3.9.14</b>'));
+test('app R15D rc3.9.14 fotoğraf sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.14'"));
+test('service worker rc3.9.14 cache', sw.includes("aves-saha-r15d-rc3914'"));
+test('uygulama manifesti rc3.9.14 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.14"'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',
@@ -126,7 +126,10 @@ test('yerel yazımdan sonra denetim sayacı anında güncelleniyor', app.include
 test('son açık madde cihazda hatırlanıyor', app.includes('async function rememberPosition') && app.includes('last_position_'));
 test('denetim yeniden açıldığında son konum yükleniyor', app.includes('const savedPosition = await DB.kvGet'));
 
-test('IndexedDB v3 ve geçmiş deposu', app.includes('const DB_VERSION = 3') && app.includes("createObjectStore('gecmis'"));
+test('IndexedDB v4 geçmiş ve fotoğraf depoları', app.includes('const DB_VERSION = 4') && app.includes("createObjectStore('gecmis'") && app.includes("createObjectStore('fotograflar'"));
+test('kritik montaj maddelerinde sınırsız çoklu fotoğraf girişi', app.includes('KRITIK_FOTOGRAF_MADDELERI') && app.includes('capture="environment" multiple'));
+test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
+test('fotoğraf galerisi adet ve tam görünüm sunuyor', app.includes('fotografSayilari') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
 test('DB yükseltmesi mevcut storeları yeniden oluşturmuyor', app.includes("objectStoreNames.contains('outbox')"));
 test('atomik yerel cevap, geçmiş ve outbox', app.includes('putAllWithOutbox') && app.includes("[store, 'outbox', 'gecmis']"));
 test('kütüphane ve manifest atomik yenileniyor', app.includes('replaceAllWithMeta') && app.includes("db.transaction([store, 'kv'], 'readwrite')"));
