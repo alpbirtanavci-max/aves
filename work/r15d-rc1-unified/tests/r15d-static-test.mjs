@@ -61,10 +61,11 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.14 fotoğraf sürümü', index.includes('R15D-RC3.9.14</b>'));
-test('app R15D rc3.9.14 fotoğraf sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.14'"));
-test('service worker rc3.9.14 cache', sw.includes("aves-saha-r15d-rc3914'"));
-test('uygulama manifesti rc3.9.14 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.14"'));
+test('index R15D rc3.9.15 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.15</b>'));
+test('app R15D rc3.9.15 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.15'"));
+test('service worker rc3.9.15 cache', sw.includes("aves-saha-r15d-rc3915'"));
+test('uygulama manifesti rc3.9.15 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.15"'));
+test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
 test('kurumsal arayüz klavye odak görünürlüğünü koruyor', index.includes('button:focus-visible') && index.includes('outline:3px solid rgba(234,0,72,.18)'));
 test('Inter ve Montserrat çevrimdışı paketleniyor',

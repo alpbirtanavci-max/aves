@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.14';
+const APP_VERSION = 'R15D-rc3.9.15';
 const DB_VERSION = 4;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -777,10 +777,12 @@ const UI = (() => {
 
   async function fotografYukle(foto) {
     if (!navigator.onLine || !foto.blob) return false;
+    // x-upsert:true — metadata yazımı bir önceki denemede başarısız olup obje storage'da
+    // yetim kalmışsa (örn. yetki hatası), yeniden deneme aynı object_path'i sorunsuz üstüne yazabilsin.
     const upload = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, {
-      method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'false' }, body: foto.blob,
+      method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: foto.blob,
     });
-    if (!upload.ok && upload.status !== 409) throw new Error(`Fotoğraf yüklenemedi (${upload.status})`);
+    if (!upload.ok) throw new Error(`Fotoğraf yüklenemedi (${upload.status})`);
     const meta = { ...foto, blob: undefined, sync_status: undefined };
     await API.upsert('denetim_fotograflari', meta);
     foto.blob = undefined;
