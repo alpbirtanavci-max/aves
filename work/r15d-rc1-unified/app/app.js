@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.17';
+const APP_VERSION = 'R15D-rc3.9.18';
 const DB_VERSION = 4;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1000,20 +1000,15 @@ const UI = (() => {
     };
   }
 
-  // TS EN 81-70 (erişilebilirlik), TS EN 81-71 (kasıtlı tahribata dayanıklılık),
-  // TS EN 81-73 (yangın anında davranış), TS EN 81-21 (mevcut bina kurulumu),
-  // TS EN 81-22 (eğik düzlem), TS EN 81-28 (uzaktan alarm) ve TS EN 81-77
-  // (sismik durum) AVES saha denetiminin zorunlu katmanlarıdır. Denetçi
-  // bunları ek standart olarak seçip kaldıramaz; uygulanabilirlik (örn. bina
-  // yüksekliği eşiği, eğik düzlem olup olmadığı) her bölümün kendi ilk
+  // TS EN 81-70 (erişilebilirlik), TS EN 81-71 (kasıtlı tahribata dayanıklılık)
+  // ve TS EN 81-73 (yangın anında davranış) AVES saha denetiminin zorunlu
+  // katmanlarıdır. Denetçi bunları ek standart olarak seçip kaldıramaz;
+  // uygulanabilirlik (örn. bina yüksekliği eşiği) her bölümün kendi ilk
   // maddesinde denetçi tarafından değerlendirilir. TS EN 81-72 (itfaiyeci
   // asansörü) ise ayrı, kategorik bir asansör tipidir — yalnız denetçi
   // açıkça işaretlerse (ek_standartlar) checklist'e eklenir.
   function seciliStandartGruplari(anaStandart, ekStandartlar = []) {
-    const gruplar = new Set([
-      'Genel', anaStandart, '81-71', '81-73', '81-21', '81-22', '81-28', '81-77',
-      ...(ekStandartlar || []),
-    ]);
+    const gruplar = new Set(['Genel', anaStandart, '81-71', '81-73', ...(ekStandartlar || [])]);
     if (anaStandart === '81-20') gruplar.add('81-70');
     return gruplar;
   }
@@ -1493,7 +1488,7 @@ const UI = (() => {
           <button type="button" class="seg on" data-v="hayir">Hayır</button>
           <button type="button" class="seg" data-v="evet">Evet — TS EN 81-72</button>
         </div>
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71), yangın anında davranış (TS EN 81-73), mevcut bina kurulumu (TS EN 81-21), eğik düzlem (TS EN 81-22), uzaktan alarm (TS EN 81-28) ve sismik durum (TS EN 81-77) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71) ve yangın anında davranış (TS EN 81-73) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
       </div>
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>

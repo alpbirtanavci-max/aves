@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.17 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.17</b>'));
-test('app R15D rc3.9.17 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.17'"));
-test('service worker rc3.9.17 cache', sw.includes("aves-saha-r15d-rc3917'"));
-test('uygulama manifesti rc3.9.17 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.17"'));
+test('index R15D rc3.9.18 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.18</b>'));
+test('app R15D rc3.9.18 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.18'"));
+test('service worker rc3.9.18 cache', sw.includes("aves-saha-r15d-rc3918'"));
+test('uygulama manifesti rc3.9.18 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.18"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -569,8 +569,8 @@ test('rc3.9.10 ek standart migrationı 64 yeni madde ekliyor, mevcut satırlara 
   !/update\s+public\.madde_kutuphanesi/i.test(rc3910EkStandartlarMigration) &&
   (rc3910EkStandartlarMigration.match(/^\s*\('MAD-10\d\d',/gm) || []).length === 64 &&
   ['81-21','81-22','81-28','81-77'].every(sg => rc3910EkStandartlarMigration.includes(`'${sg}'`)));
-test('81-21/22/28/77 seçim yaptırmadan otomatik checklist e ekleniyor (81-71/73 ile aynı kalıp)',
-  /const gruplar = new Set\(\[\s*'Genel', anaStandart, '81-71', '81-73', '81-21', '81-22', '81-28', '81-77',/.test(app) &&
+test('81-21/22/28/77 checklist e otomatik eklenmiyor (rc3.9.18 geri alma — yalnız 81-71/73/70)',
+  app.includes("const gruplar = new Set(['Genel', anaStandart, '81-71', '81-73', ...(ekStandartlar || [])]);") &&
   !app.includes('ekStandartlarCard') && !app.includes('sEkStandartlar'));
 
 test('durak sayısı yeni denetim formunda zorunlu',
