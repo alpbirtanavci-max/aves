@@ -9,8 +9,8 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.19';
-const DB_VERSION = 4;
+const APP_VERSION = 'R15D-rc3.9.20';
+const DB_VERSION = 5;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
@@ -36,16 +36,16 @@ const FOTO_HATIRLATMALARI = {
 };
 // Ana durum butonlarının kopyası olan genel bulgu seçenekleri — Uygun Değil altında gösterilmez
 const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Belirgin kusur görülmedi','2.000 mm altında ve belirgin kusur yok','8.8 veya üzeri','Kontrol edilemedi','Uygulanmaz','Aranmaz','Diğer bulgu'];
-// Yalnız montajın genel görünümünün kayıt altına alınacağı kritik konular.
-// Uygulama fotoğrafı yorumlamaz ve fotoğraf sayısına sınır koymaz.
-const KRITIK_FOTOGRAF_MADDELERI = new Set([
-  'MAD-0006', // tampon kaidesi
-  'MAD-0072', // regülatör alt makara / gergi tertibatı
-  'MAD-0110', // kabin ve karşı ağırlık ray konsolları
-  'MAD-0111', // kat kapısı üst/alt taşıyıcı bağlantıları
-  'MAD-0162', 'MAD-0364', // MRL 2:1 askı ve halat bağlantıları
-  'MAD-0366', 'MAD-0368', 'MAD-0369', // makine şasesi
-]);
+// Fotoğraflar tek bir maddeye değil, Seri No sekmesiyle aynı desende sabit bir saha
+// kategorisine bağlanır — denetçi "hangi maddeye" diye tereddüt etmez. Uygulama
+// fotoğrafı yorumlamaz, uygunluk kararı vermez; sayı sınırı yoktur.
+const FOTOGRAF_KATEGORILERI = [
+  ['kuyu_dibi', 'Kuyu Dibi', 'Tampon kaideleri ve ankrajları, kaide-zemin bağlantısı. Genel görünüm ve bağlantı/cıvata detayını ayrı kare olarak çekin.'],
+  ['kuyu_boyunca', 'Kuyu Boyunca (Ray / Kat Kapısı)', 'Ray konsolu-duvar bağlantısı ve kat kapısı üst/alt taşıyıcı bağlantıları. Kaynak mı cıvata mı olduğu karede net görünsün.'],
+  ['kabin_kabin_ustu', 'Kabin ve Kabin Üstü', 'Askı/palanga halatı bağlantıları ve sonlandırmaları.'],
+  ['makine_sase', 'Makine ve Şase', 'Şase-taşıyıcı kiriş bağlantısı, kaynaklar, ankraj cıvataları, motor-şase bağlantısı.'],
+  ['kumanda_grubu', 'Kumanda Grubu', 'Kumanda panosu genel görünümü; kart/sürücü etiketleri okunaklı olsun.'],
+];
 
 
 const DENETIM_TURLERI = {
@@ -92,7 +92,11 @@ const DB = (() => {
         if (!d.objectStoreNames.contains('fotograflar')) {
           const f = d.createObjectStore('fotograflar', { keyPath: 'id' });
           f.createIndex('byDenetim', 'denetim_id');
-          f.createIndex('byMadde', 'saha_kontrol_id');
+          f.createIndex('byKategori', 'kategori');
+        } else {
+          const f = e.target.transaction.objectStore('fotograflar');
+          if (!f.indexNames.contains('byKategori')) f.createIndex('byKategori', 'kategori');
+          if (f.indexNames.contains('byMadde')) f.deleteIndex('byMadde');
         }
       };
       req.onsuccess = () => { db = req.result; res(); };
@@ -761,8 +765,14 @@ const UI = (() => {
     }
     const all = await DB.allByIndex('fotograflar', 'byDenetim', denetimId);
     fotografSayilari = new Map();
-    all.filter(f => !f.deleted_at).forEach(f => fotografSayilari.set(f.saha_kontrol_id, (fotografSayilari.get(f.saha_kontrol_id) || 0) + 1));
+    all.filter(f => !f.deleted_at).forEach(f => fotografSayilari.set(f.kategori, (fotografSayilari.get(f.kategori) || 0) + 1));
     fotografBekleyenSayisi = all.filter(f => f.sync_status === 'pending').length;
+  }
+
+  function fotografToplamSayisi() {
+    let toplam = 0;
+    fotografSayilari.forEach(n => toplam += n);
+    return toplam;
   }
 
   async function fotografSikistir(file) {
@@ -813,57 +823,72 @@ const UI = (() => {
     return resp.blob();
   }
 
-  async function fotografGalerisi(row) {
-    let fotograflar = (await DB.allByIndex('fotograflar', 'byMadde', row.id)).filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
+  async function fotografSekmesi() {
+    await fotografOnbellekYenile(currentDenetimId);
+    let tumFotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId))
+      .filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
     const ov = document.createElement('div');
     ov.className = 'overlay';
+    const kategoriFotograflari = (kat) => tumFotograflar.filter(f => f.kategori === kat);
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
-        <h3>Madde fotoğrafları <span class="photo-total">${fotograflar.length}</span></h3>
-        <p class="photo-help">İstediğiniz kadar fotoğraf çekebilir veya galeriden seçebilirsiniz. Uygulama fotoğrafları yorumlamaz.</p>
-        <div class="photo-grid"></div>
-        ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden></label>` : ''}
+        <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
+        <p class="photo-help">İstediğiniz kadar fotoğraf çekebilir veya galeriden seçebilirsiniz. Uygulama fotoğrafları yorumlamaz, uygunluk kararı vermez.</p>
+        <div class="photo-kategoriler"></div>
       </div>`;
-      const grid = ov.querySelector('.photo-grid');
-      for (const foto of fotograflar) {
-        const card = document.createElement('div'); card.className = 'photo-card';
-        try {
-          const url = URL.createObjectURL(await fotografBlob(foto));
-          card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}`;
-          card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
-          const remove = card.querySelector('.photo-remove');
-          if (remove) remove.onclick = async () => {
-            if (!confirm('Bu fotoğraf kaldırılsın mı?')) return;
-            if (foto.sync_status !== 'pending') {
-              const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
-              if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Fotoğraf kaldırılamadı (${storageDelete.status})`);
-              await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
-            }
-            await DB.del('fotograflar', foto.id);
-            fotograflar = fotograflar.filter(f => f.id !== foto.id);
-            await ciz();
-          };
-        } catch { card.innerHTML = '<div class="photo-error">Fotoğraf çevrimdışı açılamadı</div>'; }
-        grid.appendChild(card);
+      const kategoriler = ov.querySelector('.photo-kategoriler');
+      for (const [kat, baslik, rehber] of FOTOGRAF_KATEGORILERI) {
+        const fotograflar = kategoriFotograflari(kat);
+        const section = document.createElement('div');
+        section.className = 'photo-kategori';
+        section.innerHTML = `<h4>${esc(baslik)} <span class="photo-total">${fotograflar.length}</span></h4>
+          <p class="photo-help">${esc(rehber)}</p>
+          <div class="photo-grid"></div>
+          ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden data-kat="${kat}"></label>` : ''}`;
+        const grid = section.querySelector('.photo-grid');
+        for (const foto of fotograflar) {
+          const card = document.createElement('div'); card.className = 'photo-card';
+          try {
+            const url = URL.createObjectURL(await fotografBlob(foto));
+            card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}`;
+            card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
+            const remove = card.querySelector('.photo-remove');
+            if (remove) remove.onclick = async () => {
+              if (!confirm('Bu fotoğraf kaldırılsın mı?')) return;
+              if (foto.sync_status !== 'pending') {
+                const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
+                if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Fotoğraf kaldırılamadı (${storageDelete.status})`);
+                await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+              }
+              await DB.del('fotograflar', foto.id);
+              tumFotograflar = tumFotograflar.filter(f => f.id !== foto.id);
+              await ciz();
+            };
+          } catch { card.innerHTML = '<div class="photo-error">Fotoğraf çevrimdışı açılamadı</div>'; }
+          grid.appendChild(card);
+        }
+        kategoriler.appendChild(section);
       }
       ov.querySelector('.close').onclick = async () => { ov.remove(); await renderDenetim(); };
-      const input = ov.querySelector('input[type=file]');
-      if (input) input.onchange = async () => {
-        const files = [...input.files];
-        if (!files.length) return;
-        toast(`${files.length} fotoğraf hazırlanıyor…`);
-        for (const file of files) {
-          const { blob, width, height } = await fotografSikistir(file);
-          const id = crypto.randomUUID();
-          const foto = { id, denetim_id: currentDenetimId, saha_kontrol_id: row.id, madde_id: row.madde_id,
-            object_path: `${currentDenetimId}/${row.madde_id}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: blob.size,
-            width, height, created_by: API.email, created_at: new Date().toISOString(), blob, sync_status: 'pending' };
-          await DB.put('fotograflar', foto);
-          try { await fotografYukle(foto); } catch (error) { console.warn(error); }
-          fotograflar.push(foto);
-        }
-        await ciz();
-      };
+      ov.querySelectorAll('input[type=file]').forEach(input => {
+        input.onchange = async () => {
+          const files = [...input.files];
+          if (!files.length) return;
+          const kat = input.dataset.kat;
+          toast(`${files.length} fotoğraf hazırlanıyor…`);
+          for (const file of files) {
+            const { blob, width, height } = await fotografSikistir(file);
+            const id = crypto.randomUUID();
+            const foto = { id, denetim_id: currentDenetimId, kategori: kat,
+              object_path: `${currentDenetimId}/${kat}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: blob.size,
+              width, height, created_by: API.email, created_at: new Date().toISOString(), blob, sync_status: 'pending' };
+            await DB.put('fotograflar', foto);
+            try { await fotografYukle(foto); } catch (error) { console.warn(error); }
+            tumFotograflar.push(foto);
+          }
+          await ciz();
+        };
+      });
     };
     document.body.appendChild(ov); await ciz();
   }
@@ -2134,6 +2159,7 @@ const UI = (() => {
     <div class="footbar">
       <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
       <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
+      <button class="btn btn-serial ready" id="btnFotograflar">📷 Fotoğraflar${fotografToplamSayisi() ? ` · ${fotografToplamSayisi()}` : ''}</button>
       ${inspectionReadOnly && normaldeDuzenleyebilir ? '<button class="btn btn-finish ready" id="btnDenetimeDon">↩ Denetime Geri Dön</button>' : ''}
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
         ? (gozden ? 'Çalışmayı Tamamla' : 'Saha Kontrolünü Bitir')
@@ -2252,6 +2278,7 @@ const UI = (() => {
     });
     document.getElementById('btnOzet').onclick = showOzet;
     document.getElementById('btnSeriler').onclick = seriNumaralariGoster;
+    document.getElementById('btnFotograflar').onclick = fotografSekmesi;
     const btnBitirGlobal = document.getElementById('btnBitirGlobal');
     if (btnBitirGlobal) btnBitirGlobal.onclick = async () => {
       const latestRows = (await DB.allByIndex('saha', 'byDenetim', currentDenetimId)).sort(siraKarsilastir);
@@ -2573,8 +2600,6 @@ const UI = (() => {
     const resmiMetin = r.resmi_madde_metni || '';
     const ayni = metinlerAyni(baslik, rehber);
     const rehberResmiyleAyni = metinlerAyni(resmiMetin, rehber);
-    const fotografli = KRITIK_FOTOGRAF_MADDELERI.has(r.madde_id);
-    const fotografSayisi = fotografSayilari.get(r.id) || 0;
     const hamRehberParca = resmiMetin ? { ana: '', saha: rehberResmiyleAyni ? '' : rehber } : splitRehber(rehber);
     const kaynakEtiketi = [r.kaynak_form_kodu, r.kaynak_form_revizyonu].filter(Boolean).join(' ');
     // Başlık kısa/kalıtsal görünse bile kalın gösterilen alan hep başlıktır;
@@ -2605,7 +2630,6 @@ const UI = (() => {
         ${r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama ? `<small>${esc(r.takip_onceki_diger_bulgu || r.takip_onceki_aciklama)}</small>` : ''}
       </div>` : ''}
       ${gorselHTML(r)}
-      ${fotografli ? `<button class="photo-btn ${fotografSayisi ? 'has' : ''}" data-photo-btn type="button" title="Madde fotoğrafları"><span>📷</span> Fotoğraflar${fotografSayisi ? ` <b>${fotografSayisi}</b>` : ''}</button>` : ''}
       ${olcumHTML(r)}
       ${icKontrolNotu ? `<div class="aranmaz-note"><b>İç kontrol notu:</b> ${esc(icKontrolNotu)}</div>` : ''}
       <div class="mstates" style="margin-top:9px">
@@ -2682,11 +2706,6 @@ const UI = (() => {
       const mEl = e.target.closest('.madde'); if (!mEl) return;
       const id = mEl.dataset.id;
       const row = await guncelSahaSatiri(id);
-      const photoBtn = e.target.closest('[data-photo-btn]');
-      if (photoBtn) {
-        await fotografGalerisi(row);
-        return;
-      }
       if (!currentCanEdit) {
         toast('Bu denetim salt okunur');
         return;
