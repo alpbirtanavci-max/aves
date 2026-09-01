@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.26';
+const APP_VERSION = 'R15D-rc3.9.27';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -863,6 +863,7 @@ const UI = (() => {
       ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
         <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
         <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. UCM testi, paraşüt fren testi, motor freni tek çene testi ve motor hareket sınırlayıcısı testi gibi işlev testlerinin videolarını bu fotoğraf alanına yüklemeyin; videoları kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
+        ${tumFotograflar.length ? '<button type="button" class="btn btn-ghost photo-download-all">⇩ Tüm fotoğrafları indir</button>' : ''}
         <div class="photo-kategoriler"></div>
       </div>`;
       const kategoriler = ov.querySelector('.photo-kategoriler');
@@ -879,7 +880,8 @@ const UI = (() => {
           const card = document.createElement('div'); card.className = 'photo-card';
           try {
             const url = URL.createObjectURL(await fotografBlob(foto));
-            card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}`;
+            const fotoTarihi = foto.created_at ? new Date(foto.created_at).toLocaleString('tr-TR') : 'Tarih yok';
+            card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}<div class="photo-meta"><span>${esc(fotoTarihi)}</span><span>${esc(foto.created_by || 'Kullanıcı bilgisi yok')}</span></div>`;
             card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
             const remove = card.querySelector('.photo-remove');
             if (remove) remove.onclick = async () => {
@@ -899,6 +901,36 @@ const UI = (() => {
         kategoriler.appendChild(section);
       }
       ov.querySelector('.close').onclick = async () => { ov.remove(); await renderDenetim(); };
+      const downloadAll = ov.querySelector('.photo-download-all');
+      if (downloadAll) downloadAll.onclick = async () => {
+        if (!window.JSZip) { toast('Toplu indirme bileşeni yüklenemedi'); return; }
+        const original = downloadAll.textContent;
+        downloadAll.disabled = true;
+        try {
+          const zip = new JSZip();
+          for (let i = 0; i < tumFotograflar.length; i += 1) {
+            const foto = tumFotograflar[i];
+            downloadAll.textContent = `Hazırlanıyor ${i + 1}/${tumFotograflar.length}`;
+            const blob = await fotografBlob(foto);
+            const tarih = (foto.created_at || new Date().toISOString()).replace(/[:.]/g, '-');
+            zip.folder(foto.kategori || 'diger').file(`${String(i + 1).padStart(3, '0')}_${tarih}.jpg`, blob);
+          }
+          const arsiv = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+          const url = URL.createObjectURL(arsiv);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `AVES_${currentDenetimId}_fotograflar.zip`;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+          toast(`${tumFotograflar.length} fotoğraf arşivlendi`);
+        } catch (error) {
+          console.error('Fotoğraf arşivi hazırlanamadı', error);
+          toast('Fotoğraf arşivi hazırlanamadı');
+        } finally {
+          downloadAll.disabled = false;
+          downloadAll.textContent = original;
+        }
+      };
       ov.querySelectorAll('input[type=file]').forEach(input => {
         input.onchange = async () => {
           const files = [...input.files];

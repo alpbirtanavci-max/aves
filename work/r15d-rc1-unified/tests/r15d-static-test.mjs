@@ -64,10 +64,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.26 inceleme konumu sürümü', index.includes('R15D-RC3.9.26</b>'));
-test('app R15D rc3.9.26 inceleme konumu sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.26'"));
-test('service worker rc3.9.26 cache', sw.includes("aves-saha-r15d-rc3926'"));
-test('uygulama manifesti rc3.9.26 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.26"'));
+test('index R15D rc3.9.27 fotoğraf arşivi sürümü', index.includes('R15D-RC3.9.27</b>'));
+test('app R15D rc3.9.27 fotoğraf arşivi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.27'"));
+test('service worker rc3.9.27 cache', sw.includes("aves-saha-r15d-rc3927'"));
+test('uygulama manifesti rc3.9.27 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.27"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -159,6 +159,11 @@ test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyo
   app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
+test('fotoğraf kartı tarih ve yükleyen kullanıcı bilgisini gösteriyor',
+  app.includes("new Date(foto.created_at).toLocaleString('tr-TR')") && app.includes("foto.created_by || 'Kullanıcı bilgisi yok'"));
+test('denetim fotoğrafları kategori klasörleriyle toplu ZIP indiriliyor',
+  app.includes('photo-download-all') && app.includes('const zip = new JSZip()') &&
+  app.includes("zip.folder(foto.kategori || 'diger')") && app.includes('_fotograflar.zip'));
 test('fotoğraflar sekmesi denetim ayrıntısında Seri No yanında açılıyor', app.includes("id=\"btnFotograflar\"") && app.includes("btnFotograflar').onclick = fotografSekmesi"));
 test('eski cihaz fotoğrafları kategoriye dönüştürülüyor', app.includes('LEGACY_FOTOGRAF_KATEGORISI') &&
   app.includes('LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id]') &&

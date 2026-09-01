@@ -252,6 +252,9 @@ textarea.diger{width:100%;border:1.5px solid var(--line);border-radius:8px;paddi
 .compact-row .compact-result{font-weight:700;white-space:nowrap;}
 .compact-row.review-return{background:#fff8dc;box-shadow:inset 3px 0 0 var(--warn);}
 .compact-row.ok .compact-icon{color:var(--ok);}.compact-row.bad .compact-icon{color:var(--fuchsia);}.compact-row.pending .compact-icon,.compact-row.review .compact-icon{color:var(--warn);}
+.photo-download-all{width:100%;margin:8px 0 12px;}
+.photo-meta{padding:5px 6px;background:#f7f8fc;color:var(--muted);font-size:9px;line-height:1.3;overflow:hidden;}
+.photo-meta span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 @media(max-width:520px){.compact-row{grid-template-columns:18px 68px minmax(0,1fr)}.compact-row .compact-result{grid-column:3;font-size:10px;color:var(--muted);}}
 .offline-ready{margin-top:8px;padding:8px 10px;border-radius:8px;font-size:11.5px;font-weight:800;}
 .offline-ready.ok{background:#e8f7ef;color:#12643d;border:1px solid #b8e4cb;}
@@ -473,7 +476,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.26</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.27</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
