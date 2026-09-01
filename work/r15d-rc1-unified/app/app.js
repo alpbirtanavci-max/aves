@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.23';
+const APP_VERSION = 'R15D-rc3.9.24';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -41,7 +41,7 @@ const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Be
 // fotoğrafı yorumlamaz, uygunluk kararı vermez; sayı sınırı yoktur.
 const FOTOGRAF_KATEGORILERI = [
   ['genel_kimlik', 'Genel Yerleşim ve Kimlik', 'Asansörün genel yerleşimi, durak girişleri, kullanım/uyarı işaretleri ile makine, regülatör, tampon, kapı ve güvenlik bileşenlerinin bilgi plakaları. Farklı tip veya uygulamalar ayrıca kaydedilir.'],
-  ['kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini karşı yönlerden geniş açıyla kaydedin. Tamponlar ve kaideleri, tamponun bastığı/basabileceği alanlar, regülatör gergi makarası ve sabitlemesi, ray alt uçları, karşı ağırlık/ayırıcı bölme, dengeleme tertibatı ve kabin altı birlikte görülebilsin.'],
+  ['kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini karşı yönlerden geniş açıyla kaydedin. Tamponlar ve kaideleri, tamponun bastığı/basabileceği alanlar, regülatör gergi makarası ve sabitlemesi, ray alt uçları, karşı ağırlık/ayırıcı bölme, dengeleme tertibatı ve kabin altı genel ve gerektiğinde ayrı fotoğraflarda açıkça kaydedilsin.'],
   ['kuyu_boyunca', 'Kuyu Boyunca ve Kılavuzlama', 'Kuyuyu farklı kotlardan geniş açıyla kaydedin. Kabin ve karşı ağırlık ray konsollarının genel düzgünlüğü, civatalı bağlantıları, ankraj/duvar bağlantıları, ray ekleri, ayırıcı bölmeler ve kuyu içi donanımın sabitlenmesi görülsün. Paraşüt fren testi tamamlandıktan sonra frenin ray üzerinde oluşturduğu izi de fotoğraflayın.'],
   ['durak_kapilari', 'Durak Kapıları ve Bağlantıları', 'Temsilî kapılarla birlikte farklı montaj tipi bulunan her kapıyı kaydedin. Alt ve üst konsollar, kasa/eşik bağlantıları, duvar ankrajı, kaynak veya civata uygulaması, kapı kilidi ve taşıyıcı düzen genel bağlantısıyla görülsün. Katlar arasında değişen ya da şüpheli uygulamalar ayrıca çekilir.'],
   ['kabin_kabin_ustu', 'Kabin, Kabin Üstü ve Askı', 'Kabin karkası, korkuluk ve etek sacı; askı/palanga düzeni, 1:1 veya 2:1 halat bağlantıları ve sonlandırmaları, sabit noktalar, makaralar ve koruyucular, regülatör bağlantısı görülsün.'],
