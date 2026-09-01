@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.24';
+const APP_VERSION = 'R15D-rc3.9.25';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -3205,7 +3205,7 @@ const UI = (() => {
       if (r.durum === 'Uygulanmaz') return ['na', '—', 'Uygulanmaz'];
       return ['ok', '✓', 'Uygun'];
     };
-    const compactRows = rows.map(r => {
+    const compactRowHtml = (r) => {
       const [status, icon, label] = compactStatus(r);
       const hasNote = !!(r.aciklama || r.diger_bulgu || icKontrolNotuVar(r));
       const hasMeasurement = olcumTanimlari(r).some(def => olcumDegeri(r, def) !== '');
@@ -3213,6 +3213,21 @@ const UI = (() => {
         <span class="compact-icon">${icon}</span><span class="compact-ref">${esc(r.standart_madde_no || r.madde_id)}</span>
         <span class="compact-title">${esc(r.kontrol_basligi)}</span><span class="compact-result">${label}${hasNote?' · ✎':''}${hasMeasurement?' · ◫':''}</span>
       </button>`;
+    };
+    const compactBolumler = [];
+    const compactByBolum = {};
+    rows.forEach(r => {
+      if (!compactByBolum[r.bolum]) { compactByBolum[r.bolum] = []; compactBolumler.push(r.bolum); }
+      compactByBolum[r.bolum].push(r);
+    });
+    const firstReviewBolum = (rows.find(r => !isFlowComplete(r)) || rows[0] || {}).bolum;
+    const compactRows = compactBolumler.map(bolum => {
+      const bolumRows = compactByBolum[bolum];
+      const tamamlanan = bolumRows.filter(isFlowComplete).length;
+      return `<details class="compact-section" ${bolum === firstReviewBolum ? 'open' : ''}>
+        <summary><span>${esc(bolum)}</span><span class="compact-section-count">${tamamlanan}/${bolumRows.length}</span></summary>
+        <div class="compact-section-rows">${bolumRows.map(compactRowHtml).join('')}</div>
+      </details>`;
     }).join('');
     const item = (r, cls) => `<button type="button" class="oz-item ${cls}" data-go-row="${esc(r.id)}" style="display:block;width:100%;text-align:left"><b>${esc(r.standart_madde_no || r.madde_id)} · ${esc(r.bolum)}</b>
       ${esc(r.kontrol_basligi)}${r.bulgu_secenegi ? `<div class="not">Bulgu: ${esc(r.bulgu_secenegi)}${r.diger_bulgu ? ' — ' + esc(r.diger_bulgu) : ''}</div>` : ''}
@@ -3269,25 +3284,34 @@ const UI = (() => {
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
     ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
-    ov.querySelectorAll('[data-compact-filter]').forEach(btn => btn.onclick = () => {
-      ov.querySelectorAll('[data-compact-filter]').forEach(other => other.classList.toggle('on', other === btn));
-      const selected = btn.dataset.compactFilter;
-      ov.querySelectorAll('.compact-row').forEach(row => {
-        const visible = selected === 'all' || row.dataset.reviewStatus === selected ||
-          (selected === 'note' && row.dataset.hasNote === '1') ||
-          (selected === 'measurement' && row.dataset.hasMeasurement === '1');
-        row.classList.toggle('hidden', !visible);
-      });
-    });
+    let compactFilter = 'all';
     const compactSearch = ov.querySelector('.compact-search');
-    if (compactSearch) compactSearch.oninput = () => {
-      const query = compactSearch.value.trim().toLocaleLowerCase('tr-TR');
-      ov.querySelectorAll('.compact-row').forEach((element, index) => {
-        const row = rows[index];
-        const haystack = `${row.madde_id || ''} ${row.standart_madde_no || ''} ${row.bolum || ''} ${row.kontrol_basligi || ''} ${row.denetci_yonlendirmesi || ''}`.toLocaleLowerCase('tr-TR');
-        element.classList.toggle('hidden', !!query && !haystack.includes(query));
+    const applyCompactVisibility = () => {
+      const query = compactSearch ? compactSearch.value.trim().toLocaleLowerCase('tr-TR') : '';
+      ov.querySelectorAll('.compact-section').forEach(section => {
+        let visibleCount = 0;
+        section.querySelectorAll('.compact-row').forEach(element => {
+          const row = rows.find(r => r.id === element.dataset.goRow);
+          const filterMatches = compactFilter === 'all' || element.dataset.reviewStatus === compactFilter ||
+            (compactFilter === 'note' && element.dataset.hasNote === '1') ||
+            (compactFilter === 'measurement' && element.dataset.hasMeasurement === '1');
+          const haystack = row
+            ? `${row.madde_id || ''} ${row.standart_madde_no || ''} ${row.bolum || ''} ${row.kontrol_basligi || ''} ${row.denetci_yonlendirmesi || ''}`.toLocaleLowerCase('tr-TR')
+            : '';
+          const visible = filterMatches && (!query || haystack.includes(query));
+          element.classList.toggle('hidden', !visible);
+          if (visible) visibleCount += 1;
+        });
+        section.classList.toggle('hidden', visibleCount === 0);
+        if (query && visibleCount) section.open = true;
       });
     };
+    ov.querySelectorAll('[data-compact-filter]').forEach(btn => btn.onclick = () => {
+      ov.querySelectorAll('[data-compact-filter]').forEach(other => other.classList.toggle('on', other === btn));
+      compactFilter = btn.dataset.compactFilter;
+      applyCompactVisibility();
+    });
+    if (compactSearch) compactSearch.oninput = applyCompactVisibility;
     ov.querySelectorAll('[data-go-row]').forEach(btn => btn.onclick = () => {
       const hedef = rows.find(r => r.id === btn.dataset.goRow);
       if (!hedef) return;

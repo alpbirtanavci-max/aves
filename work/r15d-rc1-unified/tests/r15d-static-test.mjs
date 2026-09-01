@@ -64,10 +64,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.24 fotoğraf yönergesi sürümü', index.includes('R15D-RC3.9.24</b>'));
-test('app R15D rc3.9.24 fotoğraf yönergesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.24'"));
-test('service worker rc3.9.24 cache', sw.includes("aves-saha-r15d-rc3924'"));
-test('uygulama manifesti rc3.9.24 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.24"'));
+test('index R15D rc3.9.25 bölümlemeli inceleme sürümü', index.includes('R15D-RC3.9.25</b>'));
+test('app R15D rc3.9.25 bölümlemeli inceleme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.25'"));
+test('service worker rc3.9.25 cache', sw.includes("aves-saha-r15d-rc3925'"));
+test('uygulama manifesti rc3.9.25 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.25"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -108,7 +108,11 @@ test('salt okunur sonuç ve bulgu butonları dokunmatik ekranda görsel olarak p
   index.includes('.madde.readonly .mst:disabled,.madde.readonly .bopt:disabled') &&
   index.includes('.madde.readonly .mst[class*="on-"]:disabled,.madde.readonly .bopt.on:disabled'));
 test('kompakt tüm maddeler inceleme listesi', app.includes('Tüm maddeler (${rows.length})') && app.includes('compactRows'));
+test('inceleme modu maddeleri denetim bölümleri altında grupluyor',
+  app.includes('const compactBolumler = []') && app.includes('class="compact-section"') &&
+  app.includes('compact-section-count') && index.includes('.compact-section>summary'));
 test('inceleme modunda madde araması', app.includes('compact-search') && app.includes('haystack.includes(query)'));
+test('inceleme araması eşleşen bölümleri otomatik açıyor', app.includes('if (query && visibleCount) section.open = true'));
 test('kompakt liste durum ve not/ölçüm filtreleri', app.includes('data-compact-filter="note"') && app.includes('data-compact-filter="measurement"'));
 test('Sahaya Hazırla bütünlük kontrolü', app.includes('async function sahayaHazirla') && app.includes('Madde kimlikleri eksiksiz ve benzersiz'));
 test('Sahaya Hazırla item-set hash kaydı', app.includes('expected_item_set_hash = itemSetHash'));
