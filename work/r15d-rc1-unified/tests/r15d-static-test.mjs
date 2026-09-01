@@ -64,10 +64,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.22 Modül G fotoğraf kapsamı sürümü', index.includes('R15D-RC3.9.22</b>'));
-test('app R15D rc3.9.22 Modül G fotoğraf kapsamı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.22'"));
-test('service worker rc3.9.22 cache', sw.includes("aves-saha-r15d-rc3922'"));
-test('uygulama manifesti rc3.9.22 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.22"'));
+test('index R15D rc3.9.23 fotoğraf yönergesi sürümü', index.includes('R15D-RC3.9.23</b>'));
+test('app R15D rc3.9.23 fotoğraf yönergesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.23'"));
+test('service worker rc3.9.23 cache', sw.includes("aves-saha-r15d-rc3923'"));
+test('uygulama manifesti rc3.9.23 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.23"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -139,8 +139,15 @@ test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
   app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini") &&
   app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('capture="environment" multiple'));
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
-  app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('şüpheli veya uygunsuz uygulama ayrıca çekilir') &&
-  app.includes('Fotoğraflar muayene, ölçüm ve fonksiyon testlerinin yerine geçmez'));
+  app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
+test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',
+  app.includes('Paraşüt fren testi tamamlandıktan sonra frenin ray üzerinde oluşturduğu izi de fotoğraflayın'));
+test('alarm ve iki yönlü haberleşme özel değil her asansörde aranıyor',
+  app.includes('Her asansörde aranan alarm ve iki yönlü haberleşme tertibatını') &&
+  !app.slice(app.indexOf("'ozel_sistemler'"), app.indexOf('];', app.indexOf("'ozel_sistemler'"))).includes('alarm/iki yönlü haberleşme'));
+test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyor',
+  app.includes('UCM testi, paraşüt fren testi, motor freni tek çene testi') &&
+  app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
 test('fotoğraflar sekmesi denetim ayrıntısında Seri No yanında açılıyor', app.includes("id=\"btnFotograflar\"") && app.includes("btnFotograflar').onclick = fotografSekmesi"));
