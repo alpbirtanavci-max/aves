@@ -64,10 +64,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.25 bölümlemeli inceleme sürümü', index.includes('R15D-RC3.9.25</b>'));
-test('app R15D rc3.9.25 bölümlemeli inceleme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.25'"));
-test('service worker rc3.9.25 cache', sw.includes("aves-saha-r15d-rc3925'"));
-test('uygulama manifesti rc3.9.25 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.25"'));
+test('index R15D rc3.9.26 inceleme konumu sürümü', index.includes('R15D-RC3.9.26</b>'));
+test('app R15D rc3.9.26 inceleme konumu sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.26'"));
+test('service worker rc3.9.26 cache', sw.includes("aves-saha-r15d-rc3926'"));
+test('uygulama manifesti rc3.9.26 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.26"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -113,6 +113,11 @@ test('inceleme modu maddeleri denetim bölümleri altında grupluyor',
   app.includes('compact-section-count') && index.includes('.compact-section>summary'));
 test('inceleme modunda madde araması', app.includes('compact-search') && app.includes('haystack.includes(query)'));
 test('inceleme araması eşleşen bölümleri otomatik açıyor', app.includes('if (query && visibleCount) section.open = true'));
+test('inceleme modu son seçilen madde konumunu cihazda hatırlıyor',
+  app.includes('review_position_${currentDenetimId}') && app.includes('reviewPositionRow'));
+test('inceleme modu tekrar açıldığında son bölümü açıp maddeye kaydırıyor',
+  app.includes('reviewPositionRow || rows.find') && app.includes("rememberedButton.classList.add('review-return')") &&
+  app.includes("rememberedButton.scrollIntoView({ block: 'center' })") && index.includes('.compact-row.review-return'));
 test('kompakt liste durum ve not/ölçüm filtreleri', app.includes('data-compact-filter="note"') && app.includes('data-compact-filter="measurement"'));
 test('Sahaya Hazırla bütünlük kontrolü', app.includes('async function sahayaHazirla') && app.includes('Madde kimlikleri eksiksiz ve benzersiz'));
 test('Sahaya Hazırla item-set hash kaydı', app.includes('expected_item_set_hash = itemSetHash'));

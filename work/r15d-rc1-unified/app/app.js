@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.25';
+const APP_VERSION = 'R15D-rc3.9.26';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -3193,6 +3193,8 @@ const UI = (() => {
     const integrityMatches = !!d.butunluk_hash && d.butunluk_hash === currentIntegrity.hash;
     const history = (await DB.allByIndex('gecmis', 'byDenetim', currentDenetimId))
       .sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const reviewPosition = await DB.kvGet(`review_position_${currentDenetimId}`);
+    const reviewPositionRow = reviewPosition && rows.find(r => r.id === reviewPosition.item_id);
     const lastActor = history[0]
       ? (history[0].degistiren_ad || history[0].degistiren_email)
       : (d.son_degistiren_ad || d.son_degistiren_email);
@@ -3220,7 +3222,7 @@ const UI = (() => {
       if (!compactByBolum[r.bolum]) { compactByBolum[r.bolum] = []; compactBolumler.push(r.bolum); }
       compactByBolum[r.bolum].push(r);
     });
-    const firstReviewBolum = (rows.find(r => !isFlowComplete(r)) || rows[0] || {}).bolum;
+    const firstReviewBolum = (reviewPositionRow || rows.find(r => !isFlowComplete(r)) || rows[0] || {}).bolum;
     const compactRows = compactBolumler.map(bolum => {
       const bolumRows = compactByBolum[bolum];
       const tamamlanan = bolumRows.filter(isFlowComplete).length;
@@ -3282,6 +3284,14 @@ const UI = (() => {
       <button class="btn btn-ghost" id="ozKopya" style="margin-top:10px">Özeti panoya kopyala</button>
     </div>`;
     document.body.appendChild(ov);
+    if (reviewPositionRow) {
+      const rememberedButton = Array.from(ov.querySelectorAll('.compact-row'))
+        .find(button => button.dataset.goRow === reviewPositionRow.id);
+      if (rememberedButton) {
+        rememberedButton.classList.add('review-return');
+        requestAnimationFrame(() => rememberedButton.scrollIntoView({ block: 'center' }));
+      }
+    }
     ov.querySelector('.close').onclick = () => ov.remove();
     ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
     let compactFilter = 'all';
@@ -3312,16 +3322,21 @@ const UI = (() => {
       applyCompactVisibility();
     });
     if (compactSearch) compactSearch.oninput = applyCompactVisibility;
-    ov.querySelectorAll('[data-go-row]').forEach(btn => btn.onclick = () => {
+    ov.querySelectorAll('[data-go-row]').forEach(btn => btn.onclick = async () => {
       const hedef = rows.find(r => r.id === btn.dataset.goRow);
       if (!hedef) return;
+      await DB.kvPut(`review_position_${currentDenetimId}`, {
+        item_id: hedef.id,
+        bolum: hedef.bolum,
+        updated_at: new Date().toISOString(),
+      });
       ov.remove();
       inspectionReadOnly = true;
       search = ''; filter = 'all';
       openBolums = new Set([hedef.bolum]);
       const bolumRows = rows.filter(r => r.bolum === hedef.bolum);
       cursors[hedef.bolum] = bolumRows.findIndex(r => r.id === hedef.id);
-      rememberPosition(hedef.bolum, hedef.id);
+      await rememberPosition(hedef.bolum, hedef.id);
       renderDenetim().then(() => {
         const opened = document.querySelector('.bolum.open');
         if (opened) opened.scrollIntoView({ block: 'start' });
