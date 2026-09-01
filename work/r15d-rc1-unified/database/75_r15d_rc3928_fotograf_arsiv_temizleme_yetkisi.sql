@@ -7,6 +7,24 @@ begin;
 alter table public.kullanici_profilleri
   add column if not exists fotograf_arsiv_temizleme_yetkisi boolean not null default false;
 
+do $$
+declare
+  alp_sayisi integer;
+  emine_sayisi integer;
+begin
+  select count(*) into alp_sayisi
+  from public.kullanici_profilleri
+  where aktif = true and lower(trim(ad_soyad)) = lower('Alpbirtan Avcı');
+
+  select count(*) into emine_sayisi
+  from public.kullanici_profilleri
+  where aktif = true and (lower(trim(ad_soyad)) = 'emine' or lower(trim(ad_soyad)) like 'emine %');
+
+  if alp_sayisi <> 1 or emine_sayisi <> 1 then
+    raise exception 'Fotoğraf arşiv yetkisi verilmedi: Alpbirtan eşleşmesi %, Emine eşleşmesi % (her biri tam 1 olmalı)', alp_sayisi, emine_sayisi;
+  end if;
+end $$;
+
 update public.kullanici_profilleri
 set fotograf_arsiv_temizleme_yetkisi = true
 where aktif = true and (

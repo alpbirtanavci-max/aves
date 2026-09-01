@@ -195,7 +195,8 @@ test('fotoğraf arşiv temizliği kişi bazlı yetki ve tamamlanmış kayıt RLS
   rc3928PhotoArchiveMigration.includes('fotograf_arsiv_temizleme_yetkisi boolean not null default false') &&
   rc3928PhotoArchiveMigration.includes("lower(trim(ad_soyad)) = lower('Alpbirtan Avcı')") &&
   rc3928PhotoArchiveMigration.includes("lower(trim(ad_soyad)) like 'emine %'") &&
-  rc3928PhotoArchiveMigration.includes('p.fotograf_arsiv_temizleme_yetkisi'));
+  rc3928PhotoArchiveMigration.includes('p.fotograf_arsiv_temizleme_yetkisi') &&
+  rc3928PhotoArchiveMigration.includes('alp_sayisi <> 1 or emine_sayisi <> 1'));
 test('DB yükseltmesi mevcut storeları yeniden oluşturmuyor', app.includes("objectStoreNames.contains('outbox')"));
 test('atomik yerel cevap, geçmiş ve outbox', app.includes('putAllWithOutbox') && app.includes("[store, 'outbox', 'gecmis']"));
 test('kütüphane ve manifest atomik yenileniyor', app.includes('replaceAllWithMeta') && app.includes("db.transaction([store, 'kv'], 'readwrite')"));
