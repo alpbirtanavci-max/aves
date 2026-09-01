@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.28';
+const APP_VERSION = 'R15D-rc3.9.29';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -2039,7 +2039,7 @@ const UI = (() => {
       const bolumRows = rows.filter(r => r.bolum === savedPosition.bolum).sort(siraKarsilastir);
       cursors[savedPosition.bolum] = bolumRows.findIndex(r => r.id === savedPosition.item_id);
     }
-    renderDenetim();
+    await renderDenetim();
   }
 
   async function rememberPosition(bolum, itemId) {
@@ -3385,22 +3385,17 @@ const UI = (() => {
     ov.querySelectorAll('[data-go-row]').forEach(btn => btn.onclick = async () => {
       const hedef = rows.find(r => r.id === btn.dataset.goRow);
       if (!hedef) return;
+      const denetimId = currentDenetimId;
       await DB.kvPut(`review_position_${currentDenetimId}`, {
         item_id: hedef.id,
         bolum: hedef.bolum,
         updated_at: new Date().toISOString(),
       });
       ov.remove();
-      inspectionReadOnly = true;
-      search = ''; filter = 'all';
-      openBolums = new Set([hedef.bolum]);
-      const bolumRows = rows.filter(r => r.bolum === hedef.bolum);
-      cursors[hedef.bolum] = bolumRows.findIndex(r => r.id === hedef.id);
       await rememberPosition(hedef.bolum, hedef.id);
-      renderDenetim().then(() => {
-        const opened = document.querySelector('.bolum.open');
-        if (opened) opened.scrollIntoView({ block: 'start' });
-      });
+      await showDenetim(denetimId, true);
+      const opened = document.querySelector('.bolum.open');
+      if (opened) opened.scrollIntoView({ block: 'start' });
     });
     ov.querySelector('#ozKopya').onclick = () => {
       const lines = [`AVES SAHA ÇALIŞMA ÖZETİ — ${d.musteri_unvani} · ${d.asansor_seri_no} · ${d.denetim_tarihi}`, `Durum: ${durum}`];
