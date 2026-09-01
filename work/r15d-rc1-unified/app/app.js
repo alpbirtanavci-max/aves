@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.18';
+const APP_VERSION = 'R15D-rc3.9.19';
 const DB_VERSION = 4;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1628,7 +1628,7 @@ const UI = (() => {
         ${satir('Tip Varyant Kodu', f.tipVaryantKodu)}
         ${satir('Ana standart', f.anaStandart)}
         ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
-        ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73 + TS EN 81-21 + TS EN 81-22 + TS EN 81-28 + TS EN 81-77')}
+        ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
         ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}

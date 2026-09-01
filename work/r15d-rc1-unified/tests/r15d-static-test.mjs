@@ -61,10 +61,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.18 fotoğraf düzeltme sürümü', index.includes('R15D-RC3.9.18</b>'));
-test('app R15D rc3.9.18 fotoğraf düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.18'"));
-test('service worker rc3.9.18 cache', sw.includes("aves-saha-r15d-rc3918'"));
-test('uygulama manifesti rc3.9.18 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.18"'));
+test('index R15D rc3.9.19 onay özeti düzeltme sürümü', index.includes('R15D-RC3.9.19</b>'));
+test('app R15D rc3.9.19 onay özeti düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.19'"));
+test('service worker rc3.9.19 cache', sw.includes("aves-saha-r15d-rc3919'"));
+test('uygulama manifesti rc3.9.19 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.19"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -572,6 +572,9 @@ test('rc3.9.10 ek standart migrationı 64 yeni madde ekliyor, mevcut satırlara 
 test('81-21/22/28/77 checklist e otomatik eklenmiyor (rc3.9.18 geri alma — yalnız 81-71/73/70)',
   app.includes("const gruplar = new Set(['Genel', anaStandart, '81-71', '81-73', ...(ekStandartlar || [])]);") &&
   !app.includes('ekStandartlarCard') && !app.includes('sEkStandartlar'));
+test('denetim onay ekranı yalnız gerçekten zorunlu 81-71/81-73 standartlarını gösteriyor',
+  app.includes("satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')") &&
+  !app.includes("satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73 + TS EN 81-21"));
 
 test('durak sayısı yeni denetim formunda zorunlu',
   app.includes('<label>Durak sayısı *</label>') &&
