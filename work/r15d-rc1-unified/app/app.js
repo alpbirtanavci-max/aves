@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.21';
+const APP_VERSION = 'R15D-rc3.9.22';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -40,11 +40,15 @@ const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Be
 // kategorisine bağlanır — denetçi "hangi maddeye" diye tereddüt etmez. Uygulama
 // fotoğrafı yorumlamaz, uygunluk kararı vermez; sayı sınırı yoktur.
 const FOTOGRAF_KATEGORILERI = [
-  ['kuyu_dibi', 'Kuyu Dibi', 'Tampon kaideleri ve ankrajları, kaide-zemin bağlantısı. Genel görünüm ve bağlantı/cıvata detayını ayrı kare olarak çekin.'],
-  ['kuyu_boyunca', 'Kuyu Boyunca (Ray / Kat Kapısı)', 'Ray konsolu-duvar bağlantısı ve kat kapısı üst/alt taşıyıcı bağlantıları. Kaynak mı cıvata mı olduğu karede net görünsün.'],
-  ['kabin_kabin_ustu', 'Kabin ve Kabin Üstü', 'Askı/palanga halatı bağlantıları ve sonlandırmaları.'],
-  ['makine_sase', 'Makine ve Şase', 'Şase-taşıyıcı kiriş bağlantısı, kaynaklar, ankraj cıvataları, motor-şase bağlantısı.'],
-  ['kumanda_grubu', 'Kumanda Grubu', 'Kumanda panosu genel görünümü; kart/sürücü etiketleri okunaklı olsun.'],
+  ['genel_kimlik', 'Genel Yerleşim ve Kimlik', 'Asansörün genel yerleşimi, durak girişleri, kullanım/uyarı işaretleri ile makine, regülatör, tampon, kapı ve güvenlik bileşenlerinin bilgi plakaları. Farklı tip veya uygulamalar ayrıca kaydedilir.'],
+  ['kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini karşı yönlerden geniş açıyla kaydedin. Tamponlar ve kaideleri, tamponun bastığı/basabileceği alanlar, regülatör gergi makarası ve sabitlemesi, ray alt uçları, karşı ağırlık/ayırıcı bölme, dengeleme tertibatı ve kabin altı birlikte görülebilsin. Stop, priz, aydınlatma ve merdiven için rutin yakın plan gerekmez; farklı, şüpheli veya uygunsuz uygulama ayrıca çekilir.'],
+  ['kuyu_boyunca', 'Kuyu Boyunca ve Kılavuzlama', 'Kuyuyu farklı kotlardan geniş açıyla kaydedin. Kabin ve karşı ağırlık ray konsollarının genel düzgünlüğü, civatalı bağlantıları, ankraj/duvar bağlantıları, ray ekleri, ayırıcı bölmeler ve kuyu içi donanımın sabitlenmesi görülsün. Tek kare kapsamıyorsa farklı kat ve yönlerden ilave fotoğraf çekin.'],
+  ['durak_kapilari', 'Durak Kapıları ve Bağlantıları', 'Temsilî kapılarla birlikte farklı montaj tipi bulunan her kapıyı kaydedin. Alt ve üst konsollar, kasa/eşik bağlantıları, duvar ankrajı, kaynak veya civata uygulaması, kapı kilidi ve taşıyıcı düzen genel bağlantısıyla görülsün. Katlar arasında değişen ya da şüpheli uygulamalar ayrıca çekilir.'],
+  ['kabin_kabin_ustu', 'Kabin, Kabin Üstü ve Askı', 'Kabin içi, kabin üstü ve erişilebildiğinde kabin altını genel görünüşlerle kaydedin. Kabin karkası, korkuluk ve etek; askı/palanga düzeni, 1:1 veya 2:1 halat bağlantıları ve sonlandırmaları, sabit noktalar, makaralar ve koruyucular, regülatör bağlantısı ile kapı operatörü görülsün. Farklı veya tek kareye sığmayan bağlantılar ayrıca çekilir.'],
+  ['makine_sase', 'Makine, Şase ve Üst Donanım', 'Makine şasesinin tamamını bir veya gerektiği kadar çok karede gösterin. Taşıyıcı kirişler, ankrajlar, civatalı ve varsa kaynaklı bağlantılar, motor-şase bağlantısı, fren/tahrik kasnağı ve koruyucular, üst regülatör ve sabitlemesi görülsün. MRL ve 2:1 sistemlerde üst makara, sabit askı noktaları ve halat bağlantıları genel yerleşimle birlikte kaydedilir.'],
+  ['hidrolik_grubu', 'Hidrolik Grup', 'Uygulanıyorsa güç ünitesi, tank, motor-pompa ve valf grubu; silindir ve taşıyıcı/sabitleme düzeni; boru kırılma valfi, rijit/esnek borular, bağlantılar, kelepçeler ve sızıntı toplama/koruma düzeni genel ve okunabilir ayrıntılarla kaydedilir.'],
+  ['kumanda_grubu', 'Elektrik ve Kumanda Grubu', 'Kumanda panosunu ve güç/dağıtım düzenini genel görünüşle kaydedin; kart, sürücü ve ana bileşen etiketleri okunabilsin. Pano sabitlemesi, kablo girişleri ve güzergâhı, koruyucu topraklama, MRL acil durum/test panosu, yedek güç ve haberleşme birimleri uygulanıyorsa ayrıca gösterilir. Fotoğraf elektriksel ve fonksiyonel testlerin yerine geçmez.'],
+  ['ozel_sistemler', 'Uygulanabilir Özel Sistemler', 'Denetim kapsamına giriyorsa itfaiyeci erişim seviyesi ve kumandaları, alarm/iki yönlü haberleşme, erişilebilirlik düzenleri, küçültülmüş üst-alt boşluk korumaları, hareketli durdurucular, sismik sabitlemeler, eğik asansör veya vandalizme dayanıklı uygulamalar genel yerleşimiyle kaydedilir. Yalnız uygulanabilir sistemleri çekin; her özel veya alışılmadık çözümü ayrıca belgeleyin.'],
 ];
 const LEGACY_FOTOGRAF_KATEGORISI = {
   'MAD-0006': 'kuyu_dibi',
@@ -858,7 +862,7 @@ const UI = (() => {
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
         <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
-        <p class="photo-help">İstediğiniz kadar fotoğraf çekebilir veya galeriden seçebilirsiniz. Uygulama fotoğrafları yorumlamaz, uygunluk kararı vermez.</p>
+        <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. Fotoğraflar muayene, ölçüm ve fonksiyon testlerinin yerine geçmez; uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
         <div class="photo-kategoriler"></div>
       </div>`;
       const kategoriler = ov.querySelector('.photo-kategoriler');
