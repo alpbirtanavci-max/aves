@@ -36,6 +36,8 @@ const rc394FeedbackMigration = fs.readFileSync(path.join(databaseDir, '47_r15d_r
 const rc398ModulBMigration = fs.readFileSync(path.join(databaseDir, '64_r15d_rc398_modul_b_ab_tip_incelemesi.sql'), 'utf8');
 const rc399ModulBTakipMigration = fs.readFileSync(path.join(databaseDir, '65_r15d_rc399_modul_b_takip_muayenesi.sql'), 'utf8');
 const rc3910EkStandartlarMigration = fs.readFileSync(path.join(databaseDir, '66_r15d_rc3910_ek_standartlar_81_21_22_28_77.sql'), 'utf8');
+const rc3920PhotoCategoryMigration = fs.readFileSync(path.join(databaseDir, '72_r15d_rc3920_fotograf_kategori_sekmesi.sql'), 'utf8');
+const rc3921PhotoCompatibilityMigration = fs.readFileSync(path.join(databaseDir, '73_r15d_rc3921_fotograf_gecis_uyumlulugu.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -61,10 +63,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.20 onay özeti düzeltme sürümü', index.includes('R15D-RC3.9.20</b>'));
-test('app R15D rc3.9.20 onay özeti düzeltme sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.20'"));
-test('service worker rc3.9.20 cache', sw.includes("aves-saha-r15d-rc3920'"));
-test('uygulama manifesti rc3.9.20 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.20"'));
+test('index R15D rc3.9.21 geçiş güvenliği sürümü', index.includes('R15D-RC3.9.21</b>'));
+test('app R15D rc3.9.21 geçiş güvenliği sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.21'"));
+test('service worker rc3.9.21 cache', sw.includes("aves-saha-r15d-rc3921'"));
+test('uygulama manifesti rc3.9.21 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.21"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -128,7 +130,7 @@ test('yerel yazımdan sonra denetim sayacı anında güncelleniyor', app.include
 test('son açık madde cihazda hatırlanıyor', app.includes('async function rememberPosition') && app.includes('last_position_'));
 test('denetim yeniden açıldığında son konum yükleniyor', app.includes('const savedPosition = await DB.kvGet'));
 
-test('IndexedDB v5 geçmiş ve fotoğraf depoları', app.includes('const DB_VERSION = 5') && app.includes("createObjectStore('gecmis'") && app.includes("createObjectStore('fotograflar'"));
+test('IndexedDB v6 geçmiş ve fotoğraf depoları', app.includes('const DB_VERSION = 6') && app.includes("createObjectStore('gecmis'") && app.includes("createObjectStore('fotograflar'"));
 test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile aynı desen)', app.includes('FOTOGRAF_KATEGORILERI') &&
   ['kuyu_dibi','kuyu_boyunca','kabin_kabin_ustu','makine_sase','kumanda_grubu'].every(k => app.includes(`'${k}'`)) &&
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
@@ -136,6 +138,21 @@ test('her fotoğraf kategorisinde denetçiye yönlendirme metni var', app.includ
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
 test('fotoğraflar sekmesi denetim ayrıntısında Seri No yanında açılıyor', app.includes("id=\"btnFotograflar\"") && app.includes("btnFotograflar').onclick = fotografSekmesi"));
+test('eski cihaz fotoğrafları kategoriye dönüştürülüyor', app.includes('LEGACY_FOTOGRAF_KATEGORISI') &&
+  app.includes('LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id]') &&
+  app.includes('foto.kategori = LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id]'));
+test('kategori migrationı sunucu fotoğraflarını silmiyor ve eski alanları koruyor',
+  !/delete\s+from\s+public\.denetim_fotograflari/i.test(rc3920PhotoCategoryMigration) &&
+  !/drop\s+column\s+(if\s+exists\s+)?(saha_kontrol_id|madde_id)/i.test(rc3920PhotoCategoryMigration));
+test('kategori migrationı eski kritik maddeleri kayıpsız eşliyor',
+  ['MAD-0006','MAD-0072','MAD-0110','MAD-0111','MAD-0162','MAD-0364','MAD-0366','MAD-0368','MAD-0369']
+    .every(id => rc3920PhotoCategoryMigration.includes(`'${id}'`)) &&
+  rc3920PhotoCategoryMigration.includes('Kategoriye eşlenemeyen eski fotoğraf var'));
+test('düzeltme migrationı eski ve yeni uygulama sürümlerini birlikte destekliyor',
+  rc3921PhotoCompatibilityMigration.includes('add column if not exists saha_kontrol_id uuid') &&
+  rc3921PhotoCompatibilityMigration.includes('add column if not exists madde_id text') &&
+  rc3921PhotoCompatibilityMigration.includes('denetim_fotografi_legacy_kategori_ata') &&
+  !/delete\s+from\s+public\.denetim_fotograflari/i.test(rc3921PhotoCompatibilityMigration));
 test('DB yükseltmesi mevcut storeları yeniden oluşturmuyor', app.includes("objectStoreNames.contains('outbox')"));
 test('atomik yerel cevap, geçmiş ve outbox', app.includes('putAllWithOutbox') && app.includes("[store, 'outbox', 'gecmis']"));
 test('kütüphane ve manifest atomik yenileniyor', app.includes('replaceAllWithMeta') && app.includes("db.transaction([store, 'kv'], 'readwrite')"));
