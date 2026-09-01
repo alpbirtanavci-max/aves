@@ -9,8 +9,8 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.20';
-const DB_VERSION = 5;
+const APP_VERSION = 'R15D-rc3.9.21';
+const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
@@ -46,6 +46,17 @@ const FOTOGRAF_KATEGORILERI = [
   ['makine_sase', 'Makine ve Şase', 'Şase-taşıyıcı kiriş bağlantısı, kaynaklar, ankraj cıvataları, motor-şase bağlantısı.'],
   ['kumanda_grubu', 'Kumanda Grubu', 'Kumanda panosu genel görünümü; kart/sürücü etiketleri okunaklı olsun.'],
 ];
+const LEGACY_FOTOGRAF_KATEGORISI = {
+  'MAD-0006': 'kuyu_dibi',
+  'MAD-0072': 'kuyu_dibi',
+  'MAD-0110': 'kuyu_boyunca',
+  'MAD-0111': 'kuyu_boyunca',
+  'MAD-0162': 'kabin_kabin_ustu',
+  'MAD-0364': 'kabin_kabin_ustu',
+  'MAD-0366': 'makine_sase',
+  'MAD-0368': 'makine_sase',
+  'MAD-0369': 'makine_sase',
+};
 
 
 const DENETIM_TURLERI = {
@@ -97,6 +108,20 @@ const DB = (() => {
           const f = e.target.transaction.objectStore('fotograflar');
           if (!f.indexNames.contains('byKategori')) f.createIndex('byKategori', 'kategori');
           if (f.indexNames.contains('byMadde')) f.deleteIndex('byMadde');
+          // rc3.9.14-19 cihaz kuyruğundaki madde bazlı fotoğrafları kaybetmeden
+          // rc3.9.20+ kategori sekmesine taşı. Eski sistem yalnız bu dokuz maddeye
+          // fotoğraf ekleyebildiği için eşleme kapalı ve belirgindir.
+          const cursorReq = f.openCursor();
+          cursorReq.onsuccess = () => {
+            const cursor = cursorReq.result;
+            if (!cursor) return;
+            const foto = cursor.value;
+            if (!foto.kategori && LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id]) {
+              foto.kategori = LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id];
+              cursor.update(foto);
+            }
+            cursor.continue();
+          };
         }
       };
       req.onsuccess = () => { db = req.result; res(); };
