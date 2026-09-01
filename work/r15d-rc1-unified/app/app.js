@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.27';
+const APP_VERSION = 'R15D-rc3.9.28';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -357,7 +357,7 @@ const Profile = (() => {
       const email = (API.email || '').toLowerCase();
       const rows = await API.select(
         'kullanici_profilleri',
-        `select=email,ad_soyad,aktif,rol&email=eq.${encodeURIComponent(email)}&aktif=eq.true&limit=1`
+        `select=email,ad_soyad,aktif,rol,fotograf_arsiv_temizleme_yetkisi&email=eq.${encodeURIComponent(email)}&aktif=eq.true&limit=1`
       );
       if (!rows.length) throw new Error('PROFILE_NOT_FOUND');
       current = normalize(rows[0]);
@@ -391,6 +391,7 @@ const Profile = (() => {
     get canCorrectInspections() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
     get canCreate() { return !!current && ['yonetici','teknik_mudur','muhendis'].includes(current.rol); },
     get canDelete() { return !!current && (current.rol === 'yonetici' || current.rol === 'teknik_mudur'); },
+    get canArchivePhotos() { return !!current && current.fotograf_arsiv_temizleme_yetkisi === true; },
   };
 })();
 
@@ -923,6 +924,33 @@ const UI = (() => {
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 30000);
           toast(`${tumFotograflar.length} fotoğraf arşivlendi`);
+          if (Profile.canArchivePhotos && confirm('İndirilen fotoğraf arşivini güvenli bir yerde depoladınız mı? Depoladıysanız sunucudaki kopyaları silebilirim.')) {
+            const silinecek = tumFotograflar.length;
+            if (confirm(`${silinecek} fotoğrafın sunucu ve cihaz kopyaları kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?`)) {
+              downloadAll.textContent = `Siliniyor 0/${silinecek}`;
+              let silinen = 0;
+              let basarisiz = 0;
+              for (const foto of [...tumFotograflar]) {
+                try {
+                  if (foto.sync_status !== 'pending') {
+                    const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
+                    if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Storage silme hatası (${storageDelete.status})`);
+                    await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+                  }
+                  await DB.del('fotograflar', foto.id);
+                  tumFotograflar = tumFotograflar.filter(item => item.id !== foto.id);
+                  silinen += 1;
+                } catch (error) {
+                  basarisiz += 1;
+                  console.error('Arşivlenmiş fotoğraf silinemedi', foto.id, error);
+                }
+                downloadAll.textContent = `Siliniyor ${silinen + basarisiz}/${silinecek}`;
+              }
+              await fotografOnbellekYenile(currentDenetimId);
+              await ciz();
+              toast(basarisiz ? `${silinen} fotoğraf silindi · ${basarisiz} kayıt korundu` : `${silinen} fotoğraf güvenle silindi`);
+            }
+          }
         } catch (error) {
           console.error('Fotoğraf arşivi hazırlanamadı', error);
           toast('Fotoğraf arşivi hazırlanamadı');

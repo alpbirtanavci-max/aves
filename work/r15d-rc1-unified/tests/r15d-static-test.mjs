@@ -39,6 +39,7 @@ const rc3910EkStandartlarMigration = fs.readFileSync(path.join(databaseDir, '66_
 const rc3920PhotoCategoryMigration = fs.readFileSync(path.join(databaseDir, '72_r15d_rc3920_fotograf_kategori_sekmesi.sql'), 'utf8');
 const rc3921PhotoCompatibilityMigration = fs.readFileSync(path.join(databaseDir, '73_r15d_rc3921_fotograf_gecis_uyumlulugu.sql'), 'utf8');
 const rc3922PhotoScopeMigration = fs.readFileSync(path.join(databaseDir, '74_r15d_rc3922_fotograf_kategori_kapsami.sql'), 'utf8');
+const rc3928PhotoArchiveMigration = fs.readFileSync(path.join(databaseDir, '75_r15d_rc3928_fotograf_arsiv_temizleme_yetkisi.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -64,10 +65,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.27 fotoğraf arşivi sürümü', index.includes('R15D-RC3.9.27</b>'));
-test('app R15D rc3.9.27 fotoğraf arşivi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.27'"));
-test('service worker rc3.9.27 cache', sw.includes("aves-saha-r15d-rc3927'"));
-test('uygulama manifesti rc3.9.27 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.27"'));
+test('index R15D rc3.9.28 kontrollü arşiv temizliği sürümü', index.includes('R15D-RC3.9.28</b>'));
+test('app R15D rc3.9.28 kontrollü arşiv temizliği sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.28'"));
+test('service worker rc3.9.28 cache', sw.includes("aves-saha-r15d-rc3928'"));
+test('uygulama manifesti rc3.9.28 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.28"'));
 test('fotoğraf storage yüklemesi upsert ile yeniden denemeye toleranslıdır', app.includes("'x-upsert': 'true'"));
 test('bekleyen fotoğraf sayısı senkron durumuna yansıyor', app.includes('fotografBekleyenSayisi') && app.includes('waitingSync || fotografBekleyenSayisi'));
 test('AVES kurumsal arayüz tasarım sistemi', index.includes('--radius-sm:6px') && index.includes('--shadow-card:') && index.includes('AVES KURUMSAL ARAYUZ'));
@@ -164,6 +165,12 @@ test('fotoğraf kartı tarih ve yükleyen kullanıcı bilgisini gösteriyor',
 test('denetim fotoğrafları kategori klasörleriyle toplu ZIP indiriliyor',
   app.includes('photo-download-all') && app.includes('const zip = new JSZip()') &&
   app.includes("zip.folder(foto.kategori || 'diger')") && app.includes('_fotograflar.zip'));
+test('arşiv temizliği yalnız özel profil yetkisiyle iki ayrı onay istiyor',
+  app.includes('Profile.canArchivePhotos && confirm') &&
+  app.includes('İndirilen fotoğraf arşivini güvenli bir yerde depoladınız mı?') &&
+  app.includes('Bu işlem geri alınamaz. Emin misiniz?'));
+test('arşiv temizliği başarısız kayıtları cihazda koruyup sayısını bildiriyor',
+  app.includes('basarisiz += 1') && app.includes('kayıt korundu'));
 test('fotoğraflar sekmesi denetim ayrıntısında Seri No yanında açılıyor', app.includes("id=\"btnFotograflar\"") && app.includes("btnFotograflar').onclick = fotografSekmesi"));
 test('eski cihaz fotoğrafları kategoriye dönüştürülüyor', app.includes('LEGACY_FOTOGRAF_KATEGORISI') &&
   app.includes('LEGACY_FOTOGRAF_KATEGORISI[foto.madde_id]') &&
@@ -184,6 +191,11 @@ test('Modül G fotoğraf kapsamı migrationı dokuz kategoriyi veri silmeden aç
   ['genel_kimlik','kuyu_dibi','kuyu_boyunca','durak_kapilari','kabin_kabin_ustu','makine_sase','hidrolik_grubu','kumanda_grubu','ozel_sistemler']
     .every(k => rc3922PhotoScopeMigration.includes(`'${k}'`)) &&
   !/delete\s+from\s+public\.denetim_fotograflari/i.test(rc3922PhotoScopeMigration));
+test('fotoğraf arşiv temizliği kişi bazlı yetki ve tamamlanmış kayıt RLS desteği içeriyor',
+  rc3928PhotoArchiveMigration.includes('fotograf_arsiv_temizleme_yetkisi boolean not null default false') &&
+  rc3928PhotoArchiveMigration.includes("lower(trim(ad_soyad)) = lower('Alpbirtan Avcı')") &&
+  rc3928PhotoArchiveMigration.includes("lower(trim(ad_soyad)) like 'emine %'") &&
+  rc3928PhotoArchiveMigration.includes('p.fotograf_arsiv_temizleme_yetkisi'));
 test('DB yükseltmesi mevcut storeları yeniden oluşturmuyor', app.includes("objectStoreNames.contains('outbox')"));
 test('atomik yerel cevap, geçmiş ve outbox', app.includes('putAllWithOutbox') && app.includes("[store, 'outbox', 'gecmis']"));
 test('kütüphane ve manifest atomik yenileniyor', app.includes('replaceAllWithMeta') && app.includes("db.transaction([store, 'kv'], 'readwrite')"));
