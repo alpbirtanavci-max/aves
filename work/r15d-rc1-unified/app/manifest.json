@@ -1,7 +1,7 @@
 {
   "name": "AVES Saha Denetim",
   "short_name": "AVES Saha",
-  "version": "R15D-rc3.9.29",
+  "version": "R15D-rc3.9.30",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#20235B",

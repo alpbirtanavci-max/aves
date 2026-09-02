@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.29';
+const APP_VERSION = 'R15D-rc3.9.30';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -3386,7 +3386,7 @@ const UI = (() => {
       const hedef = rows.find(r => r.id === btn.dataset.goRow);
       if (!hedef) return;
       const denetimId = currentDenetimId;
-      await DB.kvPut(`review_position_${currentDenetimId}`, {
+      await DB.kvSet(`review_position_${currentDenetimId}`, {
         item_id: hedef.id,
         bolum: hedef.bolum,
         updated_at: new Date().toISOString(),
