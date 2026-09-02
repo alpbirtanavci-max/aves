@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.34';
+const APP_VERSION = 'R15D-rc3.9.35';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -936,6 +936,13 @@ const UI = (() => {
           link.download = `AVES_${arsivKimligi}_${arsivTarihi}_fotograflar.zip`;
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 30000);
+          const indirmeKaydi = await DB.get('denetimler', currentDenetimId);
+          if (indirmeKaydi) {
+            indirmeKaydi.fotograf_arsiv_son_indirme_at = new Date().toISOString();
+            indirmeKaydi.fotograf_arsiv_son_indirme_by = Profile.name || API.email || null;
+            indirmeKaydi.updated_at = new Date().toISOString();
+            await localWrite('denetimler', indirmeKaydi, 'denetimler');
+          }
           toast(`${tumFotograflar.length} fotoğraf arşivlendi`);
           if (Profile.canArchivePhotos && confirm('İndirilen fotoğraf arşivini güvenli bir yerde depoladınız mı? Depoladıysanız sunucudaki kopyaları silebilirim.')) {
             const silinecek = tumFotograflar.length;
@@ -960,6 +967,16 @@ const UI = (() => {
                 downloadAll.textContent = `Siliniyor ${silinen + basarisiz}/${silinecek}`;
               }
               await fotografOnbellekYenile(currentDenetimId);
+              if (!basarisiz && silinen === silinecek) {
+                const temizlemeKaydi = await DB.get('denetimler', currentDenetimId);
+                if (temizlemeKaydi) {
+                  temizlemeKaydi.fotograf_arsiv_temizlendi_at = new Date().toISOString();
+                  temizlemeKaydi.fotograf_arsiv_temizlendi_by = Profile.name || API.email || null;
+                  temizlemeKaydi.fotograf_arsiv_temizlenen_adet = silinen;
+                  temizlemeKaydi.updated_at = new Date().toISOString();
+                  await localWrite('denetimler', temizlemeKaydi, 'denetimler');
+                }
+              }
               await ciz();
               toast(basarisiz ? `${silinen} fotoğraf silindi · ${basarisiz} kayıt korundu` : `${silinen} fotoğraf güvenle silindi`);
             }
@@ -1391,6 +1408,7 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
       <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
+      <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.</span></button>
       ${canStartFollowup(d, tamamlananRows) ? `<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B ? `ÜB.FR.53 kapsamındaki ${modulBTakipUygunsuzlukSayisi} uygunsuzluğu yeniden doğrulamak için bağlı takip muayenesi oluşturur.` : 'Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.'}</span></button>` : ''}
       ${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B && !modulBTakipUygunsuzlukSayisi ? '<div class="photo-help">Bu Modül B denetiminde takip muayenesine aktarılacak uygunsuzluk bulunmuyor.</div>' : ''}
       ${(kontrolProfili(d) !== KONTROL_PROFILLERI.TAM && kontrolProfili(d) !== KONTROL_PROFILLERI.MODUL_B) ? '<div class="photo-help">Takip denetimi yalnızca Modül G ve Modül B denetimlerinde kullanılabilir.</div>' : ''}
@@ -1400,6 +1418,7 @@ const UI = (() => {
     ov.querySelector('.close').onclick = close;
     ov.onclick = e => { if (e.target === ov) close(); };
     ov.querySelector('#completedReview').onclick = () => { close(); showDenetim(d.id, true); };
+    ov.querySelector('#completedSummary').onclick = async () => { close(); await tamamlanmisDenetimOzetiniGoster(d, tamamlananRows); };
     const followup = ov.querySelector('#completedFollowup');
     if (followup) followup.onclick = async () => {
       const takipMesaji = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
@@ -3296,6 +3315,45 @@ const UI = (() => {
       ov.querySelector('#kapanisOnay').disabled = true;
       await denetimDurumuDegistir(yeniDurum, ov, true);
     };
+  }
+
+  async function tamamlanmisDenetimOzetiniGoster(denetim, kaynakSatirlar = []) {
+    await fotografOnbellekYenile(denetim.id);
+    const d = await DB.get('denetimler', denetim.id) || denetim;
+    const rows = (kaynakSatirlar.length ? kaynakSatirlar : await DB.allByIndex('saha', 'byDenetim', d.id)).sort(siraKarsilastir);
+    const fotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', d.id)).filter(foto => !foto.deleted_at);
+    const bekleyenFotograflar = fotograflar.filter(foto => foto.sync_status === 'pending').length;
+    const uygunsuzluklar = rows.filter(row => row.durum === 'Olumsuz bulgu');
+    const takipVar = !!d.takip_onceki_denetim_id || (await DB.all('denetimler')).some(item => item.takip_onceki_denetim_id === d.id);
+    const tarihGoster = (value) => value ? new Date(value).toLocaleString('tr-TR') : '';
+    const arsivDurumu = d.fotograf_arsiv_temizlendi_at
+      ? `Sunucu ve cihaz kopyaları temizlendi · ${d.fotograf_arsiv_temizlenen_adet || 0} fotoğraf · ${tarihGoster(d.fotograf_arsiv_temizlendi_at)}${d.fotograf_arsiv_temizlendi_by ? ` · ${d.fotograf_arsiv_temizlendi_by}` : ''}`
+      : `${fotograflar.length} fotoğraf kayıtlı${bekleyenFotograflar ? ` · ${bekleyenFotograflar} aktarım bekliyor` : ''}`;
+    const sonIndirme = d.fotograf_arsiv_son_indirme_at
+      ? `Son ZIP indirme: ${tarihGoster(d.fotograf_arsiv_son_indirme_at)}${d.fotograf_arsiv_son_indirme_by ? ` · ${d.fotograf_arsiv_son_indirme_by}` : ''}`
+      : 'Bu denetim için kayıtlı ZIP indirme bilgisi yok';
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Tamamlanmış Denetim Özeti</h3>
+      <div class="onay-box">
+        <div class="onay-satir"><span>Firma</span><b>${esc(d.musteri_unvani)}</b></div>
+        <div class="onay-satir"><span>Asansör seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
+        <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi || '')}</b></div>
+        <div class="onay-satir"><span>Denetimi yapan</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
+      </div>
+      <div class="integrity-card ok"><b>Sonuç özeti</b><small>${rows.filter(row => row.durum === 'Kontrol tamamlandı').length} Uygun · ${uygunsuzluklar.length} Uygun Değil · ${rows.filter(row => row.durum === 'Uygulanmaz').length} Uygulanmaz</small></div>
+      <div class="integrity-card ${d.fotograf_arsiv_temizlendi_at ? 'pending' : (bekleyenFotograflar ? 'pending' : 'ok')}"><b>Fotoğraf arşiv durumu</b><small>${esc(arsivDurumu)}<br>${esc(sonIndirme)}</small></div>
+      <div class="onay-satir"><span>Takip denetimi</span><b>${takipVar ? 'İlişkili takip kaydı var' : 'Takip kaydı yok'}</b></div>
+      ${uygunsuzluklar.length ? `<button class="btn btn-ghost" id="completedBadList">Uygunsuzluk listesini aç (${uygunsuzluklar.length})</button>` : '<div class="oz-hazir ok">✓ Uygun Değil sonucu yok</div>'}
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+    const badList = ov.querySelector('#completedBadList');
+    if (badList) badList.onclick = () => { close(); uygunsuzlukListesiniGoster(d, uygunsuzluklar); };
   }
 
   async function denetimDurumuDegistir(yeniDurum, overlay, kapanisOzetiOnaylandi = false) {
