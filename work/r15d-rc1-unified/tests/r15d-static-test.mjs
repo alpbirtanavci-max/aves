@@ -65,10 +65,16 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.31 fotoğraf kategori notu sürümü', index.includes('R15D-RC3.9.31</b>'));
-test('app R15D rc3.9.31 fotoğraf kategori notu sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.31'"));
-test('service worker rc3.9.31 cache', sw.includes("aves-saha-r15d-rc3931'"));
-test('uygulama manifesti rc3.9.31 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.31"'));
+test('index R15D rc3.9.32 uygunsuzluk ve seri no sürümü', index.includes('R15D-RC3.9.32</b>'));
+test('app R15D rc3.9.32 uygunsuzluk ve seri no sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.32'"));
+test('service worker rc3.9.32 cache', sw.includes("aves-saha-r15d-rc3932'"));
+test('uygulama manifesti rc3.9.32 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.32"'));
+test('normal yeni denetimde aynı seri no engelleniyor, takip akışı etkilenmiyor',
+  app.includes('Bu seri no için zaten bir denetim var') && app.includes('Takip denetimi') && app.includes('normSeriNo'));
+test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti var',
+  app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
+test('fotoğraf ZIP adı seri no ve tarih içeriyor', app.includes('arsivKimligi') && app.includes('_fotograflar.zip'));
+test('takipte uygun hale gelen uygunsuzluk kapanış bilgisi gösteriliyor', app.includes('TAKİPTE KAPATILAN UYGUNSUZLUKLAR'));
 test('fotoğraf kategorilerinde kalıcı saha notu alanı var',
   app.includes('data-photo-note') && app.includes('Fotoğraf kategori notu kaydedildi'));
 test('inceleme sonucu hedef madde kayıtlı konumdan salt okunur açılıyor',

@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.31';
+const APP_VERSION = 'R15D-rc3.9.32';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -930,7 +930,10 @@ const UI = (() => {
           const url = URL.createObjectURL(arsiv);
           const link = document.createElement('a');
           link.href = url;
-          link.download = `AVES_${currentDenetimId}_fotograflar.zip`;
+          const denetim = await DB.get('denetimler', currentDenetimId);
+          const arsivKimligi = safeFilePart(denetim?.asansor_seri_no || denetim?.musteri_unvani || currentDenetimId);
+          const arsivTarihi = safeFilePart(denetim?.denetim_tarihi || localDateISO());
+          link.download = `AVES_${arsivKimligi}_${arsivTarihi}_fotograflar.zip`;
           link.click();
           setTimeout(() => URL.revokeObjectURL(url), 30000);
           toast(`${tumFotograflar.length} fotoğraf arşivlendi`);
@@ -1006,6 +1009,7 @@ const UI = (() => {
   const editorDraftTimers = new Map();
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const safeFilePart = (s) => (s ?? '').toString().trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 80) || 'denetim';
 
   const SERI_GRUPLARI = [
     ['kabin_tamponlari', 'Kabin tamponu', '01 - Kuyu Dibi'],
@@ -1083,6 +1087,7 @@ const UI = (() => {
     .replace(/\bAranmaz\b/g, 'Uygulanmaz')
     .replace(/\baranmaz\b/g, 'uygulanmaz');
   const normEmail = (s) => (s || '').trim().toLowerCase();
+  const normSeriNo = (s) => (s || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
   const localDateISO = () => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -1687,6 +1692,31 @@ const UI = (() => {
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
       if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }
+
+      // Aynı asansör için ikinci, bağımsız bir kayıt açılmaz. Takip denetimi
+      // bu formdan değil, önceki tamamlanmış kayıttaki bağlı takip akışından
+      // üretildiği için bu koruma onu etkilemez.
+      const seriAnahtari = normSeriNo(seri);
+      const cihazdakiEslesme = (await DB.all('denetimler'))
+        .find(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
+      if (cihazdakiEslesme) {
+        toast(`Bu seri no için zaten bir denetim var: ${cihazdakiEslesme.musteri_unvani || 'Kayıt'} (${cihazdakiEslesme.denetim_tarihi || 'tarih yok'})`);
+        return;
+      }
+      if (navigator.onLine) {
+        try {
+          const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
+          const sunucudakiEslesme = sunucudakiKayitlar
+            .find(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
+          if (sunucudakiEslesme) {
+            toast(`Bu seri no için zaten bir denetim var: ${sunucudakiEslesme.musteri_unvani || 'Kayıt'} (${sunucudakiEslesme.denetim_tarihi || 'tarih yok'})`);
+            return;
+          }
+        } catch {
+          toast('Seri no tekrar kontrolü sunucuda yapılamadı; bağlantıyı kontrol edin');
+          return;
+        }
+      }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
       // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
@@ -3263,6 +3293,12 @@ const UI = (() => {
     const integrityMatches = !!d.butunluk_hash && d.butunluk_hash === currentIntegrity.hash;
     const history = (await DB.allByIndex('gecmis', 'byDenetim', currentDenetimId))
       .sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    const takipteKapatilanlar = rows.filter(row =>
+      row.takip_kaynak_saha_kontrol_id && row.takip_onceki_durum === 'Olumsuz bulgu' && row.durum === 'Kontrol tamamlandı'
+    ).map(row => ({
+      row,
+      event: history.find(event => event.saha_kontrol_id === row.id && event.yeni_deger?.durum === 'Kontrol tamamlandı'),
+    }));
     const reviewPosition = await DB.kvGet(`review_position_${currentDenetimId}`);
     const reviewPositionRow = reviewPosition && rows.find(r => r.id === reviewPosition.item_id);
     const lastActor = history[0]
@@ -3322,6 +3358,7 @@ const UI = (() => {
       <div class="onay-satir"><span>Çalışma durumu</span><b>${esc(durum)}</b></div>
       <div class="onay-satir"><span>Oluşturan</span><b>${esc(d.olusturan_ad || d.denetimi_yapan || d.olusturan_email || 'Kayıt yok')}</b></div>
       <div class="onay-satir"><span>Son değiştiren</span><b>${esc(lastActor || 'Kayıt yok')}</b></div>
+      ${durum === 'Çalışma Tamamlandı' ? `<div class="integrity-card ok"><b>Sonuç özeti</b><small>${currentIntegrity.summary.uygun} Uygun · ${currentIntegrity.summary.uygun_degil} Uygun Değil · ${currentIntegrity.summary.uygulanmaz} Uygulanmaz</small></div>` : ''}
       <div class="integrity-card ${integrityMatches ? 'ok' : 'pending'}"><b>${integrityMatches ? '✓ Bütünlük özeti doğrulandı' : 'Bütünlük özeti henüz kesinleşmedi'}</b><small>${d.butunluk_hash ? esc(d.butunluk_hash.slice(0,16)) + '…' : 'Çalışma tamamlanınca parmak izi kaydedilir'} · ${currentIntegrity.summary.uygun}/${rows.length} uygun · ${currentIntegrity.summary.uygun_degil} uygun değil · ${currentIntegrity.summary.uygulanmaz} uygulanmaz</small></div>
       <div class="local-sync-state ${protectedSync ? 'error' : (inspectionOutbox.length ? 'pending' : 'ok')}">${protectedSync
         ? `⚠ ${protectedSync} yerel işlem ${conflictSync ? 'çakışma/yetki' : 'yetki'} incelemesinde; hiçbir kayıt silinmedi`
@@ -3347,10 +3384,12 @@ const UI = (() => {
       ${seriEntries.length ? `<h4>Ekipman seri numaraları</h4>${seriEntries.map(([label,item]) => `<div class="oz-item"><b>${esc(label)}${item.kat ? ` · ${esc(item.kat)}${item.giris ? ` / ${esc(item.giris)}` : ''}` : ''}</b><div class="not">${esc(item.seri_no)}</div></div>`).join('')}` : ''}
       ${bakilmadi.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">BAKILMADI (${bakilmadi.length})</div>` + bakilmadi.slice(0,100).map(r => item(r,'warn')).join('') : ''}
       ${bad.length ? `<div style="font-size:12px;font-weight:700;color:var(--fuchsia);margin:12px 0 6px">UYGUN DEĞİL (${bad.length})</div>` + bad.map(r => item(r,'')).join('') : ''}
+      ${takipteKapatilanlar.length ? `<div style="font-size:12px;font-weight:700;color:var(--ok);margin:12px 0 6px">TAKİPTE KAPATILAN UYGUNSUZLUKLAR (${takipteKapatilanlar.length})</div>${takipteKapatilanlar.map(({row,event}) => `<div class="oz-item" style="border-left-color:var(--ok)"><b>${esc(row.standart_madde_no || row.madde_id)} · ${esc(row.kontrol_basligi)}</b><div class="not">Önceki sonuç: Uygun Değil · Takip sonucu: Uygun</div><small>${event ? `${esc(event.degistiren_ad || event.degistiren_email || 'Kullanıcı')} · ${new Date(event.created_at).toLocaleString('tr-TR')}` : 'Kapanış geçmişi yerelde henüz indirilemedi'}</small></div>`).join('')}` : ''}
       ${icNotlar.length ? `<div style="font-size:12px;font-weight:700;color:var(--warn);margin:12px 0 6px">İÇ KONTROL NOTU (${icNotlar.length})</div>` + icNotlar.map(r => `<div class="oz-item warn"><b>${esc(r.standart_madde_no || r.madde_id)} · ${esc(r.bolum)}</b>${esc(r.ic_kontrol_notu || 'Eski sürümden kalan iç kontrol kaydı')}</div>`).join('') : ''}
       ${notEntries.length ? `<div style="font-size:12px;font-weight:700;color:var(--navy);margin:12px 0 6px">BÖLÜM AÇIKLAMALARI</div>` + notEntries.map(([b,v]) => `<div class="oz-item" style="border-left-color:var(--navy)"><b>${esc(b)}</b>${esc(v)}</div>`).join('') : ''}
       ${history.length ? `<details class="compact-review"><summary>Değişiklik geçmişi (${history.length})</summary><div class="history-list">${history.slice(0,250).map(event => `<div class="history-row"><b>${esc(event.degistiren_ad || event.degistiren_email || 'Bilinmeyen kullanıcı')}</b><span>${esc(event.madde_id || (event.islem_turu === 'denetim_olusturma' ? 'Denetim oluşturuldu' : 'Denetim bilgisi'))}</span><small>${esc(event.degistiren_rol || '')} · ${event.created_at ? new Date(event.created_at).toLocaleString('tr-TR') : ''}${event.duzeltme_nedeni ? ` · Düzeltme: ${esc(event.duzeltme_nedeni)}` : ''}</small></div>`).join('')}</div></details>` : ''}
       ${!bad.length && !bakilmadi.length && !notEntries.length && !icNotlar.length ? '<div class="empty">Açık konu yok 🎉</div>' : ''}
+      ${bad.length ? '<button class="btn btn-ghost" id="ozUygunsuzluk" style="margin-top:10px">Uygunsuzluk listesini aç</button>' : ''}
       <button class="btn btn-ghost" id="ozKopya" style="margin-top:10px">Özeti panoya kopyala</button>
     </div>`;
     document.body.appendChild(ov);
@@ -3414,6 +3453,23 @@ const UI = (() => {
         bad.forEach(r => lines.push(`- [${r.standart_madde_no||r.madde_id}] ${r.kontrol_basligi}${r.bulgu_secenegi ? ' — ' + r.bulgu_secenegi : ''}${r.diger_bulgu ? ' (' + r.diger_bulgu + ')' : ''}`)); }
       notEntries.forEach(([b,v]) => { lines.push('', `${b} — AÇIKLAMA:`, v); });
       navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Panoya kopyalandı'));
+    };
+    const uygunsuzlukBtn = ov.querySelector('#ozUygunsuzluk');
+    if (uygunsuzlukBtn) uygunsuzlukBtn.onclick = () => uygunsuzlukListesiniGoster(d, bad);
+  }
+
+  function uygunsuzlukListesiniGoster(d, bad) {
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    const satirlar = bad.map(row => `<div class="oz-item"><b>${esc(row.standart_madde_no || row.madde_id)} · ${esc(row.kontrol_basligi)}</b>${row.bulgu_secenegi ? `<div class="not">${esc(row.bulgu_secenegi)}</div>` : ''}${row.diger_bulgu ? `<div class="not">${esc(row.diger_bulgu)}</div>` : ''}${row.aciklama ? `<div class="not">${esc(row.aciklama)}</div>` : ''}</div>`).join('');
+    ov.innerHTML = `<div class="modal"><button class="close">×</button><h3>Uygunsuzluk Listesi</h3><div class="onay-satir"><span>Firma</span><b>${esc(d.musteri_unvani)}</b></div><div class="onay-satir"><span>Asansör</span><b>${esc(d.asansor_seri_no)}</b></div><div class="onay-satir"><span>Tarih</span><b>${esc(d.denetim_tarihi)}</b></div><div class="photo-help">Bu liste yalnız Uygun Değil bulunan maddeleri içerir; fotoğraf içermez.</div>${satirlar}<button class="btn btn-ghost" id="uygKopya">Panoya kopyala</button></div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('.close').onclick = () => ov.remove();
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    ov.querySelector('#uygKopya').onclick = () => {
+      const lines = [`AVES UYGUNSUZLUK LİSTESİ`, `Firma: ${d.musteri_unvani}`, `Asansör seri no: ${d.asansor_seri_no}`, `Denetim tarihi: ${d.denetim_tarihi}`, ''];
+      bad.forEach((row, index) => lines.push(`${index + 1}. [${row.standart_madde_no || row.madde_id}] ${row.kontrol_basligi}${row.bulgu_secenegi ? ` — ${row.bulgu_secenegi}` : ''}${row.diger_bulgu ? `: ${row.diger_bulgu}` : ''}${row.aciklama ? ` (${row.aciklama})` : ''}`));
+      navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Uygunsuzluk listesi panoya kopyalandı'));
     };
   }
 
