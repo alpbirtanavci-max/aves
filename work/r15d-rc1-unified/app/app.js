@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.30';
+const APP_VERSION = 'R15D-rc3.9.31';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -855,6 +855,8 @@ const UI = (() => {
 
   async function fotografSekmesi() {
     await fotografOnbellekYenile(currentDenetimId);
+    const denetim = await DB.get('denetimler', currentDenetimId);
+    denetim.bolum_aciklamalari = denetim.bolum_aciklamalari || {};
     let tumFotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId))
       .filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
     const ov = document.createElement('div');
@@ -870,10 +872,12 @@ const UI = (() => {
       const kategoriler = ov.querySelector('.photo-kategoriler');
       for (const [kat, baslik, rehber] of FOTOGRAF_KATEGORILERI) {
         const fotograflar = kategoriFotograflari(kat);
+        const notKey = `Fotoğraf: ${kat}`;
         const section = document.createElement('div');
         section.className = 'photo-kategori';
         section.innerHTML = `<h4>${esc(baslik)} <span class="photo-total">${fotograflar.length}</span></h4>
           <p class="photo-help">${esc(rehber)}</p>
+          ${currentCanEdit ? `<label class="photo-note-label">Kategori notu (opsiyonel)<textarea class="photo-category-note" data-photo-note="${esc(notKey)}" placeholder="Bu fotoğraf grubuna ilişkin kısa saha notu…">${esc(denetim.bolum_aciklamalari[notKey] || '')}</textarea></label>` : (denetim.bolum_aciklamalari[notKey] ? `<div class="photo-category-note readonly"><b>Kategori notu:</b> ${esc(denetim.bolum_aciklamalari[notKey])}</div>` : '')}
           <div class="photo-grid"></div>
           ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden data-kat="${kat}"></label>` : ''}`;
         const grid = section.querySelector('.photo-grid');
@@ -902,6 +906,12 @@ const UI = (() => {
         kategoriler.appendChild(section);
       }
       ov.querySelector('.close').onclick = async () => { ov.remove(); await renderDenetim(); };
+      ov.querySelectorAll('[data-photo-note]').forEach(note => note.onchange = async e => {
+        denetim.bolum_aciklamalari[e.target.dataset.photoNote] = e.target.value.trim();
+        denetim.updated_at = new Date().toISOString();
+        await localWrite('denetimler', denetim, 'denetimler');
+        toast('Fotoğraf kategori notu kaydedildi');
+      });
       const downloadAll = ov.querySelector('.photo-download-all');
       if (downloadAll) downloadAll.onclick = async () => {
         if (!window.JSZip) { toast('Toplu indirme bileşeni yüklenemedi'); return; }
