@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.35';
+const APP_VERSION = 'R15D-rc3.9.36';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1409,6 +1409,7 @@ const UI = (() => {
       </div>
       <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
       <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.</span></button>
+      <button class="mode-choice" id="completedHandover"><b>Devir Teslim</b><span>Denetimin tamamlandığını başka bir yetkiliye bildirir; ilk denetçi ve geçmiş kayıtları değişmez.</span></button>
       ${canStartFollowup(d, tamamlananRows) ? `<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B ? `ÜB.FR.53 kapsamındaki ${modulBTakipUygunsuzlukSayisi} uygunsuzluğu yeniden doğrulamak için bağlı takip muayenesi oluşturur.` : 'Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.'}</span></button>` : ''}
       ${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B && !modulBTakipUygunsuzlukSayisi ? '<div class="photo-help">Bu Modül B denetiminde takip muayenesine aktarılacak uygunsuzluk bulunmuyor.</div>' : ''}
       ${(kontrolProfili(d) !== KONTROL_PROFILLERI.TAM && kontrolProfili(d) !== KONTROL_PROFILLERI.MODUL_B) ? '<div class="photo-help">Takip denetimi yalnızca Modül G ve Modül B denetimlerinde kullanılabilir.</div>' : ''}
@@ -1419,6 +1420,7 @@ const UI = (() => {
     ov.onclick = e => { if (e.target === ov) close(); };
     ov.querySelector('#completedReview').onclick = () => { close(); showDenetim(d.id, true); };
     ov.querySelector('#completedSummary').onclick = async () => { close(); await tamamlanmisDenetimOzetiniGoster(d, tamamlananRows); };
+    ov.querySelector('#completedHandover').onclick = async () => { close(); await denetimDevirTesliminiGoster(d); };
     const followup = ov.querySelector('#completedFollowup');
     if (followup) followup.onclick = async () => {
       const takipMesaji = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
@@ -3314,6 +3316,38 @@ const UI = (() => {
     ov.querySelector('#kapanisOnay').onclick = async () => {
       ov.querySelector('#kapanisOnay').disabled = true;
       await denetimDurumuDegistir(yeniDurum, ov, true);
+    };
+  }
+
+  async function denetimDevirTesliminiGoster(denetim) {
+    const d = await DB.get('denetimler', denetim.id) || denetim;
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal"><button class="close" aria-label="Kapat">×</button><h3>Devir Teslim</h3>
+      <div class="photo-help">İlk denetçi, sonuçlar ve geçmiş kayıtları değişmez; yalnız tamamlanmış kaydın teslim bilgisi tutulur.</div>
+      <div class="onay-satir"><span>Denetim</span><b>${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</b></div>
+      <label class="field full"><span>Devredilen kişi / birim *</span><input id="devirAlan" placeholder="Ad soyad veya birim"></label>
+      <label class="field full"><span>E-posta veya iletişim (opsiyonel)</span><input id="devirEmail" placeholder="ornek@firma.com"></label>
+      <label class="field full"><span>Devir notu (opsiyonel)</span><textarea id="devirNotu" placeholder="Teslim kapsamı veya açıklama…"></textarea></label>
+      <button class="btn btn-primary" id="devirKaydet">Devir teslimi kaydet</button></div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+    ov.querySelector('#devirKaydet').onclick = async () => {
+      const alan = ov.querySelector('#devirAlan').value.trim();
+      if (!alan) { toast('Devredilen kişi veya birimi girin'); return; }
+      const hedef = await DB.get('denetimler', d.id);
+      if (!hedef) { toast('Denetim kaydı bulunamadı'); return; }
+      const now = new Date().toISOString();
+      hedef.devir_edilen_ad = alan;
+      hedef.devir_edilen_email = ov.querySelector('#devirEmail').value.trim() || null;
+      hedef.devir_at = now;
+      hedef.devir_notu = ov.querySelector('#devirNotu').value.trim() || null;
+      hedef.updated_at = now;
+      await localWrite('denetimler', hedef, 'denetimler');
+      close();
+      toast('Devir teslim bilgisi kaydedildi');
     };
   }
 
