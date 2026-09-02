@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.33';
+const APP_VERSION = 'R15D-rc3.9.34';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -2432,7 +2432,7 @@ const UI = (() => {
       const latestRows = (await DB.allByIndex('saha', 'byDenetim', currentDenetimId)).sort(siraKarsilastir);
       const firstPending = latestRows.find(r => !isFlowComplete(r));
       if (!firstPending) {
-        await denetimDurumuDegistir(gozden ? 'Çalışma Tamamlandı' : 'Gözden Geçirme');
+        await kapanisOzetiniGoster(gozden ? 'Çalışma Tamamlandı' : 'Gözden Geçirme');
         return;
       }
       search = ''; filter = 'all';
@@ -3249,7 +3249,56 @@ const UI = (() => {
     return { summary, hash: await sha256Hex(stableStringify(summary)) };
   }
 
-  async function denetimDurumuDegistir(yeniDurum, overlay) {
+  async function kapanisOzetiniGoster(yeniDurum) {
+    const d = await DB.get('denetimler', currentDenetimId);
+    const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
+    const bakilmadi = rows.filter(r => !isFlowComplete(r));
+    const eksikSeriler = seriEksikleri(d);
+    if (bakilmadi.length || eksikSeriler.length) {
+      await denetimDurumuDegistir(yeniDurum);
+      return;
+    }
+    const fotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId)).filter(foto => !foto.deleted_at);
+    const bekleyenFotograflar = fotograflar.filter(foto => foto.sync_status === 'pending').length;
+    const inspectionOutbox = (await DB.outboxAll()).filter(item => item.inspection_id === currentDenetimId);
+    const korunanIslemler = inspectionOutbox.filter(item => ['forbidden','conflict'].includes(item.sync_status)).length;
+    const bekleyenIslemler = inspectionOutbox.length - korunanIslemler;
+    const sonuc = {
+      uygun: rows.filter(row => row.durum === 'Kontrol tamamlandı').length,
+      uygunDegil: rows.filter(row => row.durum === 'Olumsuz bulgu').length,
+      uygulanmaz: rows.filter(row => row.durum === 'Uygulanmaz').length,
+    };
+    const sonrakiAdim = yeniDurum === 'Gözden Geçirme'
+      ? 'Saha kontrolü Gözden Geçirme aşamasına alınacak; sonuçları burada gerekirse düzeltebilirsiniz.'
+      : 'Çalışma tamamlanacak ve denetim listesine dönülecek. Gerekirse daha sonra yeniden düzenlemeye açabilirsiniz.';
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Kapanış öncesi denetim özeti</h3>
+      <div class="onay-box">
+        <div class="onay-satir"><span>Firma</span><b>${esc(d.musteri_unvani)}</b></div>
+        <div class="onay-satir"><span>Asansör seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
+        <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi)}</b></div>
+      </div>
+      <div class="integrity-card ok"><b>Sonuçlar</b><small>${sonuc.uygun} Uygun · ${sonuc.uygunDegil} Uygun Değil · ${sonuc.uygulanmaz} Uygulanmaz</small></div>
+      <div class="integrity-card ${korunanIslemler ? 'error' : ((bekleyenIslemler || bekleyenFotograflar) ? 'pending' : 'ok')}"><b>Fotoğraf ve aktarım durumu</b><small>${fotograflar.length} fotoğraf${bekleyenFotograflar ? ` · ${bekleyenFotograflar} fotoğraf aktarım bekliyor` : ' · fotoğraf aktarımı tamam'}${bekleyenIslemler ? ` · ${bekleyenIslemler} kayıt aktarımı bekliyor` : ''}${korunanIslemler ? ` · ${korunanIslemler} kayıt inceleme gerektiriyor` : ''}</small></div>
+      <div class="photo-help">${esc(sonrakiAdim)}</div>
+      <button class="btn btn-primary" id="kapanisOnay">Devam et</button>
+      <button class="btn btn-ghost" id="kapanisVazgec">Denetime dön</button>
+    </div>`;
+    document.body.appendChild(ov);
+    const kapat = () => ov.remove();
+    ov.querySelector('.close').onclick = kapat;
+    ov.querySelector('#kapanisVazgec').onclick = kapat;
+    ov.onclick = event => { if (event.target === ov) kapat(); };
+    ov.querySelector('#kapanisOnay').onclick = async () => {
+      ov.querySelector('#kapanisOnay').disabled = true;
+      await denetimDurumuDegistir(yeniDurum, ov, true);
+    };
+  }
+
+  async function denetimDurumuDegistir(yeniDurum, overlay, kapanisOzetiOnaylandi = false) {
     await flushEditorWrites();
     const d = await DB.get('denetimler', currentDenetimId);
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
@@ -3270,13 +3319,13 @@ const UI = (() => {
     if (!canEditDenetim(d)) { toast('Bu çalışma üzerinde değişiklik yetkiniz yok'); return; }
     const now = new Date().toISOString();
     if (yeniDurum === 'Gözden Geçirme') {
-      if (!confirm('Saha kontrolü tamamlandı. Gözden Geçirme aşamasına geçilsin mi? Sonuçları bu aşamada düzeltebilirsiniz.')) return;
+      if (!kapanisOzetiOnaylandi && !confirm('Saha kontrolü tamamlandı. Gözden Geçirme aşamasına geçilsin mi? Sonuçları bu aşamada düzeltebilirsiniz.')) return;
       d.denetim_durumu = 'Gözden Geçirme';
       d.saha_tamamlandi_at = d.saha_tamamlandi_at || now;
       d.gozden_gecirme_at = now;
       toast('Gözden Geçirme aşamasına geçildi');
     } else if (yeniDurum === 'Çalışma Tamamlandı') {
-      if (!confirm('Gözden geçirme tamamlandı mı? Çalışma “Çalışma Tamamlandı” durumuna alınacak. Daha sonra gerekirse yeniden düzenlemeye açabilirsiniz.')) return;
+      if (!kapanisOzetiOnaylandi && !confirm('Gözden geçirme tamamlandı mı? Çalışma “Çalışma Tamamlandı” durumuna alınacak. Daha sonra gerekirse yeniden düzenlemeye açabilirsiniz.')) return;
       d.denetim_durumu = 'Çalışma Tamamlandı';
       d.calisma_tamamlandi_at = now;
       toast('Çalışma tamamlandı');
