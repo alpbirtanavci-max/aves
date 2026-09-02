@@ -65,12 +65,12 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.32 uygunsuzluk ve seri no sürümü', index.includes('R15D-RC3.9.32</b>'));
-test('app R15D rc3.9.32 uygunsuzluk ve seri no sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.32'"));
-test('service worker rc3.9.32 cache', sw.includes("aves-saha-r15d-rc3932'"));
-test('uygulama manifesti rc3.9.32 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.32"'));
-test('normal yeni denetimde aynı seri no engelleniyor, takip akışı etkilenmiyor',
-  app.includes('Bu seri no için zaten bir denetim var') && app.includes('Takip denetimi') && app.includes('normSeriNo'));
+test('index R15D rc3.9.33 seri no zaman kuralı sürümü', index.includes('R15D-RC3.9.33</b>'));
+test('app R15D rc3.9.33 seri no zaman kuralı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.33'"));
+test('service worker rc3.9.33 cache', sw.includes("aves-saha-r15d-rc3933'"));
+test('uygulama manifesti rc3.9.33 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.33"'));
+test('seri no tekrarında devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
+  app.includes("denetim_durumu !== 'Çalışma Tamamlandı'") && app.includes('365 * 24 * 60 * 60 * 1000') && app.includes('Yeni bağımsız denetim 365 gün sonra açılabilir') && app.includes('Takip denetimi'));
 test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti var',
   app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
 test('fotoğraf ZIP adı seri no ve tarih içeriyor', app.includes('arsivKimligi') && app.includes('_fotograflar.zip'));

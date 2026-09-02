@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.32';
+const APP_VERSION = 'R15D-rc3.9.33';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1088,6 +1088,29 @@ const UI = (() => {
     .replace(/\baranmaz\b/g, 'uygulanmaz');
   const normEmail = (s) => (s || '').trim().toLowerCase();
   const normSeriNo = (s) => (s || '').trim().replace(/\s+/g, ' ').toLocaleUpperCase('tr-TR');
+  const denetimTarihiBaslangici = (value) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '').trim());
+    if (!match) return null;
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+    const date = new Date(year, month, day);
+    return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date.getTime() : null;
+  };
+  const seriNoTekrarUyarisi = (kayitlar) => {
+    const devamEden = kayitlar.find(item => item.denetim_durumu !== 'Çalışma Tamamlandı');
+    if (devamEden) return `Bu seri no için devam eden bir denetim var: ${devamEden.musteri_unvani || 'Kayıt'} (${devamEden.denetim_tarihi || 'tarih yok'})`;
+    const tarihliKayitlar = kayitlar
+      .map(item => ({ item, zaman: denetimTarihiBaslangici(item.denetim_tarihi) }))
+      .filter(({ zaman }) => zaman !== null)
+      .sort((a, b) => b.zaman - a.zaman);
+    if (!tarihliKayitlar.length) return 'Bu seri no için tarih bilgisi olmayan bir kayıt var; yeni denetim açılmadan önce kayıt kontrol edilmeli';
+    const son = tarihliKayitlar[0];
+    const bugun = new Date();
+    bugun.setHours(0, 0, 0, 0);
+    if (bugun.getTime() - son.zaman < 365 * 24 * 60 * 60 * 1000) return `Bu seri no için son denetim ${son.item.denetim_tarihi} tarihinde tamamlandı. Yeni bağımsız denetim 365 gün sonra açılabilir.`;
+    return '';
+  };
   const localDateISO = () => {
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -1693,30 +1716,26 @@ const UI = (() => {
       if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
       if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }
 
-      // Aynı asansör için ikinci, bağımsız bir kayıt açılmaz. Takip denetimi
-      // bu formdan değil, önceki tamamlanmış kayıttaki bağlı takip akışından
-      // üretildiği için bu koruma onu etkilemez.
+      // Devam eden kayıt varken yeni denetim açılmaz. Tamamlanan denetimlerden
+      // sonra 365 gün geçince yeni, bağımsız denetim açılabilir. Takip denetimi
+      // bu formdan değil, bağlı takip akışından üretildiği için bu kuralı aşar.
       const seriAnahtari = normSeriNo(seri);
-      const cihazdakiEslesme = (await DB.all('denetimler'))
-        .find(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
-      if (cihazdakiEslesme) {
-        toast(`Bu seri no için zaten bir denetim var: ${cihazdakiEslesme.musteri_unvani || 'Kayıt'} (${cihazdakiEslesme.denetim_tarihi || 'tarih yok'})`);
-        return;
-      }
+      let ayniSeriKayitlari = (await DB.all('denetimler'))
+        .filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
       if (navigator.onLine) {
         try {
-          const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
-          const sunucudakiEslesme = sunucudakiKayitlar
-            .find(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
-          if (sunucudakiEslesme) {
-            toast(`Bu seri no için zaten bir denetim var: ${sunucudakiEslesme.musteri_unvani || 'Kayıt'} (${sunucudakiEslesme.denetim_tarihi || 'tarih yok'})`);
-            return;
-          }
+          const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi,denetim_durumu&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
+          const birlesikKayitlar = new Map(ayniSeriKayitlari.map(item => [item.id, item]));
+          sunucudakiKayitlar.filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari)
+            .forEach(item => birlesikKayitlar.set(item.id, { ...birlesikKayitlar.get(item.id), ...item }));
+          ayniSeriKayitlari = [...birlesikKayitlar.values()];
         } catch {
           toast('Seri no tekrar kontrolü sunucuda yapılamadı; bağlantıyı kontrol edin');
           return;
         }
       }
+      const seriNoUyarisi = seriNoTekrarUyarisi(ayniSeriKayitlari);
+      if (seriNoUyarisi) { toast(seriNoUyarisi); return; }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
       // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
