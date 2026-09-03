@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.40';
+const APP_VERSION = 'R15D-rc3.9.41';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1750,8 +1750,11 @@ const UI = (() => {
       // sonra 365 gün geçince yeni, bağımsız denetim açılabilir. Takip denetimi
       // bu formdan değil, bağlı takip akışından üretildiği için bu kuralı aşar.
       const seriAnahtari = normSeriNo(seri);
+      // Liste ekranı ile aynı görünürlük kuralı kullanılır. Cihazda eski bir
+      // oturumdan kalmış, kullanıcıya görünmeyen veya eksik üst bilgili kayıt
+      // yeni bir denetimi yanlışlıkla engellememelidir.
       let ayniSeriKayitlari = (await DB.all('denetimler'))
-        .filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari);
+        .filter(item => denetimGorunebilirMi(item) && normSeriNo(item.asansor_seri_no) === seriAnahtari);
       if (navigator.onLine) {
         try {
           const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi,denetim_durumu&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
