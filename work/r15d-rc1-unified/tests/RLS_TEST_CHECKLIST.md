@@ -21,7 +21,7 @@ Migration NN ve `app.js` bu kararlara göre yazılır; testler bunları doğrula
 
 | Konu | Karar | Sonuç |
 |---|---|---|
-| Üst bilgi alanları (müşteri/adres/seri no/tarih/olusturan/atama) | Atanmış mühendis **değiştiremez** | `BEFORE UPDATE` trigger `aves_takip_atanan_alan_kilidi`; RLS durum filtresi tek başına yetmez |
+| Üst bilgi alanları (müşteri/adres/seri no/tarih/olusturan/atama) | Atanmış mühendis **değiştiremez** | `BEFORE UPDATE` trigger `aves_takip_atanan_alan_kilidi`. **İzin-listesi mantığı** — listede olmayan her kolon (yeni kolonlar dahil) varsayılan kilitli. Yetki `OLD.takip_atanan_email` üzerinden değerlendirilir (atama değişikliği zaten RLS `WITH CHECK` ile engelli). RLS durum filtresi tek başına yetmez |
 | Durum ilerletme | Atanmış mühendis takibi **`Çalışma Tamamlandı`ya ilerletebilir** | `denetimler` UPDATE politikası `USING` = aktif iki durum, `WITH CHECK` = + `Çalışma Tamamlandı` (asimetrik). Tamamlanmış satırdan **yeni güncelleme başlatılamaz** (`USING` engeller) |
 | Fotoğraf silme | Atanmış mühendis **silemez** (D2) | DELETE politikaları değişmez **ve** `app.js` `.photo-remove` düğmesi ona gösterilmez — arayüzde silme eylemi görünmemeli, yalnız sunucudan 403 almak yetersiz |
 | Kaynak denetim görünürlüğü | Atanmış mühendis **yalnız takip kaydını** görür | Kaynak (`takip_onceki_denetim_id`) denetimi görmez; takip satırındaki `takip_onceki_*` snapshot alanları çıktı için yeterli |
@@ -64,6 +64,7 @@ politikası ister.
 | 3.4 | C | `insert denetim_degisim_gecmisi` (takip kaydı için, `islem_turu <> 'denetim_silme'`) | `gecmis ekleme` | **başarılı** — aksi halde "kim/ne zaman düzeltti" sunucuya gitmez |
 | 3.5 | C | `select denetim_degisim_gecmisi` takip kaydının geçmişi | `gecmis okuma` | **görür** |
 | 3.6 | C | `insert denetim_fotograflari` (takip kaydı, aktif durum) | `denetim fotograflari ekleme` | **başarılı** |
+| 3.6b | C | `update` / upsert (`Prefer: resolution=merge-duplicates`) aynı `denetim_fotograflari` metadata satırı | `denetim fotograflari guncelleme` | **başarılı** — `API.upsert` tüm tablolarda merge-duplicates kullanıyor; UPDATE politikası yoksa 403 |
 | 3.7 | C | `insert storage.objects` bucket `denetim-fotograflari`, path `<takip_denetim_id>/...` | `denetim fotograf nesnesi ekleme` | **başarılı** |
 | 3.8 | C | `update` (upsert / `x-upsert:true`) aynı `storage.objects` nesnesi | `denetim fotograf nesnesi guncelleme` | **başarılı** — yoksa upsert 403/400 |
 | 3.9 | C | `select denetim_fotograflari` + `select storage.objects` takip fotoğrafları | `... okuma` (68 / 71) | **görür** |
@@ -74,8 +75,9 @@ politikası ister.
 | 3.12c | C | `update denetimler` — `denetim_durumu` 'Gözden Geçirme'→'Çalışma Tamamlandı' (takibi kapat) | `takip atanan denetim guncelleme` `WITH CHECK` + trigger | **başarılı** — `USING` eski satırı aktifken kabul eder, `WITH CHECK` yeni 'Çalışma Tamamlandı'ya izin verir (asimetrik yazım şart) |
 | 3.12d | C | `.photo-remove` (× foto sil) — aktif takip fotoğrafı | `denetim fotograflari silme` (75, değişmedi) | **RED** — D2 kararı; app.js düğmeyi C'ye göstermemeli (statik test) |
 | 3.13 | D | `select` aynı takip `denetimler` satırı | `denetimleri okuma` | **görmez** (0 satır) |
-| 3.14 | D | `update saha_kontrol` / `insert denetim_fotograflari` aynı takip kaydında | ilgili politikalar | **RED** |
-| 3.15 | D | `select storage.objects` takip fotoğrafı | `denetim fotograf nesnesi okuma` | **görmez** |
+| 3.14 | D | `update saha_kontrol` / `insert denetim_fotograflari` / `update denetim_fotograflari` aynı takip kaydında | ilgili politikalar | **RED** |
+| 3.15 | D | `select` + `insert` + `update` `storage.objects` takip fotoğrafı (path `<takip_denetim_id>/...`) | `denetim fotograf nesnesi okuma/ekleme/guncelleme` | **hepsi RED** (görmez / yazamaz / güncelleyemez) |
+| 3.15b | D | `insert denetim_degisim_gecmisi` takip kaydı için | `gecmis ekleme` | **RED** |
 | 3.16 | A | `select` + `update` takip kaydı ve geçmişi (oluşturan sıfatıyla) | mevcut sahiplik dalları | **görür / başarılı** (regresyon) |
 | 3.17 | B | takip kaydını `select` + `takip_atanan_email` ata/değiştir | `denetim guncelleme` (yönetim) | **görür / başarılı** |
 | 3.18 | C | atama kaldırıldıktan sonra (`takip_atanan_email` = başkası) `select denetimler` / `select denetim_fotograflari` | tüm okuma politikaları | **görmez** |

@@ -5,7 +5,7 @@
 **İnceleme kapsamı:** `c2503ed` → `3d783ba` → `8a95e3a` (rc3.9.37–rc3.9.39)
 **Yeni migration:** `work/r15d-rc1-unified/database/NN_r15d_rc39XX_takip_atanan_yetki.sql`
 — `NN` için başlamadan önce `ls database/ | sort | tail -1` ile sıradaki numarayı doğrula.
-**Test:** `work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md` senaryoları, bir Supabase branch'inde üç hesapla.
+**Test:** `work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md` senaryoları, bir Supabase branch'inde dört persona / dört ayrı test kimliğiyle (A/B/C/D).
 
 Bu bir hata düzeltme brifidir. Yeni özellik yok. Amaç: yönetimin bir `muhendis`'e
 atadığı takip denetiminin o mühendiste **fiilen çalışması** — görme, checklist, fotoğraf,
@@ -118,23 +118,42 @@ alanlarını (`musteri_unvani`, `denetim_adresi`, `asansor_seri_no`, `denetim_ta
 
 Migration 79 şu trigger'ı içerir:
 
-**`BEFORE UPDATE` trigger** `public.aves_takip_atanan_alan_kilidi()` on `public.denetimler`:
-`aves_oturum_emaili()` = `new.takip_atanan_email` **ve** güncelleyen sahibi/yönetici
-**değilse**, korunan kolonlardan herhangi biri `old`'dan farklıysa `raise exception`.
+**`BEFORE UPDATE` trigger** `public.aves_takip_atanan_alan_kilidi()` on `public.denetimler`.
 
-- **Korunan (C değiştiremez):** `musteri_unvani`, `denetim_adresi`, `asansor_seri_no`,
-  `asansor_kimlik_no`, `dosya_no`, `denetim_tarihi`, `denetimi_yapan`, `olusturan_email`,
-  `olusturan_ad`, `modul`, `denetim_turu`, `kontrol_profili`, `ana_standart`,
-  `takip_ana_denetim_id`, `takip_onceki_denetim_id`, `takip_sira_no`, `takip_atanan_email`,
-  `takip_atanan_ad`, `takip_atama_at` ve teknik/beyan alanları.
-- **İzin verilen:** sonuç/ilerleme/sync alanları — `denetim_durumu` (yalnız ileri yön:
-  'Devam Ediyor' → 'Gözden Geçirme' → 'Çalışma Tamamlandı'), `saha_tamamlandi_at`,
-  `gozden_gecirme_at`, `calisma_tamamlandi_at`, `butunluk_*`, `expected_item_*`,
-  `seri_numaralari`, `offline_hazir_at`, `updated_at`, `form_cikti_snapshot`.
-- Precedent: `trg_aves_takip_zincir_kilidi` (`42_...:360`), `trg_aves_duzeltme_oturumu`
-  (`42_...:399`) — aynı desen (`security definer`, `set search_path`, `is distinct from`).
-- Kesin kolon listesini `information_schema.columns` ile doğrula; belirsiz alanda
-  (yeni kolon) **korunan** tarafta bırak, notta belirt.
+**1) Yetki değerlendirmesi `OLD` üzerinden yapılır** (Codex uyarısı):
+`lower(coalesce(OLD.takip_atanan_email,'')) = public.aves_oturum_emaili()` **ve**
+güncelleyen sahibi/yönetici **değilse** kural devreye girer. Yetki mevcut satırdan doğar;
+`NEW.takip_atanan_email` kullanılmaz — atama değişikliği zaten RLS `WITH CHECK` ile
+engelli, trigger onu tekrar denetlemez.
+
+**2) İzin listesi mantığı — kara liste DEĞİL** (Codex uyarısı): trigger tek tek korunan
+kolonları kıyaslamaz. **İzin verilen kolonlar** bir dizide tutulur; bu dizide **olmayan**
+her kolon için `NEW.<col> is distinct from OLD.<col>` ise `raise exception`. Yeni eklenen
+her kolon listede olmadığı için **varsayılan kilitli** olur.
+
+Uygulama: `to_jsonb(OLD)` / `to_jsonb(NEW)` alınır, izin verilen anahtarlar çıkarılır,
+kalan set eşit değilse reddedilir. Örn:
+
+```sql
+if (to_jsonb(NEW) - v_izinli) is distinct from (to_jsonb(OLD) - v_izinli) then
+  raise exception 'Takip mühendisi yalnız sonuç/ilerleme alanlarını güncelleyebilir';
+end if;
+```
+
+**İzin verilen kolon dizisi `v_izinli`** (yalnız bunlar; gerisi kilitli):
+`denetim_durumu`, `saha_tamamlandi_at`, `gozden_gecirme_at`, `calisma_tamamlandi_at`,
+`offline_hazir_at`, `butunluk_ozeti`, `butunluk_hash`, `butunluk_hesaplandi_at`,
+`expected_item_count`, `expected_item_set_hash`, `seri_numaralari`, `form_cikti_snapshot`,
+`updated_at`. (Kesin listeyi `GECMIS_ALANLARI` / `information_schema.columns` ile karşılaştır;
+şüpheli alanı **listeye ekleme** — kilitli kalsın.)
+
+**3) `denetim_durumu` yalnız ileri yön:** 'Devam Ediyor' → 'Gözden Geçirme' →
+'Çalışma Tamamlandı'. Geri dönüş `raise exception`. (Politikanın `USING`'i zaten
+tamamlanmış satırdan güncelleme başlatılmasını engeller; bu adım aktif satır içindeki
+geri gidişi engeller.)
+
+Precedent: `trg_aves_takip_zincir_kilidi` (`42_...:360`), `trg_aves_duzeltme_oturumu`
+(`42_...:399`) — `security definer`, `set search_path = public, pg_temp`.
 
 ---
 
@@ -145,13 +164,17 @@ Migration 79 şu trigger'ı içerir:
    `select ... from pg_policies` doğrulaması.
 1b. `app.js` — `.photo-remove` düğmesi silme yetkisi kontrolüne bağlanır (D2 kararı).
 2. Sürüm bumpı — dört dosya (`app.js` `APP_VERSION`, `index.html`, `manifest.json`, `sw.js` cache).
-3. `tests/r15d-static-test.mjs` — 79'u oku; testler: (a) `denetimleri okuma` + `gecmis okuma`
-   + `denetim fotograflari okuma` + storage okuma politikaları `takip_atanan_email` içeriyor,
-   (b) `denetimler` UPDATE + foto INSERT/UPDATE politikaları `denetim_durumu in` kısıtı içeriyor,
-   (c) üst bilgi koruma trigger'ı/RPC'si mevcut. Sürüm testleri güncellenir. `node ...` yeşil.
-4. `tests/rls/NN_takip_atama.sql` — `RLS_TEST_CHECKLIST.md` §3–4 senaryoları, `begin/rollback`.
-   Bir Supabase branch'inde koşulur, çıktı PR'a eklenir.
-5. `R15D_RC39XX_TAKIP_ATAMA_RLS_NOTU.md` — ne değişti, canlı uygulama sırası, geri dönüş planı,
-   (C) seçildiyse kabul edilen risk.
+3. `tests/r15d-static-test.mjs` — yeni migration'ı oku; testler:
+   (a) `denetimleri okuma` + `saha okuma` + `gecmis okuma` + `denetim fotograflari okuma`
+       + storage okuma politikaları `takip_atanan_email` içeriyor,
+   (b) `denetimler` UPDATE `USING` aktif iki durum / `WITH CHECK` + `Çalışma Tamamlandı`
+       (asimetrik); foto/storage INSERT + UPDATE politikaları `denetim_durumu` kısıtı içeriyor,
+   (c) trigger `aves_takip_atanan_alan_kilidi` mevcut **ve** izin-listesi deseni kullanıyor
+       (`to_jsonb(NEW) - ... is distinct from to_jsonb(OLD) - ...`), yetki `OLD.takip_atanan_email`,
+   (d) `app.js` `.photo-remove` render koşulu salt `currentCanEdit` değil (D2).
+   Sürüm testleri yeni numaraya güncellenir. `node ...` yeşil.
+4. `tests/rls/NN_takip_atama.sql` — `RLS_TEST_CHECKLIST.md` §1b kararları + §3–4 senaryoları,
+   `begin/rollback`. Dört test kimliğiyle bir Supabase branch'inde koşulur, çıktı PR'a eklenir.
+5. `R15D_RC39XX_TAKIP_ATAMA_RLS_NOTU.md` — ne değişti, canlı uygulama sırası, geri dönüş planı.
 6. Canlıya (Supabase) uygulama **kullanıcı açıkça isteyene kadar**; yalnız dosyayı hazırla, PR aç.
 7. `aves_oturum_emaili()`'nin okuduğu JWT claim'ini Supabase panelden doğrula ve nota yaz.
