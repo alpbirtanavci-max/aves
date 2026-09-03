@@ -19,9 +19,10 @@ Supabase branch'inde gerçek çalıştırır ve çıktı özetini PR'a ekler. St
 
 Testler bir Supabase branch'inde koşar; her persona için oturum taklit edilir:
 
+Fotoğraf/storage politikaları `lower(auth.jwt() ->> 'email')` okuyor (bkz. `68_...sql`).
+`aves_oturum_emaili()`'nin de aynı claim'e dayandığını Supabase panelden doğrula.
+
 ```sql
--- Supabase JWT taklidi. aves_oturum_emaili()'nin gerçekte hangi claim'i okuduğunu
--- Supabase panelinden DOĞRULA (genelde auth.jwt() ->> 'email').
 set local role authenticated;
 set local request.jwt.claims = '{"role":"authenticated","email":"c.muhendis@example.com"}';
 
@@ -37,22 +38,26 @@ Dosya konumu: `work/r15d-rc1-unified/tests/rls/NN_<konu>.sql`.
 Kurulum: A bir ana denetim + bir takip kaydı oluşturur (takip kaydında en az bir
 "önceki Olumsuz bulgu" satırı). B, takip kaydını C'ye atar (`takip_atanan_email = C`).
 
-| # | Aktör | İşlem | Beklenen |
-|---|---|---|---|
-| 3.1 | C | `select` takip `denetimler` satırı | **görür** (1 satır) |
-| 3.2 | C | `select` takip kaydının `saha_kontrol` satırları | **görür** (tümü) |
-| 3.3 | C | `update saha_kontrol` — bir maddeye `durum`, `bulgu_secenegi` yaz | **başarılı** (denetim_durumu 'Devam Ediyor'/'Gözden Geçirme' iken) |
-| 3.4 | C | fotoğraf tablosuna `insert` (takip kaydı için) | **başarılı** |
-| 3.5 | C | takip kaydının fotoğraflarını `select` | **görür** |
-| 3.6 | C | `denetim_degisim_gecmisi` (geçmiş) satırı oluşması / okunması | **başarılı / görür** |
-| 3.7 | C | takip `denetimler` satırını `update` — `denetim_durumu = 'Çalışma Tamamlandı'` iken herhangi bir alan | **RED** (durum kısıtı) |
-| 3.8 | C | `update denetimler` — `takip_atanan_email`'i D'ye değiştir | **RED** (`with check`) |
-| 3.9 | C | `update denetimler` — `musteri_unvani` / `denetimi_yapan` değiştir | **RED olması tercih edilir** — kapsam kararı "doğrulanması gereken" olarak işaretli |
-| 3.10 | D | `select` aynı takip `denetimler` satırı | **görmez** (0 satır) |
-| 3.11 | D | `update saha_kontrol` aynı takip kaydında | **RED** |
-| 3.12 | A | `select` + `update` takip kaydı (oluşturan sıfatıyla) | **görür / başarılı** |
-| 3.13 | B | takip kaydını `select` + `takip_atanan_email` ata/değiştir | **görür / başarılı** |
-| 3.14 | C | atama kaldırıldıktan sonra (`takip_atanan_email` = başkası) `select` | **görmez** |
+| # | Aktör | İşlem | Hedef politika | Beklenen |
+|---|---|---|---|---|
+| 3.1 | C | `select` takip `denetimler` satırı | `denetimleri okuma` | **görür** (1 satır) |
+| 3.2 | C | `select` takip kaydının `saha_kontrol` satırları | `saha okuma` | **görür** (tümü) |
+| 3.3 | C | `update saha_kontrol` — bir maddeye `durum`, `bulgu_secenegi` yaz | `takip atanan saha guncelleme` | **başarılı** (denetim_durumu 'Devam Ediyor'/'Gözden Geçirme' iken) |
+| 3.4 | C | `insert denetim_degisim_gecmisi` (takip kaydı için, `islem_turu <> 'denetim_silme'`) | `gecmis ekleme` | **başarılı** — aksi halde "kim/ne zaman düzeltti" sunucuya gitmez |
+| 3.5 | C | `select denetim_degisim_gecmisi` takip kaydının geçmişi | `gecmis okuma` | **görür** |
+| 3.6 | C | `insert denetim_fotograflari` (takip kaydı, aktif durum) | `denetim fotograflari ekleme` | **başarılı** |
+| 3.7 | C | `insert storage.objects` bucket `denetim-fotograflari`, path `<takip_denetim_id>/...` | `denetim fotograf nesnesi ekleme` | **başarılı** |
+| 3.8 | C | `update` (upsert / `x-upsert:true`) aynı `storage.objects` nesnesi | `denetim fotograf nesnesi guncelleme` | **başarılı** — yoksa upsert 403/400 |
+| 3.9 | C | `select denetim_fotograflari` + `select storage.objects` takip fotoğrafları | `... okuma` (68 / 71) | **görür** |
+| 3.10 | C | takip `denetimler` `update` — `denetim_durumu = 'Çalışma Tamamlandı'` iken herhangi bir alan | `takip atanan denetim guncelleme` | **RED** (durum kısıtı; tamamlanmış kaydı yeniden açamaz) |
+| 3.11 | C | `update denetimler` — `takip_atanan_email`'i D'ye değiştir | `... with check` | **RED** |
+| 3.12 | C | `update denetimler` — `musteri_unvani` / `denetimi_yapan` / `denetim_tarihi` değiştir (aktif durumda) | üst bilgi koruma trigger/RPC | **RED** (seçenek A/B) **veya** kabul edilen risk notu (seçenek C) — migration 79 hangisini seçtiyse |
+| 3.13 | D | `select` aynı takip `denetimler` satırı | `denetimleri okuma` | **görmez** (0 satır) |
+| 3.14 | D | `update saha_kontrol` / `insert denetim_fotograflari` aynı takip kaydında | ilgili politikalar | **RED** |
+| 3.15 | D | `select storage.objects` takip fotoğrafı | `denetim fotograf nesnesi okuma` | **görmez** |
+| 3.16 | A | `select` + `update` takip kaydı ve geçmişi (oluşturan sıfatıyla) | mevcut sahiplik dalları | **görür / başarılı** (regresyon) |
+| 3.17 | B | takip kaydını `select` + `takip_atanan_email` ata/değiştir | `denetim guncelleme` (yönetim) | **görür / başarılı** |
+| 3.18 | C | atama kaldırıldıktan sonra (`takip_atanan_email` = başkası) `select denetimler` / `select denetim_fotograflari` | tüm okuma politikaları | **görmez** |
 
 ## 4. Regresyon (mevcut davranış bozulmamalı)
 
