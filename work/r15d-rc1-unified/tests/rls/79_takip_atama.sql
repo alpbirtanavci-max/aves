@@ -1,39 +1,32 @@
 -- RLS senaryo testi — migration 79 (takip atanan mühendis yetkisi)
 -- ============================================================================
--- ÇALIŞTIRMA: Bir Supabase branch'inde, migration 1..79 uygulandıktan sonra.
---   psql "$BRANCH_DB_URL" -v ON_ERROR_STOP=1 -f 79_takip_atama.sql
+-- ÇALIŞTIRMA:
+--   Yerel, izole kanıt: .\tests\rls\run-79-local.ps1
+--   Supabase branch:    psql "$BRANCH_DB_URL" -v ON_ERROR_STOP=1 -f 79_takip_atama.sql
 --
--- Script tek transaction'dır ve sonunda ROLLBACK yapar — test verisi kalıcı olmaz.
--- Her senaryo bir DO bloğudur; sonuç `PASS <n>` / `FAIL <n>` olarak yazılır.
--- Referans: work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md §1b + §3 + §3c.
---
--- DURUM: fikstür kurulumu canlı şemaya göre yazıldı; senaryo blokları henüz bir
--- branch'te çalıştırılmadı. İlk koşumda beklenen ufak düzeltmeler (claim biçimi,
--- kolon adı) buraya işlenmeli.
+-- Script tek transaction'dır ve ROLLBACK ile biter. Başarısız her beklenti
+-- exception üretir; psql -v ON_ERROR_STOP=1 bu nedenle kırmızı döner. Notice
+-- yazıp başarıyla çıkmak yasaktır. Referans: RLS_TEST_CHECKLIST.md §1b + §3.
 -- ============================================================================
 
 begin;
 
--- Kimlik trigger'ları fikstür kurulumunu engeller (aktif profil arar); yalnız
--- setup boyunca kapat.
-alter table public.denetimler        disable trigger user;
-alter table public.saha_kontrol      disable trigger user;
+alter table public.denetimler disable trigger user;
+alter table public.saha_kontrol disable trigger user;
 
--- --- Personalar --------------------------------------------------------------
 insert into public.kullanici_profilleri (email, ad_soyad, rol, aktif) values
-  ('a.ilk@test.local',    'A Ilk Denetci',      'muhendis',  true),
-  ('b.yonetim@test.local','B Yonetim',          'yonetici',  true),
-  ('c.atanan@test.local', 'C Atanan Muhendis',  'muhendis',  true),
-  ('d.ilgisiz@test.local','D Ilgisiz Muhendis', 'muhendis',  true)
+  ('a.ilk@test.local',     'A Ilk Denetci',     'muhendis',  true),
+  ('b.yonetim@test.local', 'B Yonetim',         'yonetici',  true),
+  ('c.atanan@test.local',  'C Atanan Muhendis', 'muhendis',  true),
+  ('d.ilgisiz@test.local', 'D Ilgisiz Muhendis','muhendis',  true)
 on conflict (email) do update set aktif = true, rol = excluded.rol;
 
--- --- Fikstür: ana denetim + takip kaydı (C'ye atanmış) + bir saha satırı ------
--- Not: NOT NULL kolonlar canlı şemadan: musteri_unvani, asansor_seri_no,
--- ana_standart, olusturan_email (+ default'lu olanlar boş bırakılabilir).
 do $$
-declare v_ana uuid := gen_random_uuid();
-        v_takip uuid := gen_random_uuid();
-        v_saha uuid := gen_random_uuid();
+declare
+  v_ana uuid := gen_random_uuid();
+  v_takip uuid := gen_random_uuid();
+  v_saha uuid := gen_random_uuid();
+  v_foto uuid := gen_random_uuid();
 begin
   insert into public.denetimler (id, musteri_unvani, asansor_seri_no, ana_standart,
     olusturan_email, denetim_durumu)
@@ -51,168 +44,189 @@ begin
     standart_grubu, kontrol_basligi)
   values (v_saha, v_takip, 'MAD-0001', 1, 'Genel', 'TS EN 81-20', 'Test maddesi');
 
-  -- id'leri sonraki bloklara taşı
-  create temporary table _ids (ana uuid, takip uuid, saha uuid) on commit drop;
-  insert into _ids values (v_ana, v_takip, v_saha);
+  insert into public.denetim_fotograflari (id, denetim_id, object_path, kategori)
+  values (v_foto, v_takip, v_takip::text || '/genel/baslangic.jpg', 'genel');
+
+  insert into storage.objects (bucket_id, name)
+  values ('denetim-fotograflari', v_takip::text || '/genel/baslangic.jpg');
+
+  create temporary table _ids (ana uuid, takip uuid, saha uuid, foto uuid) on commit drop;
+  insert into _ids values (v_ana, v_takip, v_saha, v_foto);
 end $$;
 
-alter table public.denetimler   enable trigger user;
+-- Senaryo blokları `authenticated` rolüne geçer; fixture kimlikleri test
+-- yardımcısıdır, production tablosu değildir.
+grant select on _ids to authenticated;
+
+alter table public.denetimler enable trigger user;
 alter table public.saha_kontrol enable trigger user;
 
--- --- Yardımcı: oturum taklidi -----------------------------------------------
--- aves_oturum_emaili() = lower(coalesce(auth.jwt() ->> 'email','')) (canlıdan doğrulandı)
--- Her senaryo bloğu başında:
---   set local role authenticated;
---   set local request.jwt.claims = '{"role":"authenticated","email":"<persona>"}';
--- ve blok sonunda `reset role;` (transaction ROLLBACK ile toparlanır).
+-- Her blok başarısız beklentide exception atar. Bu, RLS'nin 0 satır döndürdüğü
+-- sessiz retleri ile trigger kaynaklı açık retleri aynı güven düzeyinde sınar.
 
--- ============================================================================
--- §3 SENARYOLAR — beklenen sonuçlar RLS_TEST_CHECKLIST.md ile birebir
--- ============================================================================
-
--- 3.1  C takip denetimini görür (SELECT denetimler) -> 1 satır
+-- 3.1–3.3 C: takip ve checklist'i görür/günceller.
 do $$
-declare n int;
+declare n integer; changed integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  select count(*) into n from public.denetimler d
-    where d.id = (select takip from _ids);
+  select count(*) into n from public.denetimler where id = (select takip from _ids);
+  if n <> 1 then raise exception '3.1: C takip kaydını göremedi (satır=%)', n; end if;
+  select count(*) into n from public.saha_kontrol where denetim_id = (select takip from _ids);
+  if n <> 1 then raise exception '3.2: C checklist satırını göremedi (satır=%)', n; end if;
+  update public.saha_kontrol set durum = 'Kontrol tamamlandı' where id = (select saha from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.3: C checklist güncelleyemedi (satır=%)', changed; end if;
   reset role;
-  raise notice '%  3.1  C takip denetimini gorur (beklenen 1, gelen %)',
-    case when n = 1 then 'PASS' else 'FAIL' end, n;
 end $$;
 
--- 3.2  C takip kaydının saha_kontrol satırlarını görür
+-- 3.4–3.5 C: geçmiş ekler ve görür.
 do $$
-declare n int;
+declare n integer; changed integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  select count(*) into n from public.saha_kontrol s
-    where s.denetim_id = (select takip from _ids);
+  insert into public.denetim_degisim_gecmisi (denetim_id, islem_turu, detay)
+  values ((select takip from _ids), 'saha_kontrol_guncelleme', '{"test":true}');
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.4: C geçmiş olayı ekleyemedi'; end if;
+  select count(*) into n from public.denetim_degisim_gecmisi where denetim_id = (select takip from _ids);
+  if n <> 1 then raise exception '3.5: C geçmiş olayını göremedi (satır=%)', n; end if;
   reset role;
-  raise notice '%  3.2  C saha_kontrol gorur (beklenen 1, gelen %)',
-    case when n = 1 then 'PASS' else 'FAIL' end, n;
 end $$;
 
--- 3.3  C bir maddeyi günceller (aktif durumda) -> başarılı
+-- 3.6–3.9 C: fotoğraf metadata'sı ve Storage nesnesi okunur; ekleme/upsert yapılır.
 do $$
+declare n integer; changed integer; v_path text;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  update public.saha_kontrol set durum = 'Kontrol tamamlandı'
-    where denetim_id = (select takip from _ids);
+  select count(*) into n from public.denetim_fotograflari where id = (select foto from _ids);
+  if n <> 1 then raise exception '3.6: C fotoğraf metadata göremedi (satır=%)', n; end if;
+  update public.denetim_fotograflari set kategori = 'genel-guncel' where id = (select foto from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.6b: C fotoğraf metadata güncelleyemedi'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'denetim-fotograflari'
+    and name = (select takip::text || '/genel/baslangic.jpg' from _ids);
+  if n <> 1 then raise exception '3.7: C Storage nesnesini göremedi (satır=%)', n; end if;
+  select takip::text || '/genel/yeni.jpg' into v_path from _ids;
+  insert into storage.objects (bucket_id, name) values ('denetim-fotograflari', v_path);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.8: C Storage nesnesi ekleyemedi'; end if;
+  update storage.objects set metadata = '{"upsert":true}'::jsonb
+    where bucket_id = 'denetim-fotograflari' and name = v_path;
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.9: C Storage upsert güncellemesi yapamadı'; end if;
   reset role;
-  raise notice 'PASS  3.3  C saha_kontrol guncelleme basarili';
-exception when others then
-  reset role;
-  raise notice 'FAIL  3.3  C saha_kontrol guncelleme reddedildi: %', sqlerrm;
 end $$;
 
--- 3.12  C üst bilgi değiştiremez (trigger) -> RED
+-- 3.12 C üst bilgiyi değiştiremez; 3.12b izinli tam-satır PATCH'i başarır.
 do $$
+declare blocked boolean := false; changed integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  update public.denetimler set musteri_unvani = 'DEGISTIRILDI'
-    where id = (select takip from _ids);
+  begin
+    update public.denetimler set musteri_unvani = 'DEGISTIRILDI' where id = (select takip from _ids);
+  exception when others then blocked := true;
+  end;
+  if not blocked then raise exception '3.12: C üst bilgiyi değiştirebildi'; end if;
+  update public.denetimler
+  set updated_at = now(), son_degistiren_email = 'c.atanan@test.local',
+      son_degistiren_ad = 'C Atanan Muhendis', son_degistiren_rol = 'muhendis',
+      son_degistiren_at = now(), gozden_gecirme_at = now()
+  where id = (select takip from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.12b: C izinli tam-satır PATCH yapamadı'; end if;
   reset role;
-  raise notice 'FAIL  3.12  C musteri_unvani degistirebildi (RED bekleniyordu)';
-exception when others then
-  reset role;
-  raise notice 'PASS  3.12  C ust bilgi degisikligi reddedildi: %', sqlerrm;
 end $$;
 
--- 3.12c  C takibi kapatabilir (denetim_durumu -> Çalışma Tamamlandı) -> başarılı
+-- 3.12d D2: C metadata veya Storage nesnesi silemez; RLS reddi 0 satırdır.
 do $$
+declare changed integer; n integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  update public.denetimler set denetim_durumu = 'Çalışma Tamamlandı'
-    where id = (select takip from _ids);
+  delete from public.denetim_fotograflari where id = (select foto from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 0 then raise exception '3.12d: C fotoğraf metadata silebildi'; end if;
+  select count(*) into n from public.denetim_fotograflari where id = (select foto from _ids);
+  if n <> 1 then raise exception '3.12d: C metadata silme denemesi kaydı korumadı'; end if;
+  delete from storage.objects where bucket_id = 'denetim-fotograflari'
+    and name = (select takip::text || '/genel/baslangic.jpg' from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 0 then raise exception '3.12d: C Storage nesnesi silebildi'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'denetim-fotograflari'
+    and name = (select takip::text || '/genel/baslangic.jpg' from _ids);
+  if n <> 1 then raise exception '3.12d: C Storage silme denemesi nesneyi korumadı'; end if;
   reset role;
-  raise notice 'PASS  3.12c C takibi kapatabildi';
-exception when others then
-  reset role;
-  raise notice 'FAIL  3.12c C takibi kapatamadi: %', sqlerrm;
 end $$;
 
--- 3.10 / 3.5(a)  Tamamlanmış kayıttan sonra C yeni güncelleme başlatamaz -> RED
+-- 3.13–3.15 D: ilgisiz mühendis takip, geçmiş, metadata ve Storage'a erişemez.
 do $$
-begin
-  set local role authenticated;
-  set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  update public.denetimler set updated_at = now()
-    where id = (select takip from _ids);
-  reset role;
-  raise notice 'FAIL  3.10  C tamamlanmis kaydi guncelleyebildi (RED bekleniyordu)';
-exception when others then
-  reset role;
-  raise notice 'PASS  3.10  C tamamlanmis kayitta guncelleme reddedildi';
-end $$;
-
--- 3.13  D takip denetimini GÖRMEZ -> 0 satır
-do $$
-declare n int;
+declare n integer; changed integer; blocked boolean;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"d.ilgisiz@test.local"}';
-  select count(*) into n from public.denetimler d
-    where d.id = (select takip from _ids);
+  select count(*) into n from public.denetimler where id = (select takip from _ids);
+  if n <> 0 then raise exception '3.13: D takip kaydını görebildi'; end if;
+  update public.saha_kontrol set durum = 'Olumsuz bulgu' where id = (select saha from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 0 then raise exception '3.14: D checklist güncelleyebildi'; end if;
+  select count(*) into n from public.denetim_fotograflari where id = (select foto from _ids);
+  if n <> 0 then raise exception '3.15: D fotoğraf metadata görebildi'; end if;
+  select count(*) into n from storage.objects where bucket_id = 'denetim-fotograflari'
+    and name = (select takip::text || '/genel/baslangic.jpg' from _ids);
+  if n <> 0 then raise exception '3.15: D Storage nesnesini görebildi'; end if;
+  blocked := false;
+  begin
+    insert into public.denetim_degisim_gecmisi (denetim_id, islem_turu)
+    values ((select takip from _ids), 'saha_kontrol_guncelleme');
+  exception when others then blocked := true;
+  end;
+  if not blocked then raise exception '3.15b: D geçmiş olayı ekleyebildi'; end if;
+  blocked := false;
+  begin
+    insert into storage.objects (bucket_id, name)
+    values ('denetim-fotograflari', (select takip::text || '/d/yeni.jpg' from _ids));
+  exception when others then blocked := true;
+  end;
+  if not blocked then raise exception '3.15: D Storage nesnesi ekleyebildi'; end if;
   reset role;
-  raise notice '%  3.13  D takip denetimini gormez (beklenen 0, gelen %)',
-    case when n = 0 then 'PASS' else 'FAIL' end, n;
 end $$;
 
--- 3.14  D saha_kontrol güncelleyemez -> RED
+-- 3.16–3.17 A sahip ve B yönetim regresyonu: ikisi de kaydı günceller.
 do $$
-begin
-  set local role authenticated;
-  set local request.jwt.claims = '{"role":"authenticated","email":"d.ilgisiz@test.local"}';
-  update public.saha_kontrol set durum = 'Olumsuz bulgu'
-    where denetim_id = (select takip from _ids);
-  -- güncellenen satır 0 ise de "RED" sayılır (RLS satırı görünmez kılar)
-  if not found then
-    reset role; raise notice 'PASS  3.14  D saha_kontrol guncelleyemedi (0 satir)';
-  else
-    reset role; raise notice 'FAIL  3.14  D saha_kontrol guncelledi';
-  end if;
-exception when others then
-  reset role;
-  raise notice 'PASS  3.14  D saha_kontrol guncelleme reddedildi';
-end $$;
-
--- 3.16  A (oluşturan) kendi takip kaydını görür + günceller -> başarılı (regresyon)
-do $$
-declare n int;
+declare changed integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"a.ilk@test.local"}';
-  select count(*) into n from public.denetimler d where d.id = (select takip from _ids);
+  update public.denetimler set musteri_unvani = 'A Sahip Güncellemesi' where id = (select takip from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.16: A sahip kaydı güncelleyemedi'; end if;
   reset role;
-  raise notice '%  3.16  A takip kaydini gorur (beklenen 1, gelen %)',
-    case when n = 1 then 'PASS' else 'FAIL' end, n;
-end $$;
-
--- 3.17  B (yönetim) tüm denetimleri görür -> başarılı (regresyon)
-do $$
-declare n int;
-begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"b.yonetim@test.local"}';
-  select count(*) into n from public.denetimler d where d.id = (select takip from _ids);
+  update public.denetimler set takip_atanan_ad = 'C Atanan Muhendis' where id = (select takip from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.17: B yönetim kaydı güncelleyemedi'; end if;
   reset role;
-  raise notice '%  3.17  B takip kaydini gorur (beklenen 1, gelen %)',
-    case when n = 1 then 'PASS' else 'FAIL' end, n;
 end $$;
 
--- ============================================================================
--- EKSİK (branch'te tamamlanacak): denetim_degisim_gecmisi INSERT/SELECT (3.4/3.5),
--- denetim_fotograflari + storage.objects metadata/nesne senaryoları (3.6–3.9, 3.15),
--- §3c gerçek PWA akışı (son_degistiren_* ile tam-satır PATCH).
--- Bunlar fikstür olarak bir denetim_fotograflari satırı + storage.objects kaydı
--- ve gecmis trigger'ının kimlik damgası gerektirir.
--- ============================================================================
+-- 3.12c C takibi kapatır; 3.10 ile sonrasında yeniden güncelleyemez.
+do $$
+declare changed integer;
+begin
+  set local role authenticated;
+  set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
+  update public.denetimler set denetim_durumu = 'Çalışma Tamamlandı', calisma_tamamlandi_at = now()
+    where id = (select takip from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 1 then raise exception '3.12c: C takibi kapatamadı'; end if;
+  update public.denetimler set updated_at = now() where id = (select takip from _ids);
+  get diagnostics changed = row_count;
+  if changed <> 0 then raise exception '3.10: C tamamlanmış kaydı güncelleyebildi'; end if;
+  reset role;
+end $$;
 
 rollback;
