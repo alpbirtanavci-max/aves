@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.39';
+const APP_VERSION = 'R15D-rc3.9.40';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -858,6 +858,10 @@ const UI = (() => {
     await fotografOnbellekYenile(currentDenetimId);
     const denetim = await DB.get('denetimler', currentDenetimId);
     denetim.bolum_aciklamalari = denetim.bolum_aciklamalari || {};
+    // Fotoğraf ekleme atanan takip mühendisine açık; silme değil (RLS DELETE
+    // politikası genişletilmedi, migration 79 kararı D2). Sunucudan 403 almadan
+    // önce düğmeyi de gizle.
+    const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.isAdmin || Profile.canArchivePhotos);
     let tumFotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId))
       .filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
     const ov = document.createElement('div');
@@ -887,7 +891,7 @@ const UI = (() => {
           try {
             const url = URL.createObjectURL(await fotografBlob(foto));
             const fotoTarihi = foto.created_at ? new Date(foto.created_at).toLocaleString('tr-TR') : 'Tarih yok';
-            card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${currentCanEdit ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}<div class="photo-meta"><span>${esc(fotoTarihi)}</span><span>${esc(foto.created_by || 'Kullanıcı bilgisi yok')}</span></div>`;
+            card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${fotoSilebilir ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}<div class="photo-meta"><span>${esc(fotoTarihi)}</span><span>${esc(foto.created_by || 'Kullanıcı bilgisi yok')}</span></div>`;
             card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
             const remove = card.querySelector('.photo-remove');
             if (remove) remove.onclick = async () => {
