@@ -6,7 +6,7 @@ Supabase branch'inde gerçek çalıştırır ve çıktı özetini PR'a ekler. St
 
 ---
 
-## 1. Test edilecek roller (üç gerçek hesap)
+## 1. Test edilecek roller (dört persona / dört gerçek hesap)
 
 | Persona | `kullanici_profilleri.rol` | Rolü |
 |---|---|---|
@@ -37,6 +37,13 @@ Dosya konumu: `work/r15d-rc1-unified/tests/rls/NN_<konu>.sql`.
 
 Kurulum: A bir ana denetim + bir takip kaydı oluşturur (takip kaydında en az bir
 "önceki Olumsuz bulgu" satırı). B, takip kaydını C'ye atar (`takip_atanan_email = C`).
+
+**Fotoğraf iki katmanda test edilir:** (a) `public.denetim_fotograflari` metadata
+tablosu, (b) `storage.objects` bucket `denetim-fotograflari`. Gerçek yükleme önce
+Storage nesnesini yazıp sonra metadata satırını yazdığı için Storage katmanı ayrıca
+kontrol edilmeli — daha önce yaşanan senkron hatası (rc3.9.15–17) tam bu katmandaydı.
+`x-upsert:true` her yeni nesnede bile `storage.objects` üzerinde SELECT + UPDATE
+politikası ister.
 
 | # | Aktör | İşlem | Hedef politika | Beklenen |
 |---|---|---|---|---|

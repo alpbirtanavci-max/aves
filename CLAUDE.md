@@ -7,6 +7,6 @@ Bir işe başlamadan önce `AGENTS.md` ve
 Hızlı hatırlatma:
 - Uygulama kökü: `work/r15d-rc1-unified/`
 - Statik test: `node work/r15d-rc1-unified/tests/r15d-static-test.mjs` (her zaman yeşil)
-- Sıradaki migration numarası: **79**
+- Migration dizini: `work/r15d-rc1-unified/database/` — başlamadan önce sıradaki numarayı doğrula (`ls database/ | sort | tail -1`)
 - Production dalı: `claude/aves-saha-denetim-brief-4x9wxx` — doğrudan yazma, branch + PR kullan
 - RLS değişikliği → `work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md` senaryolarını üç hesapla çalıştır

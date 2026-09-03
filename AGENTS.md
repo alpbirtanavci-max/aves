@@ -31,8 +31,10 @@ Kısa ömürlü branch → PR → inceleme → merge → branch sil. Ölü branc
 
 ## 3. Migration disiplini
 
-- Dizin: `work/r15d-rc1-unified/database/`. Numaralandırma sıralı: sıradaki dosya **79**.
-  Brief'te sıradaki numarayı açıkça belirt; iki ajan aynı numarayı kullanmaz.
+- Dizin: `work/r15d-rc1-unified/database/`. Numaralandırma sıralı. **Başlamadan önce
+  sıradaki numarayı doğrula** (`ls database/ | sort | tail -1`); bu dosyaya sabit numara
+  yazma — ilk migration'dan sonra eskir. Brief'te sıradaki numarayı açıkça belirt; iki
+  ajan aynı numarayı kullanmaz.
 - **Canlıda uygulanmış bir migration'ı yerinde düzenleme.** Politika/şema düzeltmesi
   yeni dosyada `drop ... if exists` + yeniden `create` ile yapılır.
 - Her migration tek `begin; ... commit;` ve idempotent (`if not exists`, `if exists`).
