@@ -44,6 +44,7 @@ const rc3935PhotoArchiveStatusMigration = fs.readFileSync(path.join(databaseDir,
 const rc3936HandoverMigration = fs.readFileSync(path.join(databaseDir, '77_r15d_rc3936_denetim_devir_teslim.sql'), 'utf8');
 const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir, '78_r15d_rc3937_takip_muhendisi_atama.sql'), 'utf8');
 const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r15d_rc3940_takip_atanan_yetki.sql'), 'utf8');
+const rc3941AnonRevokeMigration = fs.readFileSync(path.join(databaseDir, '80_r15d_rc3941_anon_execute_revoke.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
 const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
 const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
@@ -120,6 +121,14 @@ test('migration 79 trigger denetimler üzerinde BEFORE UPDATE olarak kurulur',
   rc3940FollowupAuthMigration.includes('before update on public.denetimler'));
 test('migration 79 fotoğraf/storage DELETE politikalarına dokunmaz (karar D2)',
   !rc3940FollowupAuthMigration.includes('for delete') && !/fotograflari silme|nesnesi silme/.test(rc3940FollowupAuthMigration));
+test('migration 80 anon EXECUTE yetkisini aves_* fonksiyonlarından kaldırır, authenticated korur',
+  /revoke execute on function[\s\S]*?from public, anon;/.test(rc3941AnonRevokeMigration) &&
+  rc3941AnonRevokeMigration.includes('grant execute on function') &&
+  rc3941AnonRevokeMigration.includes('to authenticated;') &&
+  rc3941AnonRevokeMigration.includes('aves_satir_kimligini_dogrula()') &&
+  rc3941AnonRevokeMigration.includes('aves_denetim_gorebilir_mi(text)') &&
+  !/from [^;]*service_role|from [^;]*postgres/.test(rc3941AnonRevokeMigration) &&
+  rc3941AnonRevokeMigration.includes("has_function_privilege('anon'"));
 test('migration 79 dört-persona RLS harness dosyaları hata yayılımını tanımlar',
   rls79Scenario.includes('raise exception') &&
   !rls79Scenario.includes('EKSİK (branch') &&
