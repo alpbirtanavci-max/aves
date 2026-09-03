@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.38';
+const APP_VERSION = 'R15D-rc3.9.39';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -2218,6 +2218,7 @@ const UI = (() => {
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${tamamlandi ? '<button class="delbtn" id="btnYazdir" title="Resmî formu PDF veya Word olarak hazırla">Yazdır</button>' : ''}
           ${d.takip_onceki_denetim_id ? '<button class="delbtn" id="btnTakipCikti" title="Yalnız takip maddelerini yazdır">Takip Çıktısı</button>' : ''}
+          ${d.takip_onceki_denetim_id && Profile.canCorrectInspections ? '<button class="delbtn" id="btnTakipAta" title="Takip mühendisi ata">Takip Ata</button>' : ''}
           ${canDeleteDenetim(d) ? '<button class="delbtn" id="btnSil" title="Denetimi sil">🗑 Sil</button>' : ''}
         </div>
       </div>
@@ -2370,6 +2371,8 @@ const UI = (() => {
     const btnSil = document.getElementById('btnSil');
     const btnTakipCikti = document.getElementById('btnTakipCikti');
     if (btnTakipCikti) btnTakipCikti.onclick = () => takipKisaCiktiYazdir(d, rows);
+    const btnTakipAta = document.getElementById('btnTakipAta');
+    if (btnTakipAta) btnTakipAta.onclick = () => takipMuehendisiniAta(d);
     const btnYazdir = document.getElementById('btnYazdir');
     if (btnYazdir) btnYazdir.onclick = async () => {
       if (!navigator.onLine) {
@@ -3358,13 +3361,15 @@ const UI = (() => {
     };
   }
 
-  function takipKisaCiktiYazdir(d, rows) {
+  async function takipKisaCiktiYazdir(d, rows) {
     const takipRows = rows.filter(row => row.takip_onceki_durum === 'Olumsuz bulgu');
     if (!takipRows.length) { toast('Bu takip kaydında aktarılmış uygunsuzluk bulunmuyor'); return; }
+    const kaynak = await DB.get('denetimler', d.takip_onceki_denetim_id);
     const hedef = window.open('', '_blank');
     if (!hedef) { toast('Çıktı penceresi açılamadı; tarayıcı açılır pencereyi engelliyor olabilir'); return; }
     const satirlar = takipRows.map((row, index) => `<tr><td>${index + 1}</td><td><b>${esc(row.standart_madde_no || row.madde_id)}</b><br>${esc(row.kontrol_basligi || '')}</td><td>${esc(row.takip_onceki_bulgu_secenegi || 'Uygun Değil')}${row.takip_onceki_diger_bulgu || row.takip_onceki_aciklama ? `<br><small>${esc(row.takip_onceki_diger_bulgu || row.takip_onceki_aciklama)}</small>` : ''}</td><td><b>${esc(effectiveDurum(row) || 'Bakılmadı')}</b>${row.bulgu_secenegi || row.diger_bulgu || row.aciklama ? `<br><small>${esc(row.bulgu_secenegi || row.diger_bulgu || row.aciklama)}</small>` : ''}</td></tr>`).join('');
-    hedef.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>AVES Takip Çıktısı</title><style>body{font-family:Arial,sans-serif;color:#20235b;margin:28px;font-size:12px}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;margin:24px 0 8px;border-bottom:2px solid #e90048;padding-bottom:5px}p{margin:4px 0;color:#444}.meta{display:grid;grid-template-columns:130px 1fr;gap:4px;margin-top:16px}.meta b{color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #cfd3df;padding:7px;vertical-align:top;text-align:left}th{background:#f1f3f8}small{color:#555}.footer{margin-top:24px;color:#666;font-size:10px}@media print{body{margin:14mm}button{display:none}}</style></head><body><h1>AVES — Takip Denetimi Kısa Çıktısı</h1><p>Yalnız önceki denetimde Uygun Değil bulunan maddeler gösterilmiştir.</p><div class="meta"><b>Firma</b><span>${esc(d.musteri_unvani || '')}</span><b>Asansör seri no</b><span>${esc(d.asansor_seri_no || '')}</span><b>Önceki denetim</b><span>${esc(d.takip_onceki_denetim_id || '')}</span><b>Takip tarihi</b><span>${esc(d.denetim_tarihi || '')}</span><b>Takip mühendisi</b><span>${esc(d.takip_atanan_ad || d.denetimi_yapan || '')}</span></div><h2>Takip edilecek maddeler (${takipRows.length})</h2><table><thead><tr><th>#</th><th>Madde</th><th>Önceki bulgu</th><th>Takip sonucu</th></tr></thead><tbody>${satirlar}</tbody></table><div class="footer">Bu çıktı saha takip çalışmasına yardımcı kısa listedir; resmî denetim formunun yerine geçmez.</div><script>window.onload=()=>setTimeout(()=>window.print(),150);</script></body></html>`);
+    const oncekiEtiketi = kaynak ? `${kaynak.musteri_unvani || ''} · ${kaynak.asansor_seri_no || ''} · ${kaynak.denetim_tarihi || 'tarih yok'}` : `Önceki kayıt bulunamadı (${d.takip_onceki_denetim_id})`;
+    hedef.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>AVES Takip Çıktısı</title><style>body{font-family:Arial,sans-serif;color:#20235b;margin:28px;font-size:12px}h1{font-size:20px;margin:0 0 4px}h2{font-size:14px;margin:24px 0 8px;border-bottom:2px solid #e90048;padding-bottom:5px}p{margin:4px 0;color:#444}.meta{display:grid;grid-template-columns:130px 1fr;gap:4px;margin-top:16px}.meta b{color:#555}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #cfd3df;padding:7px;vertical-align:top;text-align:left}th{background:#f1f3f8}small{color:#555}.footer{margin-top:24px;color:#666;font-size:10px}@media print{body{margin:14mm}button{display:none}}</style></head><body><h1>AVES — Takip Denetimi Kısa Çıktısı</h1><p>Yalnız önceki denetimde Uygun Değil bulunan maddeler gösterilmiştir.</p><div class="meta"><b>Firma</b><span>${esc(d.musteri_unvani || '')}</span><b>Asansör seri no</b><span>${esc(d.asansor_seri_no || '')}</span><b>Önceki denetim</b><span>${esc(oncekiEtiketi)}</span><b>Takip tarihi</b><span>${esc(d.denetim_tarihi || '')}</span><b>Takip mühendisi</b><span>${esc(d.takip_atanan_ad || d.denetimi_yapan || '')}</span></div><h2>Takip edilecek maddeler (${takipRows.length})</h2><table><thead><tr><th>#</th><th>Madde</th><th>Önceki bulgu</th><th>Takip sonucu</th></tr></thead><tbody>${satirlar}</tbody></table><div class="footer">Bu çıktı saha takip çalışmasına yardımcı kısa listedir; resmî denetim formunun yerine geçmez.</div><script>window.onload=()=>setTimeout(()=>window.print(),150);</script></body></html>`);
     hedef.document.close();
   }
 

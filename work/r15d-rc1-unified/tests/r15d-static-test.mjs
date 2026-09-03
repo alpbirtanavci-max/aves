@@ -68,10 +68,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.38 takip çıktısı sürümü', index.includes('R15D-RC3.9.38</b>'));
-test('app R15D rc3.9.38 takip çıktısı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.38'"));
-test('service worker rc3.9.38 cache', sw.includes("aves-saha-r15d-rc3938'"));
-test('uygulama manifesti rc3.9.38 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.38"'));
+test('index R15D rc3.9.39 takip çıktısı sürümü', index.includes('R15D-RC3.9.39</b>'));
+test('app R15D rc3.9.39 takip çıktısı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.39'"));
+test('service worker rc3.9.39 cache', sw.includes("aves-saha-r15d-rc3939'"));
+test('uygulama manifesti rc3.9.39 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.39"'));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
@@ -81,7 +81,9 @@ test('tamamlanmış denetimde devir teslim kaydı oluşturulabilir',
 test('takip mühendisi yönetim tarafından atanır ve atanan kişiye görünür',
   app.includes('Takip Mühendisi Ata') && app.includes('takipMuehendisiniAta') && app.includes('takip_atanan_email') && rc3937FollowupAssignmentMigration.includes('takip atanan saha guncelleme'));
 test('takip için kısa çıktı yalnız önceki uygunsuzlukları içerir',
-  app.includes('Takip Çıktısı') && app.includes('takipKisaCiktiYazdir') && app.includes('takip_onceki_durum === \'Olumsuz bulgu\''));
+  app.includes('Takip Çıktısı') && app.includes('takipKisaCiktiYazdir') && app.includes('takip_onceki_durum === \'Olumsuz bulgu\'') && app.includes('oncekiEtiketi') && !app.includes('takip_onceki_denetim_id || \'\')}'));
+test('Takip Ata düğmesi gerçek olay bağlayıcısına sahip',
+  app.includes('id="btnTakipAta"') && app.includes('btnTakipAta.onclick = () => takipMuehendisiniAta(d)'));
 test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar açar',
   rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_son_indirme_at') && rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_temizlendi_at') && !/\b(delete|truncate)\b/i.test(rc3935PhotoArchiveStatusMigration));
 test('seri no tekrarında devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
