@@ -16,10 +16,11 @@
 -- Fotoğraf/storage DELETE politikaları DEĞİŞMEZ (karar D2): atanan mühendis fotoğraf
 -- silemez; app.js `.photo-remove` düğmesi de ona gösterilmez (aynı sürümde).
 --
--- NOT (review): denetimler/saha/geçmiş politikaları `public.aves_oturum_emaili()`,
--- fotoğraf/storage politikaları `lower(auth.jwt() ->> 'email')` kullanıyor (mevcut
--- gövdeleriyle tutarlı kalmak için korundu). İkisinin aynı değeri döndürdüğü Supabase
--- panelinden doğrulanmalı.
+-- Oturum e-postası: eklenen "atanan takip mühendisi" dalları tüm 11 politikada
+-- tutarlı olarak `public.aves_oturum_emaili()` kullanır (fotoğraf/storage
+-- politikalarının mevcut gövdeleri `lower(auth.jwt() ->> 'email')` yazsa da).
+-- Böylece atanan mühendisin metadata + storage görünürlüğü tek ifadeye bağlıdır;
+-- "listelenir ama açılmaz" tutarsızlığı olmaz.
 --
 -- Trigger sırası: PostgreSQL BEFORE trigger'ları ad sırasına göre çalıştırır.
 -- `trg_aves_denetim_kimligi` ('d') < `trg_aves_takip_atanan_alan_kilidi` ('t'), yani
@@ -120,7 +121,7 @@ using (exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 
@@ -134,7 +135,7 @@ with check (exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 
@@ -148,7 +149,7 @@ using (exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ))
 with check (exists (
@@ -158,7 +159,7 @@ with check (exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 
@@ -172,7 +173,7 @@ using (bucket_id = 'denetim-fotograflari' and exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 
@@ -186,7 +187,7 @@ with check (bucket_id = 'denetim-fotograflari' and exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 
@@ -200,7 +201,7 @@ using (bucket_id = 'denetim-fotograflari' and exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ))
 with check (bucket_id = 'denetim-fotograflari' and exists (
@@ -210,7 +211,7 @@ with check (bucket_id = 'denetim-fotograflari' and exists (
       select 1 from public.kullanici_profilleri p
       where lower(p.email) = lower(auth.jwt() ->> 'email') and p.aktif and p.rol in ('yonetici','teknik_mudur')
     )
-    or lower(coalesce(d.takip_atanan_email,'')) = lower(auth.jwt() ->> 'email')
+    or lower(coalesce(d.takip_atanan_email,'')) = public.aves_oturum_emaili()
   )
 ));
 

@@ -37,8 +37,10 @@ korunuyor; app.js düğmesi de gizlendiği için "düzenleyebilir görünüp 403
    (11 politika + `trg_aves_takip_atanan_alan_kilidi` görünmeli).
 2. `RLS_TEST_CHECKLIST.md` §1b + §3–4 + §3c senaryolarını **dört test kimliğiyle** koş,
    çıktıyı PR'a ekle.
-3. `aves_oturum_emaili()` = `lower(auth.jwt() ->> 'email')` olduğunu panelden doğrula
-   (denetimler politikaları helper, fotoğraf politikaları jwt kullanıyor).
+3. Eklenen "atanan takip mühendisi" dalları 11 politikada tutarlı olarak
+   `public.aves_oturum_emaili()` kullanır. (Fotoğraf/storage politikalarının mevcut
+   sahip/rol dalları hâlâ `lower(auth.jwt() ->> 'email')` — bu pre-existing davranış,
+   bu migrationda değişmedi.)
 4. Yeşilse `main` branch'e uygula, PWA sürümünü (`rc3940` cache) yayına al.
 
 ## Geri dönüş planı
