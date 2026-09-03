@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.41';
+const APP_VERSION = 'R15D-rc3.9.42';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -412,7 +412,7 @@ const Sync = (() => {
       label.textContent = n > 0 ? `Çevrimdışı · ${n} bekliyor` : 'Çevrimdışı';
     } else if (warning) {
       pill.className = 'syncpill error';
-      label.textContent = warning.kind === 'conflict' ? 'Çakışma uyarısı' : 'Yetki uyarısı';
+      label.textContent = (warning.kind === 'conflict' ? 'Çakışma uyarısı' : 'Yetki uyarısı') + ' · dokun';
     } else if (n > 0) {
       pill.className = 'syncpill pending';
       label.textContent = `${n} bekliyor`;
@@ -645,13 +645,82 @@ const Sync = (() => {
     return completed;
   }
 
-  async function manual() {
-    if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
+  const escSync = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // 403/409 sonrası cihazda korunan kalemler için tek inceleme + kurtarma noktası.
+  // Bu yol olmadan `sync_warning` KV kalıcı kalıyor ve elle senkron kilitleniyordu.
+  async function reviewWarning() {
     const warning = await DB.kvGet('sync_warning');
-    if (warning) {
-      toast(warning.message);
+    const stuck = (await DB.outboxAll()).filter(it => ['conflict', 'forbidden'].includes(it.sync_status));
+    if (!warning && !stuck.length) { toast('Bekleyen senkron uyarısı yok'); return; }
+    if (!stuck.length) {
+      await DB.kvDel('sync_warning');
+      await updatePill();
+      toast('Senkron uyarısı temizlendi');
       return;
     }
+
+    const denetimler = await DB.all('denetimler');
+    const adOf = (id) => {
+      const d = denetimler.find(x => x.id === id);
+      return d ? `${d.musteri_unvani || 'Firma bilgisi yok'} · ${d.asansor_seri_no || '-'}` : 'Bilinmeyen denetim';
+    };
+    const grup = new Map();
+    for (const it of stuck) {
+      const key = it.inspection_id || 'yok';
+      if (!grup.has(key)) grup.set(key, []);
+      grup.get(key).push(it);
+    }
+    const satirlar = [...grup.entries()].map(([id, list]) => {
+      const cakisma = list.some(x => x.sync_status === 'conflict');
+      const sonHata = list.map(x => x.last_error_message).filter(Boolean).slice(-1)[0] || '';
+      return `<div class="sync-review-row"><b>${escSync(adOf(id))}</b>` +
+        `<small>${list.length} işlem · ${cakisma ? 'çakışma incelemesi' : 'yetki incelemesi'}` +
+        `${sonHata ? ` · ${escSync(sonHata).slice(0, 140)}` : ''}</small></div>`;
+    }).join('');
+
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Senkron uyarısı</h3>
+      <div class="photo-help">${escSync(warning ? warning.message : 'Bazı yerel kayıtlar sunucuya gönderilemedi.')} Hiçbir saha cevabı silinmedi; cihazda korunuyor.</div>
+      <div class="sync-review-list">${satirlar}</div>
+      <div class="print-actions">
+        <button class="btn btn-primary" id="syncRetryAll">Yeniden dene</button>
+        <button class="btn btn-ghost" id="syncReviewClose">Kapat</button>
+      </div>
+      <p class="photo-help" style="margin-top:10px">Yeniden dene: korunan işlemler tekrar gönderilmeyi dener. Yetki hatası sürüyorsa yöneticine bildir — kayıt kaybolmaz.</p>
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.querySelector('#syncReviewClose').onclick = close;
+    ov.onclick = e => { if (e.target === ov) close(); };
+    ov.querySelector('#syncRetryAll').onclick = async () => {
+      if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince yeniden deneyin'); return; }
+      const btn = ov.querySelector('#syncRetryAll');
+      btn.disabled = true; btn.textContent = 'Deneniyor…';
+      for (const it of stuck) {
+        it.sync_status = 'retry';
+        it.last_error_code = null;
+        it.last_error_message = null;
+        await DB.outboxPut(it);
+      }
+      await DB.kvDel('sync_warning');
+      close();
+      toast('Senkronize ediliyor…');
+      const ok = await full();
+      const kalan = (await DB.outboxAll()).filter(x => ['conflict', 'forbidden'].includes(x.sync_status)).length;
+      toast(kalan ? `${kalan} işlem hâlâ inceleme gerektiriyor` : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
+      await updatePill();
+    };
+  }
+
+  async function manual() {
+    const warning = await DB.kvGet('sync_warning');
+    if (warning) { await reviewWarning(); return; }
+    if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
     toast('Senkronize ediliyor…');
     const completed = await full();
     toast(completed ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek');
@@ -664,7 +733,7 @@ const Sync = (() => {
     updatePill();
   }
 
-  return { full, manual, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri };
+  return { full, manual, reviewWarning, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri };
 })();
 
 /* ================= Yerel yazma (local-first) ================= */
