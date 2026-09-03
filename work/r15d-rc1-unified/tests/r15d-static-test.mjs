@@ -43,6 +43,10 @@ const rc3928PhotoArchiveMigration = fs.readFileSync(path.join(databaseDir, '75_r
 const rc3935PhotoArchiveStatusMigration = fs.readFileSync(path.join(databaseDir, '76_r15d_rc3935_fotograf_arsiv_durumu.sql'), 'utf8');
 const rc3936HandoverMigration = fs.readFileSync(path.join(databaseDir, '77_r15d_rc3936_denetim_devir_teslim.sql'), 'utf8');
 const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir, '78_r15d_rc3937_takip_muhendisi_atama.sql'), 'utf8');
+const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r15d_rc3940_takip_atanan_yetki.sql'), 'utf8');
+const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
+const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
+const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -68,10 +72,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.39 takip çıktısı sürümü', index.includes('R15D-RC3.9.39</b>'));
-test('app R15D rc3.9.39 takip çıktısı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.39'"));
-test('service worker rc3.9.39 cache', sw.includes("aves-saha-r15d-rc3939'"));
-test('uygulama manifesti rc3.9.39 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.39"'));
+test('index R15D rc3.9.40 takip atanan yetki sürümü', index.includes('R15D-RC3.9.40</b>'));
+test('app R15D rc3.9.40 takip atanan yetki sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.40'"));
+test('service worker rc3.9.40 cache', sw.includes("aves-saha-r15d-rc3940'"));
+test('uygulama manifesti rc3.9.40 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.40"'));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
@@ -84,6 +88,48 @@ test('takip için kısa çıktı yalnız önceki uygunsuzlukları içerir',
   app.includes('Takip Çıktısı') && app.includes('takipKisaCiktiYazdir') && app.includes('takip_onceki_durum === \'Olumsuz bulgu\'') && app.includes('oncekiEtiketi') && !app.includes('takip_onceki_denetim_id || \'\')}'));
 test('Takip Ata düğmesi gerçek olay bağlayıcısına sahip',
   app.includes('id="btnTakipAta"') && app.includes('btnTakipAta.onclick = () => takipMuehendisiniAta(d)'));
+test('migration 79 atanan mühendisi okuma politikalarına ekler',
+  rc3940FollowupAuthMigration.includes('drop policy if exists "denetimleri okuma"') &&
+  rc3940FollowupAuthMigration.includes('drop policy if exists "saha okuma"') &&
+  rc3940FollowupAuthMigration.includes('drop policy if exists "gecmis okuma"') &&
+  rc3940FollowupAuthMigration.includes('drop policy if exists "gecmis ekleme"') &&
+  rc3940FollowupAuthMigration.includes('denetim fotograflari okuma') &&
+  rc3940FollowupAuthMigration.includes('denetim fotograf nesnesi okuma') &&
+  (rc3940FollowupAuthMigration.match(/takip_atanan_email/g) || []).length >= 11);
+test('migration 79 denetimler UPDATE USING/WITH CHECK asimetrik (takibi kapatabilir, tamamlanmışı açamaz)',
+  /using \([^;]*denetim_durumu in \('Devam Ediyor','Gözden Geçirme'\)\s*\)\s*with check \([^;]*'Çalışma Tamamlandı'\)/s.test(rc3940FollowupAuthMigration));
+test('migration 79 fotoğraf/storage yazma politikaları tamamlanmış denetimi dışlar',
+  (rc3940FollowupAuthMigration.match(/denetim_durumu <> 'Çalışma Tamamlandı'/g) || []).length >= 6);
+test('migration 79 üst bilgi kilidi izin-listesi mantığı + OLD yetki kullanır',
+  rc3940FollowupAuthMigration.includes('aves_takip_atanan_alan_kilidi') &&
+  rc3940FollowupAuthMigration.includes('to_jsonb(NEW) - v_izinli') &&
+  rc3940FollowupAuthMigration.includes('to_jsonb(OLD) - v_izinli') &&
+  rc3940FollowupAuthMigration.includes('OLD.takip_atanan_email') &&
+  rc3940FollowupAuthMigration.includes("'son_degistiren_email','son_degistiren_ad','son_degistiren_rol','son_degistiren_at'") &&
+  !rc3940FollowupAuthMigration.includes('NEW.takip_atanan_email'));
+test('migration 79 alan kilidi bakım rollerini dışlar ve SECURITY INVOKER çalışır',
+  rc3940FollowupAuthMigration.includes("if current_user in ('postgres','service_role','supabase_admin') then") &&
+  (() => {
+    const fn = rc3940FollowupAuthMigration.slice(
+      rc3940FollowupAuthMigration.indexOf('function public.aves_takip_atanan_alan_kilidi'),
+      rc3940FollowupAuthMigration.indexOf('drop trigger if exists trg_aves_takip_atanan_alan_kilidi'));
+    return !/security\s+definer/i.test(fn) && fn.includes("v_email <> ''");
+  })());
+test('migration 79 trigger denetimler üzerinde BEFORE UPDATE olarak kurulur',
+  rc3940FollowupAuthMigration.includes('drop trigger if exists trg_aves_takip_atanan_alan_kilidi on public.denetimler') &&
+  rc3940FollowupAuthMigration.includes('before update on public.denetimler'));
+test('migration 79 fotoğraf/storage DELETE politikalarına dokunmaz (karar D2)',
+  !rc3940FollowupAuthMigration.includes('for delete') && !/fotograflari silme|nesnesi silme/.test(rc3940FollowupAuthMigration));
+test('migration 79 dört-persona RLS harness dosyaları hata yayılımını tanımlar',
+  rls79Scenario.includes('raise exception') &&
+  !rls79Scenario.includes('EKSİK (branch') &&
+  rls79Scenario.includes('3.6b') && rls79Scenario.includes('3.15b') &&
+  rls79Bootstrap.includes('create table storage.objects') &&
+  rls79Runner.includes('ON_ERROR_STOP=1') && rls79Runner.includes('docker rm -f $container'));
+test('atanan takip mühendisi fotoğraf silme düğmesini görmez; ekleme açık, teknik müdür korunur (karar D2)',
+  app.includes('const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.canSeeAllInspections || Profile.canArchivePhotos)') &&
+  app.includes('${fotoSilebilir ? `<button class="photo-remove"') &&
+  !app.includes('${currentCanEdit ? `<button class="photo-remove"'));
 test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar açar',
   rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_son_indirme_at') && rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_temizlendi_at') && !/\b(delete|truncate)\b/i.test(rc3935PhotoArchiveStatusMigration));
 test('seri no tekrarında devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
