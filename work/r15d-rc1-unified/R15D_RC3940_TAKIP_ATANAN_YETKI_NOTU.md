@@ -17,10 +17,13 @@
 **Trigger `aves_takip_atanan_alan_kilidi`** (`BEFORE UPDATE` on `denetimler`): atanan takip
 mühendisi (sahip/yönetim değil) yalnız izin listesindeki alanları değiştirebilir; liste
 dışı her kolon (yeni kolonlar dahil) kilitli. Durum yalnız ileri yön. Yetki
-`OLD.takip_atanan_email` üzerinden.
+`OLD.takip_atanan_email` üzerinden. **SECURITY INVOKER** + `current_user in ('postgres',
+'service_role','supabase_admin')` erken çıkışı — `aves_takip_referansini_kilitle` /
+`aves_takip_zincirini_kilitle` ile aynı desen; SQL bakım rolleri kilidin dışında.
 
 **`app/app.js`** — sürüm `rc3.9.39 → rc3.9.40` (4 dosya). `.photo-remove` düğmesi artık
-`fotoSilebilir` (sahip / admin / arşiv yetkisi) ile korunuyor — atanan mühendis fotoğraf
+`fotoSilebilir` (sahip / `canSeeAllInspections` = yönetici·teknik müdür / arşiv yetkisi)
+ile korunuyor — RLS DELETE politikasıyla (68/75) birebir hizalı. Atanan mühendis fotoğraf
 **ekler**, silmez (DELETE politikaları bilinçli olarak değişmedi, karar D2).
 
 ## DELETE neden kapsam dışı (karar D2, 2026-09-03)

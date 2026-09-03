@@ -860,8 +860,9 @@ const UI = (() => {
     denetim.bolum_aciklamalari = denetim.bolum_aciklamalari || {};
     // Fotoğraf ekleme atanan takip mühendisine açık; silme değil (RLS DELETE
     // politikası genişletilmedi, migration 79 kararı D2). Sunucudan 403 almadan
-    // önce düğmeyi de gizle.
-    const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.isAdmin || Profile.canArchivePhotos);
+    // önce düğmeyi de gizle. Koşul RLS DELETE politikasıyla (68/75) hizalı:
+    // sahip · yönetici/teknik müdür · fotoğraf arşiv yetkisi.
+    const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.canSeeAllInspections || Profile.canArchivePhotos);
     let tumFotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId))
       .filter(f => !f.deleted_at).sort((a,b) => a.created_at.localeCompare(b.created_at));
     const ov = document.createElement('div');

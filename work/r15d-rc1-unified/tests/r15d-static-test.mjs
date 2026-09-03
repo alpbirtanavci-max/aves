@@ -104,13 +104,21 @@ test('migration 79 üst bilgi kilidi izin-listesi mantığı + OLD yetki kullan�
   rc3940FollowupAuthMigration.includes('OLD.takip_atanan_email') &&
   rc3940FollowupAuthMigration.includes("'son_degistiren_email','son_degistiren_ad','son_degistiren_rol','son_degistiren_at'") &&
   !rc3940FollowupAuthMigration.includes('NEW.takip_atanan_email'));
+test('migration 79 alan kilidi bakım rollerini dışlar ve SECURITY INVOKER çalışır',
+  rc3940FollowupAuthMigration.includes("if current_user in ('postgres','service_role','supabase_admin') then") &&
+  (() => {
+    const fn = rc3940FollowupAuthMigration.slice(
+      rc3940FollowupAuthMigration.indexOf('function public.aves_takip_atanan_alan_kilidi'),
+      rc3940FollowupAuthMigration.indexOf('drop trigger if exists trg_aves_takip_atanan_alan_kilidi'));
+    return !/security\s+definer/i.test(fn) && fn.includes("v_email <> ''");
+  })());
 test('migration 79 trigger denetimler üzerinde BEFORE UPDATE olarak kurulur',
   rc3940FollowupAuthMigration.includes('drop trigger if exists trg_aves_takip_atanan_alan_kilidi on public.denetimler') &&
   rc3940FollowupAuthMigration.includes('before update on public.denetimler'));
 test('migration 79 fotoğraf/storage DELETE politikalarına dokunmaz (karar D2)',
   !rc3940FollowupAuthMigration.includes('for delete') && !/fotograflari silme|nesnesi silme/.test(rc3940FollowupAuthMigration));
-test('atanan takip mühendisi fotoğraf silme düğmesini görmez; ekleme açık (karar D2)',
-  app.includes('const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.isAdmin || Profile.canArchivePhotos)') &&
+test('atanan takip mühendisi fotoğraf silme düğmesini görmez; ekleme açık, teknik müdür korunur (karar D2)',
+  app.includes('const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.canSeeAllInspections || Profile.canArchivePhotos)') &&
   app.includes('${fotoSilebilir ? `<button class="photo-remove"') &&
   !app.includes('${currentCanEdit ? `<button class="photo-remove"'));
 test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar açar',

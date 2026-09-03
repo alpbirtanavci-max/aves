@@ -219,12 +219,16 @@ with check (bucket_id = 'denetim-fotograflari' and exists (
 -- değiştirebilir. Liste dışındaki her kolon (yeni eklenenler dahil) varsayılan kilitli.
 -- son_degistiren_* alanları listede: app.js istemciden yazıyor, değeri
 -- trg_aves_satir_kimligini_dogrula oturumdan yeniden yazdığı için güvenli.
+--
+-- Kontrollü SQL bakım rolleri kilidin dışındadır (42 numaralı migrationdaki
+-- aves_takip_referansini_kilitle / aves_takip_zincirini_kilitle ile aynı desen).
+-- Bu nedenle fonksiyon SECURITY INVOKER'dır: current_user gerçek çağıran rolü
+-- göstermeli. Oturum e-postası zaten security definer olan aves_oturum_emaili()
+-- ile alınıyor; fonksiyonun kendisi RLS korumalı tablo okumuyor.
 create or replace function public.aves_takip_atanan_alan_kilidi()
 returns trigger
 language plpgsql
-security definer
 set search_path = public, pg_temp
-set row_security = off
 as $$
 declare
   v_email text := public.aves_oturum_emaili();
@@ -235,7 +239,11 @@ declare
     'updated_at','son_degistiren_email','son_degistiren_ad','son_degistiren_rol','son_degistiren_at'
   ];
 begin
-  if lower(coalesce(OLD.takip_atanan_email,'')) = v_email
+  if current_user in ('postgres','service_role','supabase_admin') then
+    return NEW;
+  end if;
+  if v_email <> ''
+     and lower(coalesce(OLD.takip_atanan_email,'')) = v_email
      and lower(coalesce(OLD.olusturan_email,'')) <> v_email
      and not public.aves_tum_denetimleri_gorebilir_mi()
   then
