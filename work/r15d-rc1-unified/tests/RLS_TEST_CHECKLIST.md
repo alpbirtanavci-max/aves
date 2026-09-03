@@ -21,7 +21,7 @@ Migration NN ve `app.js` bu kararlara göre yazılır; testler bunları doğrula
 
 | Konu | Karar | Sonuç |
 |---|---|---|
-| Üst bilgi alanları (müşteri/adres/seri no/tarih/olusturan/atama) | Atanmış mühendis **değiştiremez** | `BEFORE UPDATE` trigger `aves_takip_atanan_alan_kilidi`. **İzin-listesi mantığı** — listede olmayan her kolon (yeni kolonlar dahil) varsayılan kilitli. Yetki `OLD.takip_atanan_email` üzerinden değerlendirilir (atama değişikliği zaten RLS `WITH CHECK` ile engelli). RLS durum filtresi tek başına yetmez |
+| Üst bilgi alanları (müşteri/adres/seri no/tarih/olusturan/atama) | Atanmış mühendis **değiştiremez** | `BEFORE UPDATE` trigger `aves_takip_atanan_alan_kilidi`. **İzin-listesi mantığı** — listede olmayan her kolon (yeni kolonlar dahil) varsayılan kilitli. İzin listesi sonuç/ilerleme/sync alanları **+ `son_degistiren_email/ad/rol/at`** (bunları `trg_aves_satir_kimligini_dogrula` oturumdan yeniden yazıyor, `app.js:734` istemciden gönderiyor). Yetki `OLD.takip_atanan_email` üzerinden. RLS durum filtresi tek başına yetmez |
 | Durum ilerletme | Atanmış mühendis takibi **`Çalışma Tamamlandı`ya ilerletebilir** | `denetimler` UPDATE politikası `USING` = aktif iki durum, `WITH CHECK` = + `Çalışma Tamamlandı` (asimetrik). Tamamlanmış satırdan **yeni güncelleme başlatılamaz** (`USING` engeller) |
 | Fotoğraf silme | Atanmış mühendis **silemez** (D2) | DELETE politikaları değişmez **ve** `app.js` `.photo-remove` düğmesi ona gösterilmez — arayüzde silme eylemi görünmemeli, yalnız sunucudan 403 almak yetersiz |
 | Kaynak denetim görünürlüğü | Atanmış mühendis **yalnız takip kaydını** görür | Kaynak (`takip_onceki_denetim_id`) denetimi görmez; takip satırındaki `takip_onceki_*` snapshot alanları çıktı için yeterli |
@@ -81,6 +81,21 @@ politikası ister.
 | 3.16 | A | `select` + `update` takip kaydı ve geçmişi (oluşturan sıfatıyla) | mevcut sahiplik dalları | **görür / başarılı** (regresyon) |
 | 3.17 | B | takip kaydını `select` + `takip_atanan_email` ata/değiştir | `denetim guncelleme` (yönetim) | **görür / başarılı** |
 | 3.18 | C | atama kaldırıldıktan sonra (`takip_atanan_email` = başkası) `select denetimler` / `select denetim_fotograflari` | tüm okuma politikaları | **görmez** |
+
+## 3c. Gerçek PWA akış testi (yalnız SQL yeterli değil)
+
+Ham SQL testi `app.js`'in satırın **tamamını** PATCH ettiğini ve otomatik yazdığı
+alanları (`son_degistiren_email/ad/rol/at`, `updated_at`) yakalamaz. C hesabıyla
+gerçek uygulamada (veya PostgREST üzerinden `app.js` gövdesini birebir taklit ederek):
+
+| # | Adım | Beklenen |
+|---|---|---|
+| 3c.1 | C giriş yapar, kendine atanmış takip kaydını açar | kayıt ve maddeler yüklenir |
+| 3c.2 | C bir maddeyi günceller (`durum`, `bulgu_secenegi`) — `app.js` `saha_kontrol` + `denetimler` satırını `son_degistiren_*` ile PATCH eder | **başarılı**; trigger reddetmez |
+| 3c.3 | C bir fotoğraf ekler (Storage nesnesi + metadata, `x-upsert:true`) | **başarılı** |
+| 3c.4 | C takibi kapatır: `denetim_durumu` → `Çalışma Tamamlandı` (+ `calisma_tamamlandi_at`, `son_degistiren_*`) | **başarılı**; `WITH CHECK` ve trigger izin verir |
+| 3c.5 | 3c.4 sonrası C aynı kaydı tekrar güncellemeye çalışır | **RED** (`USING` — tamamlanmış satırdan güncelleme başlatılamaz) |
+| 3c.6 | `denetim_degisim_gecmisi`'nde C'nin işlemleri için satır oluştu | **evet**, `son_degistiren_email` = C |
 
 ## 4. Regresyon (mevcut davranış bozulmamalı)
 

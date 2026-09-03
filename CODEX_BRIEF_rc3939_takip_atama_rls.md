@@ -144,8 +144,19 @@ end if;
 `denetim_durumu`, `saha_tamamlandi_at`, `gozden_gecirme_at`, `calisma_tamamlandi_at`,
 `offline_hazir_at`, `butunluk_ozeti`, `butunluk_hash`, `butunluk_hesaplandi_at`,
 `expected_item_count`, `expected_item_set_hash`, `seri_numaralari`, `form_cikti_snapshot`,
-`updated_at`. (Kesin listeyi `GECMIS_ALANLARI` / `information_schema.columns` ile karşılaştır;
-şüpheli alanı **listeye ekleme** — kilitli kalsın.)
+`updated_at`, **`son_degistiren_email`, `son_degistiren_ad`, `son_degistiren_rol`,
+`son_degistiren_at`**. (Kesin listeyi `GECMIS_ALANLARI` / `information_schema.columns` ile
+karşılaştır; şüpheli alanı **listeye ekleme** — kilitli kalsın.)
+
+> **`son_degistiren_*` neden izinli (Codex uyarısı):** `app.js` (`app.js:734-737`) her
+> denetim güncellemesinde bu dört alanı istemciden yazar; listede olmasaydı atanan
+> mühendisin her madde/durum güncellemesi reddedilirdi. Değerler **istemciye
+> güvenilmez** — mevcut `trg_aves_satir_kimligini_dogrula` trigger'ı (`28_...:197`,
+> `security definer`) bunları oturumdan **yeniden yazıyor**. Trigger sırası alfabetik:
+> `trg_aves_denetim_kimligi` ('d') < `trg_aves_takip_atanan_alan_kilidi` ('t'), yani
+> bizim trigger çalıştığında `NEW.son_degistiren_*` zaten oturum değerleridir — sadece
+> `v_izinli`'de olmaları yeterli, ek doğrulama gerekmez. Migration 79 bu sırayı bir
+> yorumla belgeler.
 
 **3) `denetim_durumu` yalnız ileri yön:** 'Devam Ediyor' → 'Gözden Geçirme' →
 'Çalışma Tamamlandı'. Geri dönüş `raise exception`. (Politikanın `USING`'i zaten
@@ -171,10 +182,14 @@ Precedent: `trg_aves_takip_zincir_kilidi` (`42_...:360`), `trg_aves_duzeltme_otu
        (asimetrik); foto/storage INSERT + UPDATE politikaları `denetim_durumu` kısıtı içeriyor,
    (c) trigger `aves_takip_atanan_alan_kilidi` mevcut **ve** izin-listesi deseni kullanıyor
        (`to_jsonb(NEW) - ... is distinct from to_jsonb(OLD) - ...`), yetki `OLD.takip_atanan_email`,
+       izin listesi `son_degistiren_email/ad/rol/at` içeriyor,
    (d) `app.js` `.photo-remove` render koşulu salt `currentCanEdit` değil (D2).
    Sürüm testleri yeni numaraya güncellenir. `node ...` yeşil.
 4. `tests/rls/NN_takip_atama.sql` — `RLS_TEST_CHECKLIST.md` §1b kararları + §3–4 senaryoları,
    `begin/rollback`. Dört test kimliğiyle bir Supabase branch'inde koşulur, çıktı PR'a eklenir.
+4b. **Gerçek PWA akış testi** (`RLS_TEST_CHECKLIST.md` §3c) — C hesabıyla uygulamada madde
+   güncelleme + fotoğraf + takip kapatma; `app.js`'in `son_degistiren_*` / `updated_at`
+   otomatik yazımının trigger'ı tetiklemediği doğrulanır. Ham SQL bunu yakalamaz.
 5. `R15D_RC39XX_TAKIP_ATAMA_RLS_NOTU.md` — ne değişti, canlı uygulama sırası, geri dönüş planı.
 6. Canlıya (Supabase) uygulama **kullanıcı açıkça isteyene kadar**; yalnız dosyayı hazırla, PR aç.
 7. `aves_oturum_emaili()`'nin okuduğu JWT claim'ini Supabase panelden doğrula ve nota yaz.
