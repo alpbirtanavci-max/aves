@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.36';
+const APP_VERSION = 'R15D-rc3.9.37';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -673,6 +673,7 @@ const GECMIS_ALANLARI = {
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
     'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari',
     'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
+    'takip_atanan_email', 'takip_atanan_ad', 'takip_atama_at',
     'form_cikti_snapshot',
     'duzeltme_oturumu_id', 'duzeltme_nedeni', 'duzeltme_baslatildi_at',
   ],
@@ -1135,9 +1136,9 @@ const UI = (() => {
   };
   const siraKarsilastir = (a, b) => (a.sira_no - b.sira_no) || String(a.madde_id).localeCompare(String(b.madde_id), 'tr');
   const denetimSahibiMi = (d) => !!d && normEmail(d.olusturan_email) !== '' && normEmail(d.olusturan_email) === normEmail(Profile.email);
-  const denetimGorunebilirMi = (d) => !!d && (Profile.canSeeAllInspections || denetimSahibiMi(d));
+  const denetimGorunebilirMi = (d) => !!d && (Profile.canSeeAllInspections || denetimSahibiMi(d) || normEmail(d.takip_atanan_email) === normEmail(Profile.email));
   const canEditDenetim = (d) => !!d && d.denetim_durumu !== 'Çalışma Tamamlandı' && (
-    Profile.isAdmin || denetimSahibiMi(d) ||
+    Profile.isAdmin || denetimSahibiMi(d) || normEmail(d.takip_atanan_email) === normEmail(Profile.email) ||
     (Profile.isTechnicalManager && d.denetim_durumu === 'Gözden Geçirme' && normEmail(d.duzeltme_baslatan_email) === normEmail(Profile.email))
   );
   const canReopenDenetim = (d) => !!d && d.denetim_durumu === 'Çalışma Tamamlandı' && (Profile.canCorrectInspections || denetimSahibiMi(d));
@@ -1527,6 +1528,9 @@ const UI = (() => {
       takip_ana_denetim_id: anaId,
       takip_onceki_denetim_id: kaynak.id,
       takip_sira_no: takipSira,
+      takip_atanan_email: Profile.email,
+      takip_atanan_ad: Profile.name,
+      takip_atama_at: now,
       takip_onceki_seri_numaralari: seriNumaralariNormalize(kaynak.seri_numaralari),
       saha_tamamlandi_at: null,
       gozden_gecirme_at: null,
@@ -3348,6 +3352,26 @@ const UI = (() => {
       await localWrite('denetimler', hedef, 'denetimler');
       close();
       toast('Devir teslim bilgisi kaydedildi');
+    };
+  }
+
+  async function takipMuehendisiniAta(denetim) {
+    if (!Profile.canCorrectInspections) { toast('Takip mühendisi atama yetkiniz yok'); return; }
+    let profiller = [];
+    try { profiller = await API.select('kullanici_profilleri', 'select=email,ad_soyad&aktif=eq.true&rol=eq.muhendis&order=ad_soyad.asc'); } catch (_) { toast('Mühendis listesi alınamadı'); return; }
+    const ov = document.createElement('div'); ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal"><button class="close" aria-label="Kapat">×</button><h3>Takip Mühendisi Ata</h3>
+      <div class="photo-help">Atama yalnız yönetim tarafından yapılabilir. Önceki denetim ve uygunsuzluk geçmişi korunur.</div>
+      <select id="takipMuhendis" class="field full"><option value="">Mühendis seçin</option>${profiller.map(p => `<option value="${esc(p.email)}" ${normEmail(p.email) === normEmail(denetim.takip_atanan_email) ? 'selected' : ''}>${esc(p.ad_soyad || p.email)} · ${esc(p.email)}</option>`).join('')}</select>
+      <button class="btn btn-primary" id="takipAtaKaydet">Atamayı kaydet</button></div>`;
+    document.body.appendChild(ov); const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close; ov.onclick = e => { if (e.target === ov) close(); };
+    ov.querySelector('#takipAtaKaydet').onclick = async () => {
+      const email = ov.querySelector('#takipMuhendis').value; const p = profiller.find(item => normEmail(item.email) === normEmail(email));
+      if (!p) { toast('Bir mühendis seçin'); return; }
+      const hedef = await DB.get('denetimler', denetim.id); const now = new Date().toISOString();
+      hedef.takip_atanan_email = p.email; hedef.takip_atanan_ad = p.ad_soyad || p.email; hedef.takip_atama_at = now; hedef.updated_at = now;
+      await localWrite('denetimler', hedef, 'denetimler'); close(); toast(`Takip ${hedef.takip_atanan_ad} kişisine atandı`); await renderDenetim();
     };
   }
 

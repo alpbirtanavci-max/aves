@@ -42,6 +42,7 @@ const rc3922PhotoScopeMigration = fs.readFileSync(path.join(databaseDir, '74_r15
 const rc3928PhotoArchiveMigration = fs.readFileSync(path.join(databaseDir, '75_r15d_rc3928_fotograf_arsiv_temizleme_yetkisi.sql'), 'utf8');
 const rc3935PhotoArchiveStatusMigration = fs.readFileSync(path.join(databaseDir, '76_r15d_rc3935_fotograf_arsiv_durumu.sql'), 'utf8');
 const rc3936HandoverMigration = fs.readFileSync(path.join(databaseDir, '77_r15d_rc3936_denetim_devir_teslim.sql'), 'utf8');
+const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir, '78_r15d_rc3937_takip_muhendisi_atama.sql'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -67,16 +68,18 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.36 devir teslim sürümü', index.includes('R15D-RC3.9.36</b>'));
-test('app R15D rc3.9.36 devir teslim sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.36'"));
-test('service worker rc3.9.36 cache', sw.includes("aves-saha-r15d-rc3936'"));
-test('uygulama manifesti rc3.9.36 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.36"'));
+test('index R15D rc3.9.37 takip atama sürümü', index.includes('R15D-RC3.9.37</b>'));
+test('app R15D rc3.9.37 takip atama sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.37'"));
+test('service worker rc3.9.37 cache', sw.includes("aves-saha-r15d-rc3937'"));
+test('uygulama manifesti rc3.9.37 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.37"'));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
   app.includes('Tamamlanmış Denetim Özeti') && app.includes('Fotoğraf arşiv durumu') && app.includes('fotograf_arsiv_temizlendi_at') && app.includes('tamamlanmisDenetimOzetiniGoster'));
 test('tamamlanmış denetimde devir teslim kaydı oluşturulabilir',
   app.includes('Devir Teslim') && app.includes('denetimDevirTesliminiGoster') && app.includes('devir_edilen_ad') && rc3936HandoverMigration.includes('devir_edilen_email'));
+test('takip mühendisi yönetim tarafından atanır ve atanan kişiye görünür',
+  app.includes('Takip Mühendisi Ata') && app.includes('takipMuehendisiniAta') && app.includes('takip_atanan_email') && rc3937FollowupAssignmentMigration.includes('takip atanan saha guncelleme'));
 test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar açar',
   rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_son_indirme_at') && rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_temizlendi_at') && !/\b(delete|truncate)\b/i.test(rc3935PhotoArchiveStatusMigration));
 test('seri no tekrarında devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
