@@ -1,0 +1,12 @@
+# CLAUDE.md
+
+Ortak çalışma kuralları **`AGENTS.md`** dosyasındadır — Claude ve Codex için tek kaynak.
+Bir işe başlamadan önce `AGENTS.md` ve
+`work/r15d-rc1-unified/CLAUDE_CODE_AVES_MASTER_BRIEF.md` dosyalarını oku.
+
+Hızlı hatırlatma:
+- Uygulama kökü: `work/r15d-rc1-unified/`
+- Statik test: `node work/r15d-rc1-unified/tests/r15d-static-test.mjs` (her zaman yeşil)
+- Sıradaki migration numarası: **79**
+- Production dalı: `claude/aves-saha-denetim-brief-4x9wxx` — doğrudan yazma, branch + PR kullan
+- RLS değişikliği → `work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md` senaryolarını üç hesapla çalıştır
