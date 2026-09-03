@@ -60,8 +60,10 @@ or (public.aves_aktif_kullanici_mi()
     and denetim_durumu in ('Devam Ediyor','Gözden Geçirme','Çalışma Tamamlandı'))
 ```
 
-"Tamamlanmış kaydı yeniden açamaz" güvencesi `USING`'den gelir (eski satır aktif
-olmalı). İleri-yön geçiş kontrolü trigger'ın işi.
+**Kural, brief boyunca açık kalsın:** durum filtresi denetimi `Çalışma Tamamlandı`ya
+**ilerletmeye izin verir** (`WITH CHECK`), ama zaten `Çalışma Tamamlandı` olan bir satırdan
+**yeni güncelleme başlatmaya izin vermez** (`USING` eski satırın aktif olmasını şart koşar).
+İleri-yön geçiş kontrolü (geri dönüşü engelleme) trigger'ın işi.
 
 | # | Tablo | Politika | Cmd | Kaynak | Not |
 |---|---|---|---|---|---|

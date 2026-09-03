@@ -15,6 +15,17 @@ Supabase branch'inde gerçek çalıştırır ve çıktı özetini PR'a ekler. St
 | **C — Atanmış ikinci mühendis** | `muhendis` | B tarafından takip kaydına atanır; kaydı oluşturan **değildir** |
 | **D — İlgisiz mühendis** | `muhendis` | Hiçbir role atanmamış; negatif kontrol |
 
+## 1b. Bağlayıcı kararlar (takip atama akışı, 2026-09-03)
+
+Migration NN ve `app.js` bu kararlara göre yazılır; testler bunları doğrular.
+
+| Konu | Karar | Sonuç |
+|---|---|---|
+| Üst bilgi alanları (müşteri/adres/seri no/tarih/olusturan/atama) | Atanmış mühendis **değiştiremez** | `BEFORE UPDATE` trigger `aves_takip_atanan_alan_kilidi`; RLS durum filtresi tek başına yetmez |
+| Durum ilerletme | Atanmış mühendis takibi **`Çalışma Tamamlandı`ya ilerletebilir** | `denetimler` UPDATE politikası `USING` = aktif iki durum, `WITH CHECK` = + `Çalışma Tamamlandı` (asimetrik). Tamamlanmış satırdan **yeni güncelleme başlatılamaz** (`USING` engeller) |
+| Fotoğraf silme | Atanmış mühendis **silemez** (D2) | DELETE politikaları değişmez **ve** `app.js` `.photo-remove` düğmesi ona gösterilmez — arayüzde silme eylemi görünmemeli, yalnız sunucudan 403 almak yetersiz |
+| Kaynak denetim görünürlüğü | Atanmış mühendis **yalnız takip kaydını** görür | Kaynak (`takip_onceki_denetim_id`) denetimi görmez; takip satırındaki `takip_onceki_*` snapshot alanları çıktı için yeterli |
+
 ## 2. Harness deseni (pgTAP / düz SQL)
 
 Testler bir Supabase branch'inde koşar; her persona için oturum taklit edilir:

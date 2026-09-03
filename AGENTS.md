@@ -22,8 +22,9 @@ vermez. Kodda `APPROVED`, `CERTIFIED`, `CONFORMITY_DECISION` gibi yetki aşan du
 2. **Değişiklik her zaman branch'te yapılır.** Production dalına
    (`claude/aves-saha-denetim-brief-4x9wxx`) doğrudan yazılmaz.
 3. **Diğer ajan diff'i inceler.** Merge öncesi zorunlu. Claude tarafında `/code-review high`.
-4. **RLS değişikliğinde üç gerçek hesapla test yapılır:** ilk denetçi (mühendis),
-   yönetim (yönetici/teknik müdür), atanmış ikinci mühendis. Bkz.
+4. **RLS değişikliğinde dört persona / dört ayrı test kimliği ile test yapılır:**
+   A ilk denetçi (mühendis), B yönetim (yönetici/teknik müdür), C atanmış ikinci mühendis,
+   D ilgisiz mühendis (negatif kontrol). Bkz.
    `work/r15d-rc1-unified/tests/RLS_TEST_CHECKLIST.md`.
 5. **Production'a alma yalnız kullanıcının açık onayıyla.** Önce salt okunur inceleme,
    yedek, transaction, doğrulama, geri dönüş planı.
