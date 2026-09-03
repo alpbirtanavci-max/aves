@@ -44,6 +44,9 @@ const rc3935PhotoArchiveStatusMigration = fs.readFileSync(path.join(databaseDir,
 const rc3936HandoverMigration = fs.readFileSync(path.join(databaseDir, '77_r15d_rc3936_denetim_devir_teslim.sql'), 'utf8');
 const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir, '78_r15d_rc3937_takip_muhendisi_atama.sql'), 'utf8');
 const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r15d_rc3940_takip_atanan_yetki.sql'), 'utf8');
+const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
+const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
+const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
 const rc394SectionFixMigration = fs.readFileSync(path.join(databaseDir, '49_r15d_rc394_bolum_yanlis_yerlesim_duzeltme.sql'), 'utf8');
 const rc394DuplicateMergeMigration = fs.readFileSync(path.join(databaseDir, '50_r15d_rc394_yalitim_direnci_mukerrer_birlestirme.sql'), 'utf8');
@@ -117,6 +120,12 @@ test('migration 79 trigger denetimler üzerinde BEFORE UPDATE olarak kurulur',
   rc3940FollowupAuthMigration.includes('before update on public.denetimler'));
 test('migration 79 fotoğraf/storage DELETE politikalarına dokunmaz (karar D2)',
   !rc3940FollowupAuthMigration.includes('for delete') && !/fotograflari silme|nesnesi silme/.test(rc3940FollowupAuthMigration));
+test('migration 79 dört-persona RLS harness dosyaları hata yayılımını tanımlar',
+  rls79Scenario.includes('raise exception') &&
+  !rls79Scenario.includes('EKSİK (branch') &&
+  rls79Scenario.includes('3.6b') && rls79Scenario.includes('3.15b') &&
+  rls79Bootstrap.includes('create table storage.objects') &&
+  rls79Runner.includes('ON_ERROR_STOP=1') && rls79Runner.includes('docker rm -f $container'));
 test('atanan takip mühendisi fotoğraf silme düğmesini görmez; ekleme açık, teknik müdür korunur (karar D2)',
   app.includes('const fotoSilebilir = currentCanEdit && (denetimSahibiMi(denetim) || Profile.canSeeAllInspections || Profile.canArchivePhotos)') &&
   app.includes('${fotoSilebilir ? `<button class="photo-remove"') &&
