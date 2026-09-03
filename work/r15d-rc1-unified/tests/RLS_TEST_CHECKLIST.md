@@ -58,7 +58,8 @@ politikası ister.
 | 3.9 | C | `select denetim_fotograflari` + `select storage.objects` takip fotoğrafları | `... okuma` (68 / 71) | **görür** |
 | 3.10 | C | takip `denetimler` `update` — `denetim_durumu = 'Çalışma Tamamlandı'` iken herhangi bir alan | `takip atanan denetim guncelleme` | **RED** (durum kısıtı; tamamlanmış kaydı yeniden açamaz) |
 | 3.11 | C | `update denetimler` — `takip_atanan_email`'i D'ye değiştir | `... with check` | **RED** |
-| 3.12 | C | `update denetimler` — `musteri_unvani` / `denetimi_yapan` / `denetim_tarihi` değiştir (aktif durumda) | üst bilgi koruma trigger/RPC | **RED** (seçenek A/B) **veya** kabul edilen risk notu (seçenek C) — migration 79 hangisini seçtiyse |
+| 3.12 | C | `update denetimler` — `musteri_unvani` / `denetimi_yapan` / `denetim_tarihi` değiştir (aktif durumda) | `aves_takip_atanan_alan_kilidi` trigger | **RED** (kullanıcı kararı 2026-09-03: sunucu kilitler) |
+| 3.12b | C | `update denetimler` — yalnız `denetim_durumu` 'Devam Ediyor'→'Gözden Geçirme' (aktif durumda) | aynı trigger | **başarılı** (izin verilen ileri yön) |
 | 3.13 | D | `select` aynı takip `denetimler` satırı | `denetimleri okuma` | **görmez** (0 satır) |
 | 3.14 | D | `update saha_kontrol` / `insert denetim_fotograflari` aynı takip kaydında | ilgili politikalar | **RED** |
 | 3.15 | D | `select storage.objects` takip fotoğrafı | `denetim fotograf nesnesi okuma` | **görmez** |
