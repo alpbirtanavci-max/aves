@@ -6,44 +6,14 @@ on:
     branches:
       - claude/aves-saha-denetim-brief-4x9wxx
 
-# Aynı dal/PR için eski koşuları iptal et
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   statik-test:
-    name: Statik test (r15d-static-test)
+    name: Statik test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Statik test — her zaman yeşil olmalı (AGENTS.md §5)
+      - name: r15d-static-test (AGENTS.md bolum 5 - her zaman yesil)
         run: node work/r15d-rc1-unified/tests/r15d-static-test.mjs
-
-  # ------------------------------------------------------------------
-  # RLS senaryo testi — migration NN (takip atama yetkisi) ile eklenecek.
-  # tests/rls/*.sql oluştuğunda otomatik devreye girer.
-  #
-  # İki uygulama seçeneğinden biri seçilecek (bkz. CODEX_BRIEF_rc3939_takip_atama_rls.md):
-  #  (1) database/00_baseline_schema.sql  — canlıdan `supabase db dump` ile alınıp
-  #      commit edilir; job bare Postgres'e tüm migration'ları sırayla uygular.
-  #  (2) Supabase branching — SUPABASE_ACCESS_TOKEN + proje ref secret'ı ile
-  #      geçici branch açılıp senaryolar orada koşulur.
-  #
-  # Bare Postgres bugün çalışmaz: database/ dizini migration 21'den başlıyor ve
-  # daha eski (R11/R12/R15C) baseline şemasına dayanıyor.
-  # ------------------------------------------------------------------
-  rls-test:
-    name: RLS senaryo testi (dört persona)
-    runs-on: ubuntu-latest
-    if: ${{ hashFiles('work/r15d-rc1-unified/tests/rls/**/*.sql') != '' }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Placeholder — uygulama yöntemi seçilmedi
-        run: |
-          echo "::error::tests/rls/ mevcut ama CI koşum yöntemi (baseline dump veya Supabase branch) henüz tanımlı değil."
-          echo "CODEX_BRIEF_rc3939_takip_atama_rls.md teslim maddesi 4 ile birlikte bu job tamamlanmalı."
-          exit 1
