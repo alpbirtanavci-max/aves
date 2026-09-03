@@ -17,3 +17,31 @@ jobs:
           node-version: '24'
       - name: r15d-static-test (AGENTS.md bolum 5 - her zaman yesil)
         run: node work/r15d-rc1-unified/tests/r15d-static-test.mjs
+
+  rls-test:
+    name: RLS dort-persona senaryo testi
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local-test
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGPASSWORD: local-test
+      PSQL: psql -X -v ON_ERROR_STOP=1 -h localhost -U postgres -d postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Izole sema bootstrap
+        run: $PSQL -f work/r15d-rc1-unified/tests/rls/79_local_bootstrap.sql
+      - name: Migration 79 uygula
+        run: $PSQL -f work/r15d-rc1-unified/database/79_r15d_rc3940_takip_atanan_yetki.sql
+      - name: Dort-persona senaryolari
+        run: $PSQL -f work/r15d-rc1-unified/tests/rls/79_takip_atama.sql
