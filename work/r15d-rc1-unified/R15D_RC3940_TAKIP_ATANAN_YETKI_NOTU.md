@@ -51,5 +51,24 @@ Migration 79 yalnız `drop policy` + `create policy` + `create trigger`. Geri al
 
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 332/332 (7 yeni kontrol).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 333/333.
 Statik test RLS davranışını doğrulamaz — canlı test §2 zorunlu.
+
+## Canlı şema doğrulaması (2026-09-03, Supabase MCP salt okunur)
+
+- `aves_oturum_emaili()` = `lower(coalesce(auth.jwt() ->> 'email',''))` — fotoğraf
+  politikalarındaki ifadeyle authenticated kullanıcı için birebir aynı. Bulgu #3 kapandı.
+- 11 politikanın tümü canlıda beklenen ad/tablo/komutla mevcut.
+- `denetimler` trigger sırası yeni trigger'ı `trg_aves_denetim_kimligi`'den sonra,
+  `trg_aves_takip_zincir_kilidi`'den önce koyuyor — `son_degistiren_*` sıralaması güvenli.
+
+## Bu migration kapsamı dışı — ayrı ele alınacak advisor bulguları
+
+- **security · `anon` SECURITY DEFINER RPC**: 14 `aves_*` yardımcı fonksiyonu `anon`
+  rolüne RPC ile açık. app.js hiçbirini RPC ile çağırmıyor → `revoke execute ... from anon`
+  güvenli (authenticated grant'ı RLS için korunur). Ayrı PR.
+- **perf · `auth_rls_initplan`**: `denetim_fotograflari` politikalarında `auth.jwt()`
+  satır başına yeniden değerlendiriliyor; `(select auth.jwt())` sarımıyla düzeltilir.
+  Bu migrationda mevcut davranış korundu (diff'i küçük tutmak için).
+- **perf · `multiple_permissive_policies`** (`denetimler`, `saha_kontrol`): 78'in eklediği
+  ikinci UPDATE politikasından; ek yük düşük, konsolidasyon opsiyonel.
