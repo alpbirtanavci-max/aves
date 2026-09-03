@@ -1,7 +1,8 @@
-# Codex Brifi — Canlı Doğrulama Özeti (rc3.9.40 + rc3.9.41)
+# Codex Brifi — Canlı Doğrulama Özeti (79–80 migration'ları + app rc3.9.40)
 
 **Tarih:** 2026-09-03 · **Uygulayan:** Claude (Supabase MCP) · **Proje:** `jmccmkqyncunpqliqvox` (PG 17, eu-west-1)
-**Kapsam:** migration 79 (`takip_atanan_yetki`) + migration 80 (`anon_execute_revoke`) + app `rc3.9.40`
+**Kapsam:** migration 79 (`takip_atanan_yetki`) + migration 80 (`anon_execute_revoke`) + yayımlanan app sürümü `R15D-rc3.9.40`
+(migration dosya adlarındaki `rc3937` / `rc3941` yalnız dosya-adı etiketidir; canlı app sürümü tek: rc3.9.40.)
 
 Bu bir bilgilendirme brifidir — aksiyon istemez. Sıradaki iş: bir sonraki gerçek takip
 atamasında sahada göz kontrolü + (istenirse) advisor takip kalemleri.
