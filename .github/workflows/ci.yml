@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - claude/aves-saha-denetim-brief-4x9wxx
+
+jobs:
+  statik-test:
+    name: Statik test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: r15d-static-test (AGENTS.md bolum 5 - her zaman yesil)
+        run: node work/r15d-rc1-unified/tests/r15d-static-test.mjs
