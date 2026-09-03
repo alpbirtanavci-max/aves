@@ -60,6 +60,8 @@ politikası ister.
 | 3.11 | C | `update denetimler` — `takip_atanan_email`'i D'ye değiştir | `... with check` | **RED** |
 | 3.12 | C | `update denetimler` — `musteri_unvani` / `denetimi_yapan` / `denetim_tarihi` değiştir (aktif durumda) | `aves_takip_atanan_alan_kilidi` trigger | **RED** (kullanıcı kararı 2026-09-03: sunucu kilitler) |
 | 3.12b | C | `update denetimler` — yalnız `denetim_durumu` 'Devam Ediyor'→'Gözden Geçirme' (aktif durumda) | aynı trigger | **başarılı** (izin verilen ileri yön) |
+| 3.12c | C | `update denetimler` — `denetim_durumu` 'Gözden Geçirme'→'Çalışma Tamamlandı' (takibi kapat) | `takip atanan denetim guncelleme` `WITH CHECK` + trigger | **başarılı** — `USING` eski satırı aktifken kabul eder, `WITH CHECK` yeni 'Çalışma Tamamlandı'ya izin verir (asimetrik yazım şart) |
+| 3.12d | C | `.photo-remove` (× foto sil) — aktif takip fotoğrafı | `denetim fotograflari silme` (75, değişmedi) | **RED** — D2 kararı; app.js düğmeyi C'ye göstermemeli (statik test) |
 | 3.13 | D | `select` aynı takip `denetimler` satırı | `denetimleri okuma` | **görmez** (0 satır) |
 | 3.14 | D | `update saha_kontrol` / `insert denetim_fotograflari` aynı takip kaydında | ilgili politikalar | **RED** |
 | 3.15 | D | `select storage.objects` takip fotoğrafı | `denetim fotograf nesnesi okuma` | **görmez** |

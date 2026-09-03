@@ -17,7 +17,8 @@ vermez. Kodda `APPROVED`, `CERTIFIED`, `CONFORMITY_DECISION` gibi yetki aşan du
 1. **Tek iş, tek geliştirici, tek branch.** Bir işi ya Claude ya Codex götürür; ikisi
    aynı dosyaya aynı anda dokunmaz. İş devri bir brief dosyasıyla yapılır
    (`CODEX_BRIEF_*.md` / `CLAUDE_BRIEF_*.md`): kanıt satır numaraları + istenen çıktı +
-   test beklentisi.
+   test beklentisi. **Brief repo içine commit edilir** — yalnız bir kişinin yerel
+   oturumunda kalırsa sonraki devirde bağlam kaybı olur. İş bitince `docs/arsiv/`e taşınır.
 2. **Değişiklik her zaman branch'te yapılır.** Production dalına
    (`claude/aves-saha-denetim-brief-4x9wxx`) doğrudan yazılmaz.
 3. **Diğer ajan diff'i inceler.** Merge öncesi zorunlu. Claude tarafında `/code-review high`.
