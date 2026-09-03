@@ -73,10 +73,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.40 takip atanan yetki sürümü', index.includes('R15D-RC3.9.40</b>'));
-test('app R15D rc3.9.40 takip atanan yetki sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.40'"));
-test('service worker rc3.9.40 cache', sw.includes("aves-saha-r15d-rc3940'"));
-test('uygulama manifesti rc3.9.40 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.40"'));
+test('index R15D rc3.9.41 seri no görünürlük düzeltmesi sürümü', index.includes('R15D-RC3.9.41</b>'));
+test('app R15D rc3.9.41 seri no görünürlük düzeltmesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.41'"));
+test('service worker rc3.9.41 cache', sw.includes("aves-saha-r15d-rc3941'"));
+test('uygulama manifesti rc3.9.41 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.41"'));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
@@ -141,8 +141,8 @@ test('atanan takip mühendisi fotoğraf silme düğmesini görmez; ekleme açık
   !app.includes('${currentCanEdit ? `<button class="photo-remove"'));
 test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar açar',
   rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_son_indirme_at') && rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_temizlendi_at') && !/\b(delete|truncate)\b/i.test(rc3935PhotoArchiveStatusMigration));
-test('seri no tekrarında devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
-  app.includes("denetim_durumu !== 'Çalışma Tamamlandı'") && app.includes('365 * 24 * 60 * 60 * 1000') && app.includes('Yeni bağımsız denetim 365 gün sonra açılabilir') && app.includes('Takip denetimi'));
+test('seri no tekrarında yalnız görünür kayıtlar, devam eden kayıt ve 365 gün kuralı var; takip akışı etkilenmiyor',
+  app.includes('denetimGorunebilirMi(item) && normSeriNo(item.asansor_seri_no) === seriAnahtari') && app.includes("denetim_durumu !== 'Çalışma Tamamlandı'") && app.includes('365 * 24 * 60 * 60 * 1000') && app.includes('Yeni bağımsız denetim 365 gün sonra açılabilir') && app.includes('Takip denetimi'));
 test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti var',
   app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
 test('fotoğraf ZIP adı seri no ve tarih içeriyor', app.includes('arsivKimligi') && app.includes('_fotograflar.zip'));
