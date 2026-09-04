@@ -73,10 +73,21 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.42 senkron uyarı kilidi sürümü', index.includes('R15D-RC3.9.42</b>'));
-test('app R15D rc3.9.42 senkron uyarı kilidi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.42'"));
-test('service worker rc3.9.42 cache', sw.includes("aves-saha-r15d-rc3942'"));
-test('uygulama manifesti rc3.9.42 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.42"'));
+test('index R15D rc3.9.43 kalıcı depolama sürümü', index.includes('R15D-RC3.9.43</b>'));
+test('app R15D rc3.9.43 kalıcı depolama sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.43'"));
+test('service worker rc3.9.43 cache', sw.includes("aves-saha-r15d-rc3943'"));
+test('uygulama manifesti rc3.9.43 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.43"'));
+test('başlangıçta navigator.storage.persist() çağrılır ve sonucu kv storage_persist olarak yazılır',
+  app.includes('async function ensurePersistentStorage()') &&
+  app.includes('navigator.storage.persist()') &&
+  app.includes('navigator.storage.persisted') &&
+  app.includes("DB.kvSet('storage_persist'") &&
+  app.includes('try { await ensurePersistentStorage(); } catch {}'));
+test('hazırlık kontrolü kalıcı depolama iznini advisory (hazırlığı engellemeyen) satır olarak gösterir',
+  app.includes("add('Kalıcı depolama izni',") &&
+  app.includes("DB.kvGet('storage_persist')") &&
+  app.includes('const ready = checks.every(check => check.ok || check.advisory);') &&
+  app.includes('advisory: !!advisory'));
 test('senkron uyarısı kilidi kırılır: reviewWarning + kvDel(sync_warning) + export',
   app.includes('async function reviewWarning()') &&
   app.includes("DB.kvDel('sync_warning')") &&

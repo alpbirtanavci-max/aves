@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.42';
+const APP_VERSION = 'R15D-rc3.9.43';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -2117,7 +2117,9 @@ const UI = (() => {
     // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez.
     await DB.kvDel(`offline_ready_${d.id}`);
     const checks = [];
-    const add = (name, ok, detail) => checks.push({ name, ok: !!ok, detail });
+    // advisory: kırmızı gösterilir ama "hazır" işaretini engellemez (ör. tarayıcı
+    // kararına bağlı kalıcı depolama izni).
+    const add = (name, ok, detail, advisory) => checks.push({ name, ok: !!ok, detail, advisory: !!advisory });
     const manifest = await DB.kvGet('kutuphane_manifest');
     const library = await DB.all('kutuphane');
     const itemIds = rows.map(r => r.madde_id).sort();
@@ -2153,6 +2155,15 @@ const UI = (() => {
     }
     add('Yerel depolama alanı', quotaOk, quotaDetail);
 
+    const persistState = await DB.kvGet('storage_persist');
+    add('Kalıcı depolama izni',
+      !!persistState && persistState.granted,
+      !persistState ? 'Henüz kontrol edilmedi'
+        : persistState.granted ? 'Tarayıcı yerel veriyi uyarısız temizlemez'
+        : persistState.supported ? 'Tarayıcı izni vermedi — depolama dolarsa veri silinebilir; uygulamayı ana ekrana ekleyin'
+        : 'Tarayıcı bu özelliği desteklemiyor',
+      true);
+
     const visualAssets = [...new Set(rows.flatMap(r => gorselDosyalari(r.gorsel_referansi)).map(file => `./referans-gorseller/${file}`))];
     const assets = [...OFFLINE_CORE_ASSETS, ...visualAssets];
     let cachedCount = 0;
@@ -2163,7 +2174,7 @@ const UI = (() => {
     }
     add('Uygulama ve gerekli görseller çevrimdışı hazır', cachedCount === assets.length, `${cachedCount}/${assets.length} dosya`);
 
-    const ready = checks.every(check => check.ok);
+    const ready = checks.every(check => check.ok || check.advisory);
     if (ready) {
       const now = new Date().toISOString();
       d.offline_hazir_at = now;
@@ -2192,8 +2203,12 @@ const UI = (() => {
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal"><button class="close">×</button>
       <h3>${result.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</h3>
-      <div class="preflight-list">${result.checks.map(check => `<div class="preflight-row ${check.ok?'ok':'fail'}"><span>${check.ok?'✓':'✕'}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`).join('')}</div>
-      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'}</div>
+      <div class="preflight-list">${result.checks.map(check => {
+        const cls = check.ok ? 'ok' : (check.advisory ? 'warn' : 'fail');
+        const mark = check.ok ? '✓' : (check.advisory ? '⚠' : '✕');
+        return `<div class="preflight-row ${cls}"><span>${mark}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`;
+      }).join('')}</div>
+      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -3850,6 +3865,24 @@ async function registerServiceWorkerWithUpdateChoice() {
   });
 }
 
+// Kalıcı depolama izni: tarayıcının IndexedDB'yi depolama baskısında uyarısız
+// tahliye etmesini engeller. Bir kez istenir, sonucu kv'ye yazılır (hazırlık
+// kontrolü okur). İzin verilmese bile uygulama çalışır — bu yalnız güvence katmanı.
+async function ensurePersistentStorage() {
+  const now = new Date().toISOString();
+  if (!navigator.storage || !navigator.storage.persist) {
+    await DB.kvSet('storage_persist', { supported: false, granted: false, checked_at: now });
+    return;
+  }
+  try {
+    let granted = navigator.storage.persisted ? await navigator.storage.persisted() : false;
+    if (!granted) granted = await navigator.storage.persist();
+    await DB.kvSet('storage_persist', { supported: true, granted: !!granted, checked_at: now });
+  } catch (error) {
+    await DB.kvSet('storage_persist', { supported: true, granted: false, error: String((error && error.message) || error), checked_at: now });
+  }
+}
+
 /* ================= Başlat ================= */
 (async () => {
   try {
@@ -3863,6 +3896,7 @@ async function registerServiceWorkerWithUpdateChoice() {
     return;
   }
   try { await registerServiceWorkerWithUpdateChoice(); } catch {}
+  try { await ensurePersistentStorage(); } catch {}
   await API.loadSession();
   document.getElementById('btnLogout').onclick = async () => {
     if (confirm('Çıkış yapılsın mı? (Cihazdaki veriler korunur)')) { await API.logout(); Profile.clear(); UI.showLogin(); }
