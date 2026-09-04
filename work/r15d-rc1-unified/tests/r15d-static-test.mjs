@@ -73,10 +73,25 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.41 seri no görünürlük düzeltmesi sürümü', index.includes('R15D-RC3.9.41</b>'));
-test('app R15D rc3.9.41 seri no görünürlük düzeltmesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.41'"));
-test('service worker rc3.9.41 cache', sw.includes("aves-saha-r15d-rc3941'"));
-test('uygulama manifesti rc3.9.41 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.41"'));
+test('index R15D rc3.9.42 senkron uyarı kilidi sürümü', index.includes('R15D-RC3.9.42</b>'));
+test('app R15D rc3.9.42 senkron uyarı kilidi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.42'"));
+test('service worker rc3.9.42 cache', sw.includes("aves-saha-r15d-rc3942'"));
+test('uygulama manifesti rc3.9.42 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.42"'));
+test('senkron uyarısı kilidi kırılır: reviewWarning + kvDel(sync_warning) + export',
+  app.includes('async function reviewWarning()') &&
+  app.includes("DB.kvDel('sync_warning')") &&
+  app.includes('reviewWarning,') &&
+  app.includes('async function korunanKalemler()') &&
+  app.includes("KORUNAN_DURUMLAR = ['conflict', 'forbidden']"));
+test('manual() gerçek outbox durumuna bakar, yalnız KV değil',
+  app.includes('const korunan = await korunanKalemler();') &&
+  app.includes('if (warning || korunan.length) { await reviewWarning(); return; }'));
+test('çakışma (409) kayıtları körlemesine yeniden gönderilmez; yalnız 403 retry edilir',
+  app.includes("const yetkiKalemleri = korunan.filter(it => it.sync_status === 'forbidden')") &&
+  app.includes('for (const it of yetkiKalemleri) {') &&
+  app.includes("it.sync_status = 'retry'") &&
+  app.includes("const kalanCakisma = (await DB.outboxAll()).filter(x => x.sync_status === 'conflict')") &&
+  !/for \(const it of korunan\) \{\s*\n\s*it\.sync_status = 'retry'/.test(app));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
