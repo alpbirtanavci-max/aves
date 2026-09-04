@@ -401,18 +401,28 @@ const Sync = (() => {
   let pushRunning = false;
   let pushTimer = null;
 
+  const KORUNAN_DURUMLAR = ['conflict', 'forbidden'];
+  async function korunanKalemler() {
+    return (await DB.outboxAll()).filter(it => KORUNAN_DURUMLAR.includes(it.sync_status));
+  }
+
   async function updatePill() {
     const pill = document.getElementById('syncPill');
     const label = document.getElementById('syncLabel');
     if (!pill || !label) return;
-    const n = await DB.outboxCount();
+    const outbox = await DB.outboxAll();
+    const n = outbox.length;
     const warning = await DB.kvGet('sync_warning');
+    // KV yazılmadan uygulama kapanmış olabilir; gerçek outbox durumu esastır.
+    const korunan = outbox.filter(it => KORUNAN_DURUMLAR.includes(it.sync_status));
+    const uyariVar = !!warning || korunan.length > 0;
     if (!navigator.onLine) {
       pill.className = 'syncpill offline';
       label.textContent = n > 0 ? `Çevrimdışı · ${n} bekliyor` : 'Çevrimdışı';
-    } else if (warning) {
+    } else if (uyariVar) {
       pill.className = 'syncpill error';
-      label.textContent = (warning.kind === 'conflict' ? 'Çakışma uyarısı' : 'Yetki uyarısı') + ' · dokun';
+      const cakisma = warning ? warning.kind === 'conflict' : korunan.some(x => x.sync_status === 'conflict');
+      label.textContent = (cakisma ? 'Çakışma uyarısı' : 'Yetki uyarısı') + ' · dokun';
     } else if (n > 0) {
       pill.className = 'syncpill pending';
       label.textContent = `${n} bekliyor`;
@@ -649,11 +659,15 @@ const Sync = (() => {
 
   // 403/409 sonrası cihazda korunan kalemler için tek inceleme + kurtarma noktası.
   // Bu yol olmadan `sync_warning` KV kalıcı kalıyor ve elle senkron kilitleniyordu.
+  //
+  // KRİTİK: yalnız 403 (yetki) kalemleri yeniden gönderilir. 409 (çakışma) kalemleri
+  // körlemesine gönderilmez — sunucudaki değişikliği ezebilir; karşılaştırma akışı
+  // (yol haritası 4d) gelene kadar cihazda korunur ve kullanıcıya görünür kılınır.
   async function reviewWarning() {
     const warning = await DB.kvGet('sync_warning');
-    const stuck = (await DB.outboxAll()).filter(it => ['conflict', 'forbidden'].includes(it.sync_status));
-    if (!warning && !stuck.length) { toast('Bekleyen senkron uyarısı yok'); return; }
-    if (!stuck.length) {
+    const korunan = await korunanKalemler();
+    if (!warning && !korunan.length) { toast('Bekleyen senkron uyarısı yok'); return; }
+    if (!korunan.length) {
       await DB.kvDel('sync_warning');
       await updatePill();
       toast('Senkron uyarısı temizlendi');
@@ -666,7 +680,7 @@ const Sync = (() => {
       return d ? `${d.musteri_unvani || 'Firma bilgisi yok'} · ${d.asansor_seri_no || '-'}` : 'Bilinmeyen denetim';
     };
     const grup = new Map();
-    for (const it of stuck) {
+    for (const it of korunan) {
       const key = it.inspection_id || 'yok';
       if (!grup.has(key)) grup.set(key, []);
       grup.get(key).push(it);
@@ -674,10 +688,15 @@ const Sync = (() => {
     const satirlar = [...grup.entries()].map(([id, list]) => {
       const cakisma = list.some(x => x.sync_status === 'conflict');
       const sonHata = list.map(x => x.last_error_message).filter(Boolean).slice(-1)[0] || '';
-      return `<div class="sync-review-row"><b>${escSync(adOf(id))}</b>` +
-        `<small>${list.length} işlem · ${cakisma ? 'çakışma incelemesi' : 'yetki incelemesi'}` +
-        `${sonHata ? ` · ${escSync(sonHata).slice(0, 140)}` : ''}</small></div>`;
+      const aciklama = cakisma
+        ? 'başka cihazda değişti — yerel kopya korunuyor, karşılaştırma özelliği yakında'
+        : 'yetki incelemesi gerekiyor';
+      return `<div class="sync-review-row ${cakisma ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
+        `<small>${list.length} işlem · ${aciklama}${sonHata ? ` · ${escSync(sonHata).slice(0, 140)}` : ''}</small></div>`;
     }).join('');
+
+    const yetkiKalemleri = korunan.filter(it => it.sync_status === 'forbidden');
+    const cakismaVar = korunan.some(it => it.sync_status === 'conflict');
 
     const ov = document.createElement('div');
     ov.className = 'overlay';
@@ -687,39 +706,50 @@ const Sync = (() => {
       <div class="photo-help">${escSync(warning ? warning.message : 'Bazı yerel kayıtlar sunucuya gönderilemedi.')} Hiçbir saha cevabı silinmedi; cihazda korunuyor.</div>
       <div class="sync-review-list">${satirlar}</div>
       <div class="print-actions">
-        <button class="btn btn-primary" id="syncRetryAll">Yeniden dene</button>
+        ${yetkiKalemleri.length ? '<button class="btn btn-primary" id="syncRetryForbidden">Yetki kayıtlarını yeniden dene</button>' : ''}
         <button class="btn btn-ghost" id="syncReviewClose">Kapat</button>
       </div>
-      <p class="photo-help" style="margin-top:10px">Yeniden dene: korunan işlemler tekrar gönderilmeyi dener. Yetki hatası sürüyorsa yöneticine bildir — kayıt kaybolmaz.</p>
+      ${cakismaVar ? '<p class="photo-help" style="margin-top:10px">Çakışma kayıtları otomatik gönderilmez; başka cihazdaki değişikliği ezmemek için korunur. Karşılaştırma akışı ayrı geliştirmede eklenecek.</p>' : ''}
     </div>`;
     document.body.appendChild(ov);
     const close = () => ov.remove();
     ov.querySelector('.close').onclick = close;
     ov.querySelector('#syncReviewClose').onclick = close;
     ov.onclick = e => { if (e.target === ov) close(); };
-    ov.querySelector('#syncRetryAll').onclick = async () => {
+    const btnRetry = ov.querySelector('#syncRetryForbidden');
+    if (btnRetry) btnRetry.onclick = async () => {
       if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince yeniden deneyin'); return; }
-      const btn = ov.querySelector('#syncRetryAll');
-      btn.disabled = true; btn.textContent = 'Deneniyor…';
-      for (const it of stuck) {
+      btnRetry.disabled = true; btnRetry.textContent = 'Deneniyor…';
+      for (const it of yetkiKalemleri) {
         it.sync_status = 'retry';
         it.last_error_code = null;
         it.last_error_message = null;
         await DB.outboxPut(it);
       }
-      await DB.kvDel('sync_warning');
+      // Çakışma kalemi kalmadıysa uyarıyı kaldır; kaldıysa çakışma sinyalini koru.
+      const kalanCakisma = (await DB.outboxAll()).filter(x => x.sync_status === 'conflict');
+      if (kalanCakisma.length) {
+        await DB.kvSet('sync_warning', {
+          kind: 'conflict',
+          message: 'Bir veya daha fazla kayıt başka bir cihazda değişmiş olabilir. Yerel cevap silinmedi; çakışma incelemesi gerekiyor.',
+          ts: Date.now(),
+        });
+      } else {
+        await DB.kvDel('sync_warning');
+      }
       close();
       toast('Senkronize ediliyor…');
-      const ok = await full();
-      const kalan = (await DB.outboxAll()).filter(x => ['conflict', 'forbidden'].includes(x.sync_status)).length;
-      toast(kalan ? `${kalan} işlem hâlâ inceleme gerektiriyor` : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
+      await full();
+      const kalan = await korunanKalemler();
+      toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı');
       await updatePill();
     };
   }
 
   async function manual() {
     const warning = await DB.kvGet('sync_warning');
-    if (warning) { await reviewWarning(); return; }
+    const korunan = await korunanKalemler();
+    if (warning || korunan.length) { await reviewWarning(); return; }
     if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
     toast('Senkronize ediliyor…');
     const completed = await full();
