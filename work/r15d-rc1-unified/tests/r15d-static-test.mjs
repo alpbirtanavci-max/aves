@@ -73,10 +73,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.44 kaldığı yere dönüş sürümü', index.includes('R15D-RC3.9.44</b>'));
-test('app R15D rc3.9.44 kaldığı yere dönüş sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.44'"));
-test('service worker rc3.9.44 cache', sw.includes("aves-saha-r15d-rc3944'"));
-test('uygulama manifesti rc3.9.44 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.44"'));
+test('index R15D rc3.9.45 senkron merkezi sürümü', index.includes('R15D-RC3.9.45</b>'));
+test('app R15D rc3.9.45 senkron merkezi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.45'"));
+test('service worker rc3.9.45 cache', sw.includes("aves-saha-r15d-rc3945'"));
+test('uygulama manifesti rc3.9.45 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.45"'));
 test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
   app.includes("DB.kvSet('last_inspection', { id, at:") &&
   app.includes("DB.kvGet('last_inspection')"));
@@ -100,21 +100,31 @@ test('hazırlık kontrolü kalıcı depolama iznini advisory (hazırlığı enge
   app.includes("DB.kvGet('storage_persist')") &&
   app.includes('const ready = checks.every(check => check.ok || check.advisory);') &&
   app.includes('advisory: !!advisory'));
-test('senkron uyarısı kilidi kırılır: reviewWarning + kvDel(sync_warning) + export',
-  app.includes('async function reviewWarning()') &&
+test('senkron merkezi: syncCenter + sync_warning kilidi kırılır + export',
+  app.includes('async function syncCenter()') &&
   app.includes("DB.kvDel('sync_warning')") &&
-  app.includes('reviewWarning,') &&
+  app.includes('syncCenter,') && app.includes('reviewWarning,') &&
+  app.includes('async function reviewWarning() { await syncCenter(); }') &&
   app.includes('async function korunanKalemler()') &&
   app.includes("KORUNAN_DURUMLAR = ['conflict', 'forbidden']"));
-test('manual() gerçek outbox durumuna bakar, yalnız KV değil',
-  app.includes('const korunan = await korunanKalemler();') &&
-  app.includes('if (warning || korunan.length) { await reviewWarning(); return; }'));
+test('manual() gerçek outbox durumuna bakar (KV + outboxCount), Senkron Merkezi açar',
+  app.includes('const outboxVar = (await DB.outboxCount()) > 0;') &&
+  app.includes('if (warning || outboxVar) { await syncCenter(); return; }'));
 test('çakışma (409) kayıtları körlemesine yeniden gönderilmez; yalnız 403 retry edilir',
-  app.includes("const yetkiKalemleri = korunan.filter(it => it.sync_status === 'forbidden')") &&
+  app.includes("const yetkiKalemleri = items.filter(it => it.sync_status === 'forbidden')") &&
   app.includes('for (const it of yetkiKalemleri) {') &&
   app.includes("it.sync_status = 'retry'") &&
   app.includes("const kalanCakisma = (await DB.outboxAll()).filter(x => x.sync_status === 'conflict')") &&
-  !/for \(const it of korunan\) \{\s*\n\s*it\.sync_status = 'retry'/.test(app));
+  !/for \(const it of items\) \{\s*\n\s*it\.sync_status = 'retry'/.test(app));
+test('4 kopyalanmış inspectionOutbox filtresi tek Sync.denetimSyncOzeti yardımcısına indirildi',
+  (app.match(/Sync\.denetimSyncOzeti\(currentDenetimId\)/g) || []).length === 4 &&
+  app.includes('function outboxOzeti(items)') &&
+  app.includes('async function denetimSyncOzeti(denetimId)') &&
+  !app.includes("(await DB.outboxAll()).filter(item => item.inspection_id === currentDenetimId)"));
+test('Senkron Merkezi denetime göre gruplar + "Şimdi senkronize et" + çakışma açıklaması',
+  app.includes('<h3>Senkron Merkezi</h3>') &&
+  app.includes("id=\"syncCenterNow\"") &&
+  app.includes('Çakışma kayıtları otomatik gönderilmez'));
 test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
   app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
