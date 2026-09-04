@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.46';
+const APP_VERSION = 'R15D-rc3.9.47';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1507,12 +1507,14 @@ const UI = (() => {
       dl.appendChild(resume);
     }
 
+    const hazirlikAktif = [];   // sahaya çıkılabilecek denetimler {d, ready}
     for (const d of denetimler) {
       const st = statsBy[d.id];
       const offlineState = await cevrimdisiHazirlikDurumu(d, rowsBy[d.id] || []);
       const canEdit = canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
+      if (!tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
       const card = document.createElement('button');
       card.className = 'dcard';
       card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
@@ -1537,6 +1539,34 @@ const UI = (() => {
       card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
       dl.appendChild(card);
     }
+
+    // Toplu "Sahaya Hazırlık" rozeti — sahaya çıkılabilecek denetimlerin
+    // çevrimdışı hazırlık özeti + tek dokunuşla hepsini doğrula.
+    if (hazirlikAktif.length) {
+      const hazirSayi = hazirlikAktif.filter(x => x.ready).length;
+      const eksik = hazirlikAktif.filter(x => !x.ready);
+      const badge = document.createElement('div');
+      badge.className = `prep-badge ${eksik.length ? 'no' : 'ok'}`;
+      badge.innerHTML = `<div><b>Sahaya Hazırlık · ${hazirSayi}/${hazirlikAktif.length} denetim hazır</b>` +
+        `<small>${eksik.length ? `${eksik.length} denetim çevrimdışı çalışmaya hazır değil` : 'Tüm aktif denetimler bu cihazda çevrimdışı çalışmaya hazır'}</small></div>` +
+        (eksik.length ? '<button class="btn btn-ghost" id="prepVerifyAll">Tümünü doğrula</button>' : '');
+      dl.insertBefore(badge, dl.firstChild);
+      const btnPrep = document.getElementById('prepVerifyAll');
+      if (btnPrep) btnPrep.onclick = async () => {
+        btnPrep.disabled = true;
+        let ok = 0;
+        for (let i = 0; i < eksik.length; i++) {
+          btnPrep.textContent = `Doğrulanıyor ${i + 1}/${eksik.length}…`;
+          try {
+            const sonuc = await sahayaHazirla(eksik[i].d, rowsBy[eksik[i].d.id] || []);
+            if (sonuc.ready) ok++;
+          } catch (e) { console.warn('Toplu hazırlık: bir denetim doğrulanamadı', e); }
+        }
+        toast(`${ok}/${eksik.length} denetim hazır işaretlendi`);
+        await showList();
+      };
+    }
+
     const applyListFilters = () => {
       const query = listSearch.trim().toLocaleLowerCase('tr-TR');
       let visible = 0;
