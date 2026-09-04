@@ -33,12 +33,24 @@ Mevcut `denetim guncelleme` politikası: sahip / yönetici / teknik müdür. Ç�
 - 10c: Üretilen belgeye doğrulanabilir künye (form kodu/revizyon/hash alt bilgisi)
 - 10d: Kurumsal arşive aktarım durumu (`arsive_aktarildi_at` + işaretleme akışı)
 
-## Canlı uygulama
+## Canlı uygulama — sıra zorunlu (Cloudflare otomatik dağıtım)
 
-Migration 81 sadece `alter table … add column if not exists`. Canlıya kullanıcı açıkça
-isteyince; sonrasında salt okunur `select ... information_schema.columns` doğrulaması
-(migration dosyasının sonunda). Geri dönüş: `alter table public.denetimler drop column …`
-(kolonlar boş, veri kaybı yok).
+Production dalı Cloudflare'a otomatik dağıtıldığı için **PR merge = app yayını**. Yeni
+app `resmi_cikti_*` yazmaya başlamadan önce canlı şemada kolonlar olmalı; yoksa
+outbox'ta sunucunun kabul edemediği kayıtlar oluşur.
+
+1. **Kullanıcının açık onayıyla** migration 81 canlıya uygulanır (`apply_migration`).
+2. Sondaki salt okunur `select ... information_schema.columns` ile 3 kolon doğrulanır.
+3. PR #15 merge → `rc3.9.46` yayımlanır.
+
+## Geri dönüş
+
+- **Kullanım başlamadan önce:** `alter table public.denetimler drop column
+  resmi_cikti_uretildi_at, drop column resmi_cikti_snapshot_ozeti, drop column
+  resmi_cikti_hash;` — kolonlar boş, veri kaybı yok.
+- **Kullanım başladıktan sonra:** kolonları düşürmek **çıktı üretim geçmişini
+  kaybettirir**. Geri dönüş bunun yerine app tarafında yazımı devre dışı bırakmak +
+  kolonları yerinde bırakmaktır (dolu veri korunur).
 
 ## Test
 
