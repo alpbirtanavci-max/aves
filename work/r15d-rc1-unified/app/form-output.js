@@ -362,7 +362,7 @@ const FormOutput = (() => {
     const code=chosen.code.replace(/Ü/g,'U').replace(/\./g,'_'); const revision=chosen.revision.replace(/\./g,'');
     const filename=`${code}_${revision}_${safeName(inspection.dosya_no||inspection.asansor_seri_no)}_${inspection.denetim_tarihi||''}.${format}`;
     downloadBytes(bytes,format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf',filename);
-    return filename;
+    return { filename, bytes, form: chosen };
   }
 
   return { createSnapshot, formsForInspection, build, download, rowMeasurement, rowNotes };

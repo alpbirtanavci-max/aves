@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.45';
+const APP_VERSION = 'R15D-rc3.9.46';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -225,6 +225,11 @@ async function getDeviceId() {
 
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function sha256HexBytes(bytes) {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -828,6 +833,7 @@ const GECMIS_ALANLARI = {
     'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
     'takip_atanan_email', 'takip_atanan_ad', 'takip_atama_at',
     'form_cikti_snapshot',
+    'resmi_cikti_uretildi_at', 'resmi_cikti_snapshot_ozeti', 'resmi_cikti_hash',
     'duzeltme_oturumu_id', 'duzeltme_nedeni', 'duzeltme_baslatildi_at',
   ],
   saha_kontrol: [
@@ -2601,8 +2607,23 @@ const UI = (() => {
         ov.querySelectorAll('[data-print]').forEach(button => button.onclick = async () => {
           const original = button.textContent; button.disabled = true; button.textContent = 'Hazırlanıyor…';
           try {
-            const filename = await FormOutput.download(button.dataset.print, d, rows);
+            const format = button.dataset.print;
+            const { filename, bytes, form } = await FormOutput.download(format, d, rows);
             toast(`${filename} hazırlandı`);
+            // 10a: resmî çıktı üretim kaydı (yalnız yerel + sync; belge değişmez).
+            try {
+              const guncel = await DB.get('denetimler', d.id) || d;
+              const now = new Date().toISOString();
+              guncel.resmi_cikti_uretildi_at = now;
+              guncel.resmi_cikti_hash = await sha256HexBytes(bytes);
+              guncel.resmi_cikti_snapshot_ozeti = `${form.code} · ${form.revision} · ${format.toUpperCase()}`
+                + (guncel.kutuphane_content_hash ? ` · kütüphane ${String(guncel.kutuphane_content_hash).slice(0, 12)}` : '')
+                + (guncel.butunluk_hash ? ` · bütünlük ${String(guncel.butunluk_hash).slice(0, 12)}` : '');
+              guncel.updated_at = now;
+              await localWrite('denetimler', guncel, 'denetimler');
+            } catch (kayitHatasi) {
+              console.warn('Resmî çıktı üretim kaydı yazılamadı', kayitHatasi);
+            }
           } catch (error) {
             console.error('Form çıktısı üretilemedi', error);
             toast(error.message || 'Form çıktısı üretilemedi');
@@ -3613,6 +3634,9 @@ const UI = (() => {
       </div>
       <div class="integrity-card ok"><b>Sonuç özeti</b><small>${rows.filter(row => row.durum === 'Kontrol tamamlandı').length} Uygun · ${uygunsuzluklar.length} Uygun Değil · ${rows.filter(row => row.durum === 'Uygulanmaz').length} Uygulanmaz</small></div>
       <div class="integrity-card ${d.fotograf_arsiv_temizlendi_at ? 'pending' : (bekleyenFotograflar ? 'pending' : 'ok')}"><b>Fotoğraf arşiv durumu</b><small>${esc(arsivDurumu)}<br>${esc(sonIndirme)}</small></div>
+      <div class="integrity-card ${d.resmi_cikti_uretildi_at ? 'ok' : 'pending'}"><b>Resmî çıktı</b><small>${d.resmi_cikti_uretildi_at
+        ? `${esc(d.resmi_cikti_snapshot_ozeti || 'Üretildi')} · ${tarihGoster(d.resmi_cikti_uretildi_at)}${d.resmi_cikti_hash ? `<br>Belge parmak izi: ${esc(String(d.resmi_cikti_hash).slice(0, 16))}…` : ''}`
+        : 'Bu denetim için resmî PDF/Word henüz üretilmedi'}</small></div>
       <div class="onay-satir"><span>Takip denetimi</span><b>${takipVar ? 'İlişkili takip kaydı var' : 'Takip kaydı yok'}</b></div>
       ${uygunsuzluklar.length ? `<button class="btn btn-ghost" id="completedBadList">Uygunsuzluk listesini aç (${uygunsuzluklar.length})</button>` : '<div class="oz-hazir ok">✓ Uygun Değil sonucu yok</div>'}
     </div>`;
