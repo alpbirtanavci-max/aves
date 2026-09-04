@@ -74,10 +74,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.46 resmî çıktı kaydı sürümü', index.includes('R15D-RC3.9.46</b>'));
-test('app R15D rc3.9.46 resmî çıktı kaydı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.46'"));
-test('service worker rc3.9.46 cache', sw.includes("aves-saha-r15d-rc3946'"));
-test('uygulama manifesti rc3.9.46 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.46"'));
+test('index R15D rc3.9.47 toplu hazırlık rozeti sürümü', index.includes('R15D-RC3.9.47</b>'));
+test('app R15D rc3.9.47 toplu hazırlık rozeti sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.47'"));
+test('service worker rc3.9.47 cache', sw.includes("aves-saha-r15d-rc3947'"));
+test('uygulama manifesti rc3.9.47 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.47"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -94,6 +94,14 @@ test('tamamlanmış denetim özeti resmî çıktı durumunu gösterir',
   app.includes('<b>Resmî çıktı</b>') &&
   app.includes('d.resmi_cikti_uretildi_at ?') &&
   app.includes('resmî PDF/Word henüz üretilmedi'));
+test('liste ekranında toplu Sahaya Hazırlık rozeti: N/M hazır + tümünü doğrula',
+  app.includes('const hazirlikAktif = [];') &&
+  app.includes('if (!tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });') &&
+  app.includes("badge.className = `prep-badge") &&
+  app.includes('Sahaya Hazırlık · ${hazirSayi}/${hazirlikAktif.length}') &&
+  app.includes("id=\"prepVerifyAll\"") &&
+  app.includes('await sahayaHazirla(eksik[i].d, rowsBy[eksik[i].d.id] || [])') &&
+  index.includes('.prep-badge{'));
 test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
   app.includes("DB.kvSet('last_inspection', { id, at:") &&
   app.includes("DB.kvGet('last_inspection')"));

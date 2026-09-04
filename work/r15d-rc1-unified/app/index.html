@@ -77,6 +77,12 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .resume-card b{display:block;font-size:14px;}
 .resume-card small{display:block;margin-top:2px;font-size:12px;color:#C7CAE2;}
 .resume-card>span{font-size:20px;font-weight:900;flex:0 0 auto;}
+.prep-badge{display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:14px;padding:12px 14px;margin-bottom:12px;border:1px solid;}
+.prep-badge.ok{background:#E8F7EF;color:#12643D;border-color:#B8E4CB;}
+.prep-badge.no{background:#FFF5E5;color:#845A00;border-color:#F0D696;}
+.prep-badge b{display:block;font-size:13.5px;}
+.prep-badge small{display:block;margin-top:2px;font-size:11.5px;line-height:1.35;}
+.prep-badge .btn{width:auto;flex:0 0 auto;padding:9px 12px;font-size:13px;}
 .dcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;display:block;width:100%;text-align:left;}
 .dcard .drow1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
 .dcard .dtitle{font-weight:700;font-size:15px;color:var(--ink);}
@@ -485,7 +491,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.46</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.47</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
