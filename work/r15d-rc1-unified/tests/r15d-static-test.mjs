@@ -45,6 +45,7 @@ const rc3936HandoverMigration = fs.readFileSync(path.join(databaseDir, '77_r15d_
 const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir, '78_r15d_rc3937_takip_muhendisi_atama.sql'), 'utf8');
 const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r15d_rc3940_takip_atanan_yetki.sql'), 'utf8');
 const rc3941AnonRevokeMigration = fs.readFileSync(path.join(databaseDir, '80_r15d_rc3941_anon_execute_revoke.sql'), 'utf8');
+const rc3946OutputRecordMigration = fs.readFileSync(path.join(databaseDir, '81_r15d_rc3946_resmi_cikti_kaydi.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
 const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
 const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
@@ -73,10 +74,26 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.45 senkron merkezi sürümü', index.includes('R15D-RC3.9.45</b>'));
-test('app R15D rc3.9.45 senkron merkezi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.45'"));
-test('service worker rc3.9.45 cache', sw.includes("aves-saha-r15d-rc3945'"));
-test('uygulama manifesti rc3.9.45 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.45"'));
+test('index R15D rc3.9.46 resmî çıktı kaydı sürümü', index.includes('R15D-RC3.9.46</b>'));
+test('app R15D rc3.9.46 resmî çıktı kaydı sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.46'"));
+test('service worker rc3.9.46 cache', sw.includes("aves-saha-r15d-rc3946'"));
+test('uygulama manifesti rc3.9.46 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.46"'));
+test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
+  rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
+  rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
+  rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_hash text') &&
+  !/create policy|drop policy|create trigger|alter policy|update public\.|delete from/i.test(rc3946OutputRecordMigration));
+test('btnYazdir resmî çıktı üretimini kaydeder (yerel + sync): tarih + belge SHA + snapshot özeti',
+  app.includes('async function sha256HexBytes(bytes)') &&
+  formOutput.includes('return { filename, bytes, form: chosen };') &&
+  app.includes('guncel.resmi_cikti_uretildi_at = now;') &&
+  app.includes('guncel.resmi_cikti_hash = await sha256HexBytes(bytes);') &&
+  app.includes('resmi_cikti_snapshot_ozeti') &&
+  app.includes("'resmi_cikti_uretildi_at', 'resmi_cikti_snapshot_ozeti', 'resmi_cikti_hash'"));
+test('tamamlanmış denetim özeti resmî çıktı durumunu gösterir',
+  app.includes('<b>Resmî çıktı</b>') &&
+  app.includes('d.resmi_cikti_uretildi_at ?') &&
+  app.includes('resmî PDF/Word henüz üretilmedi'));
 test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
   app.includes("DB.kvSet('last_inspection', { id, at:") &&
   app.includes("DB.kvGet('last_inspection')"));
