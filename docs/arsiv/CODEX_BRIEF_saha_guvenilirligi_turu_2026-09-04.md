@@ -16,7 +16,8 @@ seçilen alanlar **4, 6, 7, 10** için ilk uygulama paketi.
 | #15 | 10a | Resmî çıktı üretim kaydı — `btnYazdir` sonrası tarih + belge SHA + snapshot özeti | rc3.9.46 | **migration 81** |
 | #16 | 7c | Toplu "Sahaya Hazırlık · N/M hazır" rozeti + "Tümünü doğrula" | rc3.9.47 | — |
 
-**Canlı: app `R15D-rc3.9.47`, DB migration 79 + 80 + 81 uygulanmış. Açık PR yok. CI yeşil.**
+**Canlı: app `R15D-rc3.9.47`, DB migration 79 + 80 + 81 uygulanmış. Açık kod/özellik PR'ı yok
+(bu devir belgesinin kendi PR'ı hariç). CI yeşil.**
 
 ## 2. Kalıcı davranış kararları
 
@@ -28,7 +29,9 @@ seçilen alanlar **4, 6, 7, 10** için ilk uygulama paketi.
 - `updatePill` fotoğraf saymıyor (blob'lu `DB.all('fotograflar')` hot-path regresyonu olurdu).
 
 ### Hazırlık (7a + 7c)
-- `ensurePersistentStorage()` başlangıçta bir kez; `kv.storage_persist = {supported, granted, checked_at}`.
+- `ensurePersistentStorage()` her uygulama başlangıcında çağrılır: `navigator.storage.persisted()`
+  ile bakılır, izin yoksa `navigator.storage.persist()` denenir (yani izin verilene kadar her
+  açılışta tekrar denenir). Sonuç `kv.storage_persist = {supported, granted, checked_at}`.
 - Hazırlık kontrolü `add()` helper'ında `advisory` bayrağı: kırmızı gösterilir ama `ready = every(ok || advisory)` — "Kalıcı depolama izni" hazırlığı engellemez (`persist()` çoğu masaüstünde yalnız PWA kurulumunda verilir).
 - Toplu rozet: yalnız `!Çalışma Tamamlandı && canEditDenetim(d)` denetimler; batch = mevcut `sahayaHazirla` sarmalayıcısı, bir denetimin hatası diğerlerini durdurmaz.
 
