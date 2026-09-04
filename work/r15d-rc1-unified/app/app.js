@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.43';
+const APP_VERSION = 'R15D-rc3.9.44';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1432,6 +1432,21 @@ const UI = (() => {
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     const dl = document.getElementById('dlist');
+
+    // "Kaldığın yerden devam et" — en son açılan, tamamlanmamış, görünür denetim.
+    const sonKayit = await DB.kvGet('last_inspection');
+    const sonDenetim = sonKayit && denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı');
+    if (sonDenetim) {
+      const sonPozisyon = await DB.kvGet(`last_position_${sonDenetim.id}`);
+      const resume = document.createElement('button');
+      resume.className = 'resume-card';
+      resume.innerHTML = `<div><b>Kaldığın yerden devam et</b>` +
+        `<small>${esc(sonDenetim.musteri_unvani)} · ${esc(sonDenetim.asansor_seri_no)}` +
+        `${sonPozisyon && sonPozisyon.bolum ? ` · ${esc(sonPozisyon.bolum)}` : ''}</small></div><span>→</span>`;
+      resume.onclick = () => showDenetim(sonDenetim.id, Profile.isTechnicalManager && !denetimSahibiMi(sonDenetim));
+      dl.appendChild(resume);
+    }
+
     for (const d of denetimler) {
       const st = statsBy[d.id];
       const offlineState = await cevrimdisiHazirlikDurumu(d, rowsBy[d.id] || []);
@@ -2240,12 +2255,21 @@ const UI = (() => {
       }
     }
     const savedPosition = await DB.kvGet(`last_position_${id}`);
-    if (savedPosition && rows.some(r => r.id === savedPosition.item_id && r.bolum === savedPosition.bolum)) {
+    const positionValid = savedPosition && rows.some(r => r.id === savedPosition.item_id && r.bolum === savedPosition.bolum);
+    if (positionValid) {
       openBolums = new Set([savedPosition.bolum]);
       const bolumRows = rows.filter(r => r.bolum === savedPosition.bolum).sort(siraKarsilastir);
       cursors[savedPosition.bolum] = bolumRows.findIndex(r => r.id === savedPosition.item_id);
     }
+    // "En son açtığın denetim" işaretçisi — listedeki devam et kartı için.
+    await DB.kvSet('last_inspection', { id, at: new Date().toISOString() });
     await renderDenetim();
+    if (positionValid && openBolums.has(savedPosition.bolum)) {
+      requestAnimationFrame(() => {
+        const el = document.querySelector(`.madde[data-id="${(window.CSS && CSS.escape ? CSS.escape(savedPosition.item_id) : savedPosition.item_id)}"]`);
+        if (el) el.scrollIntoView({ block: 'center' });
+      });
+    }
   }
 
   async function rememberPosition(bolum, itemId) {
