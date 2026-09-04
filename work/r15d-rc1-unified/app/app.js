@@ -678,11 +678,23 @@ const Sync = (() => {
   // KRİTİK: yalnız 403 (yetki) kalemleri kullanıcı isteğiyle yeniden gönderilir.
   // 409 (çakışma) kalemleri körlemesine gönderilmez — sunucudaki değişikliği
   // ezebilir; karşılaştırma akışı (yol haritası 4d) gelene kadar korunur.
+  // Cihazda gönderilmeyi bekleyen fotoğraflar (fotograflar store, blob'lu).
+  async function bekleyenFotoOzeti() {
+    const map = new Map();
+    for (const f of await DB.all('fotograflar')) {
+      if (f.sync_status !== 'pending' || !f.blob) continue;
+      map.set(f.denetim_id, (map.get(f.denetim_id) || 0) + 1);
+    }
+    return map;
+  }
+
   async function syncCenter() {
     const items = await DB.outboxAll();
     const warning = await DB.kvGet('sync_warning');
-    if (!items.length && !warning) { toast('Bekleyen senkron işlemi yok'); return; }
-    if (!items.length && warning) {
+    const fotoByDenetim = await bekleyenFotoOzeti();
+    const fotoToplam = [...fotoByDenetim.values()].reduce((a, b) => a + b, 0);
+    if (!items.length && !fotoToplam && !warning) { toast('Bekleyen senkron işlemi yok'); return; }
+    if (!items.length && !fotoToplam && warning) {
       await DB.kvDel('sync_warning');
       await updatePill();
       toast('Senkron uyarısı temizlendi');
@@ -700,12 +712,14 @@ const Sync = (() => {
       if (!grup.has(key)) grup.set(key, []);
       grup.get(key).push(it);
     }
-    const satirlar = [...grup.entries()]
-      .map(([id, list]) => [id, outboxOzeti(list)])
-      .sort((a, b) => (b[1].korunan - a[1].korunan) || (b[1].toplam - a[1].toplam))
-      .map(([id, o]) => {
+    const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys()]);
+    const satirlar = [...tumIdler]
+      .map(id => [id, outboxOzeti(grup.get(id) || []), fotoByDenetim.get(id) || 0])
+      .sort((a, b) => (b[1].korunan - a[1].korunan) || ((b[1].toplam + b[2]) - (a[1].toplam + a[2])))
+      .map(([id, o, foto]) => {
         const parts = [];
-        if (o.bekleyen) parts.push(`${o.bekleyen} bekliyor`);
+        if (o.bekleyen) parts.push(`${o.bekleyen} işlem`);
+        if (foto) parts.push(`${foto} fotoğraf`);
         if (o.yetki) parts.push(`${o.yetki} yetki incelemesi`);
         if (o.cakisma) parts.push(`${o.cakisma} çakışma`);
         return `<div class="sync-review-row ${o.cakisma ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
@@ -720,7 +734,7 @@ const Sync = (() => {
     ov.innerHTML = `<div class="modal">
       <button class="close" aria-label="Kapat">×</button>
       <h3>Senkron Merkezi</h3>
-      <div class="photo-help">${warning ? escSync(warning.message) + ' ' : ''}Hiçbir saha cevabı silinmedi; cihazda korunuyor. Bağlantı geldikçe bekleyen işlemler otomatik gönderilir.</div>
+      <div class="photo-help">${warning ? escSync(warning.message) + ' ' : ''}Hiçbir saha cevabı silinmedi; cihazda korunuyor. Bağlantı geldikçe bekleyen işlemler ve fotoğraflar otomatik gönderilir.</div>
       <div class="sync-review-list">${satirlar}</div>
       <div class="print-actions">
         <button class="btn btn-primary" id="syncCenterNow">Şimdi senkronize et</button>
@@ -740,8 +754,13 @@ const Sync = (() => {
       close();
       toast('Senkronize ediliyor…');
       const ok = await full();
+      if (typeof UI !== 'undefined' && UI.bekleyenFotograflariYukle) {
+        try { await UI.bekleyenFotograflariYukle(); } catch (e) { console.warn('Fotoğraf gönderimi sürdü', e); }
+      }
       const kalan = await korunanKalemler();
+      const kalanFoto = [...(await bekleyenFotoOzeti()).values()].reduce((a, b) => a + b, 0);
       toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor`
+        : kalanFoto ? `${kalanFoto} fotoğraf gönderilemedi; yeniden denenecek`
         : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
       await updatePill();
     };
@@ -781,7 +800,10 @@ const Sync = (() => {
   async function manual() {
     const warning = await DB.kvGet('sync_warning');
     const outboxVar = (await DB.outboxCount()) > 0;
-    if (warning || outboxVar) { await syncCenter(); return; }
+    // Fotoğraf taraması blob'ları yüklediği için ağırdır; yalnız hızlı-senkron
+    // yolundan önce (uyarı/outbox yokken) bir kez bakılır.
+    const fotoVar = !warning && !outboxVar && (await bekleyenFotoOzeti()).size > 0;
+    if (warning || outboxVar || fotoVar) { await syncCenter(); return; }
     if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
     toast('Senkronize ediliyor…');
     const completed = await full();
@@ -3844,7 +3866,7 @@ const UI = (() => {
   }
 
   return {
-    showLogin, afterLogin, showList,
+    showLogin, afterLogin, showList, bekleyenFotograflariYukle,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
     canRefreshSafely: () => {

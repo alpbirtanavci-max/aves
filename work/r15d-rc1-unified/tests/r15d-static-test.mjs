@@ -107,9 +107,17 @@ test('senkron merkezi: syncCenter + sync_warning kilidi kırılır + export',
   app.includes('async function reviewWarning() { await syncCenter(); }') &&
   app.includes('async function korunanKalemler()') &&
   app.includes("KORUNAN_DURUMLAR = ['conflict', 'forbidden']"));
-test('manual() gerçek outbox durumuna bakar (KV + outboxCount), Senkron Merkezi açar',
+test('manual() gerçek outbox + bekleyen fotoğraf durumuna bakar, Senkron Merkezi açar',
   app.includes('const outboxVar = (await DB.outboxCount()) > 0;') &&
-  app.includes('if (warning || outboxVar) { await syncCenter(); return; }'));
+  app.includes('const fotoVar = !warning && !outboxVar && (await bekleyenFotoOzeti()).size > 0;') &&
+  app.includes('if (warning || outboxVar || fotoVar) { await syncCenter(); return; }'));
+test('Senkron Merkezi bekleyen fotoğrafları denetime göre özetler ve "Şimdi senkronize et" onları da gönderir',
+  app.includes('async function bekleyenFotoOzeti()') &&
+  app.includes("f.sync_status !== 'pending' || !f.blob") &&
+  app.includes('const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys()]);') &&
+  app.includes('if (foto) parts.push(`${foto} fotoğraf`);') &&
+  app.includes('UI.bekleyenFotograflariYukle()') &&
+  app.includes('showLogin, afterLogin, showList, bekleyenFotograflariYukle,'));
 test('çakışma (409) kayıtları körlemesine yeniden gönderilmez; yalnız 403 retry edilir',
   app.includes("const yetkiKalemleri = items.filter(it => it.sync_status === 'forbidden')") &&
   app.includes('for (const it of yetkiKalemleri) {') &&
