@@ -73,10 +73,22 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.43 kalıcı depolama sürümü', index.includes('R15D-RC3.9.43</b>'));
-test('app R15D rc3.9.43 kalıcı depolama sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.43'"));
-test('service worker rc3.9.43 cache', sw.includes("aves-saha-r15d-rc3943'"));
-test('uygulama manifesti rc3.9.43 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.43"'));
+test('index R15D rc3.9.44 kaldığı yere dönüş sürümü', index.includes('R15D-RC3.9.44</b>'));
+test('app R15D rc3.9.44 kaldığı yere dönüş sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.44'"));
+test('service worker rc3.9.44 cache', sw.includes("aves-saha-r15d-rc3944'"));
+test('uygulama manifesti rc3.9.44 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.44"'));
+test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
+  app.includes("DB.kvSet('last_inspection', { id, at:") &&
+  app.includes("DB.kvGet('last_inspection')"));
+test('liste ekranında "Kaldığın yerden devam et" kartı: görünür + tamamlanmamış denetim',
+  app.includes("resume.className = 'resume-card'") &&
+  app.includes('Kaldığın yerden devam et') &&
+  app.includes("denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı')") &&
+  index.includes('.resume-card{'));
+test('showDenetim kayıtlı maddeye scrollIntoView yapar (kaldığı satır)',
+  app.includes('const positionValid = savedPosition && rows.some(r => r.id === savedPosition.item_id') &&
+  app.includes('.madde[data-id="') &&
+  app.includes("el.scrollIntoView({ block: 'center' })"));
 test('başlangıçta navigator.storage.persist() çağrılır ve sonucu kv storage_persist olarak yazılır',
   app.includes('async function ensurePersistentStorage()') &&
   app.includes('navigator.storage.persist()') &&

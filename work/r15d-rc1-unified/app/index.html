@@ -73,6 +73,10 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .list-head{display:flex;align-items:center;justify-content:space-between;margin:4px 0 12px;}
 .list-head h2{font-size:17px;margin:0;color:var(--navy);}
 .btn-new{background:var(--fuchsia);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-weight:700;font-size:14px;}
+.resume-card{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--navy);color:#fff;border:none;border-radius:14px;padding:14px;margin-bottom:12px;}
+.resume-card b{display:block;font-size:14px;}
+.resume-card small{display:block;margin-top:2px;font-size:12px;color:#C7CAE2;}
+.resume-card>span{font-size:20px;font-weight:900;flex:0 0 auto;}
 .dcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px;display:block;width:100%;text-align:left;}
 .dcard .drow1{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
 .dcard .dtitle{font-weight:700;font-size:15px;color:var(--ink);}
@@ -481,7 +485,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.43</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.44</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
