@@ -80,10 +80,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.51 belge künyesi sürümü', index.includes('R15D-RC3.9.51</b>'));
-test('app R15D rc3.9.51 belge künyesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.51'"));
-test('service worker rc3.9.51 cache', sw.includes("aves-saha-r15d-rc3951'"));
-test('uygulama manifesti rc3.9.51 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.51"'));
+test('index R15D rc3.9.52 çevrimdışı Yazdır sürümü', index.includes('R15D-RC3.9.52</b>'));
+test('app R15D rc3.9.52 çevrimdışı Yazdır sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.52'"));
+test('service worker rc3.9.52 cache', sw.includes("aves-saha-r15d-rc3952'"));
+test('uygulama manifesti rc3.9.52 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.52"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -608,7 +608,15 @@ test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.inclu
 test('boş hazir_secenekler hayalet bulgu seçeneği üretmiyor', app.includes(".split('|').map(o => o.trim()).filter(Boolean)"));
 
 test('tamamlanmış denetimde Yazdır düğmesi var', app.includes('id="btnYazdir"') && app.includes("tamamlandi ? '<button class=\"delbtn\" id=\"btnYazdir\""));
-test('Yazdır çevrimdışı kullanılamaz ve yerel kaydı koruduğunu açıklar', app.includes('Bu özellik yalnız çevrimiçiyken kullanılabilir. Denetim kaydınız cihazda korunuyor.'));
+test('10b: Yazdır çevrimdışı da çalışır — navigator.onLine engeli kalktı, tamamlanmış denetim şartı korundu',
+  !formOutput.includes('yalnız çevrimiçiyken kullanılabilir') &&
+  !/btnYazdir\.onclick = async \(\) => \{\s*\n\s*if \(!navigator\.onLine\)/.test(app) &&
+  formOutput.includes("inspection.denetim_durumu!=='Çalışma Tamamlandı'") &&
+  app.includes('Çevrimdışıyken de üretebilirsiniz'));
+test('10b: form şablonları + manifest + yazı tipi çevrimdışı önbellekte (sw ASSETS + OFFLINE_CORE_ASSETS)',
+  sw.includes("'./form-assets/UB_FR_38_R04.pdf'") && sw.includes("'./form-assets/UB_FR_39_R02.docx'") &&
+  app.includes("'./form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf'") &&
+  app.includes("'./form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf'"));
 test('Yazdır PDF ve Word seçenekleri sunuyor', app.includes('data-print="pdf"') && app.includes('data-print="docx"'));
 test('form revizyonu yeni denetimde kilitleniyor', app.includes('form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart)'));
 test('takip denetimi ana kaydın kilitli form revizyonunu koruyor', app.includes('form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart)'));

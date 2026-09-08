@@ -396,7 +396,8 @@ const FormOutput = (() => {
     return format==='docx' ? buildDocx(chosen.key,form,inspection,rows) : buildPdf(chosen.key,form,inspection,rows);
   }
   async function download(format, inspection, rows, selectedKey) {
-    if(!navigator.onLine) throw new Error('Bu özellik yalnız çevrimiçiyken kullanılabilir. Denetim kaydınız cihazda korunuyor.');
+    // 10b: üretim tamamen istemci tarafında; şablon + yazı tipi + manifest çevrimdışı
+    // önbellekte (OFFLINE_CORE_ASSETS / sw ASSETS). Çevrimiçi zorunluluğu kaldırıldı.
     if(inspection.denetim_durumu!=='Çalışma Tamamlandı') throw new Error('Resmî form yalnız tamamlanmış denetimden üretilebilir');
     const available=await formsForInspection(inspection); const chosen=available.find(x=>x.key===(selectedKey||available[0]?.key));
     if(!chosen) throw new Error('Bu denetim için resmî form bulunamadı');
