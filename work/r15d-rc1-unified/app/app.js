@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.47';
+const APP_VERSION = 'R15D-rc3.9.48';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -3537,6 +3537,9 @@ const UI = (() => {
     const fotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', currentDenetimId)).filter(foto => !foto.deleted_at);
     const bekleyenFotograflar = fotograflar.filter(foto => foto.sync_status === 'pending').length;
     const { items: inspectionOutbox, korunan: korunanIslemler, bekleyen: bekleyenIslemler } = await Sync.denetimSyncOzeti(currentDenetimId);
+    const offlineState = await cevrimdisiHazirlikDurumu(d, rows);
+    const seriKayitSayisi = seriNumarasiSayisi(d);
+    const seriBeklenenSayi = seriBeklenenMinimum(d);
     const sonuc = {
       uygun: rows.filter(row => row.durum === 'Kontrol tamamlandı').length,
       uygunDegil: rows.filter(row => row.durum === 'Olumsuz bulgu').length,
@@ -3556,7 +3559,10 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi)}</b></div>
       </div>
       <div class="integrity-card ok"><b>Sonuçlar</b><small>${sonuc.uygun} Uygun · ${sonuc.uygunDegil} Uygun Değil · ${sonuc.uygulanmaz} Uygulanmaz</small></div>
-      <div class="integrity-card ${korunanIslemler ? 'error' : ((bekleyenIslemler || bekleyenFotograflar) ? 'pending' : 'ok')}"><b>Fotoğraf ve aktarım durumu</b><small>${fotograflar.length} fotoğraf${bekleyenFotograflar ? ` · ${bekleyenFotograflar} fotoğraf aktarım bekliyor` : ' · fotoğraf aktarımı tamam'}${bekleyenIslemler ? ` · ${bekleyenIslemler} kayıt aktarımı bekliyor` : ''}${korunanIslemler ? ` · ${korunanIslemler} kayıt inceleme gerektiriyor` : ''}</small></div>
+      <div class="integrity-card ok"><b>✓ Ekipman seri kayıtları tamam</b><small>${seriKayitSayisi}/${seriBeklenenSayi} zorunlu ekipman grubu kaydedildi</small></div>
+      <div class="integrity-card ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready ? '✓ Bu cihaz çevrimdışı kullanıma hazır' : 'Bu cihaz çevrimdışı kullanıma hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
+      <div class="integrity-card ${korunanIslemler ? 'error' : (bekleyenIslemler ? 'pending' : 'ok')}"><b>${korunanIslemler ? 'Aktarım inceleme gerektiriyor' : (bekleyenIslemler ? 'Kayıt aktarımı bekliyor' : '✓ Cihaz ve sunucu kayıtları eşit')}</b><small>${bekleyenIslemler ? `${bekleyenIslemler} kayıt aktarım bekliyor` : 'Kayıt aktarımı tamam'}${korunanIslemler ? ` · ${korunanIslemler} kayıt inceleme gerektiriyor` : ''}</small></div>
+      <div class="integrity-card ${bekleyenFotograflar ? 'pending' : 'ok'}"><b>${bekleyenFotograflar ? 'Fotoğraf aktarımı bekliyor' : '✓ Fotoğraf aktarımı tamam'}</b><small>${fotograflar.length} fotoğraf${bekleyenFotograflar ? ` · ${bekleyenFotograflar} fotoğraf aktarım bekliyor` : ''}</small></div>
       <div class="photo-help">${esc(sonrakiAdim)}</div>
       <button class="btn btn-primary" id="kapanisOnay">Devam et</button>
       <button class="btn btn-ghost" id="kapanisVazgec">Denetime dön</button>
