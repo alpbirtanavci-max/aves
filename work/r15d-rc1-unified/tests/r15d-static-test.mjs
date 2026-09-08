@@ -74,10 +74,10 @@ vm.runInContext(sectionMappingJs, sectionMappingContext);
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.47 toplu hazırlık rozeti sürümü', index.includes('R15D-RC3.9.47</b>'));
-test('app R15D rc3.9.47 toplu hazırlık rozeti sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.47'"));
-test('service worker rc3.9.47 cache', sw.includes("aves-saha-r15d-rc3947'"));
-test('uygulama manifesti rc3.9.47 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.47"'));
+test('index R15D rc3.9.48 kapanış güven özeti sürümü', index.includes('R15D-RC3.9.48</b>'));
+test('app R15D rc3.9.48 kapanış güven özeti sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.48'"));
+test('service worker rc3.9.48 cache', sw.includes("aves-saha-r15d-rc3948'"));
+test('uygulama manifesti rc3.9.48 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.48"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -158,8 +158,16 @@ test('Senkron Merkezi denetime göre gruplar + "Şimdi senkronize et" + çakış
   app.includes('<h3>Senkron Merkezi</h3>') &&
   app.includes("id=\"syncCenterNow\"") &&
   app.includes('Çakışma kayıtları otomatik gönderilmez'));
-test('kapanış öncesi özet sonuç, fotoğraf ve aktarım durumunu gösterir',
-  app.includes('Kapanış öncesi denetim özeti') && app.includes('Fotoğraf ve aktarım durumu') && app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
+test('kapanış öncesi özet veri güvenini ayrı satırlarda gösterir: seri kaydı, çevrimdışı hazırlık, aktarım ve fotoğraf',
+  app.includes('Kapanış öncesi denetim özeti') &&
+  app.includes('Ekipman seri kayıtları tamam') &&
+  app.includes('cevrimdisiHazirlikDurumu(d, rows)') &&
+  app.includes('Bu cihaz çevrimdışı kullanıma hazır') &&
+  app.includes('Cihaz ve sunucu kayıtları eşit') &&
+  app.includes('Fotoğraf aktarımı tamam') &&
+  app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
+test('kapanıştaki korunan aktarım uyarısı error integrity-card stiliyle görünür',
+  index.includes('.integrity-card.error{background:#fff0f0;color:#9b2525;}'));
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
   app.includes('Tamamlanmış Denetim Özeti') && app.includes('Fotoğraf arşiv durumu') && app.includes('fotograf_arsiv_temizlendi_at') && app.includes('tamamlanmisDenetimOzetiniGoster'));
 test('tamamlanmış denetimde devir teslim kaydı oluşturulabilir',
