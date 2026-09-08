@@ -267,6 +267,7 @@ const FormOutput = (() => {
       setCell(xml,tables,loc.table,loc.row,loc.measurement_cell,rowMeasurement(row));
       setCell(xml,tables,loc.table,loc.row,loc.notes_cell,rowNotes(row));
     });
+    docxKunyeEkle(xml, form, d, 'DOCX');
     zip.file('word/document.xml', new XMLSerializer().serializeToString(xml));
     return zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
   }
@@ -338,7 +339,48 @@ const FormOutput = (() => {
       pdfCell(page,font,[loc.measurement[0],loc.y0,loc.measurement[1],loc.y1],rowMeasurement(row),{size:5.6});
       pdfCell(page,font,[loc.notes[0],loc.y0,loc.notes[1],loc.y1],rowNotes(row),{size:5.6});
     });
+    pdfKunyeEkle(pages, font, form, d, 'PDF');
     return pdf.save();
+  }
+
+  // Doğrulanabilir belge künyesi — üretilen her PDF/Word'ün sonunda sabit satır.
+  // İçerik app.js'in `resmi_cikti_snapshot_ozeti` kaydıyla hizalı olmalı (çapraz kontrol).
+  function kunyeMetni(form, d, formatEtiketi) {
+    const parcalar = [
+      'AVES resmî çıktı',
+      `${value(form.code)} · ${value(form.revision)} · ${formatEtiketi}`,
+    ];
+    if (d && d.kutuphane_content_hash) parcalar.push(`kütüphane ${String(d.kutuphane_content_hash).slice(0, 12)}`);
+    if (d && d.butunluk_hash) parcalar.push(`bütünlük ${String(d.butunluk_hash).slice(0, 12)}`);
+    parcalar.push(`üretim ${new Date().toISOString()}`);
+    return parcalar.join(' · ');
+  }
+
+  function docxKunyeEkle(xml, form, d, formatEtiketi) {
+    const body = [...xml.getElementsByTagNameNS(NS, 'body')][0];
+    if (!body) return;
+    const p = xml.createElementNS(NS, 'w:p');
+    const pPr = xml.createElementNS(NS, 'w:pPr');
+    const jc = xml.createElementNS(NS, 'w:jc'); jc.setAttributeNS(NS, 'w:val', 'left'); pPr.appendChild(jc);
+    p.appendChild(pPr);
+    const run = xml.createElementNS(NS, 'w:r');
+    const rPr = xml.createElementNS(NS, 'w:rPr');
+    const sz = xml.createElementNS(NS, 'w:sz'); sz.setAttributeNS(NS, 'w:val', '12'); rPr.appendChild(sz);
+    const color = xml.createElementNS(NS, 'w:color'); color.setAttributeNS(NS, 'w:val', '808080'); rPr.appendChild(color);
+    run.appendChild(rPr);
+    const t = xml.createElementNS(NS, 'w:t'); t.setAttribute('xml:space', 'preserve');
+    t.textContent = kunyeMetni(form, d, formatEtiketi); run.appendChild(t);
+    p.appendChild(run);
+    const sectPr = directChildren(body, 'sectPr')[0];
+    if (sectPr) body.insertBefore(p, sectPr); else body.appendChild(p);
+  }
+
+  function pdfKunyeEkle(pages, font, form, d, formatEtiketi) {
+    const { rgb } = PDFLib;
+    const metin = kunyeMetni(form, d, formatEtiketi);
+    for (const page of pages) {
+      page.drawText(metin, { x: 18, y: 6, size: 5, font, color: rgb(0.42, 0.42, 0.42) });
+    }
   }
 
   function safeName(valueText) { return value(valueText).replace(/[^a-zA-Z0-9ğüşöçıİĞÜŞÖÇ_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,60) || 'denetim'; }
