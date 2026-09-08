@@ -45,3 +45,7 @@ jobs:
         run: $PSQL -f work/r15d-rc1-unified/database/79_r15d_rc3940_takip_atanan_yetki.sql
       - name: Dort-persona senaryolari
         run: $PSQL -f work/r15d-rc1-unified/tests/rls/79_takip_atama.sql
+      - name: Migration 82 uygula (arsiv durumu trigger)
+        run: $PSQL -f work/r15d-rc1-unified/database/82_r15d_rc3953_arsiv_durumu.sql
+      - name: Arsiv durumu senaryolari (dort-persona)
+        run: $PSQL -f work/r15d-rc1-unified/tests/rls/82_arsiv_durumu.sql

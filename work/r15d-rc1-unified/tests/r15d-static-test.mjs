@@ -50,6 +50,8 @@ const rc3941AnonRevokeMigration = fs.readFileSync(path.join(databaseDir, '80_r15
 const rc3946OutputRecordMigration = fs.readFileSync(path.join(databaseDir, '81_r15d_rc3946_resmi_cikti_kaydi.sql'), 'utf8');
 const rc3953ArchiveStatusMigration = fs.readFileSync(path.join(databaseDir, '82_r15d_rc3953_arsiv_durumu.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
+const archiveRlsScenario = fs.readFileSync(path.join(testDir, 'rls', '82_arsiv_durumu.sql'), 'utf8');
+const ci = fs.readFileSync(path.resolve(root, '..', '..', '.github', 'workflows', 'ci.yml'), 'utf8');
 const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
 const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
@@ -637,10 +639,28 @@ test('10c künye PDF her sayfaya, Word body sonuna (sectPr öncesi) eklenir',
   formOutput.includes("page.drawText(metin, { x: 18, y: 6, size: 5,") &&
   formOutput.includes('docxKunyeEkle(xml, form, d, ') &&
   formOutput.includes('if (sectPr) body.insertBefore(p, sectPr)'));
-test('10d migration 82: yalnız 2 nullable kolon, RLS/trigger/veri değişikliği yok',
+test('10d migration 82: 2 nullable kolon, RLS politikası ve veri değişikliği yok',
   rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktarildi_at timestamptz') &&
   rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktaran_email text') &&
-  !/^\s*(create policy|drop policy|create trigger|create or replace function|update public\.|delete from|truncate)/mi.test(rc3953ArchiveStatusMigration));
+  !/^\s*(create policy|drop policy|update public\.|delete from|truncate)/mi.test(rc3953ArchiveStatusMigration));
+test('10d migration 82: BEFORE UPDATE trigger arşiv alanlarını sunucu tarafında koruyor',
+  rc3953ArchiveStatusMigration.includes('before update on public.denetimler') &&
+  rc3953ArchiveStatusMigration.includes('trg_aves_arsiv_durumu_kilidi') &&
+  rc3953ArchiveStatusMigration.includes("rol in ('yonetici','teknik_mudur')") &&
+  rc3953ArchiveStatusMigration.includes('yalnız yönetici veya teknik müdür') &&
+  rc3953ArchiveStatusMigration.includes("new.denetim_durumu <> 'Çalışma Tamamlandı'") &&
+  rc3953ArchiveStatusMigration.includes('new.arsive_aktarildi_at := now()') &&
+  rc3953ArchiveStatusMigration.includes('new.arsive_aktaran_email := v_email') &&
+  rc3953ArchiveStatusMigration.includes("current_user in ('postgres','service_role','supabase_admin')"));
+test('10d RLS senaryosu: sahip/ilgisiz reddi + yönetici/teknik müdür başarısı + sunucu yazımı',
+  archiveRlsScenario.includes('A sahip arşiv alanını değiştirebildi') &&
+  archiveRlsScenario.includes('C ilgisiz muhendis arşiv alanını değiştirebildi') &&
+  archiveRlsScenario.includes('B yönetici devam eden denetimi arşive aktarabildi') &&
+  archiveRlsScenario.includes("'{\"role\":\"authenticated\",\"email\":\"t.mudur@test.local\"}'") &&
+  archiveRlsScenario.includes('arsive_aktaran_email istemciden alındı, oturumdan değil') &&
+  archiveRlsScenario.includes('işaret kaldırılınca alanlar NULL olmadı'));
+test('10d RLS senaryosu CI zincirinde migration 82 sonrası çalışıyor',
+  ci.includes('82_r15d_rc3953_arsiv_durumu.sql') && ci.includes('tests/rls/82_arsiv_durumu.sql'));
 test('10d arşiv durum kolonları geçmiş alanları listesinde',
   app.includes("'arsive_aktarildi_at', 'arsive_aktaran_email',"));
 test('10d tamamlanmış denetim özetinde arşiv durum kartı + işaret düğmesi yalnız yönetime',
