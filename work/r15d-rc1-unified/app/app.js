@@ -9,13 +9,17 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.51';
+const APP_VERSION = 'R15D-rc3.9.52';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
+  // Resmî çıktı çevrimdışı da üretilebilsin (10b): manifest + yazı tipi + form şablonları.
+  './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf',
+  './form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf',
+  './form-assets/UB_FR_39_R02.docx', './form-assets/UB_FR_39_R02.pdf',
 ];
 
 if (typeof avesFizikselBolumUygula !== 'function' ||
@@ -2609,10 +2613,6 @@ const UI = (() => {
     if (btnTakipAta) btnTakipAta.onclick = () => takipMuehendisiniAta(d);
     const btnYazdir = document.getElementById('btnYazdir');
     if (btnYazdir) btnYazdir.onclick = async () => {
-      if (!navigator.onLine) {
-        toast('Bu özellik yalnız çevrimiçiyken kullanılabilir. Denetim kaydınız cihazda korunuyor.');
-        return;
-      }
       try {
         const forms = await FormOutput.formsForInspection(d);
         if (!forms.length) { toast('Bu denetim için resmî form tanımlı değil'); return; }
@@ -2621,7 +2621,7 @@ const UI = (() => {
         ov.innerHTML = `<div class="modal">
           <button class="close" aria-label="Kapat">×</button>
           <h3>Yazdır</h3>
-          <div class="photo-help">Denetim verileri, denetim tarihinde kilitlenen resmî form revizyonuna aktarılır. Kaynak denetim kaydı değiştirilmez.</div>
+          <div class="photo-help">Denetim verileri, denetim tarihinde kilitlenen resmî form revizyonuna aktarılır. Kaynak denetim kaydı değiştirilmez. Çevrimdışıyken de üretebilirsiniz; form şablonu bu cihazda yoksa bir kez internete bağlanın.</div>
           <div class="print-form-list">${forms.map(form => `<div class="print-form-card ${form.available ? '' : 'print-pending'}">
             <b>${esc(form.code)} · ${esc(form.revision)}</b>
             <small>${form.legacy_inferred ? 'Eski denetim · ana standarda göre mevcut resmî revizyon' : 'Denetime kilitli revizyon'}${form.available ? '' : ` · ${esc(form.reason)}`}</small>

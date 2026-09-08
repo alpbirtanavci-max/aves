@@ -1,11 +1,13 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc3951';
+const CACHE = 'aves-saha-r15d-rc3952';
 const ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json', './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
   './form-output.js', './vendor/jszip.min.js', './vendor/pdf-lib.min.js', './vendor/fontkit.umd.min.js',
   './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf',
+  './form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf',
+  './form-assets/UB_FR_39_R02.docx', './form-assets/UB_FR_39_R02.pdf',
   './update.html', './update.js',
   './icon-192.png', './icon-512.png',
   './referans-gorseller/G-PIT-LADDER-TYPE3-4-TR.svg',
