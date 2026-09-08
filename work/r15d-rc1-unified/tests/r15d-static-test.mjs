@@ -48,7 +48,10 @@ const rc3937FollowupAssignmentMigration = fs.readFileSync(path.join(databaseDir,
 const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r15d_rc3940_takip_atanan_yetki.sql'), 'utf8');
 const rc3941AnonRevokeMigration = fs.readFileSync(path.join(databaseDir, '80_r15d_rc3941_anon_execute_revoke.sql'), 'utf8');
 const rc3946OutputRecordMigration = fs.readFileSync(path.join(databaseDir, '81_r15d_rc3946_resmi_cikti_kaydi.sql'), 'utf8');
+const rc3953ArchiveStatusMigration = fs.readFileSync(path.join(databaseDir, '82_r15d_rc3953_arsiv_durumu.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
+const archiveRlsScenario = fs.readFileSync(path.join(testDir, 'rls', '82_arsiv_durumu.sql'), 'utf8');
+const ci = fs.readFileSync(path.resolve(root, '..', '..', '.github', 'workflows', 'ci.yml'), 'utf8');
 const rls79Bootstrap = fs.readFileSync(path.join(testDir, 'rls', '79_local_bootstrap.sql'), 'utf8');
 const rls79Runner = fs.readFileSync(path.join(testDir, 'rls', 'run-79-local.ps1'), 'utf8');
 const rc394GuardDeviceMigration = fs.readFileSync(path.join(databaseDir, '48_r15d_rc394_koruyucu_aygit_uygulanmaz_duzeltme.sql'), 'utf8');
@@ -80,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.52 çevrimdışı Yazdır sürümü', index.includes('R15D-RC3.9.52</b>'));
-test('app R15D rc3.9.52 çevrimdışı Yazdır sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.52'"));
-test('service worker rc3.9.52 cache', sw.includes("aves-saha-r15d-rc3952'"));
-test('uygulama manifesti rc3.9.52 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.52"'));
+test('index R15D rc3.9.53 kurumsal arşiv durumu sürümü', index.includes('R15D-RC3.9.53</b>'));
+test('app R15D rc3.9.53 kurumsal arşiv durumu sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.53'"));
+test('service worker rc3.9.53 cache', sw.includes("aves-saha-r15d-rc3953'"));
+test('uygulama manifesti rc3.9.53 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.53"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -636,6 +639,36 @@ test('10c künye PDF her sayfaya, Word body sonuna (sectPr öncesi) eklenir',
   formOutput.includes("page.drawText(metin, { x: 18, y: 6, size: 5,") &&
   formOutput.includes('docxKunyeEkle(xml, form, d, ') &&
   formOutput.includes('if (sectPr) body.insertBefore(p, sectPr)'));
+test('10d migration 82: 2 nullable kolon, RLS politikası ve veri değişikliği yok',
+  rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktarildi_at timestamptz') &&
+  rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktaran_email text') &&
+  !/^\s*(create policy|drop policy|update public\.|delete from|truncate)/mi.test(rc3953ArchiveStatusMigration));
+test('10d migration 82: BEFORE UPDATE trigger arşiv alanlarını sunucu tarafında koruyor',
+  rc3953ArchiveStatusMigration.includes('before update on public.denetimler') &&
+  rc3953ArchiveStatusMigration.includes('trg_aves_arsiv_durumu_kilidi') &&
+  rc3953ArchiveStatusMigration.includes('public.aves_tum_denetimleri_gorebilir_mi()') &&
+  rc3953ArchiveStatusMigration.includes('yalnız yönetici veya teknik müdür') &&
+  rc3953ArchiveStatusMigration.includes("new.denetim_durumu <> 'Çalışma Tamamlandı'") &&
+  rc3953ArchiveStatusMigration.includes('new.arsive_aktarildi_at := now()') &&
+  rc3953ArchiveStatusMigration.includes('new.arsive_aktaran_email := v_email') &&
+  rc3953ArchiveStatusMigration.includes("current_user in ('postgres','service_role','supabase_admin')"));
+test('10d RLS senaryosu: sahip/ilgisiz reddi + yönetici/teknik müdür başarısı + sunucu yazımı',
+  archiveRlsScenario.includes('A sahip arşiv alanını değiştirebildi') &&
+  archiveRlsScenario.includes('C ilgisiz muhendis arşiv alanını değiştirebildi') &&
+  archiveRlsScenario.includes('B yönetici devam eden denetimi arşive aktarabildi') &&
+  archiveRlsScenario.includes("'{\"role\":\"authenticated\",\"email\":\"t.mudur@test.local\"}'") &&
+  archiveRlsScenario.includes('arsive_aktaran_email istemciden alındı, oturumdan değil') &&
+  archiveRlsScenario.includes('işaret kaldırılınca alanlar NULL olmadı'));
+test('10d RLS senaryosu CI zincirinde migration 82 sonrası çalışıyor',
+  ci.includes('82_r15d_rc3953_arsiv_durumu.sql') && ci.includes('tests/rls/82_arsiv_durumu.sql'));
+test('10d arşiv durum kolonları geçmiş alanları listesinde',
+  app.includes("'arsive_aktarildi_at', 'arsive_aktaran_email',"));
+test('10d tamamlanmış denetim özetinde arşiv durum kartı + işaret düğmesi yalnız yönetime',
+  app.includes("d.arsive_aktarildi_at ? '✓ Kurumsal arşive aktarıldı' : 'Kurumsal arşive aktarılmadı'") &&
+  app.includes('Profile.canSeeAllInspections ? `<button class="btn btn-ghost" id="arsivToggle"') &&
+  app.includes("await localWrite('denetimler', guncel, 'denetimler')"));
+test('10d liste kartında arşiv rozeti tamamlanmış + işaretli denetimde',
+  app.includes("tamamlandi && d.arsive_aktarildi_at ? '<span class=\"pill ok\">📁 arşivde</span>' : ''"));
 test('geçmiş denetim yalnız aynı kilitli şablon ve eşlemeyle yazdırılıyor', formOutput.includes('current.mapping_sha256 !== item.mapping_sha256') && formOutput.includes('kilitli form revizyonu'));
 test('FR38 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_38_R04.validation.expected === 451 && formManifest.forms.UB_FR_38_R04.validation.docx_mapped === 451 && formManifest.forms.UB_FR_38_R04.validation.pdf_mapped === 451);
 test('FR39 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_39_R02.validation.expected === 208 && formManifest.forms.UB_FR_39_R02.validation.docx_mapped === 208 && formManifest.forms.UB_FR_39_R02.validation.pdf_mapped === 208);

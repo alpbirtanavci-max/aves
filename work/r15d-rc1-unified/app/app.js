@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.52';
+const APP_VERSION = 'R15D-rc3.9.53';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -838,6 +838,7 @@ const GECMIS_ALANLARI = {
     'takip_atanan_email', 'takip_atanan_ad', 'takip_atama_at',
     'form_cikti_snapshot',
     'resmi_cikti_uretildi_at', 'resmi_cikti_snapshot_ozeti', 'resmi_cikti_hash',
+    'arsive_aktarildi_at', 'arsive_aktaran_email',
     'duzeltme_oturumu_id', 'duzeltme_nedeni', 'duzeltme_baslatildi_at',
   ],
   saha_kontrol: [
@@ -1537,6 +1538,7 @@ const UI = (() => {
              ${st.bad ? `<span class="pill bad">${st.bad} uygun değil</span>` : ''}
              ${st.ic ? `<span class="pill warn">${st.ic} iç kontrol notu</span>` : ''}
              <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Çalışma tamamlandı' : (gozden ? 'Gözden geçirme' : 'Devam ediyor')}</span>
+             ${tamamlandi && d.arsive_aktarildi_at ? '<span class="pill ok">📁 arşivde</span>' : ''}
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
@@ -3677,7 +3679,11 @@ const UI = (() => {
       <div class="integrity-card ${d.resmi_cikti_uretildi_at ? 'ok' : 'pending'}"><b>Resmî çıktı</b><small>${d.resmi_cikti_uretildi_at
         ? `${esc(d.resmi_cikti_snapshot_ozeti || 'Üretildi')} · ${tarihGoster(d.resmi_cikti_uretildi_at)}${d.resmi_cikti_hash ? `<br>Belge parmak izi: ${esc(String(d.resmi_cikti_hash).slice(0, 16))}…` : ''}`
         : 'Bu denetim için resmî PDF/Word henüz üretilmedi'}</small></div>
+      <div class="integrity-card ${d.arsive_aktarildi_at ? 'ok' : 'pending'}"><b>${d.arsive_aktarildi_at ? '✓ Kurumsal arşive aktarıldı' : 'Kurumsal arşive aktarılmadı'}</b><small>${d.arsive_aktarildi_at
+        ? `${tarihGoster(d.arsive_aktarildi_at)}${d.arsive_aktaran_email ? ` · ${esc(d.arsive_aktaran_email)}` : ''}`
+        : 'Resmî dosya arşive konduğunda yönetim burada işaretler'}</small></div>
       <div class="onay-satir"><span>Takip denetimi</span><b>${takipVar ? 'İlişkili takip kaydı var' : 'Takip kaydı yok'}</b></div>
+      ${Profile.canSeeAllInspections ? `<button class="btn btn-ghost" id="arsivToggle">${d.arsive_aktarildi_at ? 'Arşiv işaretini kaldır' : 'Arşive aktarıldı olarak işaretle'}</button>` : ''}
       ${uygunsuzluklar.length ? `<button class="btn btn-ghost" id="completedBadList">Uygunsuzluk listesini aç (${uygunsuzluklar.length})</button>` : '<div class="oz-hazir ok">✓ Uygun Değil sonucu yok</div>'}
     </div>`;
     document.body.appendChild(ov);
@@ -3686,6 +3692,25 @@ const UI = (() => {
     ov.onclick = event => { if (event.target === ov) close(); };
     const badList = ov.querySelector('#completedBadList');
     if (badList) badList.onclick = () => { close(); uygunsuzlukListesiniGoster(d, uygunsuzluklar); };
+    const arsivToggle = ov.querySelector('#arsivToggle');
+    if (arsivToggle) arsivToggle.onclick = async () => {
+      arsivToggle.disabled = true;
+      const guncel = await DB.get('denetimler', d.id) || d;
+      const isaretli = !!guncel.arsive_aktarildi_at;
+      const now = new Date().toISOString();
+      guncel.arsive_aktarildi_at = isaretli ? null : now;
+      guncel.arsive_aktaran_email = isaretli ? null : (Profile.email || API.email || null);
+      guncel.updated_at = now;
+      try {
+        await localWrite('denetimler', guncel, 'denetimler');
+        toast(isaretli ? 'Arşiv işareti kaldırıldı' : 'Arşive aktarıldı olarak işaretlendi');
+      } catch (e) {
+        console.warn('Arşiv işareti yazılamadı', e);
+        toast('İşaret kaydedilemedi');
+      }
+      close();
+      await tamamlanmisDenetimOzetiniGoster(guncel);
+    };
   }
 
   async function denetimDurumuDegistir(yeniDurum, overlay, kapanisOzetiOnaylandi = false) {
