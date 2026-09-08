@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.48';
+const APP_VERSION = 'R15D-rc3.9.49';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './app.js', './manifest.json',
@@ -1280,6 +1280,7 @@ const UI = (() => {
     return date.getFullYear() === year && date.getMonth() === month && date.getDate() === day ? date.getTime() : null;
   };
   const seriNoTekrarUyarisi = (kayitlar) => {
+    if (!kayitlar.length) return '';
     const devamEden = kayitlar.find(item => item.denetim_durumu !== 'Çalışma Tamamlandı');
     if (devamEden) return `Bu seri no için devam eden bir denetim var: ${devamEden.musteri_unvani || 'Kayıt'} (${devamEden.denetim_tarihi || 'tarih yok'})`;
     const tarihliKayitlar = kayitlar
