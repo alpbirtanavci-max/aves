@@ -80,10 +80,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.50 kapanış fixture sürümü', index.includes('R15D-RC3.9.50</b>'));
-test('app R15D rc3.9.50 kapanış fixture sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.50'"));
-test('service worker rc3.9.50 cache', sw.includes("aves-saha-r15d-rc3950'"));
-test('uygulama manifesti rc3.9.50 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.50"'));
+test('index R15D rc3.9.51 belge künyesi sürümü', index.includes('R15D-RC3.9.51</b>'));
+test('app R15D rc3.9.51 belge künyesi sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.51'"));
+test('service worker rc3.9.51 cache', sw.includes("aves-saha-r15d-rc3951'"));
+test('uygulama manifesti rc3.9.51 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.51"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -617,6 +617,17 @@ test('mevcut denetimler form revizyonuna bir kez bağlanıyor', rc39FormOutputMi
 test('form snapshot backfill kimlik tetikleyicisini transaction içinde geri açıyor', rc39FormOutputMigration.includes('disable trigger trg_aves_denetim_kimligi') && rc39FormOutputMigration.includes('enable trigger trg_aves_denetim_kimligi') && rc39FormOutputMigration.indexOf('disable trigger trg_aves_denetim_kimligi') < rc39FormOutputMigration.indexOf('enable trigger trg_aves_denetim_kimligi'));
 test('kilitli resmî form snapshotı istemciden değiştirilemiyor', rc39FormOutputMigration.includes('trg_aves_form_cikti_snapshot_kilidi') && rc39FormOutputMigration.includes('Denetimin resmî form revizyonu kilitlidir'));
 test('resmî şablonlar SHA-256 ile doğrulanıyor', formOutput.includes('Resmî form şablonu bütünlük kontrolünden geçmedi') && formOutput.includes('crypto.subtle.digest'));
+test('10c belge künyesi: her PDF/Word sonunda kaynak revizyon + kütüphane/bütünlük hash + üretim zamanı',
+  formOutput.includes('function kunyeMetni(form, d, formatEtiketi)') &&
+  formOutput.includes("'AVES resmî çıktı'") &&
+  formOutput.includes('kütüphane ${String(d.kutuphane_content_hash).slice(0, 12)}') &&
+  formOutput.includes('bütünlük ${String(d.butunluk_hash).slice(0, 12)}') &&
+  formOutput.includes('üretim ${new Date().toISOString()}'));
+test('10c künye PDF her sayfaya, Word body sonuna (sectPr öncesi) eklenir',
+  formOutput.includes('pdfKunyeEkle(pages, font, form, d, ') &&
+  formOutput.includes("page.drawText(metin, { x: 18, y: 6, size: 5,") &&
+  formOutput.includes('docxKunyeEkle(xml, form, d, ') &&
+  formOutput.includes('if (sectPr) body.insertBefore(p, sectPr)'));
 test('geçmiş denetim yalnız aynı kilitli şablon ve eşlemeyle yazdırılıyor', formOutput.includes('current.mapping_sha256 !== item.mapping_sha256') && formOutput.includes('kilitli form revizyonu'));
 test('FR38 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_38_R04.validation.expected === 451 && formManifest.forms.UB_FR_38_R04.validation.docx_mapped === 451 && formManifest.forms.UB_FR_38_R04.validation.pdf_mapped === 451);
 test('FR39 bütün satırlar Word ve PDF üzerinde eşlendi', formManifest.forms.UB_FR_39_R02.validation.expected === 208 && formManifest.forms.UB_FR_39_R02.validation.docx_mapped === 208 && formManifest.forms.UB_FR_39_R02.validation.pdf_mapped === 208);
