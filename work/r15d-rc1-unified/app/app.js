@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.49';
+const APP_VERSION = 'R15D-rc3.9.50';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -3541,6 +3541,12 @@ const UI = (() => {
     const offlineState = await cevrimdisiHazirlikDurumu(d, rows);
     const seriKayitSayisi = seriNumarasiSayisi(d);
     const seriBeklenenSayi = seriBeklenenMinimum(d);
+    const guvenKartlari = AVES_KAPANIS_GUVEN_OZETI.kartlar({
+      seriKayitSayisi, seriBeklenenSayi,
+      offlineReady: offlineState.ready, offlineDetail: offlineState.detail,
+      korunanIslemler, bekleyenIslemler,
+      fotografSayisi: fotograflar.length, bekleyenFotograflar,
+    });
     const sonuc = {
       uygun: rows.filter(row => row.durum === 'Kontrol tamamlandı').length,
       uygunDegil: rows.filter(row => row.durum === 'Olumsuz bulgu').length,
@@ -3560,10 +3566,7 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi)}</b></div>
       </div>
       <div class="integrity-card ok"><b>Sonuçlar</b><small>${sonuc.uygun} Uygun · ${sonuc.uygunDegil} Uygun Değil · ${sonuc.uygulanmaz} Uygulanmaz</small></div>
-      <div class="integrity-card ok"><b>✓ Ekipman seri kayıtları tamam</b><small>${seriKayitSayisi}/${seriBeklenenSayi} zorunlu ekipman grubu kaydedildi</small></div>
-      <div class="integrity-card ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready ? '✓ Bu cihaz çevrimdışı kullanıma hazır' : 'Bu cihaz çevrimdışı kullanıma hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
-      <div class="integrity-card ${korunanIslemler ? 'error' : (bekleyenIslemler ? 'pending' : 'ok')}"><b>${korunanIslemler ? 'Aktarım inceleme gerektiriyor' : (bekleyenIslemler ? 'Kayıt aktarımı bekliyor' : '✓ Cihaz ve sunucu kayıtları eşit')}</b><small>${bekleyenIslemler ? `${bekleyenIslemler} kayıt aktarım bekliyor` : 'Kayıt aktarımı tamam'}${korunanIslemler ? ` · ${korunanIslemler} kayıt inceleme gerektiriyor` : ''}</small></div>
-      <div class="integrity-card ${bekleyenFotograflar ? 'pending' : 'ok'}"><b>${bekleyenFotograflar ? 'Fotoğraf aktarımı bekliyor' : '✓ Fotoğraf aktarımı tamam'}</b><small>${fotograflar.length} fotoğraf${bekleyenFotograflar ? ` · ${bekleyenFotograflar} fotoğraf aktarım bekliyor` : ''}</small></div>
+      ${guvenKartlari.map(kart => `<div class="integrity-card ${kart.durum}"><b>${esc(kart.baslik)}</b><small>${esc(kart.detay)}</small></div>`).join('')}
       <div class="photo-help">${esc(sonrakiAdim)}</div>
       <button class="btn btn-primary" id="kapanisOnay">Devam et</button>
       <button class="btn btn-ghost" id="kapanisVazgec">Denetime dön</button>
