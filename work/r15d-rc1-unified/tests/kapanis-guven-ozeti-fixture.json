@@ -1,0 +1,21 @@
+{
+  "ad": "Yerel sentetik 8 maddelik kapanış smoke fixture'ı",
+  "amac": "Kapanış güven satırlarının test verisiyle doğrulanması; gerçek denetim sonucu değildir.",
+  "girdi": {
+    "seriKayitSayisi": 7,
+    "seriBeklenenSayi": 7,
+    "offlineReady": true,
+    "offlineDetail": "8 madde ve gerekli uygulama dosyaları bu cihazda doğrulandı.",
+    "bekleyenIslemler": 0,
+    "korunanIslemler": 0,
+    "fotografSayisi": 3,
+    "bekleyenFotograflar": 1
+  },
+  "beklenen": {
+    "seriBaslik": "✓ Ekipman seri kayıtları tamam",
+    "offlineBaslik": "✓ Bu cihaz çevrimdışı kullanıma hazır",
+    "senkronBaslik": "✓ Cihaz ve sunucu kayıtları eşit",
+    "fotoBaslik": "Fotoğraf aktarımı bekliyor",
+    "fotoDurum": "pending"
+  }
+}

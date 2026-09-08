@@ -17,6 +17,8 @@ const headers = fs.readFileSync(path.join(appDir, '_headers'), 'utf8');
 const updateHtml = fs.readFileSync(path.join(appDir, 'update.html'), 'utf8');
 const updateJs = fs.readFileSync(path.join(appDir, 'update.js'), 'utf8');
 const sectionMappingJs = fs.readFileSync(path.join(appDir, 'section-mapping.js'), 'utf8');
+const closureSummaryJs = fs.readFileSync(path.join(appDir, 'kapanis-guven-ozeti.js'), 'utf8');
+const closureSummaryFixture = JSON.parse(fs.readFileSync(path.join(testDir, 'kapanis-guven-ozeti-fixture.json'), 'utf8'));
 const formOutput = fs.readFileSync(path.join(appDir, 'form-output.js'), 'utf8');
 const formManifest = JSON.parse(fs.readFileSync(path.join(appDir, 'form-assets', 'form-output-manifest.json'), 'utf8'));
 const migration = fs.readFileSync(path.join(databaseDir, '21_r15d_guvenli_gecis.sql'), 'utf8');
@@ -70,14 +72,18 @@ const byId = new Map(library.map(row => [row.madde_id, row]));
 const sectionMappingContext = {};
 vm.createContext(sectionMappingContext);
 vm.runInContext(sectionMappingJs, sectionMappingContext);
+const closureSummaryContext = {};
+vm.createContext(closureSummaryContext);
+vm.runInContext(closureSummaryJs, closureSummaryContext);
+const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartlar(closureSummaryFixture.girdi);
 
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.49 yeni denetim seri koruması sürümü', index.includes('R15D-RC3.9.49</b>'));
-test('app R15D rc3.9.49 yeni denetim seri koruması sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.49'"));
-test('service worker rc3.9.49 cache', sw.includes("aves-saha-r15d-rc3949'"));
-test('uygulama manifesti rc3.9.49 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.49"'));
+test('index R15D rc3.9.50 kapanış fixture sürümü', index.includes('R15D-RC3.9.50</b>'));
+test('app R15D rc3.9.50 kapanış fixture sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.50'"));
+test('service worker rc3.9.50 cache', sw.includes("aves-saha-r15d-rc3950'"));
+test('uygulama manifesti rc3.9.50 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.50"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -160,14 +166,22 @@ test('Senkron Merkezi denetime göre gruplar + "Şimdi senkronize et" + çakış
   app.includes('Çakışma kayıtları otomatik gönderilmez'));
 test('kapanış öncesi özet veri güvenini ayrı satırlarda gösterir: seri kaydı, çevrimdışı hazırlık, aktarım ve fotoğraf',
   app.includes('Kapanış öncesi denetim özeti') &&
-  app.includes('Ekipman seri kayıtları tamam') &&
+  app.includes('AVES_KAPANIS_GUVEN_OZETI.kartlar') && index.includes('src="kapanis-guven-ozeti.js"') &&
   app.includes('cevrimdisiHazirlikDurumu(d, rows)') &&
-  app.includes('Bu cihaz çevrimdışı kullanıma hazır') &&
-  app.includes('Cihaz ve sunucu kayıtları eşit') &&
-  app.includes('Fotoğraf aktarımı tamam') &&
+  closureSummaryJs.includes('Bu cihaz çevrimdışı kullanıma hazır') &&
+  closureSummaryJs.includes('Cihaz ve sunucu kayıtları eşit') &&
+  closureSummaryJs.includes('Fotoğraf aktarımı tamam') &&
   app.includes('kapanisOzetiniGoster') && app.includes('kapanisOzetiOnaylandi'));
 test('kapanıştaki korunan aktarım uyarısı error integrity-card stiliyle görünür',
   index.includes('.integrity-card.error{background:#fff0f0;color:#9b2525;}'));
+test('8 maddelik yerel kapanış smoke fixture’ı seri, çevrimdışı, eşit senkron ve bekleyen fotoğrafı doğru gösterir',
+  closureSummaryFixture.girdi.seriKayitSayisi === 7 &&
+  closureSummaryFixture.girdi.seriBeklenenSayi === 7 &&
+  closureSummaryCards[0].baslik === closureSummaryFixture.beklenen.seriBaslik &&
+  closureSummaryCards[1].baslik === closureSummaryFixture.beklenen.offlineBaslik &&
+  closureSummaryCards[2].baslik === closureSummaryFixture.beklenen.senkronBaslik &&
+  closureSummaryCards[3].baslik === closureSummaryFixture.beklenen.fotoBaslik &&
+  closureSummaryCards[3].durum === closureSummaryFixture.beklenen.fotoDurum);
 test('tamamlanmış denetim özeti fotoğraf arşiv ve takip durumunu gösterir',
   app.includes('Tamamlanmış Denetim Özeti') && app.includes('Fotoğraf arşiv durumu') && app.includes('fotograf_arsiv_temizlendi_at') && app.includes('tamamlanmisDenetimOzetiniGoster'));
 test('tamamlanmış denetimde devir teslim kaydı oluşturulabilir',
