@@ -16,8 +16,10 @@ Değerlendirme (docs/degerlendirme/2026-09_saha_guvenilirligi_4-6-7-10.md) **Ala
 
 Codex P1: mevcut `denetim guncelleme` politikası denetim **sahibine de** yazma hakkı
 verir; arayüzde düğmeyi gizlemek yetmez — sahip doğrudan istek/outbox ile `arsive_*`
-alanlarını değiştirip aktaran e-postasını taklit edebilir. Trigger (SECURITY DEFINER,
-`row_security = off`) DB tarafında zorlar:
+alanlarını değiştirip aktaran e-postasını taklit edebilir. Trigger (SECURITY INVOKER — `current_user`
+gerçek oturum rolü; rol/e-posta kontrolü mevcut SECURITY DEFINER yardımcılarına
+devredilir: `aves_tum_denetimleri_gorebilir_mi()`, `aves_oturum_emaili()`) DB
+tarafında zorlar:
 
 - Yalnız aktif `yonetici` / `teknik_mudur` iki alanı değiştirebilir; aksi halde `raise exception`.
 - İşaretleme yalnız `denetim_durumu = 'Çalışma Tamamlandı'` iken.

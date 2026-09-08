@@ -11,7 +11,8 @@
 -- yazma hakkı verir. Arayüzde düğmeyi gizlemek yeterli değil — sahip kullanıcı
 -- doğrudan istek/outbox ile arsive_* alanlarını değiştirip aktaran e-postasını
 -- taklit edebilir. Trigger bu yüzden şart:
---   * Yalnız aktif yonetici / teknik_mudur iki alanı değiştirebilir.
+--   * Yalnız aktif yonetici / teknik_mudur iki alanı değiştirebilir
+--     (aves_tum_denetimleri_gorebilir_mi).
 --   * İşaretleme yalnız 'Çalışma Tamamlandı' denetimde yapılır.
 --   * Tarih sunucu saatinden (now()), aktaran e-posta DB oturumundan yazılır;
 --     istemciden gelen değerler yok sayılır.
@@ -23,16 +24,16 @@ alter table public.denetimler
   add column if not exists arsive_aktarildi_at timestamptz,
   add column if not exists arsive_aktaran_email text;
 
+-- SECURITY INVOKER (plpgsql varsayılanı): current_user gerçek oturum rolüdür.
+-- Rol/e-posta kontrolü mevcut SECURITY DEFINER yardımcılarına devredilir
+-- (aves_tum_denetimleri_gorebilir_mi = aktif yonetici/teknik_mudur).
 create or replace function public.aves_arsiv_durumunu_dogrula()
 returns trigger
 language plpgsql
-security definer
 set search_path = public, auth, pg_temp
-set row_security = off
 as $$
 declare
   v_email text := public.aves_oturum_emaili();
-  v_yonetim boolean;
 begin
   -- Bakım rolleri (migration/servis) dokunulmadan geçer.
   if current_user in ('postgres','service_role','supabase_admin') then
@@ -45,12 +46,7 @@ begin
     return new;
   end if;
 
-  select exists (
-    select 1 from public.kullanici_profilleri p
-    where lower(p.email) = v_email and p.aktif and p.rol in ('yonetici','teknik_mudur')
-  ) into v_yonetim;
-
-  if not v_yonetim then
+  if not public.aves_tum_denetimleri_gorebilir_mi() then
     raise exception 'Kurumsal arşiv durumunu yalnız yönetici veya teknik müdür değiştirebilir';
   end if;
 

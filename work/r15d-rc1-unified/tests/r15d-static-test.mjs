@@ -646,7 +646,7 @@ test('10d migration 82: 2 nullable kolon, RLS politikası ve veri değişikliği
 test('10d migration 82: BEFORE UPDATE trigger arşiv alanlarını sunucu tarafında koruyor',
   rc3953ArchiveStatusMigration.includes('before update on public.denetimler') &&
   rc3953ArchiveStatusMigration.includes('trg_aves_arsiv_durumu_kilidi') &&
-  rc3953ArchiveStatusMigration.includes("rol in ('yonetici','teknik_mudur')") &&
+  rc3953ArchiveStatusMigration.includes('public.aves_tum_denetimleri_gorebilir_mi()') &&
   rc3953ArchiveStatusMigration.includes('yalnız yönetici veya teknik müdür') &&
   rc3953ArchiveStatusMigration.includes("new.denetim_durumu <> 'Çalışma Tamamlandı'") &&
   rc3953ArchiveStatusMigration.includes('new.arsive_aktarildi_at := now()') &&
