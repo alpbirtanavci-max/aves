@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.53 kurumsal arşiv durumu sürümü', index.includes('R15D-RC3.9.53</b>'));
-test('app R15D rc3.9.53 kurumsal arşiv durumu sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.53'"));
-test('service worker rc3.9.53 cache', sw.includes("aves-saha-r15d-rc3953'"));
-test('uygulama manifesti rc3.9.53 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.53"'));
+test('index R15D rc3.9.54 sürümü', index.includes('R15D-RC3.9.54</b>'));
+test('app R15D rc3.9.54 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.54'"));
+test('service worker rc3.9.54 cache', sw.includes("aves-saha-r15d-rc3954'"));
+test('uygulama manifesti rc3.9.54 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.54"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -253,8 +253,10 @@ test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti v
   app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
 test('fotoğraf ZIP adı seri no ve tarih içeriyor', app.includes('arsivKimligi') && app.includes('_fotograflar.zip'));
 test('takipte uygun hale gelen uygunsuzluk kapanış bilgisi gösteriliyor', app.includes('TAKİPTE KAPATILAN UYGUNSUZLUKLAR'));
-test('fotoğraf kategorilerinde kalıcı saha notu alanı var',
-  app.includes('data-photo-note') && app.includes('Fotoğraf kategori notu kaydedildi'));
+test('fotoğraf kategori notu alanı kaldırıldı (amaca hizmet etmiyordu)',
+  !app.includes('data-photo-note') && !app.includes('Kategori notu (opsiyonel)') &&
+  !app.includes('Fotoğraf kategori notu kaydedildi') &&
+  app.includes("!k.startsWith('Fotoğraf: ')"));
 test('inceleme sonucu hedef madde kayıtlı konumdan salt okunur açılıyor',
   app.includes('await showDenetim(denetimId, true);') &&
   app.includes('await rememberPosition(hedef.bolum, hedef.id);') &&
