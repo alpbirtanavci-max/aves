@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.60';
+const APP_VERSION = 'R15D-rc3.9.61';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -1138,16 +1138,34 @@ const UI = (() => {
             card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${fotoSilebilir ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}<div class="photo-meta"><span>${esc(fotoTarihi)}</span><span>${esc(foto.created_by || 'Kullanıcı bilgisi yok')}</span></div>`;
             card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
             const remove = card.querySelector('.photo-remove');
+            // Onaydan sonra ağ isteği (senkron olmuş fotoğraf için) veya RLS
+            // reddi başarısız olursa hiçbir hata yakalanmıyordu — kullanıcı
+            // "onay verdim ama kaldırmadı" görüyordu, uygulama sessizce
+            // duruyordu. Artık her hata toast ile bildiriliyor; senkron
+            // olmuş bir fotoğrafı silmek internet gerektirir (offline
+            // kuyruklanmaz — bkz. migration 79 D2 kararı), bu da önceden
+            // açıkça söyleniyor.
             if (remove) remove.onclick = async () => {
               if (!confirm('Bu fotoğraf kaldırılsın mı?')) return;
-              if (foto.sync_status !== 'pending') {
-                const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
-                if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Fotoğraf kaldırılamadı (${storageDelete.status})`);
-                await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+              if (foto.sync_status !== 'pending' && !navigator.onLine) {
+                toast('Bu fotoğraf zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı gelince tekrar deneyin');
+                return;
               }
-              await DB.del('fotograflar', foto.id);
-              tumFotograflar = tumFotograflar.filter(f => f.id !== foto.id);
-              await ciz();
+              remove.disabled = true;
+              try {
+                if (foto.sync_status !== 'pending') {
+                  const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
+                  if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Sunucu reddetti (${storageDelete.status})`);
+                  await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+                }
+                await DB.del('fotograflar', foto.id);
+                tumFotograflar = tumFotograflar.filter(f => f.id !== foto.id);
+                await ciz();
+              } catch (error) {
+                console.error('Fotoğraf kaldırılamadı', error);
+                toast('Fotoğraf kaldırılamadı: ' + (error && error.message ? error.message : 'bilinmeyen hata'));
+                remove.disabled = false;
+              }
             };
           } catch { card.innerHTML = '<div class="photo-error">Fotoğraf çevrimdışı açılamadı</div>'; }
           grid.appendChild(card);

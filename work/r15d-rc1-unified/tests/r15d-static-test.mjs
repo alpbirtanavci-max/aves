@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.60 sürümü', index.includes('R15D-RC3.9.60</b>'));
-test('app R15D rc3.9.60 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.60'"));
-test('service worker rc3.9.60 cache', sw.includes("aves-saha-r15d-rc3960'"));
-test('uygulama manifesti rc3.9.60 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.60"'));
+test('index R15D rc3.9.61 sürümü', index.includes('R15D-RC3.9.61</b>'));
+test('app R15D rc3.9.61 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.61'"));
+test('service worker rc3.9.61 cache', sw.includes("aves-saha-r15d-rc3961'"));
+test('uygulama manifesti rc3.9.61 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.61"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -399,6 +399,11 @@ test('uygulama içi kamera çekimi de aynı sıkıştırma/kayıt/yükleme akı�
   app.includes('const fotografKaydet = async (kat, blob) => {') &&
   app.includes('await fotografKaydet(kat, blob);') &&
   app.includes('for (const file of files) await fotografKaydet(kat, file);'));
+test('fotoğraf silme: "onay verdim ama kaldırmadı" hatası düzeltildi — ağ/RLS hatası artık toast ile bildiriliyor, sessizce durmuyor',
+  app.includes("if (foto.sync_status !== 'pending' && !navigator.onLine) {") &&
+  app.includes("toast('Bu fotoğraf zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı gelince tekrar deneyin');") &&
+  app.includes("console.error('Fotoğraf kaldırılamadı', error);") &&
+  app.includes("toast('Fotoğraf kaldırılamadı: ' + (error && error.message"));
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
   app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
 test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',

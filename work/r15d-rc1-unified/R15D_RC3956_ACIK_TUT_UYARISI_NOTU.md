@@ -1,4 +1,4 @@
-# R15D-rc3.9.56–60 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü + Uygulama İçi Kamera (Teslim Notu)
+# R15D-rc3.9.56–61 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü + Uygulama İçi Kamera (Teslim Notu)
 
 PR #25'in (rc3.9.55) merge'inden hemen sonra, kullanıcının kendi iPhone'unda
 yaptığı test PR #25'teki bilinçli sınırı somut biçimde doğruladı:
@@ -190,6 +190,26 @@ AVES'in **kendi kendine** sebep olduğu arka-plana-atılmaları en aza indirmek.
 fizibilite denemesi) + Apple Developer Program ile mümkün; bu bütçe kararı
 netleşene kadar kâğıt yedek prosedürü fiilen zorunlu telafi edici kontroldür.
 
+## rc3.9.61 eki — fotoğraf silme sessizce başarısız oluyordu
+
+Kullanıcı yeni uygulama içi kamerayı denerken bir fotoğrafı "×" ile
+kaldırmaya çalıştı, onay verdi, ama fotoğraf kaldırılmadı — hiçbir hata
+mesajı da görmedi. Kök neden: senkron olmuş bir fotoğrafı silmek sunucuya
+istek (Storage DELETE + tablo DELETE) atıyor; bu istek ağ hatası, RLS reddi
+veya (kullanıcının o sırada test ettiği) çevrimdışılık yüzünden başarısız
+olursa **hiçbir `catch` yoktu** — fonksiyon sessizce reddoluyor, kullanıcı
+hiçbir şey görmüyordu.
+
+Düzeltme:
+- Senkron olmuş bir fotoğrafı silmeye çalışırken **çevrimdışıysa**, ağ
+  isteğini hiç denemeden önce açık bir mesaj gösteriliyor: "Bu fotoğraf
+  zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı
+  gelince tekrar deneyin." (Bu, migration 79 D2 kararıyla tutarlı: fotoğraf
+  silme offline kuyruklanmaz, kasıtlı olarak.)
+- Diğer tüm hatalar (RLS reddi, sunucu hatası vb.) artık `catch` ile
+  yakalanıp toast ile bildiriliyor; düğme işlem sırasında devre dışı
+  bırakılıp hata olursa tekrar etkinleştiriliyor.
+
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 374/374 (+12 kontrol, DB değişikliği yok).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 375/375 (+13 kontrol, DB değişikliği yok).
