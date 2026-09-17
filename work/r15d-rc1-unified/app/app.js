@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.55';
+const APP_VERSION = 'R15D-rc3.9.56';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -2329,7 +2329,8 @@ const UI = (() => {
         const mark = check.ok ? '✓' : (check.advisory ? '⚠' : '✕');
         return `<div class="preflight-row ${cls}"><span>${mark}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`;
       }).join('')}</div>
-      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.</div>
+      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda hazır. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.
+      <br><br><b>⚠ Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.</b> Uygulama açık/arka planda kalırsa (görev listesinden atılmadıysa) internet olmadan sorunsuz çalışır. Ama tamamen kapatılmış bir uygulamanın sinyalsiz bir yerde yeniden açılması — ana ekrana eklenmiş olsa bile — garanti değildir; bu bilinen bir tarayıcı kısıtıdır, hazırlık kontrolü bunu değiştiremez.</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();

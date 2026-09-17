@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.55 sürümü', index.includes('R15D-RC3.9.55</b>'));
-test('app R15D rc3.9.55 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.55'"));
-test('service worker rc3.9.55 cache', sw.includes("aves-saha-r15d-rc3955'"));
-test('uygulama manifesti rc3.9.55 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.55"'));
+test('index R15D rc3.9.56 sürümü', index.includes('R15D-RC3.9.56</b>'));
+test('app R15D rc3.9.56 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.56'"));
+test('service worker rc3.9.56 cache', sw.includes("aves-saha-r15d-rc3956'"));
+test('uygulama manifesti rc3.9.56 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.56"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -142,6 +142,10 @@ test('ana ekrana ekleme uyarısı platforma göre doğru menüyü gösterir (Saf
   app.includes('/iPhone|iPad|iPod/.test(navigator.userAgent') &&
   app.includes('Paylaş simgesi → Ana Ekrana Ekle') &&
   app.includes('Tarayıcı menüsü (⋮) → Ana ekrana ekle / Uygulamayı yükle'));
+test('hazırlık sonucu ekranı sahaya inmeden önce uygulamayı açık tutma uyarısı verir (kurulum garanti değildir)',
+  app.includes('Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.') &&
+  app.includes('ana ekrana eklenmiş olsa bile — garanti değildir') &&
+  !app.includes('Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir'));
 test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
   index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
   index.includes('name="apple-mobile-web-app-status-bar-style"') &&
