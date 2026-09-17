@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.58';
+const APP_VERSION = 'R15D-rc3.9.59';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -2782,6 +2782,20 @@ const UI = (() => {
   // silinir. Denetim açılışında/uygulama başlangıcında artakalan taslak
   // varsa kurtarılır — yaşam-döngüsü dinleyicisi (visibilitychange/pagehide)
   // bunun ANA mekanizması değil, ek bir güvencesidir.
+  //
+  // İkinci Codex incelemesi — 3 kritik düzeltme:
+  //  1) Kurtarma sırasında bir kayıt başarısız olursa yalnız BAŞARILI
+  //     anahtarlar günlükten silinir; başarısız olan cihazda kalır ve bir
+  //     sonraki açılışta yeniden denenir (yerel veritabanı geçici olarak
+  //     açılamazsa taslak kaybolmaz).
+  //  2) Her taslak kendi zaman damgasını taşır; 700ms'lik gecikmeli yazım
+  //     bitince yalnız KENDİ damgasıyla eşleşen (yani üzerine yeni bir tuş
+  //     vuruşu gelmemiş) taslağı siler — aksi hâlde yazım sürerken girilen
+  //     yeni karakter, henüz kaydedilmeden silinebilirdi.
+  //  3) Her taslak yazıldığı andaki oturum e-postasıyla damgalanır; kurtarma
+  //     yalnız GÜNCEL oturumun e-postasıyla eşleşen taslakları uygular —
+  //     ortak cihazda önceki kullanıcının taslağı asla başka bir hesaba
+  //     otomatik uygulanmaz (eşleşmeyenler dokunulmadan cihazda kalır).
   function taslakAnahtari(target) {
     if (target.matches('[data-bolumnot]')) return `bolum:${target.dataset.bolumnot}`;
     const item = target.closest('.madde');
@@ -2796,37 +2810,65 @@ const UI = (() => {
     catch { return {}; }
   }
 
-  function taslakYaz(target) {
-    if (!currentDenetimId) return;
-    const key = taslakAnahtari(target);
-    if (!key) return;
+  function taslakDeposunuYaz(denetimId, all) {
     try {
-      const all = taslakDeposu(currentDenetimId);
-      all[key] = { value: target.value, ts: Date.now() };
-      localStorage.setItem(`aves_taslak_${currentDenetimId}`, JSON.stringify(all));
+      if (all && Object.keys(all).length) localStorage.setItem(`aves_taslak_${denetimId}`, JSON.stringify(all));
+      else localStorage.removeItem(`aves_taslak_${denetimId}`);
     } catch { /* localStorage dolu/kapalı olabilir — best-effort ek güvence */ }
   }
 
+  function taslakYaz(target, ts = Date.now()) {
+    if (!currentDenetimId) return ts;
+    const key = taslakAnahtari(target);
+    if (!key) return ts;
+    const all = taslakDeposu(currentDenetimId);
+    all[key] = { value: target.value, ts, ownerEmail: normEmail(API.email) };
+    taslakDeposunuYaz(currentDenetimId, all);
+    return ts;
+  }
+
+  // Yalnız BLUR/change ile hemen komuta edilen alanlar için: o an
+  // localStorage'daki değer zaten DOM'daki komuta edilen değerin aynısı
+  // olmak zorunda (blur sonrası başka tuş vuruşu gelemez), bu yüzden
+  // koşulsuz silinebilir.
   function taslakSil(target) {
     if (!currentDenetimId) return;
     const key = taslakAnahtari(target);
     if (!key) return;
-    try {
-      const all = taslakDeposu(currentDenetimId);
-      if (key in all) { delete all[key]; localStorage.setItem(`aves_taslak_${currentDenetimId}`, JSON.stringify(all)); }
-    } catch { /* yok say */ }
+    const all = taslakDeposu(currentDenetimId);
+    if (key in all) { delete all[key]; taslakDeposunuYaz(currentDenetimId, all); }
   }
 
-  async function taslaklariKurtar(denetimId) {
+  // 700ms'lik gecikmeli yazım bitince kullanılır: yalnız YAZILAN taslakla
+  // aynı zaman damgasını taşıyan kayıt silinir. Bu süre içinde yeni bir tuş
+  // vuruşu gelip taslağı güncellediyse (daha yeni ts), o taslak dokunulmadan
+  // kalır — kendi 700ms döngüsü onu ayrıca kaydedip silecektir.
+  function taslakSilEger(target, ts) {
+    if (!currentDenetimId || ts == null) return;
+    const key = taslakAnahtari(target);
+    if (!key) return;
+    const all = taslakDeposu(currentDenetimId);
+    if (all[key] && all[key].ts <= ts) { delete all[key]; taslakDeposunuYaz(currentDenetimId, all); }
+  }
+
+  async function taslaklariKurtar(denetimId, ownerEmail) {
+    const normOwner = normEmail(ownerEmail);
+    if (!normOwner) return 0; // oturum/kimlik henüz yoksa hiçbir taslak otomatik uygulanmaz
     const all = taslakDeposu(denetimId);
     const keys = Object.keys(all);
-    if (!keys.length) { try { localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {} return 0; }
+    if (!keys.length) return 0;
     let kurtarilan = 0;
+    let degisti = false;
     for (const key of keys) {
+      const entry = all[key];
+      if (!entry) { delete all[key]; degisti = true; continue; }
+      // Farklı (veya bilinmeyen — eski format) kullanıcıya ait taslak asla
+      // otomatik uygulanmaz; dokunulmadan cihazda kalır, doğru kullanıcı
+      // giriş yaptığında kurtarılır.
+      if (normEmail(entry.ownerEmail) !== normOwner) continue;
       try {
-        const entry = all[key];
-        if (!entry) continue;
         const value = (entry.value || '').trim();
+        let basarili = false;
         if (key.startsWith('bolum:')) {
           const bolumAdi = key.slice('bolum:'.length);
           const d = await DB.get('denetimler', denetimId);
@@ -2838,6 +2880,7 @@ const UI = (() => {
             await localWrite('denetimler', d, 'denetimler');
             kurtarilan++;
           }
+          basarili = true;
         } else if (key.startsWith('saha:')) {
           const rest = key.slice('saha:'.length);
           const sep = rest.indexOf(':');
@@ -2856,26 +2899,36 @@ const UI = (() => {
               await localWrite('saha_kontrol', row, 'saha');
               kurtarilan++;
             }
+            basarili = true;
           } else if ((row[field] || '') !== value) {
             row[field] = value || null;
             row.updated_at = new Date().toISOString();
             await localWrite('saha_kontrol', row, 'saha');
             kurtarilan++;
+            basarili = true;
+          } else {
+            basarili = true; // değer zaten aynı, kaydedecek bir şey yok
           }
         }
-      } catch (error) { console.warn('Taslak kurtarma başarısız', key, error); }
+        // Yalnız BAŞARIYLA uygulanan (veya uygulanacak bir şeyi kalmayan)
+        // anahtar günlükten silinir; hata alan cihazda kalıp yeniden denenir.
+        if (basarili) { delete all[key]; degisti = true; }
+      } catch (error) {
+        console.warn('Taslak kurtarma başarısız — cihazda korunuyor, sonraki açılışta yeniden denenecek', key, error);
+      }
     }
-    try { localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {}
+    if (degisti) taslakDeposunuYaz(denetimId, all);
     return kurtarilan;
   }
 
-  async function taslaklariTaraVeKurtar() {
+  async function taslaklariTaraVeKurtar(ownerEmail) {
+    if (!normEmail(ownerEmail)) return; // oturum yüklenmeden kurtarma çalıştırılmaz
     let anahtarlar = [];
     try { anahtarlar = Object.keys(localStorage).filter(k => k.startsWith('aves_taslak_')); } catch { return; }
     let toplam = 0;
     for (const k of anahtarlar) {
       const denetimId = k.slice('aves_taslak_'.length);
-      try { toplam += await taslaklariKurtar(denetimId); } catch (error) { console.warn('Taslak taraması başarısız', denetimId, error); }
+      try { toplam += await taslaklariKurtar(denetimId, ownerEmail); } catch (error) { console.warn('Taslak taraması başarısız', denetimId, error); }
     }
     if (toplam) toast(`${toplam} kaydedilmemiş değişiklik kurtarıldı`);
   }
@@ -2901,7 +2954,7 @@ const UI = (() => {
     if (key) editorDraftTimers.delete(key);
   }
 
-  function scheduleEditorDraft(target) {
+  function scheduleEditorDraft(target, ts = Date.now()) {
     const key = editorDraftKey(target);
     const item = target.closest('.madde');
     if (!key || !item) return;
@@ -2911,6 +2964,7 @@ const UI = (() => {
       measurementId: target.dataset.olcumId || null,
       field: target.matches('[data-diger]') ? 'diger_bulgu' : (target.matches('[data-aciklama]') ? 'aciklama' : null),
       value: target.value,
+      ts,
     };
     const timer = setTimeout(() => {
       editorDraftTimers.delete(key);
@@ -2930,7 +2984,9 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await localWrite('saha_kontrol', row, 'saha');
-        taslakSil(target);
+        // Yalnız BU yazımın taslağı silinir — 700ms içinde yeni bir tuş
+        // vuruşu geldiyse (daha yeni ts) taslak dokunulmadan kalır.
+        taslakSilEger(target, snapshot.ts);
       })()).catch(error => console.warn('Alan taslağı cihazda saklanamadı:', error.message));
     }, 700);
     editorDraftTimers.set(key, timer);
@@ -3239,8 +3295,11 @@ const UI = (() => {
   function bindMaddeEvents() {
     document.getElementById('bolums').addEventListener('input', (e) => {
       if (!currentCanEdit) return;
-      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target);
-      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target);
+      // Aynı tuş vuruşu için tek bir zaman damgası: 700ms sonra yazım
+      // bitince yalnız BU damgayla eşleşen taslak silinir (bkz. taslakSilEger).
+      const ts = Date.now();
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target, ts);
     });
     document.getElementById('bolums').addEventListener('click', async (e) => {
       const stepBtn = e.target.closest('[data-step]');
@@ -4191,10 +4250,6 @@ window.addEventListener('pagehide', flushOnHide);
     </div>`;
     return;
   }
-  // Bir önceki oturumdan artakalan senkron taslaklar (telefon donması,
-  // yanlışlıkla kapatma vb. yüzünden IndexedDB'ye hiç ulaşamamış alanlar)
-  // giriş yapılmadan önce, listeye gitmeden geri yüklenir.
-  try { await UI.recoverDrafts(); } catch {}
   try { await registerServiceWorkerWithUpdateChoice(); } catch {}
   try { await ensurePersistentStorage(); } catch {}
   await API.loadSession();
@@ -4202,6 +4257,15 @@ window.addEventListener('pagehide', flushOnHide);
     if (confirm('Çıkış yapılsın mı? (Cihazdaki veriler korunur)')) { await API.logout(); Profile.clear(); UI.showLogin(); }
   };
   Sync.start();
-  if (API.loggedIn) await UI.afterLogin();
-  else UI.showLogin();
+  if (API.loggedIn) {
+    // Bir önceki oturumdan artakalan senkron taslaklar (telefon donması,
+    // yanlışlıkla kapatma vb. yüzünden IndexedDB'ye hiç ulaşamamış alanlar)
+    // giriş yapıldıktan SONRA, yalnız oturumdaki e-postayla eşleşen
+    // taslaklar için geri yüklenir (Codex incelemesi — kimlik doğrulanmadan
+    // veya farklı kullanıcının taslağı otomatik uygulanmaz).
+    try { await UI.recoverDrafts(API.email); } catch {}
+    await UI.afterLogin();
+  } else {
+    UI.showLogin();
+  }
 })();

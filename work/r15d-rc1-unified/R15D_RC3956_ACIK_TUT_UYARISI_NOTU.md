@@ -1,4 +1,4 @@
-# R15D-rc3.9.56/57/58 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü (Teslim Notu)
+# R15D-rc3.9.56–59 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü (Teslim Notu)
 
 PR #25'in (rc3.9.55) merge'inden hemen sonra, kullanıcının kendi iPhone'unda
 yaptığı test PR #25'teki bilinçli sınırı somut biçimde doğruladı:
@@ -120,6 +120,39 @@ için **kullanıcı tarafından çalıştırılıp sonucu bildirilmelidir**:
    saniye bekle, çek, geri dön — sayfa sorunsuz mu devam ediyor, yoksa
    yeniden mi yükleniyor? (Bu, uygulama içi kamera kararını etkiler.)
 
+## rc3.9.59 eki — Codex incelemesi: rc3.9.58'in taslak günlüğünde 3 P1 hatası
+
+Kullanıcı rc3.9.58'i Codex'e ilettikten sonra gelen ikinci inceleme, taslak
+günlüğü fikrinin doğru yönde olduğunu ama üç veri güveni hatası taşıdığını
+tespit etti. Üçü de kabul edilip düzeltildi:
+
+1. **Kurtarma başarısız olsa bile tüm günlük siliniyordu — doğru, P1.**
+   `taslaklariKurtar()` artık yalnız **başarıyla uygulanan** (veya zaten
+   güncel olduğu için uygulanacak bir şeyi kalmayan) anahtarları günlükten
+   çıkarır; bir `localWrite` hata verirse (ör. yerel veritabanı geçici
+   olarak açılamazsa) o anahtar **cihazda kalır** ve bir sonraki açılışta
+   yeniden denenir.
+2. **Eski bir 700ms kaydı bitince yeni taslağı silebiliyordu — doğru, P1.**
+   Artık her taslak kendi zaman damgasını (`ts`) taşıyor. Bir input olayı
+   hem `taslakYaz(target, ts)` hem `scheduleEditorDraft(target, ts)`'i AYNI
+   `ts` ile çağırıyor; 700ms sonra yazım bitince `taslakSilEger(target,
+   snapshot.ts)` yalnız günlükteki taslağın damgası **kendi damgasına eşit
+   veya öncesiyse** siler. Bu süre içinde yeni bir tuş vuruşu geldiyse
+   (daha yeni `ts`), o taslak dokunulmadan kalır — kendi 700ms döngüsü onu
+   ayrıca işleyecektir.
+3. **Kurtarma oturum yüklenmeden, kimlik doğrulanmadan yapılıyordu — doğru,
+   P1.** Artık her taslak yazıldığı andaki oturum e-postasıyla
+   (`ownerEmail: normEmail(API.email)`) damgalanıyor. `taslaklariTaraVeKurtar
+   (ownerEmail)` boot sırasında `API.loadSession()` + `if (API.loggedIn)`
+   bloğunun İÇİNDE, `API.email` ile çağrılıyor; kimlik yoksa (`!ownerEmail`)
+   hiçbir şey uygulanmaz. `taslaklariKurtar()` içinde her taslağın
+   `ownerEmail`'i güncel oturumla eşleşmiyorsa o taslak **dokunulmadan**
+   cihazda kalır — ortak cihazda önceki kullanıcının taslağı asla başka bir
+   hesaba otomatik uygulanmaz.
+
+Statik test: 3 düzeltme de ayrı ayrı doğrulanıyor (#2, #3, #4 numaralı
+Codex testleri). 371/371.
+
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 369/369 (+7 kontrol, DB değişikliği yok).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 371/371 (+9 kontrol, DB değişikliği yok).

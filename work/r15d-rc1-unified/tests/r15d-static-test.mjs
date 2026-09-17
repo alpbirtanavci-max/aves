@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.58 sürümü', index.includes('R15D-RC3.9.58</b>'));
-test('app R15D rc3.9.58 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.58'"));
-test('service worker rc3.9.58 cache', sw.includes("aves-saha-r15d-rc3958'"));
-test('uygulama manifesti rc3.9.58 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.58"'));
+test('index R15D rc3.9.59 sürümü', index.includes('R15D-RC3.9.59</b>'));
+test('app R15D rc3.9.59 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.59'"));
+test('service worker rc3.9.59 cache', sw.includes("aves-saha-r15d-rc3959'"));
+test('uygulama manifesti rc3.9.59 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.59"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -151,18 +151,30 @@ test('sayfa arka plana alınırken/kapanırken odaktaki alan hemen kaydedilir (7
   app.includes("document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); })") &&
   app.includes("window.addEventListener('pagehide', flushOnHide)") &&
   app.includes("active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')"));
-test('Codex incelemesi: her tuş vuruşu senkron localStorage taslak günlüğüne yazılır (IndexedDB asenkron yazımını beklemez)',
-  app.includes('function taslakYaz(target)') &&
-  app.includes("localStorage.setItem(`aves_taslak_${currentDenetimId}`, JSON.stringify(all))") &&
-  app.includes("if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target);") &&
+test('Codex incelemesi #1: her tuş vuruşu senkron localStorage taslak günlüğüne (kimlik damgalı) yazılır',
+  app.includes('function taslakYaz(target, ts = Date.now())') &&
+  app.includes("all[key] = { value: target.value, ts, ownerEmail: normEmail(API.email) };") &&
+  app.includes("if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);") &&
   app.includes('function taslakAnahtari(target)') &&
   app.includes("if (target.matches('[data-bolumnot]')) return `bolum:${target.dataset.bolumnot}`;"));
-test('Codex incelemesi: taslak IndexedDB\'ye durduğunda siliniyor (4 commit noktası) ve uygulama açılışında artakalanlar kurtarılıyor',
-  app.includes('async function taslaklariKurtar(denetimId)') &&
-  app.includes('async function taslaklariTaraVeKurtar()') &&
-  app.includes('recoverDrafts: taslaklariTaraVeKurtar') &&
-  app.includes('try { await UI.recoverDrafts(); } catch {}') &&
-  (app.match(/taslakSil\(/g) || []).length >= 4);
+test('Codex incelemesi #2 (P1): başarısız kurtarma taslağı silmiyor — yalnız BAŞARILI anahtar günlükten çıkar',
+  app.includes('async function taslaklariKurtar(denetimId, ownerEmail)') &&
+  app.includes('if (basarili) { delete all[key]; degisti = true; }') &&
+  app.includes("console.warn('Taslak kurtarma başarısız — cihazda korunuyor, sonraki açılışta yeniden denenecek', key, error);") &&
+  !app.includes("localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {} return 0; }"));
+test('Codex incelemesi #3 (P1): 700ms yazım biterken yalnız KENDİ zaman damgasıyla eşleşen taslak silinir (yeni tuş vuruşunu silmez)',
+  app.includes('function taslakSilEger(target, ts)') &&
+  app.includes('if (all[key] && all[key].ts <= ts) { delete all[key];') &&
+  app.includes('taslakSilEger(target, snapshot.ts);') &&
+  app.includes('function scheduleEditorDraft(target, ts = Date.now())') &&
+  app.includes('const ts = Date.now();\n      if (e.target.matches(\'[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]\')) taslakYaz(e.target, ts);'));
+test('Codex incelemesi #4 (P1): kurtarma yalnız oturum yüklendikten sonra ve yalnız eşleşen kullanıcı kimliğiyle çalışır',
+  app.includes('async function taslaklariTaraVeKurtar(ownerEmail)') &&
+  app.includes("if (!normEmail(ownerEmail)) return; // oturum yüklenmeden kurtarma çalıştırılmaz") &&
+  app.includes('if (normEmail(entry.ownerEmail) !== normOwner) continue;') &&
+  app.includes('try { await UI.recoverDrafts(API.email); } catch {}') &&
+  app.includes('if (API.loggedIn) {') &&
+  app.indexOf('try { await UI.recoverDrafts(API.email); } catch {}') > app.indexOf('await API.loadSession();'));
 test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
   index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
   index.includes('name="apple-mobile-web-app-status-bar-style"') &&
@@ -453,7 +465,7 @@ test('aktif form alanı arka plan senkronuyla yeniden çizilmiyor',
   app.includes('UI.canRefreshSafely()') && app.includes("active.matches('input,textarea,select')"));
 test('bulgu, madde notu ve ölçüm yazarken taslak cihazda gecikmeli saklanıyor',
   app.includes("matches('[data-diger],[data-aciklama],[data-olcum-id]')") &&
-  app.includes('scheduleEditorDraft(e.target)') && app.includes('}, 700);'));
+  app.includes('scheduleEditorDraft(e.target, ts)') && app.includes('}, 700);'));
 test('denetim tamamlanmadan bekleyen alan yazımları bitiriliyor',
   app.includes('async function flushEditorWrites()') && app.includes('await flushEditorWrites();'));
 test('eşzamanlı push tamamlandı sayılmıyor', app.includes('if (pushRunning) return false'));
