@@ -36,7 +36,9 @@ jobs:
         run: npx cap sync android
       - name: Debug APK derle
         working-directory: native/android
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
       - name: APK'yı iş çıktısı olarak yükle
         uses: actions/upload-artifact@v4
         with:
