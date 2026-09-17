@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.55';
+const APP_VERSION = 'R15D-rc3.9.61';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -1031,6 +1031,85 @@ const UI = (() => {
     const ov = document.createElement('div');
     ov.className = 'overlay';
     const kategoriFotograflari = (kat) => tumFotograflar.filter(f => f.kategori === kat);
+    // Fotoğraf ekleme ortak yolu: hem "Galeriden ekle" hem uygulama içi kamera
+    // aynı sıkıştırma + kayıt + yükleme akışını kullanır.
+    const fotografKaydet = async (kat, blob) => {
+      const { blob: sikistirilmis, width, height } = await fotografSikistir(blob);
+      const id = crypto.randomUUID();
+      const foto = { id, denetim_id: currentDenetimId, kategori: kat,
+        object_path: `${currentDenetimId}/${kat}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: sikistirilmis.size,
+        width, height, created_by: API.email, created_at: new Date().toISOString(), blob: sikistirilmis, sync_status: 'pending' };
+      await DB.put('fotograflar', foto);
+      try { await fotografYukle(foto); } catch (error) { console.warn(error); }
+      tumFotograflar.push(foto);
+      return foto;
+    };
+    // Uygulama içi kamera (getUserMedia): saha güvenilirliği — native kamera
+    // uygulamasına geçmek AVES'i tamamen arka plana atıp iOS'ta bellek
+    // baskısı altında kapanma riskini büyütüyordu (bkz. R15D_RC3956 notu).
+    // Sayfadan hiç çıkılmadığı için bu risk oluşmaz. Çözünürlük native
+    // kameradan düşük olabilir ama fotografSikistir zaten her şeyi 1600px'e
+    // indirdiğinden pratik farkın azı kalıyor.
+    const kameraIleFotografCek = async (kat) => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast('Bu cihazda/tarayıcıda uygulama içi kamera desteklenmiyor — Galeriden ekle\'yi kullanın');
+        return;
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+          audio: false,
+        });
+      } catch (error) {
+        toast('Kameraya erişilemedi: ' + (error && error.message ? error.message : 'izin reddedildi'));
+        return;
+      }
+      const camOv = document.createElement('div');
+      camOv.className = 'overlay camera-overlay';
+      camOv.innerHTML = `<div class="camera-modal">
+        <video autoplay playsinline muted></video>
+        <div class="camera-controls">
+          <button type="button" class="btn btn-ghost" id="camKapat">Kapat</button>
+          <button type="button" class="btn btn-primary" id="camCek">📷 Çek</button>
+          <span class="camera-count">0 fotoğraf</span>
+        </div>
+      </div>`;
+      document.body.appendChild(camOv);
+      const video = camOv.querySelector('video');
+      video.srcObject = stream;
+      let cekilen = 0;
+      let kapandi = false;
+      const kapat = async () => {
+        if (kapandi) return;
+        kapandi = true;
+        stream.getTracks().forEach(track => track.stop());
+        camOv.remove();
+        if (cekilen) await ciz();
+      };
+      camOv.querySelector('#camKapat').onclick = kapat;
+      camOv.onclick = e => { if (e.target === camOv) kapat(); };
+      camOv.querySelector('#camCek').onclick = async () => {
+        const cekBtn = camOv.querySelector('#camCek');
+        cekBtn.disabled = true;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth || 1280;
+          canvas.height = video.videoHeight || 960;
+          canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('Kare yakalanamadı')), 'image/jpeg', .92));
+          await fotografKaydet(kat, blob);
+          cekilen++;
+          camOv.querySelector('.camera-count').textContent = `${cekilen} fotoğraf`;
+          toast('Fotoğraf kaydedildi');
+        } catch (error) {
+          console.error('Uygulama içi çekim başarısız', error);
+          toast('Fotoğraf kaydedilemedi, tekrar deneyin');
+        } finally {
+          cekBtn.disabled = false;
+        }
+      };
+    };
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
         <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
@@ -1046,7 +1125,10 @@ const UI = (() => {
         section.innerHTML = `<h4>${esc(baslik)} <span class="photo-total">${fotograflar.length}</span></h4>
           <p class="photo-help">${esc(rehber)}</p>
           <div class="photo-grid"></div>
-          ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden data-kat="${kat}"></label>` : ''}`;
+          ${currentCanEdit ? `<div class="photo-add-row">
+            <button type="button" class="btn btn-ghost photo-add-camera" data-kat="${kat}">📷 Fotoğraf çek</button>
+            <label class="photo-add">🖼 Galeriden ekle<input type="file" accept="image/*" multiple hidden data-kat="${kat}"></label>
+          </div>` : ''}`;
         const grid = section.querySelector('.photo-grid');
         for (const foto of fotograflar) {
           const card = document.createElement('div'); card.className = 'photo-card';
@@ -1056,16 +1138,34 @@ const UI = (() => {
             card.innerHTML = `<button class="photo-open"><img src="${url}" alt="Denetim fotoğrafı"></button>${fotoSilebilir ? `<button class="photo-remove" aria-label="Fotoğrafı kaldır">×</button>` : ''}${foto.sync_status === 'pending' ? '<span class="photo-pending">Bekliyor</span>' : ''}<div class="photo-meta"><span>${esc(fotoTarihi)}</span><span>${esc(foto.created_by || 'Kullanıcı bilgisi yok')}</span></div>`;
             card.querySelector('.photo-open').onclick = () => window.open(url, '_blank');
             const remove = card.querySelector('.photo-remove');
+            // Onaydan sonra ağ isteği (senkron olmuş fotoğraf için) veya RLS
+            // reddi başarısız olursa hiçbir hata yakalanmıyordu — kullanıcı
+            // "onay verdim ama kaldırmadı" görüyordu, uygulama sessizce
+            // duruyordu. Artık her hata toast ile bildiriliyor; senkron
+            // olmuş bir fotoğrafı silmek internet gerektirir (offline
+            // kuyruklanmaz — bkz. migration 79 D2 kararı), bu da önceden
+            // açıkça söyleniyor.
             if (remove) remove.onclick = async () => {
               if (!confirm('Bu fotoğraf kaldırılsın mı?')) return;
-              if (foto.sync_status !== 'pending') {
-                const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
-                if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Fotoğraf kaldırılamadı (${storageDelete.status})`);
-                await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+              if (foto.sync_status !== 'pending' && !navigator.onLine) {
+                toast('Bu fotoğraf zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı gelince tekrar deneyin');
+                return;
               }
-              await DB.del('fotograflar', foto.id);
-              tumFotograflar = tumFotograflar.filter(f => f.id !== foto.id);
-              await ciz();
+              remove.disabled = true;
+              try {
+                if (foto.sync_status !== 'pending') {
+                  const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
+                  if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Sunucu reddetti (${storageDelete.status})`);
+                  await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
+                }
+                await DB.del('fotograflar', foto.id);
+                tumFotograflar = tumFotograflar.filter(f => f.id !== foto.id);
+                await ciz();
+              } catch (error) {
+                console.error('Fotoğraf kaldırılamadı', error);
+                toast('Fotoğraf kaldırılamadı: ' + (error && error.message ? error.message : 'bilinmeyen hata'));
+                remove.disabled = false;
+              }
             };
           } catch { card.innerHTML = '<div class="photo-error">Fotoğraf çevrimdışı açılamadı</div>'; }
           grid.appendChild(card);
@@ -1156,18 +1256,12 @@ const UI = (() => {
           if (!files.length) return;
           const kat = input.dataset.kat;
           toast(`${files.length} fotoğraf hazırlanıyor…`);
-          for (const file of files) {
-            const { blob, width, height } = await fotografSikistir(file);
-            const id = crypto.randomUUID();
-            const foto = { id, denetim_id: currentDenetimId, kategori: kat,
-              object_path: `${currentDenetimId}/${kat}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: blob.size,
-              width, height, created_by: API.email, created_at: new Date().toISOString(), blob, sync_status: 'pending' };
-            await DB.put('fotograflar', foto);
-            try { await fotografYukle(foto); } catch (error) { console.warn(error); }
-            tumFotograflar.push(foto);
-          }
+          for (const file of files) await fotografKaydet(kat, file);
           await ciz();
         };
+      });
+      ov.querySelectorAll('.photo-add-camera').forEach(btn => {
+        btn.onclick = () => kameraIleFotografCek(btn.dataset.kat);
       });
     };
     document.body.appendChild(ov); await ciz();
@@ -2329,7 +2423,9 @@ const UI = (() => {
         const mark = check.ok ? '✓' : (check.advisory ? '⚠' : '✕');
         return `<div class="preflight-row ${cls}"><span>${mark}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`;
       }).join('')}</div>
-      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.</div>
+      <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda hazır. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.
+      <br><br><b>⚠ Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.</b> Uygulama açık/arka planda kalırsa (görev listesinden atılmadıysa) internet olmadan sorunsuz çalışır. Ama tamamen kapatılmış bir uygulamanın sinyalsiz bir yerde yeniden açılması — ana ekrana eklenmiş olsa bile — garanti değildir; bu bilinen bir tarayıcı kısıtıdır, hazırlık kontrolü bunu değiştiremez.
+      <br><br><b>Uygulama hiç açılmazsa:</b> panik yapmayın, veri kaybolmaz. Kurumun kâğıt yedek prosedürünü izleyin (sonucu not alın), sinyale çıkınca uygulamaya işleyin.</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();
@@ -2774,6 +2870,164 @@ const UI = (() => {
     return FOTO_HATIRLATMALARI[bolum] || null;
   }
 
+  // Senkron taslak günlüğü (Codex incelemesi, PR #26 sonrası): IndexedDB
+  // yazımı asenkrondur — telefon donarsa/işlem öldürülürse yazının bitmesi
+  // garanti değildir. localStorage.setItem SENKRONdur; her tuş vuruşunda
+  // (debounce beklemeden) burada de yazılır. Değer IndexedDB'ye durduğunda
+  // silinir. Denetim açılışında/uygulama başlangıcında artakalan taslak
+  // varsa kurtarılır — yaşam-döngüsü dinleyicisi (visibilitychange/pagehide)
+  // bunun ANA mekanizması değil, ek bir güvencesidir.
+  //
+  // İkinci Codex incelemesi — 3 kritik düzeltme:
+  //  1) Kurtarma sırasında bir kayıt başarısız olursa yalnız BAŞARILI
+  //     anahtarlar günlükten silinir; başarısız olan cihazda kalır ve bir
+  //     sonraki açılışta yeniden denenir (yerel veritabanı geçici olarak
+  //     açılamazsa taslak kaybolmaz).
+  //  2) Her taslak kendi zaman damgasını taşır; 700ms'lik gecikmeli yazım
+  //     bitince yalnız KENDİ damgasıyla eşleşen (yani üzerine yeni bir tuş
+  //     vuruşu gelmemiş) taslağı siler — aksi hâlde yazım sürerken girilen
+  //     yeni karakter, henüz kaydedilmeden silinebilirdi.
+  //  3) Her taslak yazıldığı andaki oturum e-postasıyla damgalanır; kurtarma
+  //     yalnız GÜNCEL oturumun e-postasıyla eşleşen taslakları uygular —
+  //     ortak cihazda önceki kullanıcının taslağı asla başka bir hesaba
+  //     otomatik uygulanmaz (eşleşmeyenler dokunulmadan cihazda kalır).
+  function taslakAnahtari(target) {
+    if (target.matches('[data-bolumnot]')) return `bolum:${target.dataset.bolumnot}`;
+    const item = target.closest('.madde');
+    if (!item) return null;
+    const field = target.dataset.olcumId ? `olcum:${target.dataset.olcumId}`
+      : target.matches('[data-diger]') ? 'diger_bulgu' : 'aciklama';
+    return `saha:${item.dataset.id}:${field}`;
+  }
+
+  function taslakDeposu(denetimId) {
+    try { return JSON.parse(localStorage.getItem(`aves_taslak_${denetimId}`) || '{}'); }
+    catch { return {}; }
+  }
+
+  function taslakDeposunuYaz(denetimId, all) {
+    try {
+      if (all && Object.keys(all).length) localStorage.setItem(`aves_taslak_${denetimId}`, JSON.stringify(all));
+      else localStorage.removeItem(`aves_taslak_${denetimId}`);
+    } catch { /* localStorage dolu/kapalı olabilir — best-effort ek güvence */ }
+  }
+
+  function taslakYaz(target, ts = Date.now()) {
+    if (!currentDenetimId) return ts;
+    const key = taslakAnahtari(target);
+    if (!key) return ts;
+    const all = taslakDeposu(currentDenetimId);
+    all[key] = { value: target.value, ts, ownerEmail: normEmail(API.email) };
+    taslakDeposunuYaz(currentDenetimId, all);
+    return ts;
+  }
+
+  // Yalnız BLUR/change ile hemen komuta edilen alanlar için: o an
+  // localStorage'daki değer zaten DOM'daki komuta edilen değerin aynısı
+  // olmak zorunda (blur sonrası başka tuş vuruşu gelemez), bu yüzden
+  // koşulsuz silinebilir.
+  function taslakSil(target) {
+    if (!currentDenetimId) return;
+    const key = taslakAnahtari(target);
+    if (!key) return;
+    const all = taslakDeposu(currentDenetimId);
+    if (key in all) { delete all[key]; taslakDeposunuYaz(currentDenetimId, all); }
+  }
+
+  // 700ms'lik gecikmeli yazım bitince kullanılır: yalnız YAZILAN taslakla
+  // aynı zaman damgasını taşıyan kayıt silinir. Bu süre içinde yeni bir tuş
+  // vuruşu gelip taslağı güncellediyse (daha yeni ts), o taslak dokunulmadan
+  // kalır — kendi 700ms döngüsü onu ayrıca kaydedip silecektir.
+  function taslakSilEger(target, ts) {
+    if (!currentDenetimId || ts == null) return;
+    const key = taslakAnahtari(target);
+    if (!key) return;
+    const all = taslakDeposu(currentDenetimId);
+    if (all[key] && all[key].ts <= ts) { delete all[key]; taslakDeposunuYaz(currentDenetimId, all); }
+  }
+
+  async function taslaklariKurtar(denetimId, ownerEmail) {
+    const normOwner = normEmail(ownerEmail);
+    if (!normOwner) return 0; // oturum/kimlik henüz yoksa hiçbir taslak otomatik uygulanmaz
+    const all = taslakDeposu(denetimId);
+    const keys = Object.keys(all);
+    if (!keys.length) return 0;
+    let kurtarilan = 0;
+    let degisti = false;
+    for (const key of keys) {
+      const entry = all[key];
+      if (!entry) { delete all[key]; degisti = true; continue; }
+      // Farklı (veya bilinmeyen — eski format) kullanıcıya ait taslak asla
+      // otomatik uygulanmaz; dokunulmadan cihazda kalır, doğru kullanıcı
+      // giriş yaptığında kurtarılır.
+      if (normEmail(entry.ownerEmail) !== normOwner) continue;
+      try {
+        const value = (entry.value || '').trim();
+        let basarili = false;
+        if (key.startsWith('bolum:')) {
+          const bolumAdi = key.slice('bolum:'.length);
+          const d = await DB.get('denetimler', denetimId);
+          if (!d) continue;
+          d.bolum_aciklamalari = d.bolum_aciklamalari || {};
+          if ((d.bolum_aciklamalari[bolumAdi] || '') !== value) {
+            d.bolum_aciklamalari[bolumAdi] = value;
+            d.updated_at = new Date().toISOString();
+            await localWrite('denetimler', d, 'denetimler');
+            kurtarilan++;
+          }
+          basarili = true;
+        } else if (key.startsWith('saha:')) {
+          const rest = key.slice('saha:'.length);
+          const sep = rest.indexOf(':');
+          const rowId = rest.slice(0, sep);
+          const field = rest.slice(sep + 1);
+          const row = await guncelSahaSatiri(rowId);
+          if (!row) continue;
+          if (field.startsWith('olcum:')) {
+            const measurementId = field.slice('olcum:'.length);
+            row.olcum_degerleri = row.olcum_degerleri && typeof row.olcum_degerleri === 'object' ? row.olcum_degerleri : {};
+            if ((row.olcum_degerleri[measurementId] || '') !== value) {
+              if (value) row.olcum_degerleri[measurementId] = value; else delete row.olcum_degerleri[measurementId];
+              if (measurementId === 'olcu1') row.olcu1_degeri = value || null;
+              if (measurementId === 'olcu2') row.olcu2_degeri = value || null;
+              row.updated_at = new Date().toISOString();
+              await localWrite('saha_kontrol', row, 'saha');
+              kurtarilan++;
+            }
+            basarili = true;
+          } else if ((row[field] || '') !== value) {
+            row[field] = value || null;
+            row.updated_at = new Date().toISOString();
+            await localWrite('saha_kontrol', row, 'saha');
+            kurtarilan++;
+            basarili = true;
+          } else {
+            basarili = true; // değer zaten aynı, kaydedecek bir şey yok
+          }
+        }
+        // Yalnız BAŞARIYLA uygulanan (veya uygulanacak bir şeyi kalmayan)
+        // anahtar günlükten silinir; hata alan cihazda kalıp yeniden denenir.
+        if (basarili) { delete all[key]; degisti = true; }
+      } catch (error) {
+        console.warn('Taslak kurtarma başarısız — cihazda korunuyor, sonraki açılışta yeniden denenecek', key, error);
+      }
+    }
+    if (degisti) taslakDeposunuYaz(denetimId, all);
+    return kurtarilan;
+  }
+
+  async function taslaklariTaraVeKurtar(ownerEmail) {
+    if (!normEmail(ownerEmail)) return; // oturum yüklenmeden kurtarma çalıştırılmaz
+    let anahtarlar = [];
+    try { anahtarlar = Object.keys(localStorage).filter(k => k.startsWith('aves_taslak_')); } catch { return; }
+    let toplam = 0;
+    for (const k of anahtarlar) {
+      const denetimId = k.slice('aves_taslak_'.length);
+      try { toplam += await taslaklariKurtar(denetimId, ownerEmail); } catch (error) { console.warn('Taslak taraması başarısız', denetimId, error); }
+    }
+    if (toplam) toast(`${toplam} kaydedilmemiş değişiklik kurtarıldı`);
+  }
+
   function editorDraftKey(target) {
     const item = target.closest('.madde');
     if (!item) return null;
@@ -2795,7 +3049,7 @@ const UI = (() => {
     if (key) editorDraftTimers.delete(key);
   }
 
-  function scheduleEditorDraft(target) {
+  function scheduleEditorDraft(target, ts = Date.now()) {
     const key = editorDraftKey(target);
     const item = target.closest('.madde');
     if (!key || !item) return;
@@ -2805,6 +3059,7 @@ const UI = (() => {
       measurementId: target.dataset.olcumId || null,
       field: target.matches('[data-diger]') ? 'diger_bulgu' : (target.matches('[data-aciklama]') ? 'aciklama' : null),
       value: target.value,
+      ts,
     };
     const timer = setTimeout(() => {
       editorDraftTimers.delete(key);
@@ -2824,6 +3079,9 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await localWrite('saha_kontrol', row, 'saha');
+        // Yalnız BU yazımın taslağı silinir — 700ms içinde yeni bir tuş
+        // vuruşu geldiyse (daha yeni ts) taslak dokunulmadan kalır.
+        taslakSilEger(target, snapshot.ts);
       })()).catch(error => console.warn('Alan taslağı cihazda saklanamadı:', error.message));
     }, 700);
     editorDraftTimers.set(key, timer);
@@ -2831,7 +3089,10 @@ const UI = (() => {
 
   async function flushEditorWrites() {
     const active = document.activeElement;
-    if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id]')) active.blur();
+    // Codex incelemesi: data-bolumnot (Bölüm açıklaması) burada eksikti —
+    // yalnız change'te (blur) yazılıyor, debounce'a hiç girmiyordu; bu
+    // yüzden arka plana alma/kapatma anında hâlâ kaybolabiliyordu.
+    if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) active.blur();
     await new Promise(resolve => setTimeout(resolve, 0));
     if (pendingEditorWrites.size) await Promise.all([...pendingEditorWrites]);
   }
@@ -3129,7 +3390,11 @@ const UI = (() => {
   function bindMaddeEvents() {
     document.getElementById('bolums').addEventListener('input', (e) => {
       if (!currentCanEdit) return;
-      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target);
+      // Aynı tuş vuruşu için tek bir zaman damgası: 700ms sonra yazım
+      // bitince yalnız BU damgayla eşleşen taslak silinir (bkz. taslakSilEger).
+      const ts = Date.now();
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target, ts);
     });
     document.getElementById('bolums').addEventListener('click', async (e) => {
       const stepBtn = e.target.closest('[data-step]');
@@ -3194,6 +3459,7 @@ const UI = (() => {
         d.bolum_aciklamalari[e.target.dataset.bolumnot] = e.target.value.trim();
         d.updated_at = new Date().toISOString();
         await localWrite('denetimler', d, 'denetimler');
+        taslakSil(e.target);
         toast('Bölüm notu kaydedildi');
         return;
       }
@@ -3211,6 +3477,7 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
+        taslakSil(e.target);
         await uygulaOlcumeBagliAranmaz(row);
         await esikOnerisiGoster(row, olcumId, value);
         await renderDenetim();
@@ -3219,6 +3486,7 @@ const UI = (() => {
       if (e.target.matches('[data-diger]')) {
         row.diger_bulgu = e.target.value.trim() || null;
         await trackedEditorWrite(save(row, mEl));
+        taslakSil(e.target);
         return;
       }
       if (e.target.matches('[data-aciklama]')) {
@@ -3226,6 +3494,7 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
+        taslakSil(e.target);
         mEl.querySelector('[data-notbtn]').classList.toggle('has', !!row.aciklama);
         toast('Madde açıklaması kaydedildi');
         return; // açıklama tamamlanmayı etkilemez, otomatik geçiş tetiklenmez
@@ -3967,6 +4236,8 @@ const UI = (() => {
 
   return {
     showLogin, afterLogin, showList, bekleyenFotograflariYukle,
+    flushPendingEdits: flushEditorWrites,
+    recoverDrafts: taslaklariTaraVeKurtar,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
     canRefreshSafely: () => {
@@ -4051,6 +4322,17 @@ async function ensurePersistentStorage() {
   }
 }
 
+// Odaktaki bir alanda 700ms yazım gecikmesi dolmadan uygulama arka plana
+// alınırsa/kapatılırsa (telefon donması, yanlışlıkla kapatma, işletim
+// sisteminin belleği geri alması) o alan kaybolabilirdi — hiçbir dinleyici
+// bu anı yakalamıyordu. visibilitychange 'hidden' ve pagehide, tarayıcının
+// JS'e son bir şans tanıdığı olaylardır; ikisi de aynı yazımı tetikleyip
+// aynı sonuca ulaşsa da hangisinin önce/güvenilir ateşlendiği platforma göre
+// değiştiğinden ikisi birden bağlanır.
+const flushOnHide = () => { try { UI.flushPendingEdits().catch(() => {}); } catch {} };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); });
+window.addEventListener('pagehide', flushOnHide);
+
 /* ================= Başlat ================= */
 (async () => {
   try {
@@ -4070,6 +4352,15 @@ async function ensurePersistentStorage() {
     if (confirm('Çıkış yapılsın mı? (Cihazdaki veriler korunur)')) { await API.logout(); Profile.clear(); UI.showLogin(); }
   };
   Sync.start();
-  if (API.loggedIn) await UI.afterLogin();
-  else UI.showLogin();
+  if (API.loggedIn) {
+    // Bir önceki oturumdan artakalan senkron taslaklar (telefon donması,
+    // yanlışlıkla kapatma vb. yüzünden IndexedDB'ye hiç ulaşamamış alanlar)
+    // giriş yapıldıktan SONRA, yalnız oturumdaki e-postayla eşleşen
+    // taslaklar için geri yüklenir (Codex incelemesi — kimlik doğrulanmadan
+    // veya farklı kullanıcının taslağı otomatik uygulanmaz).
+    try { await UI.recoverDrafts(API.email); } catch {}
+    await UI.afterLogin();
+  } else {
+    UI.showLogin();
+  }
 })();
