@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AVES Saha</string>
+    <string name="title_activity_main">AVES Saha</string>
+    <string name="package_name">com.avesasansor.saha</string>
+    <string name="custom_url_scheme">com.avesasansor.saha</string>
+</resources>

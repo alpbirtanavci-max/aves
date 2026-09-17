@@ -1,0 +1,41 @@
+name: Native iOS fizibilite denemesi
+
+# Aynı native/ Capacitor projesinin iOS platformunu, imzalama/Apple Developer
+# hesabı OLMADAN, yalnız simülatör hedefi için derler (simulator build kod
+# imzası istemez). Amaç: iOS tarafının da teknik olarak mümkün olduğunu
+# gerçek bir macOS + Xcode ortamında kanıtlamak. Yalnız
+# claude/native-feasibility-spike dalında ve elle tetiklemede çalışır.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/native-feasibility-spike
+
+jobs:
+  ios-simulator-build:
+    name: iOS simülatör derlemesi
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Bağımlılıkları kur
+        working-directory: native
+        run: npm install
+      - name: iOS platformunu ekle
+        working-directory: native
+        run: npx cap add ios
+      - name: CocoaPods bağımlılıklarını kur
+        working-directory: native/ios/App
+        run: pod install
+      - name: Web varlıklarını native projeye senkronla
+        working-directory: native
+        run: npx cap sync ios
+      - name: Simülatör için derle (imzasız)
+        working-directory: native/ios/App
+        run: |
+          xcodebuild -workspace App.xcworkspace -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build
