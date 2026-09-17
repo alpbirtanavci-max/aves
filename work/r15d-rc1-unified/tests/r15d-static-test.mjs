@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.54 sürümü', index.includes('R15D-RC3.9.54</b>'));
-test('app R15D rc3.9.54 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.54'"));
-test('service worker rc3.9.54 cache', sw.includes("aves-saha-r15d-rc3954'"));
-test('uygulama manifesti rc3.9.54 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.54"'));
+test('index R15D rc3.9.55 sürümü', index.includes('R15D-RC3.9.55</b>'));
+test('app R15D rc3.9.55 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.55'"));
+test('service worker rc3.9.55 cache', sw.includes("aves-saha-r15d-rc3955'"));
+test('uygulama manifesti rc3.9.55 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.55"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -134,6 +134,15 @@ test('hazırlık kontrolü kalıcı depolama iznini advisory (hazırlığı enge
   app.includes("DB.kvGet('storage_persist')") &&
   app.includes('const ready = checks.every(check => check.ok || check.advisory);') &&
   app.includes('advisory: !!advisory'));
+test('hazırlık kontrolü ana ekrana eklenmemiş tarayıcı sekmesini advisory uyarır (soğuk çevrimdışı başlangıç riski)',
+  app.includes("add('Ana ekrana eklenmiş uygulama olarak açık',") &&
+  app.includes("window.matchMedia('(display-mode: standalone)').matches") &&
+  app.includes('window.navigator.standalone === true') &&
+  app.includes('Paylaş → Ana Ekrana Ekle'));
+test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
+  index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
+  index.includes('name="apple-mobile-web-app-status-bar-style"') &&
+  index.includes('rel="apple-touch-icon" href="icon-192.png"'));
 test('senkron merkezi: syncCenter + sync_warning kilidi kırılır + export',
   app.includes('async function syncCenter()') &&
   app.includes("DB.kvDel('sync_warning')") &&
