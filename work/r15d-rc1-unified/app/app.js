@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.56';
+const APP_VERSION = 'R15D-rc3.9.57';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -3968,6 +3968,7 @@ const UI = (() => {
 
   return {
     showLogin, afterLogin, showList, bekleyenFotograflariYukle,
+    flushPendingEdits: flushEditorWrites,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
     canRefreshSafely: () => {
@@ -4051,6 +4052,17 @@ async function ensurePersistentStorage() {
     await DB.kvSet('storage_persist', { supported: true, granted: false, error: String((error && error.message) || error), checked_at: now });
   }
 }
+
+// Odaktaki bir alanda 700ms yazım gecikmesi dolmadan uygulama arka plana
+// alınırsa/kapatılırsa (telefon donması, yanlışlıkla kapatma, işletim
+// sisteminin belleği geri alması) o alan kaybolabilirdi — hiçbir dinleyici
+// bu anı yakalamıyordu. visibilitychange 'hidden' ve pagehide, tarayıcının
+// JS'e son bir şans tanıdığı olaylardır; ikisi de aynı yazımı tetikleyip
+// aynı sonuca ulaşsa da hangisinin önce/güvenilir ateşlendiği platforma göre
+// değiştiğinden ikisi birden bağlanır.
+const flushOnHide = () => { try { UI.flushPendingEdits().catch(() => {}); } catch {} };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); });
+window.addEventListener('pagehide', flushOnHide);
 
 /* ================= Başlat ================= */
 (async () => {
