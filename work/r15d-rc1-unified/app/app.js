@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.59';
+const APP_VERSION = 'R15D-rc3.9.60';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -1031,6 +1031,85 @@ const UI = (() => {
     const ov = document.createElement('div');
     ov.className = 'overlay';
     const kategoriFotograflari = (kat) => tumFotograflar.filter(f => f.kategori === kat);
+    // Fotoğraf ekleme ortak yolu: hem "Galeriden ekle" hem uygulama içi kamera
+    // aynı sıkıştırma + kayıt + yükleme akışını kullanır.
+    const fotografKaydet = async (kat, blob) => {
+      const { blob: sikistirilmis, width, height } = await fotografSikistir(blob);
+      const id = crypto.randomUUID();
+      const foto = { id, denetim_id: currentDenetimId, kategori: kat,
+        object_path: `${currentDenetimId}/${kat}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: sikistirilmis.size,
+        width, height, created_by: API.email, created_at: new Date().toISOString(), blob: sikistirilmis, sync_status: 'pending' };
+      await DB.put('fotograflar', foto);
+      try { await fotografYukle(foto); } catch (error) { console.warn(error); }
+      tumFotograflar.push(foto);
+      return foto;
+    };
+    // Uygulama içi kamera (getUserMedia): saha güvenilirliği — native kamera
+    // uygulamasına geçmek AVES'i tamamen arka plana atıp iOS'ta bellek
+    // baskısı altında kapanma riskini büyütüyordu (bkz. R15D_RC3956 notu).
+    // Sayfadan hiç çıkılmadığı için bu risk oluşmaz. Çözünürlük native
+    // kameradan düşük olabilir ama fotografSikistir zaten her şeyi 1600px'e
+    // indirdiğinden pratik farkın azı kalıyor.
+    const kameraIleFotografCek = async (kat) => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast('Bu cihazda/tarayıcıda uygulama içi kamera desteklenmiyor — Galeriden ekle\'yi kullanın');
+        return;
+      }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1440 } },
+          audio: false,
+        });
+      } catch (error) {
+        toast('Kameraya erişilemedi: ' + (error && error.message ? error.message : 'izin reddedildi'));
+        return;
+      }
+      const camOv = document.createElement('div');
+      camOv.className = 'overlay camera-overlay';
+      camOv.innerHTML = `<div class="camera-modal">
+        <video autoplay playsinline muted></video>
+        <div class="camera-controls">
+          <button type="button" class="btn btn-ghost" id="camKapat">Kapat</button>
+          <button type="button" class="btn btn-primary" id="camCek">📷 Çek</button>
+          <span class="camera-count">0 fotoğraf</span>
+        </div>
+      </div>`;
+      document.body.appendChild(camOv);
+      const video = camOv.querySelector('video');
+      video.srcObject = stream;
+      let cekilen = 0;
+      let kapandi = false;
+      const kapat = async () => {
+        if (kapandi) return;
+        kapandi = true;
+        stream.getTracks().forEach(track => track.stop());
+        camOv.remove();
+        if (cekilen) await ciz();
+      };
+      camOv.querySelector('#camKapat').onclick = kapat;
+      camOv.onclick = e => { if (e.target === camOv) kapat(); };
+      camOv.querySelector('#camCek').onclick = async () => {
+        const cekBtn = camOv.querySelector('#camCek');
+        cekBtn.disabled = true;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth || 1280;
+          canvas.height = video.videoHeight || 960;
+          canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+          const blob = await new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('Kare yakalanamadı')), 'image/jpeg', .92));
+          await fotografKaydet(kat, blob);
+          cekilen++;
+          camOv.querySelector('.camera-count').textContent = `${cekilen} fotoğraf`;
+          toast('Fotoğraf kaydedildi');
+        } catch (error) {
+          console.error('Uygulama içi çekim başarısız', error);
+          toast('Fotoğraf kaydedilemedi, tekrar deneyin');
+        } finally {
+          cekBtn.disabled = false;
+        }
+      };
+    };
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
         <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
@@ -1046,7 +1125,10 @@ const UI = (() => {
         section.innerHTML = `<h4>${esc(baslik)} <span class="photo-total">${fotograflar.length}</span></h4>
           <p class="photo-help">${esc(rehber)}</p>
           <div class="photo-grid"></div>
-          ${currentCanEdit ? `<label class="photo-add">📷 Fotoğraf ekle<input type="file" accept="image/*" capture="environment" multiple hidden data-kat="${kat}"></label>` : ''}`;
+          ${currentCanEdit ? `<div class="photo-add-row">
+            <button type="button" class="btn btn-ghost photo-add-camera" data-kat="${kat}">📷 Fotoğraf çek</button>
+            <label class="photo-add">🖼 Galeriden ekle<input type="file" accept="image/*" multiple hidden data-kat="${kat}"></label>
+          </div>` : ''}`;
         const grid = section.querySelector('.photo-grid');
         for (const foto of fotograflar) {
           const card = document.createElement('div'); card.className = 'photo-card';
@@ -1156,18 +1238,12 @@ const UI = (() => {
           if (!files.length) return;
           const kat = input.dataset.kat;
           toast(`${files.length} fotoğraf hazırlanıyor…`);
-          for (const file of files) {
-            const { blob, width, height } = await fotografSikistir(file);
-            const id = crypto.randomUUID();
-            const foto = { id, denetim_id: currentDenetimId, kategori: kat,
-              object_path: `${currentDenetimId}/${kat}/${id}.jpg`, mime_type: 'image/jpeg', size_bytes: blob.size,
-              width, height, created_by: API.email, created_at: new Date().toISOString(), blob, sync_status: 'pending' };
-            await DB.put('fotograflar', foto);
-            try { await fotografYukle(foto); } catch (error) { console.warn(error); }
-            tumFotograflar.push(foto);
-          }
+          for (const file of files) await fotografKaydet(kat, file);
           await ciz();
         };
+      });
+      ov.querySelectorAll('.photo-add-camera').forEach(btn => {
+        btn.onclick = () => kameraIleFotografCek(btn.dataset.kat);
       });
     };
     document.body.appendChild(ov); await ciz();
@@ -2330,7 +2406,8 @@ const UI = (() => {
         return `<div class="preflight-row ${cls}"><span>${mark}</span><div><b>${esc(check.name)}</b><small>${esc(check.detail || '')}</small></div></div>`;
       }).join('')}</div>
       <div class="photo-help">${result.ready ? 'Bu denetim bu cihazda hazır. Cihazdaki yerel kopya, sunucu doğrulanana kadar korunur.' : 'Kırmızı kontroller düzelmeden bu cihaz “Çevrimdışı çalışmaya hazır” olarak işaretlenmez.'} Sarı kontroller uyarıdır, hazırlığı engellemez.
-      <br><br><b>⚠ Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.</b> Uygulama açık/arka planda kalırsa (görev listesinden atılmadıysa) internet olmadan sorunsuz çalışır. Ama tamamen kapatılmış bir uygulamanın sinyalsiz bir yerde yeniden açılması — ana ekrana eklenmiş olsa bile — garanti değildir; bu bilinen bir tarayıcı kısıtıdır, hazırlık kontrolü bunu değiştiremez.</div>
+      <br><br><b>⚠ Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.</b> Uygulama açık/arka planda kalırsa (görev listesinden atılmadıysa) internet olmadan sorunsuz çalışır. Ama tamamen kapatılmış bir uygulamanın sinyalsiz bir yerde yeniden açılması — ana ekrana eklenmiş olsa bile — garanti değildir; bu bilinen bir tarayıcı kısıtıdır, hazırlık kontrolü bunu değiştiremez.
+      <br><br><b>Uygulama hiç açılmazsa:</b> panik yapmayın, veri kaybolmaz. Kurumun kâğıt yedek prosedürünü izleyin (sonucu not alın), sinyale çıkınca uygulamaya işleyin.</div>
     </div>`;
     document.body.appendChild(ov);
     ov.querySelector('.close').onclick = () => ov.remove();

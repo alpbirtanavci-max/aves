@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.59 sürümü', index.includes('R15D-RC3.9.59</b>'));
-test('app R15D rc3.9.59 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.59'"));
-test('service worker rc3.9.59 cache', sw.includes("aves-saha-r15d-rc3959'"));
-test('uygulama manifesti rc3.9.59 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.59"'));
+test('index R15D rc3.9.60 sürümü', index.includes('R15D-RC3.9.60</b>'));
+test('app R15D rc3.9.60 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.60'"));
+test('service worker rc3.9.60 cache', sw.includes("aves-saha-r15d-rc3960'"));
+test('uygulama manifesti rc3.9.60 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.60"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -146,6 +146,8 @@ test('hazırlık sonucu ekranı sahaya inmeden önce uygulamayı açık tutma uy
   app.includes('Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.') &&
   app.includes('ana ekrana eklenmiş olsa bile — garanti değildir') &&
   !app.includes('Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir'));
+test('hazırlık sonucu ekranı, uygulama hiç açılmazsa kâğıt yedek prosedürüne yönlendiriyor',
+  app.includes('Uygulama hiç açılmazsa:') && app.includes('Kurumun kâğıt yedek prosedürünü izleyin'));
 test('sayfa arka plana alınırken/kapanırken odaktaki alan hemen kaydedilir (700ms debounce beklenmez)',
   app.includes('flushPendingEdits: flushEditorWrites') &&
   app.includes("document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); })") &&
@@ -167,7 +169,7 @@ test('Codex incelemesi #3 (P1): 700ms yazım biterken yalnız KENDİ zaman damga
   app.includes('if (all[key] && all[key].ts <= ts) { delete all[key];') &&
   app.includes('taslakSilEger(target, snapshot.ts);') &&
   app.includes('function scheduleEditorDraft(target, ts = Date.now())') &&
-  app.includes('const ts = Date.now();\n      if (e.target.matches(\'[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]\')) taslakYaz(e.target, ts);'));
+  /const ts = Date\.now\(\);\s*if \(e\.target\.matches\('\[data-diger\],\[data-aciklama\],\[data-olcum-id\],\[data-bolumnot\]'\)\) taslakYaz\(e\.target, ts\);/.test(app));
 test('Codex incelemesi #4 (P1): kurtarma yalnız oturum yüklendikten sonra ve yalnız eşleşen kullanıcı kimliğiyle çalışır',
   app.includes('async function taslaklariTaraVeKurtar(ownerEmail)') &&
   app.includes("if (!normEmail(ownerEmail)) return; // oturum yüklenmeden kurtarma çalıştırılmaz") &&
@@ -385,7 +387,18 @@ test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile ayn
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
 test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
   app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini") &&
-  app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('capture="environment" multiple'));
+  app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('photo-add-camera'));
+test('saha güvenilirliği: fotoğraf çekimi native kameraya değil uygulama içi kameraya (getUserMedia) yönleniyor',
+  app.includes('const kameraIleFotografCek = async (kat) => {') &&
+  app.includes('navigator.mediaDevices.getUserMedia({') &&
+  app.includes("facingMode: { ideal: 'environment' }") &&
+  !app.includes('capture="environment"') &&
+  app.includes("btn.onclick = () => kameraIleFotografCek(btn.dataset.kat);") &&
+  app.includes('🖼 Galeriden ekle'));
+test('uygulama içi kamera çekimi de aynı sıkıştırma/kayıt/yükleme akışını (fotografKaydet) kullanıyor',
+  app.includes('const fotografKaydet = async (kat, blob) => {') &&
+  app.includes('await fotografKaydet(kat, blob);') &&
+  app.includes('for (const file of files) await fotografKaydet(kat, file);'));
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
   app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
 test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',

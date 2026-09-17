@@ -1,4 +1,4 @@
-# R15D-rc3.9.56–59 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü (Teslim Notu)
+# R15D-rc3.9.56–60 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü + Uygulama İçi Kamera (Teslim Notu)
 
 PR #25'in (rc3.9.55) merge'inden hemen sonra, kullanıcının kendi iPhone'unda
 yaptığı test PR #25'teki bilinçli sınırı somut biçimde doğruladı:
@@ -153,6 +153,43 @@ tespit etti. Üçü de kabul edilip düzeltildi:
 Statik test: 3 düzeltme de ayrı ayrı doğrulanıyor (#2, #3, #4 numaralı
 Codex testleri). 371/371.
 
+## rc3.9.60 eki — uygulama içi kamera + kâğıt yedek prosedürü
+
+Kullanıcı gerçek saha akışını hatırlattı: denetçi sinyalsiz bölgede sadece
+AVES'i değil, telefonu genel amaçlı kullanıyor — fotoğraf/video çekiyor,
+standart dokümanına bakıyor, mesaj/arama alıyor. "Uygulamayı açık tutup
+telefona dokunmayın" talebi bu yüzden **gerçekçi değil**; asıl hedef,
+AVES'in **kendi kendine** sebep olduğu arka-plana-atılmaları en aza indirmek.
+
+- **Uygulama içi kamera** (`getUserMedia`): "Fotoğraf ekle" artık native
+  kamera uygulamasını açmıyor (`capture="environment"` kaldırıldı).
+  Sayfadan hiç çıkılmadan, canlı kamera görüntüsü üzerinden çekim yapılıyor
+  — bu, AVES'i tamamen arka plana atıp iOS'ta bellek baskısı altında
+  kapanma riskini büyüten en sık tekrarlanan tetikleyiciyi ortadan
+  kaldırıyor. Çözünürlük native kameradan düşük olabilir ama mevcut
+  `fotografSikistir` zaten her fotoğrafı 1600px'e indirip %82 kalitede
+  sıkıştırdığından pratik fark küçük.
+  - "🖼 Galeriden ekle" ayrı bir seçenek olarak kaldı (mevcut/önceden
+    çekilmiş fotoğraflar için).
+  - Her iki yol da aynı ortak `fotografKaydet()` işlevini kullanıyor.
+- **Video çekimi** kapsam dışı bırakıldı — uygulama içi video kaydı
+  (MediaRecorder) teknik olarak daha ağır ve kalite/güvenilirlik dengesi
+  daha belirsiz; native kamerada kalıyor.
+- **Kâğıt yedek prosedürü** (kullanıcı kararı — "3 numaralı seçenek"):
+  `docs/SAHA_PROSEDURU_SINYALSIZ_YEDEK.md` — düşük teknoloji okuryazarlığına
+  uygun, sade dilde, "uygulama açılmazsa ne yapılır" adımları. Bu bir kod
+  değişikliği değil, **kurumsal prosedür**; mühendislik bu riski tamamen
+  gideremediği için (native uygulama + Apple Developer 99$/yıl bütçesi
+  onaylanana kadar) telafi edici kontrol olarak eklendi.
+- Hazırlık sonucu ekranına ("Sahaya Hazırla") kısa bir yönlendirme satırı
+  eklendi: "Uygulama hiç açılmazsa: panik yapmayın, veri kaybolmaz. Kurumun
+  kâğıt yedek prosedürünü izleyin."
+
+**Önemli — dürüst sınır:** Bu değişiklikler riski **azaltır**, iOS'ta
+**gidermez**. Tam giderme yalnız native uygulama (bkz. `native/README.md`
+fizibilite denemesi) + Apple Developer Program ile mümkün; bu bütçe kararı
+netleşene kadar kâğıt yedek prosedürü fiilen zorunlu telafi edici kontroldür.
+
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 371/371 (+9 kontrol, DB değişikliği yok).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 374/374 (+12 kontrol, DB değişikliği yok).
