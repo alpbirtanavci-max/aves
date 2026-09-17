@@ -25,8 +25,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Android SDK kur
-        uses: android-actions/setup-android@v3
+      # ubuntu-latest runner'ı Android SDK ile önceden gelir (ANDROID_HOME
+      # zaten ayarlı); android-actions/setup-android@v3 artık var olmayan
+      # eski "tools" paketini aramaya çalışıp hata veriyordu — gereksizdi.
       - name: Bağımlılıkları kur
         working-directory: native
         run: npm install
