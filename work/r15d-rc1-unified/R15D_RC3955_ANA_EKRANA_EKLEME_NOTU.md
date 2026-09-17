@@ -20,10 +20,12 @@ eksik olan, tarayıcı sekmesinin süreç/ömür güvencesiydi.
 
 **`app/app.js`** `sahayaHazirla()` — yeni advisory (hazırlığı engellemeyen)
 kontrol satırı: `Ana ekrana eklenmiş uygulama olarak açık`.
-`window.matchMedia('(display-mode: standalone)')` veya iOS'a özgü
-`window.navigator.standalone` ile kurulu mod tespit edilir; kurulu değilse
-kontrol "Sahaya Hazırla" ekranında sarı görünür ve kurulum yolunu anlatır
-(Paylaş → Ana Ekrana Ekle).
+`window.matchMedia('(display-mode: standalone)')` — Android Chrome dahil her
+tarayıcıda çalışır — veya iOS'a özgü `window.navigator.standalone` ile kurulu
+mod tespit edilir; kurulu değilse kontrol "Sahaya Hazırla" ekranında sarı
+görünür ve **platforma göre doğru kurulum yolunu** anlatır: iOS'ta "Safari'de
+Paylaş simgesi → Ana Ekrana Ekle", diğerlerinde "Tarayıcı menüsü (⋮) → Ana
+ekrana ekle / Uygulamayı yükle" (Android Chrome'da "Paylaş" bu işi yapmaz).
 
 **`app/index.html`** — iOS'un web app manifest'i tam desteklememesi nedeniyle
 eklenen 4 etiket: `apple-mobile-web-app-capable`,
@@ -39,13 +41,16 @@ gibi). Zorunlu kılmak, mevcut kurulu-olmayan-sekme kullanıcılarını aniden
 "hazır değil" durumuna düşürürdü. Amaç: riski görünür kılmak, saha
 prosedürüne "Ana Ekrana Ekle" adımını eklemek — zorlama değil.
 
-## Saha prosedürü (kod dışı, bugün uygulanabilir)
+## Saha prosedürü (kod dışı, bugün uygulanabilir — iPhone ve Android)
 
-Tüm saha telefonlarında AVES, Safari paylaş menüsünden **Ana Ekrana Ekle**
-ile kurulmalı; bundan sonra yalnız o ana ekran ikonundan açılmalı (adres
-çubuğundan değil). Sinyalsiz bölgeye inmeden önce "Sahaya Hazırla"
-kontrolünde bu yeni satırın da yeşil olduğu doğrulanmalı.
+Tüm saha telefonlarında (iPhone **ve Android**) AVES ana ekrana kurulmalı;
+bundan sonra yalnız o ikondan açılmalı, adres çubuğundan/yer iminden değil.
+Sinyalsiz bölgeye inmeden önce "Sahaya Hazırla" kontrolünde bu yeni satırın
+da yeşil olduğu doğrulanmalı. Android'de risk iOS kadar sık görülmez (Chrome'un
+Service Worker soğuk-başlangıç davranışı daha güvenilir) ama veri temizleme
+veya bellek baskısı altında aynı risk oluşabilir — kurulum önerisi her iki
+platform için de geçerli.
 
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 364/364 (+3 kontrol).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 365/365 (+4 kontrol).

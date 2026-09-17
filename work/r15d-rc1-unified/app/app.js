@@ -2269,14 +2269,20 @@ const UI = (() => {
 
     // Ana ekrana eklenmemiş bir tarayıcı sekmesi, önbellek dolu olsa bile
     // sinyalin tamamen kesildiği bir soğuk başlangıçta açılmayabilir (özellikle
-    // iOS Safari) — bu durumda tarayıcı kendi "İnternete bağlı değilsiniz"
-    // sayfasını gösterir, uygulamanın Service Worker'ı hiç devreye girmez.
+    // iOS Safari'de görülür) — bu durumda tarayıcı kendi "İnternete bağlı
+    // değilsiniz" sayfasını gösterir, uygulamanın Service Worker'ı hiç
+    // devreye girmez. Kurulum yolu platforma göre farklı olduğundan uyarı
+    // metni buna göre değişir (Safari: Paylaş menüsü; Chrome/Android: ⋮ menüsü).
     const kuruluUygulama = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
       || window.navigator.standalone === true;
+    const iosCihaz = /iPhone|iPad|iPod/.test(navigator.userAgent || '');
+    const kurulumYolu = iosCihaz
+      ? 'Safari\'de Paylaş simgesi → Ana Ekrana Ekle'
+      : 'Tarayıcı menüsü (⋮) → Ana ekrana ekle / Uygulamayı yükle';
     add('Ana ekrana eklenmiş uygulama olarak açık',
       kuruluUygulama,
       kuruluUygulama ? 'Kurulu uygulama modunda çalışıyor'
-        : 'Tarayıcı sekmesinde açık — sinyalin tamamen kesildiği bir yerde bu sekme hiç açılmayabilir; Paylaş → Ana Ekrana Ekle ile kurup bundan sonra yalnız o simgeden açın',
+        : `Tarayıcı sekmesinde açık — sinyalin tamamen kesildiği bir yerde bu sekme hiç açılmayabilir; ${kurulumYolu} ile kurup bundan sonra yalnız o simgeden açın`,
       true);
 
     const visualAssets = [...new Set(rows.flatMap(r => gorselDosyalari(r.gorsel_referansi)).map(file => `./referans-gorseller/${file}`))];

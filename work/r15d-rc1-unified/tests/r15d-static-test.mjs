@@ -137,8 +137,11 @@ test('hazırlık kontrolü kalıcı depolama iznini advisory (hazırlığı enge
 test('hazırlık kontrolü ana ekrana eklenmemiş tarayıcı sekmesini advisory uyarır (soğuk çevrimdışı başlangıç riski)',
   app.includes("add('Ana ekrana eklenmiş uygulama olarak açık',") &&
   app.includes("window.matchMedia('(display-mode: standalone)').matches") &&
-  app.includes('window.navigator.standalone === true') &&
-  app.includes('Paylaş → Ana Ekrana Ekle'));
+  app.includes('window.navigator.standalone === true'));
+test('ana ekrana ekleme uyarısı platforma göre doğru menüyü gösterir (Safari Paylaş vs Chrome/Android ⋮)',
+  app.includes('/iPhone|iPad|iPod/.test(navigator.userAgent') &&
+  app.includes('Paylaş simgesi → Ana Ekrana Ekle') &&
+  app.includes('Tarayıcı menüsü (⋮) → Ana ekrana ekle / Uygulamayı yükle'));
 test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
   index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
   index.includes('name="apple-mobile-web-app-status-bar-style"') &&
