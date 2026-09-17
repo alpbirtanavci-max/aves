@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.57';
+const APP_VERSION = 'R15D-rc3.9.58';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -2775,6 +2775,111 @@ const UI = (() => {
     return FOTO_HATIRLATMALARI[bolum] || null;
   }
 
+  // Senkron taslak günlüğü (Codex incelemesi, PR #26 sonrası): IndexedDB
+  // yazımı asenkrondur — telefon donarsa/işlem öldürülürse yazının bitmesi
+  // garanti değildir. localStorage.setItem SENKRONdur; her tuş vuruşunda
+  // (debounce beklemeden) burada de yazılır. Değer IndexedDB'ye durduğunda
+  // silinir. Denetim açılışında/uygulama başlangıcında artakalan taslak
+  // varsa kurtarılır — yaşam-döngüsü dinleyicisi (visibilitychange/pagehide)
+  // bunun ANA mekanizması değil, ek bir güvencesidir.
+  function taslakAnahtari(target) {
+    if (target.matches('[data-bolumnot]')) return `bolum:${target.dataset.bolumnot}`;
+    const item = target.closest('.madde');
+    if (!item) return null;
+    const field = target.dataset.olcumId ? `olcum:${target.dataset.olcumId}`
+      : target.matches('[data-diger]') ? 'diger_bulgu' : 'aciklama';
+    return `saha:${item.dataset.id}:${field}`;
+  }
+
+  function taslakDeposu(denetimId) {
+    try { return JSON.parse(localStorage.getItem(`aves_taslak_${denetimId}`) || '{}'); }
+    catch { return {}; }
+  }
+
+  function taslakYaz(target) {
+    if (!currentDenetimId) return;
+    const key = taslakAnahtari(target);
+    if (!key) return;
+    try {
+      const all = taslakDeposu(currentDenetimId);
+      all[key] = { value: target.value, ts: Date.now() };
+      localStorage.setItem(`aves_taslak_${currentDenetimId}`, JSON.stringify(all));
+    } catch { /* localStorage dolu/kapalı olabilir — best-effort ek güvence */ }
+  }
+
+  function taslakSil(target) {
+    if (!currentDenetimId) return;
+    const key = taslakAnahtari(target);
+    if (!key) return;
+    try {
+      const all = taslakDeposu(currentDenetimId);
+      if (key in all) { delete all[key]; localStorage.setItem(`aves_taslak_${currentDenetimId}`, JSON.stringify(all)); }
+    } catch { /* yok say */ }
+  }
+
+  async function taslaklariKurtar(denetimId) {
+    const all = taslakDeposu(denetimId);
+    const keys = Object.keys(all);
+    if (!keys.length) { try { localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {} return 0; }
+    let kurtarilan = 0;
+    for (const key of keys) {
+      try {
+        const entry = all[key];
+        if (!entry) continue;
+        const value = (entry.value || '').trim();
+        if (key.startsWith('bolum:')) {
+          const bolumAdi = key.slice('bolum:'.length);
+          const d = await DB.get('denetimler', denetimId);
+          if (!d) continue;
+          d.bolum_aciklamalari = d.bolum_aciklamalari || {};
+          if ((d.bolum_aciklamalari[bolumAdi] || '') !== value) {
+            d.bolum_aciklamalari[bolumAdi] = value;
+            d.updated_at = new Date().toISOString();
+            await localWrite('denetimler', d, 'denetimler');
+            kurtarilan++;
+          }
+        } else if (key.startsWith('saha:')) {
+          const rest = key.slice('saha:'.length);
+          const sep = rest.indexOf(':');
+          const rowId = rest.slice(0, sep);
+          const field = rest.slice(sep + 1);
+          const row = await guncelSahaSatiri(rowId);
+          if (!row) continue;
+          if (field.startsWith('olcum:')) {
+            const measurementId = field.slice('olcum:'.length);
+            row.olcum_degerleri = row.olcum_degerleri && typeof row.olcum_degerleri === 'object' ? row.olcum_degerleri : {};
+            if ((row.olcum_degerleri[measurementId] || '') !== value) {
+              if (value) row.olcum_degerleri[measurementId] = value; else delete row.olcum_degerleri[measurementId];
+              if (measurementId === 'olcu1') row.olcu1_degeri = value || null;
+              if (measurementId === 'olcu2') row.olcu2_degeri = value || null;
+              row.updated_at = new Date().toISOString();
+              await localWrite('saha_kontrol', row, 'saha');
+              kurtarilan++;
+            }
+          } else if ((row[field] || '') !== value) {
+            row[field] = value || null;
+            row.updated_at = new Date().toISOString();
+            await localWrite('saha_kontrol', row, 'saha');
+            kurtarilan++;
+          }
+        }
+      } catch (error) { console.warn('Taslak kurtarma başarısız', key, error); }
+    }
+    try { localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {}
+    return kurtarilan;
+  }
+
+  async function taslaklariTaraVeKurtar() {
+    let anahtarlar = [];
+    try { anahtarlar = Object.keys(localStorage).filter(k => k.startsWith('aves_taslak_')); } catch { return; }
+    let toplam = 0;
+    for (const k of anahtarlar) {
+      const denetimId = k.slice('aves_taslak_'.length);
+      try { toplam += await taslaklariKurtar(denetimId); } catch (error) { console.warn('Taslak taraması başarısız', denetimId, error); }
+    }
+    if (toplam) toast(`${toplam} kaydedilmemiş değişiklik kurtarıldı`);
+  }
+
   function editorDraftKey(target) {
     const item = target.closest('.madde');
     if (!item) return null;
@@ -2825,6 +2930,7 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await localWrite('saha_kontrol', row, 'saha');
+        taslakSil(target);
       })()).catch(error => console.warn('Alan taslağı cihazda saklanamadı:', error.message));
     }, 700);
     editorDraftTimers.set(key, timer);
@@ -2832,7 +2938,10 @@ const UI = (() => {
 
   async function flushEditorWrites() {
     const active = document.activeElement;
-    if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id]')) active.blur();
+    // Codex incelemesi: data-bolumnot (Bölüm açıklaması) burada eksikti —
+    // yalnız change'te (blur) yazılıyor, debounce'a hiç girmiyordu; bu
+    // yüzden arka plana alma/kapatma anında hâlâ kaybolabiliyordu.
+    if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) active.blur();
     await new Promise(resolve => setTimeout(resolve, 0));
     if (pendingEditorWrites.size) await Promise.all([...pendingEditorWrites]);
   }
@@ -3130,6 +3239,7 @@ const UI = (() => {
   function bindMaddeEvents() {
     document.getElementById('bolums').addEventListener('input', (e) => {
       if (!currentCanEdit) return;
+      if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target);
       if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target);
     });
     document.getElementById('bolums').addEventListener('click', async (e) => {
@@ -3195,6 +3305,7 @@ const UI = (() => {
         d.bolum_aciklamalari[e.target.dataset.bolumnot] = e.target.value.trim();
         d.updated_at = new Date().toISOString();
         await localWrite('denetimler', d, 'denetimler');
+        taslakSil(e.target);
         toast('Bölüm notu kaydedildi');
         return;
       }
@@ -3212,6 +3323,7 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
+        taslakSil(e.target);
         await uygulaOlcumeBagliAranmaz(row);
         await esikOnerisiGoster(row, olcumId, value);
         await renderDenetim();
@@ -3220,6 +3332,7 @@ const UI = (() => {
       if (e.target.matches('[data-diger]')) {
         row.diger_bulgu = e.target.value.trim() || null;
         await trackedEditorWrite(save(row, mEl));
+        taslakSil(e.target);
         return;
       }
       if (e.target.matches('[data-aciklama]')) {
@@ -3227,6 +3340,7 @@ const UI = (() => {
         row.guncelleyen_email = API.email;
         row.updated_at = new Date().toISOString();
         await trackedEditorWrite(localWrite('saha_kontrol', row, 'saha'));
+        taslakSil(e.target);
         mEl.querySelector('[data-notbtn]').classList.toggle('has', !!row.aciklama);
         toast('Madde açıklaması kaydedildi');
         return; // açıklama tamamlanmayı etkilemez, otomatik geçiş tetiklenmez
@@ -3969,6 +4083,7 @@ const UI = (() => {
   return {
     showLogin, afterLogin, showList, bekleyenFotograflariYukle,
     flushPendingEdits: flushEditorWrites,
+    recoverDrafts: taslaklariTaraVeKurtar,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
     canRefreshSafely: () => {
@@ -4076,6 +4191,10 @@ window.addEventListener('pagehide', flushOnHide);
     </div>`;
     return;
   }
+  // Bir önceki oturumdan artakalan senkron taslaklar (telefon donması,
+  // yanlışlıkla kapatma vb. yüzünden IndexedDB'ye hiç ulaşamamış alanlar)
+  // giriş yapılmadan önce, listeye gitmeden geri yüklenir.
+  try { await UI.recoverDrafts(); } catch {}
   try { await registerServiceWorkerWithUpdateChoice(); } catch {}
   try { await ensurePersistentStorage(); } catch {}
   await API.loadSession();

@@ -1,4 +1,4 @@
-# R15D-rc3.9.56/57 — "Açık Tut" Uyarısı + Anlık Kayıt Güvencesi (Teslim Notu)
+# R15D-rc3.9.56/57/58 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü (Teslim Notu)
 
 PR #25'in (rc3.9.55) merge'inden hemen sonra, kullanıcının kendi iPhone'unda
 yaptığı test PR #25'teki bilinçli sınırı somut biçimde doğruladı:
@@ -63,6 +63,63 @@ riske ayırdık:
    alternatifi görüntü kalitesi/güvenlik dengesi gerektirdiğinden ayrı bir
    karar olarak değerlendiriliyor.
 
+## rc3.9.58 eki — Codex incelemesi: rc3.9.57 yetersizdi
+
+Kullanıcı rc3.9.56/57'yi Codex'e ilettikten sonra gelen inceleme, rc3.9.57'nin
+"koruma iyileştirmesi" olduğunu ama tek başına yeterli bir güvenilirlik
+standardı olmadığını doğru şekilde tespit etti. Dört somut bulgu, dördü de
+kabul edilip düzeltildi:
+
+1. **`data-bolumnot` (Bölüm açıklaması) kapsam dışıydı — doğru.** rc3.9.57'nin
+   `flushEditorWrites()`'ı yalnız `data-diger/aciklama/olcum-id` alanlarını
+   blur ediyordu; bölüm açıklaması hiçbir debounce/draft mekanizmasına da
+   girmiyordu (yalnız `change`/blur'da doğrudan yazılıyordu). Artık dahil.
+2. **IndexedDB yazımı asenkron, `pagehide`/`visibilitychange` tamamlanmayı
+   garanti etmez — doğru.** Bunun tek gerçek çözümü **senkron** bir yazma
+   yoludur. `localStorage.setItem` senkrondur; artık her tuş vuruşunda
+   (debounce beklemeden) odaktaki alanın değeri oraya da yazılıyor
+   (`taslakYaz`). Yaşam-döngüsü dinleyicileri (rc3.9.57) artık ana mekanizma
+   değil, ek bir güvence.
+3. **367/367 yalnız metin varlığını doğruluyor, gerçek cihaz senaryosunu
+   test etmiyor — doğru, hâlâ öyle.** Bu proje app.js için DOM/IndexedDB'siz
+   bir davranış test harness'i kurmuyor (bkz. `tests/r15d-static-test.mjs`
+   mimarisi); otomatik test yalnız kodun *varlığını* doğrular. Gerçek
+   doğrulama, aşağıdaki **zorunlu cihaz testi**yle yapılmalıdır.
+4. **Uygulama içi kamera kök çözüm değil, katkı sağlar — doğru, henüz
+   yapılmadı.** Kullanıcıyla görüntü kalitesi/güvenlik dengesi ayrıca karara
+   bağlanacak (bu PR'da yok).
+
+### Nasıl çalışır — senkron taslak günlüğü
+
+- `taslakAnahtari(target)`: `data-bolumnot` → `bolum:<ad>`; `data-olcum-id` →
+  `saha:<rowId>:olcum:<id>`; `data-diger`/`data-aciklama` → `saha:<rowId>:<alan>`.
+- `taslakYaz(target)`: her `input` olayında `localStorage['aves_taslak_<denetimId>']`
+  içine `{key: {value, ts}}` yazar — senkron, IndexedDB'yi beklemez.
+- `taslakSil(target)`: değer IndexedDB'ye durduğunda (4 commit noktası: bölüm
+  notu, ölçüm, diğer bulgu, açıklama) o anahtarı günlükten siler.
+- `taslaklariKurtar(denetimId)` / `taslaklariTaraVeKurtar()`: uygulama her
+  açılışında (girişten önce) `aves_taslak_*` anahtarlarını tarar, her birini
+  ilgili `denetimler`/`saha_kontrol` kaydına `localWrite` ile uygular, günlüğü
+  temizler; kurtarma olduysa toast gösterir.
+- `localStorage` dolu/kapalı olsa bile best-effort'tur (`try/catch`); IndexedDB
+  hâlâ asıl kayıt kaynağıdır, bu yalnız ek bir güvence katmanıdır.
+
+### Zorunlu cihaz testi (bu PR'ın kabul kriteri — otomatik test yerine geçmez)
+
+Codex'in önerdiği gerçek senaryo; sandbox'tan fiziksel cihaza erişim olmadığı
+için **kullanıcı tarafından çalıştırılıp sonucu bildirilmelidir**:
+
+1. Ana ekran ikonundan uygulamayı aç, bir madde açıklamasına/ölçüm alanına
+   yaz — **odağı hiç değiştirmeden** (blur etmeden).
+2. Uygulamayı görev listesinden tamamen kapat (force-quit).
+3. Uçak modunu aç.
+4. Uygulamayı ikondan tekrar aç.
+5. Aynı denetime gir, aynı maddeye git: yazdığın son değer orada mı? "N
+   kaydedilmemiş değişiklik kurtarıldı" bildirimini gördün mü?
+6. Ayrıca: bir kategoride "Fotoğraf ekle" ile native kamerayı aç, birkaç
+   saniye bekle, çek, geri dön — sayfa sorunsuz mu devam ediyor, yoksa
+   yeniden mi yükleniyor? (Bu, uygulama içi kamera kararını etkiler.)
+
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 367/367 (+3 kontrol).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 369/369 (+7 kontrol, DB değişikliği yok).
