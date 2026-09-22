@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.62';
+const APP_VERSION = 'R15D-rc3.9.63';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -2366,7 +2366,8 @@ const UI = (() => {
     // değilsiniz" sayfasını gösterir, uygulamanın Service Worker'ı hiç
     // devreye girmez. Kurulum yolu platforma göre farklı olduğundan uyarı
     // metni buna göre değişir (Safari: Paylaş menüsü; Chrome/Android: ⋮ menüsü).
-    const kuruluUygulama = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+    const kuruluUygulama = isNativeApp()
+      || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
       || window.navigator.standalone === true;
     const iosCihaz = /iPhone|iPad|iPod/.test(navigator.userAgent || '');
     const kurulumYolu = iosCihaz
@@ -2374,19 +2375,26 @@ const UI = (() => {
       : 'Tarayıcı menüsü (⋮) → Ana ekrana ekle / Uygulamayı yükle';
     add('Ana ekrana eklenmiş uygulama olarak açık',
       kuruluUygulama,
-      kuruluUygulama ? 'Kurulu uygulama modunda çalışıyor'
+      isNativeApp() ? 'Native uygulama olarak çalışıyor — en güvenilir mod'
+        : kuruluUygulama ? 'Kurulu uygulama modunda çalışıyor'
         : `Tarayıcı sekmesinde açık — sinyalin tamamen kesildiği bir yerde bu sekme hiç açılmayabilir; ${kurulumYolu} ile kurup bundan sonra yalnız o simgeden açın`,
       true);
 
     const visualAssets = [...new Set(rows.flatMap(r => gorselDosyalari(r.gorsel_referansi)).map(file => `./referans-gorseller/${file}`))];
     const assets = [...OFFLINE_CORE_ASSETS, ...visualAssets];
-    let cachedCount = 0;
-    if ('caches' in window) {
+    let cachedCount = assets.length;
+    // Native kabukta varlıklar Service Worker/Cache Storage'dan değil,
+    // doğrudan pakete gömülü dosyalardan yüklenir — caches.match kontrolü
+    // burada anlamsız (her zaman boş döner) ve yanlışlıkla "hazır değil"
+    // gösterirdi. Native'de bu kontrol her zaman geçer.
+    if (!isNativeApp() && 'caches' in window) {
+      cachedCount = 0;
       for (const asset of assets) {
         if (await caches.match(new URL(asset, location.href).href)) cachedCount++;
       }
     }
-    add('Uygulama ve gerekli görseller çevrimdışı hazır', cachedCount === assets.length, `${cachedCount}/${assets.length} dosya`);
+    add('Uygulama ve gerekli görseller çevrimdışı hazır', cachedCount === assets.length,
+      isNativeApp() ? 'Native uygulama — varlıklar pakette, ayrıca önbelleğe alınmasına gerek yok' : `${cachedCount}/${assets.length} dosya`);
 
     const ready = checks.every(check => check.ok || check.advisory);
     if (ready) {
@@ -4264,8 +4272,20 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
 
+// Native kabukta (Capacitor — bkz. native/ fizibilite denemesi) uygulama
+// kabuğu (index.html/app.js/...) ağdan/Service Worker'dan değil, doğrudan
+// cihaza kurulu paketin içinden yüklenir. window.Capacitor yalnız o kabukta
+// enjekte edilir; normal tarayıcıda/PWA'da tanımsızdır.
+function isNativeApp() {
+  return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+}
+
 async function registerServiceWorkerWithUpdateChoice() {
   if (!('serviceWorker' in navigator)) return;
+  // Native kabukta SW kaydı hem gereksiz (varlıklar zaten pakette) hem de
+  // Capacitor'ın kendi dosya şemasıyla (capacitor://) gereksiz yere
+  // çakışabilir — bu yüzden hiç kaydedilmez.
+  if (isNativeApp()) return;
 
   let reloadRequested = false;
   const showUpdateChoice = (worker) => {
