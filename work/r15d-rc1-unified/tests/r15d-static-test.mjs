@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.61 sürümü', index.includes('R15D-RC3.9.61</b>'));
-test('app R15D rc3.9.61 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.61'"));
-test('service worker rc3.9.61 cache', sw.includes("aves-saha-r15d-rc3961'"));
-test('uygulama manifesti rc3.9.61 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.61"'));
+test('index R15D rc3.9.62 sürümü', index.includes('R15D-RC3.9.62</b>'));
+test('app R15D rc3.9.62 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.62'"));
+test('service worker rc3.9.62 cache', sw.includes("aves-saha-r15d-rc3962'"));
+test('uygulama manifesti rc3.9.62 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.62"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -416,6 +416,8 @@ test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyo
   app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
+test('fotoğraf penceresinde başlık ve kapatma düğmesi içerik kayarken görünür kalıyor',
+  app.includes('photo-modal-head') && index.includes('.photo-modal-head{position:sticky') && app.includes('aria-label="Kapat"'));
 test('fotoğraf kartı tarih ve yükleyen kullanıcı bilgisini gösteriyor',
   app.includes("new Date(foto.created_at).toLocaleString('tr-TR')") && app.includes("foto.created_by || 'Kullanıcı bilgisi yok'"));
 test('denetim fotoğrafları kategori klasörleriyle toplu ZIP indiriliyor',
@@ -674,6 +676,11 @@ test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.inclu
 // bu, Uygun Değil'de anlamsız bir bulgu butonu ve açıklama kutusunun yalnız
 // "Diğer bulgu" tıklanınca açılması hatasına yol açıyordu.
 test('boş hazir_secenekler hayalet bulgu seçeneği üretmiyor', app.includes(".split('|').map(o => o.trim()).filter(Boolean)"));
+test('Ek Mühendislik maddelerinde Uygun Değil seçenek listesi yok, açıklama alanı açılıyor',
+  app.includes('const avesMuhendislik = tasarim;') &&
+  app.includes('const showBulguOpts = uygunDegil && !avesMuhendislik && ozelOpts.length > 0;') &&
+  app.includes('const showUygDegilAciklama = uygunDegil && (avesMuhendislik ||') &&
+  app.includes("row.durum !== 'Olumsuz bulgu' || row.kaynak_turu === 'Ek Mühendislik'"));
 
 test('tamamlanmış denetimde Yazdır düğmesi var', app.includes('id="btnYazdir"') && app.includes("tamamlandi ? '<button class=\"delbtn\" id=\"btnYazdir\""));
 test('10b: Yazdır çevrimdışı da çalışır — navigator.onLine engeli kalktı, tamamlanmış denetim şartı korundu',

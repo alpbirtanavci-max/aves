@@ -1,4 +1,4 @@
-# R15D-rc3.9.56–61 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü + Uygulama İçi Kamera (Teslim Notu)
+# R15D-rc3.9.56–62 — "Açık Tut" Uyarısı + Senkron Taslak Günlüğü + Uygulama İçi Kamera (Teslim Notu)
 
 PR #25'in (rc3.9.55) merge'inden hemen sonra, kullanıcının kendi iPhone'unda
 yaptığı test PR #25'teki bilinçli sınırı somut biçimde doğruladı:
@@ -210,6 +210,37 @@ Düzeltme:
   yakalanıp toast ile bildiriliyor; düğme işlem sırasında devre dışı
   bırakılıp hata olursa tekrar etkinleştiriliyor.
 
+## rc3.9.62 eki — iki kullanılabilirlik hatası
+
+Kullanıcının sahada/denemede bildirdiği iki ayrı, alakasız hata (aynı PR'a,
+bu turun devamı olarak eklendi):
+
+1. **Fotoğraflar penceresinde × kapatma düğmesine ulaşılamıyordu.** Modal
+   içerik kaydırıldığında başlık + × düğmesi yukarı kaçıyor, en üste
+   dönüldüğünde bile erişilemez oluyordu. Düzeltme: başlık + kapatma
+   düğmesi artık `.photo-modal-head{position:sticky; top:0}` ile içerik
+   kaydırılırken sabit kalıyor; düğme de 42×42px'e büyütüldü (daha kolay
+   dokunma hedefi). Mobil güvenli alan (`env(safe-area-inset-top)`) hesaba
+   katıldı.
+2. **"Ek Mühendislik" maddelerinde Uygun Değil seçilince yanlış alan
+   açılıyordu.** Kütüphanedeki 12 `kaynak_turu: 'Ek Mühendislik'` maddesi
+   (ör. "Tampon kaidesi güvenliği") `hazir_secenekler` taşıdığı için Uygun
+   Değil'de hazır seçenek düğmeleri (`Şüpheli uygulama` / `Kritik kusur`)
+   çıkıyordu — bu maddeler için seçenek listesi hiç istenmiyor, doğrudan
+   serbest metin açıklaması isteniyor. Düzeltme: bu maddelerde seçenek
+   listesi hiç gösterilmiyor, "Uygunsuzluk açıklaması" alanı doğrudan
+   açılıyor; durum yeniden "Uygun Değil" seçildiğinde eski
+   `bulgu_secenegi`/`diger_bulgu` (varsa) temizleniyor.
+
+**İncelemede doğrulanan, not edilmesi gereken artık davranış (bug değil,
+bilinçli sınır):** Bu düzeltme yalnız **bundan sonra** yapılan seçimleri
+etkiler. Üretimde, rc3.9.62'den ÖNCE bir "Ek Mühendislik" maddesinde Uygun
+Değil seçilip hazır seçenek (`Şüpheli uygulama`/`Kritik kusur`) işaretlenmiş
+satırlar varsa, o satırın `bulgu_secenegi` değeri — kullanıcı o maddenin
+durumunu tekrar değiştirmediği sürece — veritabanında kalır ve
+Uygunsuzluk Listesi/dışa aktarımlarda görünmeye devam eder. Bu, tek seferlik
+bir veri temizliği gerektirebilir (kapsam dışı, ayrı karar).
+
 ## Test
 
-`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 375/375 (+13 kontrol, DB değişikliği yok).
+`node work/r15d-rc1-unified/tests/r15d-static-test.mjs` → 377/377 (+15 kontrol, DB değişikliği yok).

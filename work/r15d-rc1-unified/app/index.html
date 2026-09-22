@@ -207,7 +207,7 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .mvisual img{display:block;width:100%;height:auto;border-top:1px solid var(--line);background:#fff;}
 .notbtn{flex:0 0 auto;width:40px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:14px;color:var(--muted);}
 .notbtn.has{background:#FFF3E4;border-color:var(--warn);color:var(--warn);}
-.photo-modal{max-width:680px;max-height:88vh;overflow-y:auto}.photo-modal h3{display:flex;align-items:center;gap:8px}.photo-total{display:inline-grid;place-items:center;min-width:25px;height:25px;border-radius:99px;background:var(--navy);color:#fff;font-size:12px}.photo-modal>.photo-help{font-size:12px;line-height:1.45;color:var(--muted);margin-top:-4px}
+.photo-modal{max-width:680px;max-height:88vh;overflow-y:auto}.photo-modal-head{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-18px -16px 12px;padding:calc(env(safe-area-inset-top) + 12px) 16px 10px;background:var(--paper);border-bottom:1px solid var(--line)}.photo-modal-head h3{display:flex;align-items:center;gap:8px;margin:0}.photo-modal-head .close{float:none;flex:0 0 auto;width:42px;height:42px;margin:0;border-radius:10px;background:var(--panel);font-size:28px;line-height:1;color:var(--navy);cursor:pointer}.photo-total{display:inline-grid;place-items:center;min-width:25px;height:25px;border-radius:99px;background:var(--navy);color:#fff;font-size:12px}.photo-modal>.photo-help{font-size:12px;line-height:1.45;color:var(--muted);margin-top:0}
 .photo-kategori{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 .photo-kategori h4{margin:0 0 4px;font-size:14px;color:var(--navy);display:flex;align-items:center;gap:8px}
 .photo-kategori>.photo-help{font-size:11.5px;line-height:1.4;color:var(--muted);margin:0 0 10px}
@@ -500,7 +500,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.61</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.62</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">

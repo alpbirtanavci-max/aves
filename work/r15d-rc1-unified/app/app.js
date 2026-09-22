@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.61';
+const APP_VERSION = 'R15D-rc3.9.62';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -1111,8 +1111,7 @@ const UI = (() => {
       };
     };
     const ciz = async () => {
-      ov.innerHTML = `<div class="modal photo-modal"><button class="close" aria-label="Kapat">×</button>
-        <h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3>
+      ov.innerHTML = `<div class="modal photo-modal"><div class="photo-modal-head"><h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3><button class="close" aria-label="Kapat">×</button></div>
         <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. UCM testi, paraşüt fren testi, motor freni tek çene testi ve motor hareket sınırlayıcısı testi gibi işlev testlerinin videolarını bu fotoğraf alanına yüklemeyin; videoları kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
         ${tumFotograflar.length ? '<button type="button" class="btn btn-ghost photo-download-all">⇩ Tüm fotoğrafları indir</button>' : ''}
         <div class="photo-kategoriler"></div>
@@ -3277,13 +3276,14 @@ const UI = (() => {
     const durum = effectiveDurum(r);
     const cls = durum ? 's-' + DURUM_CSS[durum] : '';
     const tasarim = r.kaynak_turu === 'Ek Mühendislik';
+    const avesMuhendislik = tasarim;
     const olcumKaydi = r.kaynak_turu === 'Saha Ölçümü';
     const opts = (r.hazir_secenekler || '').split('|').map(o => o.trim()).filter(Boolean);
     const ozelOpts = opts.filter(o => !GENEL_BULGULAR.includes(o));
     const uygunDegil = durum === 'Olumsuz bulgu';
     // Bulgu seçenekleri YALNIZCA Uygun Değil'de ve yalnızca özel seçenek varsa
-    const showBulguOpts = uygunDegil && ozelOpts.length > 0;
-    const showUygDegilAciklama = uygunDegil && (ozelOpts.length === 0 || r.bulgu_secenegi === 'Diğer bulgu');
+    const showBulguOpts = uygunDegil && !avesMuhendislik && ozelOpts.length > 0;
+    const showUygDegilAciklama = uygunDegil && (avesMuhendislik || ozelOpts.length === 0 || r.bulgu_secenegi === 'Diğer bulgu');
     // Eski 'Veri eksik' kaydı checklist sonucu değildir; iç kontrol notu olarak gösterilir.
     const eskiEksikKaydi = r.durum === 'Veri eksik';
     const icKontrolNotu = r.ic_kontrol_notu || (eskiEksikKaydi ? 'Önceki sürümde Veri eksik olarak işaretlenmişti; üçlü sonuçtan biriyle yeniden değerlendirin.' : '');
@@ -3432,7 +3432,7 @@ const UI = (() => {
           row.gozden_gecirme_notu = null;
         }
         transitioningId = (!search && filter === 'all' && row.durum === 'Kontrol tamamlandı') ? id : null;
-        if (row.durum !== 'Olumsuz bulgu') {
+        if (row.durum !== 'Olumsuz bulgu' || row.kaynak_turu === 'Ek Mühendislik') {
           row.bulgu_secenegi = null; row.diger_bulgu = null;
         }
         await save(row, mEl);
