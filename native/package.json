@@ -12,6 +12,10 @@
     "@capacitor/ios": "^6.2.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^6.2.0"
+  },
+  "allowScripts": {
+    "sharp@0.32.6": true
   }
 }

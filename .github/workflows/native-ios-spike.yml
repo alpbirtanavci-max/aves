@@ -27,6 +27,17 @@ jobs:
       - name: iOS platformunu ekle
         working-directory: native
         run: npx cap add ios
+      - name: Kamera izin metnini Info.plist'e ekle
+        # Uygulama içi kamera (getUserMedia, rc3.9.60) WKWebView'da
+        # NSCameraUsageDescription olmadan çalışmaz — cap add ios her
+        # çalışmada projeyi tazeden ürettiği için bu adım her seferinde
+        # gerekli. Mikrofon istenmiyor (audio:false) ama bazı WebKit
+        # sürümleri izin isteğini birlikte değerlendirdiğinden savunma
+        # amaçlı eklendi.
+        working-directory: native/ios/App/App
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'AVES, uygunsuzluk fotoğrafı çekmek için kameraya erişir.'" Info.plist
+          /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'AVES mikrofon kullanmaz; bu izin bazı tarayıcı sürümlerinin kamera isteğiyle birlikte sorması nedeniyle tanımlıdır.'" Info.plist
       - name: CocoaPods bağımlılıklarını kur
         working-directory: native/ios/App
         run: pod install
