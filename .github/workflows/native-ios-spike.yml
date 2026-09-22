@@ -24,6 +24,20 @@ jobs:
       - name: Bağımlılıkları kur
         working-directory: native
         run: npm install
+      - name: Web kaynağının production ile eş olduğunu doğrula
+        # Codex incelemesi (PR #27): native/ webDir'i doğrudan
+        # work/r15d-rc1-unified/app'i gösterir ama bu dal production'dan
+        # geride kalırsa paketlenen kabuk sessizce eskir. Bu adım, o dalın
+        # o an production'daki (claude/aves-saha-denetim-brief-4x9wxx)
+        # app/ klasörüyle BİREBİR aynı olmasını zorunlu kılar.
+        run: |
+          git fetch origin claude/aves-saha-denetim-brief-4x9wxx
+          if ! git diff --quiet origin/claude/aves-saha-denetim-brief-4x9wxx -- work/r15d-rc1-unified/app; then
+            echo "::error::native/ dalındaki work/r15d-rc1-unified/app, production (claude/aves-saha-denetim-brief-4x9wxx) ile birebir eşleşmiyor. Önce bu dalı production'a senkronlayın (merge/rebase), sonra tekrar derleyin."
+            git diff --stat origin/claude/aves-saha-denetim-brief-4x9wxx -- work/r15d-rc1-unified/app
+            exit 1
+          fi
+          echo "Web kaynağı production ile birebir eşleşiyor."
       - name: iOS platformunu ekle
         working-directory: native
         run: npx cap add ios
@@ -47,6 +61,10 @@ jobs:
       - name: Web varlıklarını native projeye senkronla
         working-directory: native
         run: npx cap sync ios
+      - name: Paketlenen app.js'in sürümünü ve hash'ini yazdır (denetim izi)
+        run: |
+          echo "APP_VERSION: $(grep -o "const APP_VERSION = '[^']*'" native/ios/App/App/public/app.js)"
+          echo "SHA-256: $(shasum -a 256 native/ios/App/App/public/app.js | cut -d' ' -f1)"
       - name: Simülatör için derle (imzasız)
         working-directory: native/ios/App
         run: |
