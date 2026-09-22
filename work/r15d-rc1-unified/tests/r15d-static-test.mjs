@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.62 sürümü', index.includes('R15D-RC3.9.62</b>'));
-test('app R15D rc3.9.62 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.62'"));
-test('service worker rc3.9.62 cache', sw.includes("aves-saha-r15d-rc3962'"));
-test('uygulama manifesti rc3.9.62 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.62"'));
+test('index R15D rc3.9.63 sürümü', index.includes('R15D-RC3.9.63</b>'));
+test('app R15D rc3.9.63 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.63'"));
+test('service worker rc3.9.63 cache', sw.includes("aves-saha-r15d-rc3963'"));
+test('uygulama manifesti rc3.9.63 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.63"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -148,6 +148,13 @@ test('hazırlık sonucu ekranı sahaya inmeden önce uygulamayı açık tutma uy
   !app.includes('Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir'));
 test('hazırlık sonucu ekranı, uygulama hiç açılmazsa kâğıt yedek prosedürüne yönlendiriyor',
   app.includes('Uygulama hiç açılmazsa:') && app.includes('Kurumun kâğıt yedek prosedürünü izleyin'));
+test('native kabuk (Capacitor) farkındalığı: Service Worker kaydedilmiyor, hazırlık kontrolleri yanlış "hazır değil" göstermiyor',
+  app.includes('function isNativeApp()') &&
+  app.includes("window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()") &&
+  app.includes('if (isNativeApp()) return;') &&
+  app.includes('const kuruluUygulama = isNativeApp()') &&
+  app.includes("isNativeApp() ? 'Native uygulama olarak çalışıyor — en güvenilir mod'") &&
+  app.includes("isNativeApp() ? 'Native uygulama — varlıklar pakette, ayrıca önbelleğe alınmasına gerek yok'"));
 test('sayfa arka plana alınırken/kapanırken odaktaki alan hemen kaydedilir (700ms debounce beklenmez)',
   app.includes('flushPendingEdits: flushEditorWrites') &&
   app.includes("document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); })") &&
