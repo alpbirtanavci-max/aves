@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.55 sürümü', index.includes('R15D-RC3.9.55</b>'));
-test('app R15D rc3.9.55 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.55'"));
-test('service worker rc3.9.55 cache', sw.includes("aves-saha-r15d-rc3955'"));
-test('uygulama manifesti rc3.9.55 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.55"'));
+test('index R15D rc3.9.62 sürümü', index.includes('R15D-RC3.9.62</b>'));
+test('app R15D rc3.9.62 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.62'"));
+test('service worker rc3.9.62 cache', sw.includes("aves-saha-r15d-rc3962'"));
+test('uygulama manifesti rc3.9.62 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.62"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -142,6 +142,41 @@ test('ana ekrana ekleme uyarısı platforma göre doğru menüyü gösterir (Saf
   app.includes('/iPhone|iPad|iPod/.test(navigator.userAgent') &&
   app.includes('Paylaş simgesi → Ana Ekrana Ekle') &&
   app.includes('Tarayıcı menüsü (⋮) → Ana ekrana ekle / Uygulamayı yükle'));
+test('hazırlık sonucu ekranı sahaya inmeden önce uygulamayı açık tutma uyarısı verir (kurulum garanti değildir)',
+  app.includes('Sinyalsiz bölgeye girmeden önce uygulamayı açın ve kapatmayın.') &&
+  app.includes('ana ekrana eklenmiş olsa bile — garanti değildir') &&
+  !app.includes('Bu denetim bu cihazda internet olmadan açılıp tamamlanabilir'));
+test('hazırlık sonucu ekranı, uygulama hiç açılmazsa kâğıt yedek prosedürüne yönlendiriyor',
+  app.includes('Uygulama hiç açılmazsa:') && app.includes('Kurumun kâğıt yedek prosedürünü izleyin'));
+test('sayfa arka plana alınırken/kapanırken odaktaki alan hemen kaydedilir (700ms debounce beklenmez)',
+  app.includes('flushPendingEdits: flushEditorWrites') &&
+  app.includes("document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); })") &&
+  app.includes("window.addEventListener('pagehide', flushOnHide)") &&
+  app.includes("active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')"));
+test('Codex incelemesi #1: her tuş vuruşu senkron localStorage taslak günlüğüne (kimlik damgalı) yazılır',
+  app.includes('function taslakYaz(target, ts = Date.now())') &&
+  app.includes("all[key] = { value: target.value, ts, ownerEmail: normEmail(API.email) };") &&
+  app.includes("if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);") &&
+  app.includes('function taslakAnahtari(target)') &&
+  app.includes("if (target.matches('[data-bolumnot]')) return `bolum:${target.dataset.bolumnot}`;"));
+test('Codex incelemesi #2 (P1): başarısız kurtarma taslağı silmiyor — yalnız BAŞARILI anahtar günlükten çıkar',
+  app.includes('async function taslaklariKurtar(denetimId, ownerEmail)') &&
+  app.includes('if (basarili) { delete all[key]; degisti = true; }') &&
+  app.includes("console.warn('Taslak kurtarma başarısız — cihazda korunuyor, sonraki açılışta yeniden denenecek', key, error);") &&
+  !app.includes("localStorage.removeItem(`aves_taslak_${denetimId}`); } catch {} return 0; }"));
+test('Codex incelemesi #3 (P1): 700ms yazım biterken yalnız KENDİ zaman damgasıyla eşleşen taslak silinir (yeni tuş vuruşunu silmez)',
+  app.includes('function taslakSilEger(target, ts)') &&
+  app.includes('if (all[key] && all[key].ts <= ts) { delete all[key];') &&
+  app.includes('taslakSilEger(target, snapshot.ts);') &&
+  app.includes('function scheduleEditorDraft(target, ts = Date.now())') &&
+  /const ts = Date\.now\(\);\s*if \(e\.target\.matches\('\[data-diger\],\[data-aciklama\],\[data-olcum-id\],\[data-bolumnot\]'\)\) taslakYaz\(e\.target, ts\);/.test(app));
+test('Codex incelemesi #4 (P1): kurtarma yalnız oturum yüklendikten sonra ve yalnız eşleşen kullanıcı kimliğiyle çalışır',
+  app.includes('async function taslaklariTaraVeKurtar(ownerEmail)') &&
+  app.includes("if (!normEmail(ownerEmail)) return; // oturum yüklenmeden kurtarma çalıştırılmaz") &&
+  app.includes('if (normEmail(entry.ownerEmail) !== normOwner) continue;') &&
+  app.includes('try { await UI.recoverDrafts(API.email); } catch {}') &&
+  app.includes('if (API.loggedIn) {') &&
+  app.indexOf('try { await UI.recoverDrafts(API.email); } catch {}') > app.indexOf('await API.loadSession();'));
 test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
   index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
   index.includes('name="apple-mobile-web-app-status-bar-style"') &&
@@ -352,7 +387,23 @@ test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile ayn
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
 test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
   app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini") &&
-  app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('capture="environment" multiple'));
+  app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('photo-add-camera'));
+test('saha güvenilirliği: fotoğraf çekimi native kameraya değil uygulama içi kameraya (getUserMedia) yönleniyor',
+  app.includes('const kameraIleFotografCek = async (kat) => {') &&
+  app.includes('navigator.mediaDevices.getUserMedia({') &&
+  app.includes("facingMode: { ideal: 'environment' }") &&
+  !app.includes('capture="environment"') &&
+  app.includes("btn.onclick = () => kameraIleFotografCek(btn.dataset.kat);") &&
+  app.includes('🖼 Galeriden ekle'));
+test('uygulama içi kamera çekimi de aynı sıkıştırma/kayıt/yükleme akışını (fotografKaydet) kullanıyor',
+  app.includes('const fotografKaydet = async (kat, blob) => {') &&
+  app.includes('await fotografKaydet(kat, blob);') &&
+  app.includes('for (const file of files) await fotografKaydet(kat, file);'));
+test('fotoğraf silme: "onay verdim ama kaldırmadı" hatası düzeltildi — ağ/RLS hatası artık toast ile bildiriliyor, sessizce durmuyor',
+  app.includes("if (foto.sync_status !== 'pending' && !navigator.onLine) {") &&
+  app.includes("toast('Bu fotoğraf zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı gelince tekrar deneyin');") &&
+  app.includes("console.error('Fotoğraf kaldırılamadı', error);") &&
+  app.includes("toast('Fotoğraf kaldırılamadı: ' + (error && error.message"));
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
   app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
 test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',
@@ -365,6 +416,8 @@ test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyo
   app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
+test('fotoğraf penceresinde başlık ve kapatma düğmesi içerik kayarken görünür kalıyor',
+  app.includes('photo-modal-head') && index.includes('.photo-modal-head{position:sticky') && app.includes('aria-label="Kapat"'));
 test('fotoğraf kartı tarih ve yükleyen kullanıcı bilgisini gösteriyor',
   app.includes("new Date(foto.created_at).toLocaleString('tr-TR')") && app.includes("foto.created_by || 'Kullanıcı bilgisi yok'"));
 test('denetim fotoğrafları kategori klasörleriyle toplu ZIP indiriliyor',
@@ -432,7 +485,7 @@ test('aktif form alanı arka plan senkronuyla yeniden çizilmiyor',
   app.includes('UI.canRefreshSafely()') && app.includes("active.matches('input,textarea,select')"));
 test('bulgu, madde notu ve ölçüm yazarken taslak cihazda gecikmeli saklanıyor',
   app.includes("matches('[data-diger],[data-aciklama],[data-olcum-id]')") &&
-  app.includes('scheduleEditorDraft(e.target)') && app.includes('}, 700);'));
+  app.includes('scheduleEditorDraft(e.target, ts)') && app.includes('}, 700);'));
 test('denetim tamamlanmadan bekleyen alan yazımları bitiriliyor',
   app.includes('async function flushEditorWrites()') && app.includes('await flushEditorWrites();'));
 test('eşzamanlı push tamamlandı sayılmıyor', app.includes('if (pushRunning) return false'));
@@ -623,6 +676,11 @@ test('geçmiş satırları güncellenemiyor ve silinemiyor', rc32Migration.inclu
 // bu, Uygun Değil'de anlamsız bir bulgu butonu ve açıklama kutusunun yalnız
 // "Diğer bulgu" tıklanınca açılması hatasına yol açıyordu.
 test('boş hazir_secenekler hayalet bulgu seçeneği üretmiyor', app.includes(".split('|').map(o => o.trim()).filter(Boolean)"));
+test('Ek Mühendislik maddelerinde Uygun Değil seçenek listesi yok, açıklama alanı açılıyor',
+  app.includes('const avesMuhendislik = tasarim;') &&
+  app.includes('const showBulguOpts = uygunDegil && !avesMuhendislik && ozelOpts.length > 0;') &&
+  app.includes('const showUygDegilAciklama = uygunDegil && (avesMuhendislik ||') &&
+  app.includes("row.durum !== 'Olumsuz bulgu' || row.kaynak_turu === 'Ek Mühendislik'"));
 
 test('tamamlanmış denetimde Yazdır düğmesi var', app.includes('id="btnYazdir"') && app.includes("tamamlandi ? '<button class=\"delbtn\" id=\"btnYazdir\""));
 test('10b: Yazdır çevrimdışı da çalışır — navigator.onLine engeli kalktı, tamamlanmış denetim şartı korundu',
