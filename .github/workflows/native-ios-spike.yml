@@ -38,6 +38,9 @@ jobs:
         run: |
           /usr/libexec/PlistBuddy -c "Add :NSCameraUsageDescription string 'AVES, uygunsuzluk fotoğrafı çekmek için kameraya erişir.'" Info.plist
           /usr/libexec/PlistBuddy -c "Add :NSMicrophoneUsageDescription string 'AVES mikrofon kullanmaz; bu izin bazı tarayıcı sürümlerinin kamera isteğiyle birlikte sorması nedeniyle tanımlıdır.'" Info.plist
+      - name: AVES ikon + açılış ekranını üret
+        working-directory: native
+        run: npx capacitor-assets generate --ios
       - name: CocoaPods bağımlılıklarını kur
         working-directory: native/ios/App
         run: pod install
