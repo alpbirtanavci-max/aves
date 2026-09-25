@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.63 sürümü', index.includes('R15D-RC3.9.63</b>'));
-test('app R15D rc3.9.63 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.63'"));
-test('service worker rc3.9.63 cache', sw.includes("aves-saha-r15d-rc3963'"));
-test('uygulama manifesti rc3.9.63 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.63"'));
+test('index R15D rc3.9.66 sürümü', index.includes('R15D-RC3.9.66</b>'));
+test('app R15D rc3.9.66 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.66'"));
+test('service worker rc3.9.66 cache', sw.includes("aves-saha-r15d-rc3966'"));
+test('uygulama manifesti rc3.9.66 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.66"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -393,8 +393,35 @@ test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile ayn
   ['genel_kimlik','kuyu_dibi','kuyu_boyunca','durak_kapilari','kabin_kabin_ustu','makine_sase','hidrolik_grubu','kumanda_grubu','ozel_sistemler'].every(k => app.includes(`'${k}'`)) &&
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
 test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
-  app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini") &&
+  app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin ilk kattan") &&
   app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('photo-add-camera'));
+test('kullanıcı saha notları kontrollü taslak olarak kanıt planına bağlanıyor',
+  app.includes('const SAHA_KANIT_PLANI = {') &&
+  app.includes('kontrollü taslak (revizyon/onay doğrulanacak)') &&
+  app.includes('SAHA_KANIT_PLANI.guvenlik') &&
+  app.includes('SAHA_KANIT_PLANI.videolar'));
+test('saha ölçüm eşleştirmesi Modül G akışından kaldırıldı; yoğun ölçü/seri no kapsamı B/E/H1 için ayrı tutuluyor',
+  !app.includes('btnOlcumRehberi') &&
+  !app.includes('olcumEslemeRehberiGoster') &&
+  !app.includes('Proje–saha ölçüm eşleştirmesi') &&
+  !app.includes('SAHA_KANIT_PLANI.olcum') &&
+  app.includes('Yoğun ölçü/seri no eşleştirmesi Modül B/E/H1 için'));
+test('seri numarası talimatı seri numarası ekranında ekipman etiketlerini yönlendiriyor',
+  app.includes('const SERI_NUMARASI_YARDIMI =') &&
+  app.includes('Fotoğraflar > Genel Yerleşim ve Kimlik kategorisine ekleyin') &&
+  app.includes('${esc(SERI_NUMARASI_YARDIMI)} Bilgiler fotoğraflardan bağımsızdır'));
+test('işlev testi video planı Fotoğraflar alanında açılır ve AVES fotoğraf yüklemesinden ayrı tutulur',
+  app.includes('<details class="photo-video-plan">') &&
+  app.includes('SAHA_KANIT_PLANI.videolar.map') &&
+  app.includes('Videolar bu AVES fotoğraf alanına yüklenmez') &&
+  app.includes('1,25 katı yükle fren testi') &&
+  app.includes('PTC, KRC, seviyeleme ve UPS testleri') &&
+  app.includes('UCM testi') && index.includes('.photo-video-plan summary'));
+test('saha güvenliği hatırlatması denetim başladıktan sonra aktif denetim ekranında görünür ve prosedürün yerini almaz',
+  app.includes('currentCanEdit && !tamamlandi ? `<aside class="saha-guvenlik"') &&
+  app.includes('SAHA_KANIT_PLANI.guvenlik.map') &&
+  app.includes('şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz') &&
+  index.includes('.saha-guvenlik{'));
 test('saha güvenilirliği: fotoğraf çekimi native kameraya değil uygulama içi kameraya (getUserMedia) yönleniyor',
   app.includes('const kameraIleFotografCek = async (kat) => {') &&
   app.includes('navigator.mediaDevices.getUserMedia({') &&
@@ -414,13 +441,13 @@ test('fotoğraf silme: "onay verdim ama kaldırmadı" hatası düzeltildi — a�
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
   app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
 test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',
-  app.includes('Paraşüt fren testi tamamlandıktan sonra frenin ray üzerinde oluşturduğu izi de fotoğraflayın'));
+  app.includes('Paraşüt fren testi tamamlandıktan sonra her iki raydaki frenleme izini'));
 test('alarm ve iki yönlü haberleşme özel değil her asansörde aranıyor',
   app.includes('Her asansörde aranan alarm ve iki yönlü haberleşme tertibatını') &&
   !app.slice(app.indexOf("'ozel_sistemler'"), app.indexOf('];', app.indexOf("'ozel_sistemler'"))).includes('alarm/iki yönlü haberleşme'));
 test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyor',
-  app.includes('UCM testi, paraşüt fren testi, motor freni tek çene testi') &&
-  app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
+  app.includes('Kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle saklayın') &&
+  app.includes('photo-video-plan'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
 test('fotoğraf penceresinde başlık ve kapatma düğmesi içerik kayarken görünür kalıyor',

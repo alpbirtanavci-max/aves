@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.63';
+const APP_VERSION = 'R15D-rc3.9.66';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -44,16 +44,36 @@ const GENEL_BULGULAR = ['Belirgin olumsuzluk yok','Olumsuz durum görüldü','Be
 // kategorisine bağlanır — denetçi "hangi maddeye" diye tereddüt etmez. Uygulama
 // fotoğrafı yorumlamaz, uygunluk kararı vermez; sayı sınırı yoktur.
 const FOTOGRAF_KATEGORILERI = [
-  ['genel_kimlik', 'Genel Yerleşim ve Kimlik', 'Asansörün genel yerleşimi, durak girişleri, kullanım/uyarı işaretleri ile makine, regülatör, tampon, kapı ve güvenlik bileşenlerinin bilgi plakaları. Farklı tip veya uygulamalar ayrıca kaydedilir.'],
-  ['kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini karşı yönlerden geniş açıyla kaydedin. Tamponlar ve kaideleri, tamponun bastığı/basabileceği alanlar, regülatör gergi makarası ve sabitlemesi, ray alt uçları, karşı ağırlık/ayırıcı bölme, dengeleme tertibatı ve kabin altı genel ve gerektiğinde ayrı fotoğraflarda açıkça kaydedilsin.'],
-  ['kuyu_boyunca', 'Kuyu Boyunca ve Kılavuzlama', 'Kuyuyu farklı kotlardan geniş açıyla kaydedin. Kabin ve karşı ağırlık ray konsollarının genel düzgünlüğü, civatalı bağlantıları, ankraj/duvar bağlantıları, ray ekleri, ayırıcı bölmeler ve kuyu içi donanımın sabitlenmesi görülsün. Paraşüt fren testi tamamlandıktan sonra frenin ray üzerinde oluşturduğu izi de fotoğraflayın.'],
+  ['genel_kimlik', 'Genel Yerleşim ve Kimlik', 'Asansörün genel yerleşimi, durak girişleri ve kullanım/uyarı işaretleriyle birlikte makine, regülatör, tampon, kapı, güvenlik ekipmanı ve motor grubunun okunabilir etiketlerini kaydedin. Güvenlik ekipmanlarında seri no, CE işareti ve tip bilgisi görünür olsun; farklı tip veya uygulamalar ayrıca kaydedilir.'],
+  ['kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin ilk kattan tüm yerleşimi gösterecek geniş açı görünüşünü ve gerektiğinde karşı açıları alın. Tamponlar/kaideleri, tamponların çarpma alanı, regülatör gergi makarası ve sabitlemesi, ray alt uçları, karşı ağırlık/ayırıcı bölme, dengeleme tertibatı, kabin altı, merdiven, durdurma anahtarı ve sığınma/güvenlik hacmi görünür olsun.'],
+  ['kuyu_boyunca', 'Kuyu Boyunca ve Kılavuzlama', 'Kuyuyu farklı kotlardan geniş açıyla kaydedin. Kabin ve karşı ağırlık ray konsolları, civatalı/ankraj bağlantıları, ray ekleri, kuyu duvarları, ayırıcı bölmeler, kapı kilit mekanizmaları, kabin sabitlemeleri ve karşı ağırlık düzeni görülsün. Paraşüt fren testi tamamlandıktan sonra her iki raydaki frenleme izini de ayrıca fotoğraflayın.'],
   ['durak_kapilari', 'Durak Kapıları ve Bağlantıları', 'Temsilî kapılarla birlikte farklı montaj tipi bulunan her kapıyı kaydedin. Alt ve üst konsollar, kasa/eşik bağlantıları, duvar ankrajı, kaynak veya civata uygulaması, kapı kilidi ve taşıyıcı düzen genel bağlantısıyla görülsün. Katlar arasında değişen ya da şüpheli uygulamalar ayrıca çekilir.'],
-  ['kabin_kabin_ustu', 'Kabin, Kabin Üstü ve Askı', 'Kabin karkası, korkuluk ve etek sacı; askı/palanga düzeni, 1:1 veya 2:1 halat bağlantıları ve sonlandırmaları, sabit noktalar, makaralar ve koruyucular, regülatör bağlantısı görülsün.'],
-  ['makine_sase', 'Makine, Şase ve Üst Donanım', 'Makine şasesinin tamamını bir veya gerektiği kadar çok karede gösterin. Taşıyıcı kirişler, ankrajlar, civatalı ve varsa kaynaklı bağlantılar, motor-şase bağlantısı, tahrik kasnağı ve koruyucular, üst regülatör ve sabitlemesi görülsün. MRL ve 2:1 sistemlerde üst makara, sabit askı noktaları ve halat bağlantıları genel yerleşimle birlikte kaydedilir.'],
+  ['kabin_kabin_ustu', 'Kabin, Kabin Altı, Üstü ve Askı', 'Kabin altı detayını; kabin içi buton, etiket ve talimatları; kabin karkası, korkuluk ve etek sacını; askı/palanga düzeni, 1:1 veya 2:1 halat bağlantıları ve sonlandırmaları, sabit noktalar, makaralar, koruyucular ve regülatör bağlantısını kaydedin. Kabin üst boşluğu/güvenlik mesafesi görünüşü, kabin üstü revizyon donanımı, yüklü testte kabin içindeki yükleme ve karşı ağırlık etiketi de gerektiğinde ayrıca gösterilsin.'],
+  ['makine_sase', 'Makine, Şase ve Üst Donanım', 'Makine dairesinin genel yerleşimini; kapı girişi, havalandırma, pano yerleşimi ve risk önlemlerini; makine/motor şasesi ile ankraj ve bağlantı şeklini; tahrik kasnağı ve halat görünümünü kaydedin. MRL ve 2:1 sistemlerde makine, regülatör, üst makara, sabit askı noktaları ve halat bağlantıları genel yerleşimle birlikte gösterilir.'],
   ['hidrolik_grubu', 'Hidrolik Grup', 'Uygulanıyorsa güç ünitesi, tank, motor-pompa ve valf grubu; silindir ve taşıyıcı/sabitleme düzeni; boru kırılma valfi, rijit/esnek borular, bağlantılar, kelepçeler ve sızıntı toplama/koruma düzeni genel ve okunabilir ayrıntılarla kaydedilir.'],
   ['kumanda_grubu', 'Elektrik ve Kumanda Grubu', 'Kumanda panosunu ve güç/dağıtım düzenini genel görünüşle kaydedin; kart, sürücü ve ana bileşen etiketleri okunabilsin. Pano sabitlemesi, kablo girişleri ve güzergâhı, koruyucu topraklama, MRL acil durum/test panosu ve yedek güç birimleri uygulanıyorsa ayrıca gösterilir. Her asansörde aranan alarm ve iki yönlü haberleşme tertibatını da genel yerleşimi ve birimleriyle kaydedin.'],
   ['ozel_sistemler', 'Uygulanabilir Özel Sistemler', 'Denetim kapsamına giriyorsa itfaiyeci erişim seviyesi ve kumandaları, eğik asansöre özgü düzenler, küçültülmüş üst-alt boşluk korumaları, hareketli durdurucular, sismik sabitlemeler ve uygulanabilir vandalizme dayanıklı çözümler genel yerleşimiyle kaydedilir. Vandalizmle ilişkili genel asansör şartları yalnız bu başlığa bırakılmaz; ilgili ana saha grubunda da kaydedilir.'],
 ];
+// Kullanıcının eklediği saha notları, bu Modül G formunda fotoğraf/video ve
+// güvenlik hatırlatıcısıdır. Yoğun ölçü/seri no eşleştirmesi Modül B/E/H1 için
+// ayrı kapsamdır; G formunda saha ölçüm eşleştirmesi olarak gösterilmez.
+// Kaynağın revizyonu/onayı doğrulanmadığı için resmi standart/sonuç değildir.
+const SAHA_KANIT_PLANI = {
+  kaynak: 'Kullanıcı saha çalışma notları · IMG_0240/IMG_0241 · kontrollü taslak (revizyon/onay doğrulanacak)',
+  guvenlik: [
+    'Sahaya başlamadan önce giriş ve çalışma alanını güvenli hale getirin; kabin içine çapraz emniyet bandı ve zemin girişine görünür uyarı levhası koyun.',
+    'Kat butonları ve erişim noktalarında asansörün çalışma dışında olduğunu bildiren uyarıyı görünür tutun; test boyunca üçüncü kişilerin erişimini kontrol edin.',
+  ],
+  videolar: [
+    '1,25 katı yükle fren testi; makine dairesiz asansörde test kapısından/kuyu içinden gözlemi de içerecek şekilde.',
+    'Bypass testi ve sesli ikazın duyulduğu kayıt.',
+    'PTC, KRC, seviyeleme ve UPS testleri.',
+    'UCM testi.',
+    'Kuyu dibi–kabin üstü revizyon kumandalarının senkron çalışma testi.',
+    'Risk analizi önlemlerine bağlı tertibat testleri; güvenlik tertibatı aktifken asansörün çalışmaması gibi kritik davranışlar.',
+  ],
+};
+const SERI_NUMARASI_YARDIMI = 'Ekipman üzerindeki etikette yazan seri numarasını aynen kaydedin. Etiket fotoğraflarını Fotoğraflar > Genel Yerleşim ve Kimlik kategorisine ekleyin. Birden fazla aynı tip ekipman varsa + Ekle ile ayrı kayıt açın; okunamayan numarayı tahmin etmeyin, ilgili madde notunda belirtin.';
 const LEGACY_FOTOGRAF_KATEGORISI = {
   'MAD-0006': 'kuyu_dibi',
   'MAD-0072': 'kuyu_dibi',
@@ -1112,7 +1132,13 @@ const UI = (() => {
     };
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><div class="photo-modal-head"><h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3><button class="close" aria-label="Kapat">×</button></div>
-        <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. UCM testi, paraşüt fren testi, motor freni tek çene testi ve motor hareket sınırlayıcısı testi gibi işlev testlerinin videolarını bu fotoğraf alanına yüklemeyin; videoları kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
+        <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
+        <details class="photo-video-plan">
+          <summary>🎥 İşlev testleri için video kayıt planı</summary>
+          <p>Videolar bu AVES fotoğraf alanına yüklenmez. Kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle saklayın; bu liste kayıt hatırlatıcısıdır, zorunlu test veya uygunluk kararı değildir.</p>
+          <ul>${SAHA_KANIT_PLANI.videolar.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+          <small>Kaynak statüsü: ${esc(SAHA_KANIT_PLANI.kaynak)}</small>
+        </details>
         ${tumFotograflar.length ? '<button type="button" class="btn btn-ghost photo-download-all">⇩ Tüm fotoğrafları indir</button>' : ''}
         <div class="photo-kategoriler"></div>
       </div>`;
@@ -2592,6 +2618,11 @@ const UI = (() => {
           d.kabin_kapi_acilma_tipi,
         ].filter(Boolean).join(' · '))}</div>` : ''}
         <div class="dmeta" style="margin-top:4px"><b>Durum:</b> ${tamamlandi ? '✓ Çalışma Tamamlandı' : (gozden ? 'Gözden Geçirme' : 'Devam Ediyor')}</div>
+        ${currentCanEdit && !tamamlandi ? `<aside class="saha-guvenlik" role="note">
+          <b>⚠ Denetim öncesi saha güvenliği</b>
+          <ul>${SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+          <small>Kaynak statüsü: ${esc(SAHA_KANIT_PLANI.kaynak)}. Bu hatırlatma şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small>
+        </aside>` : ''}
         <div class="offline-ready ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready
           ? '✓ Bu cihaz çevrimdışı çalışmaya hazır'
           : '⚠ Bu cihaz çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
@@ -3157,7 +3188,7 @@ const UI = (() => {
     ov.innerHTML = `<div class="modal serial-modal">
       <button class="close" aria-label="Kapat">×</button>
       <h3>Ekipman seri numaraları</h3>
-      <div class="photo-help">Bu ekran denetimin her aşamasından açılabilir. Bilgiler fotoğraflardan bağımsızdır ve çevrimdışı olarak cihazda saklanır.</div>
+      <div class="photo-help">${esc(SERI_NUMARASI_YARDIMI)} Bilgiler fotoğraflardan bağımsızdır ve çevrimdışı olarak cihazda saklanır.</div>
       <div class="serial-groups">${SERI_GRUPLARI.map(groupHTML).join('')}</div>
       ${canEdit ? '<button class="btn btn-primary" id="serialSave">Kaydet ve kapat</button>' : '<button class="btn btn-primary" id="serialClose">Kapat</button>'}
     </div>`;

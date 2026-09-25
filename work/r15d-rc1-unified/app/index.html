@@ -211,6 +211,15 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .photo-kategori{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}
 .photo-kategori h4{margin:0 0 4px;font-size:14px;color:var(--navy);display:flex;align-items:center;gap:8px}
 .photo-kategori>.photo-help{font-size:11.5px;line-height:1.4;color:var(--muted);margin:0 0 10px}
+.saha-guvenlik{margin:10px 0 12px;padding:11px 12px;border:1px solid #efcf96;border-left:4px solid var(--warn);border-radius:10px;background:#fffbf2;color:var(--ink)}
+.saha-guvenlik>b{display:block;color:#765000;font-size:13px;margin-bottom:6px}
+.saha-guvenlik ul{margin:0;padding-left:19px;display:grid;gap:5px;font-size:12px;line-height:1.4}
+.saha-guvenlik small{display:block;margin-top:8px;color:var(--muted);font-size:10px;line-height:1.4}
+.photo-video-plan{margin:0 0 12px;border:1px solid #c9d1ed;border-radius:10px;background:#f7f8fc;overflow:hidden}
+.photo-video-plan summary{padding:11px 12px;color:var(--navy);font-size:12.5px;font-weight:800;cursor:pointer}
+.photo-video-plan p{margin:0;padding:0 12px 8px;font-size:11.5px;line-height:1.4;color:var(--muted)}
+.photo-video-plan ul{margin:0;padding:0 14px 10px 31px;display:grid;gap:6px;font-size:11.5px;line-height:1.4;color:var(--ink)}
+.photo-video-plan small{display:block;padding:0 12px 10px;color:var(--muted);font-size:10px;line-height:1.4}
 .photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 10px}.photo-card{position:relative;aspect-ratio:1;background:#eef0f5;border-radius:9px;overflow:hidden}.photo-open{width:100%;height:100%;padding:0;border:0;background:none}.photo-open img{width:100%;height:100%;object-fit:cover;display:block}.photo-remove{position:absolute;right:5px;top:5px;width:27px;height:27px;border:0;border-radius:99px;background:rgba(18,20,45,.82);color:#fff;font-size:18px}.photo-pending{position:absolute;left:5px;bottom:5px;background:#f0a93b;color:#fff;border-radius:5px;padding:3px 5px;font-size:9px;font-weight:800}.photo-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:10px;background:var(--navy);color:#fff;font-size:13px;font-weight:800;cursor:pointer}.photo-error{padding:12px;font-size:11px;color:var(--muted)}
 .photo-add-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.photo-add-row .photo-add{padding:11px 6px;font-size:12.5px}.photo-add-row .photo-add-camera{padding:11px 6px;font-size:12.5px;font-weight:800}
 .camera-overlay{z-index:60;background:#000;align-items:stretch}.camera-modal{position:relative;width:100%;height:100%;background:#000;display:flex;flex-direction:column}.camera-modal video{flex:1;width:100%;object-fit:cover;background:#000}.camera-controls{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px calc(env(safe-area-inset-bottom) + 14px) calc(env(safe-area-inset-bottom) + 14px);background:linear-gradient(transparent,rgba(0,0,0,.75))}.camera-controls .btn{width:auto;padding:11px 16px}.camera-controls #camCek{background:var(--fuchsia)}.camera-controls .camera-count{color:#fff;font-size:12px;font-weight:700;background:rgba(255,255,255,.18);border-radius:99px;padding:5px 11px}
@@ -500,7 +509,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <div class="topbar">
   <div class="brand-lockup">
     <img src="aves-logo-white.png" alt="AVES">
-    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.63</b></div>
+    <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.66</b></div>
   </div>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
