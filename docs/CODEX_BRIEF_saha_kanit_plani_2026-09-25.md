@@ -14,17 +14,22 @@ eşik veya otomatik sonuç olarak uygulamaya aktarılmayacaktır.
 
 1. Mevcut fotoğraf kategori rehberlerini dokümandaki asgari görsel kanıt başlıklarıyla
    eşleştirmek ve eksik kalan açık noktaları rehber metinlerinde görünür kılmak.
-2. Fotoğraf ekranında videoların uygulama içinden yüklenmediğini koruyarak, harici
-   video kayıt planını ayrı ve açık bir rehber olarak göstermek.
-3. Proje/saha ölçülerinin mevcut `Saha Ölçümü` maddelerinde kaydedilmesi gerektiğini
+2. Seri numarası kayıt ekranında etiket/seri numarası girişini ve ilgili etiket
+   fotoğraflarının yerini açıklamak.
+3. Fotoğraf ekranında videoların AVES'e yüklenmediğini koruyarak, harici video
+   kayıt planını ayrı ve açık bir rehber olarak göstermek.
+4. Denetim başladıktan sonra aktif denetim ekranının üstünde saha güvenliği
+   hatırlatmasını göstermek; şirketin onaylı prosedürünün yerini almadığını belirtmek.
+5. Proje/saha ölçülerinin mevcut `Saha Ölçümü` maddelerinde kaydedilmesi gerektiğini
    hatırlatan, otomatik uygunluk sonucu üretmeyen bir ölçüm-eşleştirme rehberi eklemek.
-4. Kaynağın statüsünü kullanıcıya görünür tutmak; yeni resmi checklist sonucu,
+6. Kaynağın statüsünü kullanıcıya görünür tutmak; yeni resmi checklist sonucu,
    otomatik eşik veya RLS/DB değişikliği yapmamak.
 
 ## Kapsam dışı
 
 - Görsellerdeki el yazısı değerleri veri kütüphanesine eklemek.
 - Video dosyası yükleme/arşivleme altyapısı.
+- Video çekiminde otomatik çözünürlük düşürme veya sıkıştırma.
 - Teknik standart hükmü veya otomatik uygunluk kararı üretmek.
 - Canlı Supabase/Cloudflare değişikliği.
 
@@ -32,5 +37,5 @@ eşik veya otomatik sonuç olarak uygulamaya aktarılmayacaktır.
 
 - `node work/r15d-rc1-unified/tests/r15d-static-test.mjs` yeşil.
 - Dört sürüm dosyası birlikte güncellenecek.
-- Rehber metninin kontrollü taslak olduğunu ve video planının fotoğraf yükleme
-  akışından ayrı tutulduğunu statik test doğrulayacak.
+- Ölçüm rehberinin kontrollü taslak olduğunu; seri no, video ve güvenlik
+  hatırlatmalarının istenen ekranlarda bulunduğunu statik test doğrulayacak.

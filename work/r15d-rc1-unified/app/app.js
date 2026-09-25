@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.64';
+const APP_VERSION = 'R15D-rc3.9.65';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -80,6 +80,7 @@ const SAHA_KANIT_PLANI = {
     'Risk analizi önlemlerine bağlı tertibat testleri; güvenlik tertibatı aktifken asansörün çalışmaması gibi kritik davranışlar.',
   ],
 };
+const SERI_NUMARASI_YARDIMI = 'Ekipman üzerindeki etikette yazan seri numarasını aynen kaydedin. Etiket fotoğraflarını Fotoğraflar > Genel Yerleşim ve Kimlik kategorisine ekleyin. Birden fazla aynı tip ekipman varsa + Ekle ile ayrı kayıt açın; okunamayan numarayı tahmin etmeyin, ilgili madde notunda belirtin.';
 const LEGACY_FOTOGRAF_KATEGORISI = {
   'MAD-0006': 'kuyu_dibi',
   'MAD-0072': 'kuyu_dibi',
@@ -1138,7 +1139,13 @@ const UI = (() => {
     };
     const ciz = async () => {
       ov.innerHTML = `<div class="modal photo-modal"><div class="photo-modal-head"><h3>Fotoğraflar <span class="photo-total">${tumFotograflar.length}</span></h3><button class="close" aria-label="Kapat">×</button></div>
-        <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. UCM testi, paraşüt fren testi, motor freni tek çene testi ve motor hareket sınırlayıcısı testi gibi işlev testlerinin videolarını bu fotoğraf alanına yüklemeyin; videoları kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
+        <p class="photo-help"><b>Bu yönergeler sınırlayıcı bir liste değil, asgari kapsam için hatırlatmadır.</b> Genel durumu göstermek için geniş açı kullanın; tek kare yeterli değilse istediğiniz kadar fotoğraf çekin veya galeriden seçin. Farklı uygulamaları, kritik bağlantıları, kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin. Uygulama fotoğrafları yorumlamaz ve uygunluk kararı vermez.</p>
+        <details class="photo-video-plan">
+          <summary>🎥 İşlev testleri için video kayıt planı</summary>
+          <p>Videolar bu AVES fotoğraf alanına yüklenmez. Kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle saklayın; bu liste kayıt hatırlatıcısıdır, zorunlu test veya uygunluk kararı değildir.</p>
+          <ul>${SAHA_KANIT_PLANI.videolar.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+          <small>Kaynak statüsü: ${esc(SAHA_KANIT_PLANI.kaynak)}</small>
+        </details>
         ${tumFotograflar.length ? '<button type="button" class="btn btn-ghost photo-download-all">⇩ Tüm fotoğrafları indir</button>' : ''}
         <div class="photo-kategoriler"></div>
       </div>`;
@@ -2618,6 +2625,11 @@ const UI = (() => {
           d.kabin_kapi_acilma_tipi,
         ].filter(Boolean).join(' · '))}</div>` : ''}
         <div class="dmeta" style="margin-top:4px"><b>Durum:</b> ${tamamlandi ? '✓ Çalışma Tamamlandı' : (gozden ? 'Gözden Geçirme' : 'Devam Ediyor')}</div>
+        ${currentCanEdit && !tamamlandi ? `<aside class="saha-guvenlik" role="note">
+          <b>⚠ Denetim öncesi saha güvenliği</b>
+          <ul>${SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+          <small>Kaynak statüsü: ${esc(SAHA_KANIT_PLANI.kaynak)}. Bu hatırlatma şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small>
+        </aside>` : ''}
         <div class="offline-ready ${offlineState.ready ? 'ok' : 'pending'}"><b>${offlineState.ready
           ? '✓ Bu cihaz çevrimdışı çalışmaya hazır'
           : '⚠ Bu cihaz çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>
@@ -2712,7 +2724,7 @@ const UI = (() => {
     <div class="footbar">
       <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
       <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
-      <button class="btn btn-serial ready" id="btnKanıtPlani">📋 Kanıt Planı</button>
+      <button class="btn btn-serial ready" id="btnOlcumRehberi">📏 Ölçüm Rehberi</button>
       <button class="btn btn-serial ready" id="btnFotograflar">📷 Fotoğraflar${fotografToplamSayisi() ? ` · ${fotografToplamSayisi()}` : ''}</button>
       ${inspectionReadOnly && normaldeDuzenleyebilir ? '<button class="btn btn-finish ready" id="btnDenetimeDon">↩ Denetime Geri Dön</button>' : ''}
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
@@ -2847,7 +2859,7 @@ const UI = (() => {
     });
     document.getElementById('btnOzet').onclick = showOzet;
     document.getElementById('btnSeriler').onclick = seriNumaralariGoster;
-    document.getElementById('btnKanıtPlani').onclick = sahaKanıtPlaniGoster;
+    document.getElementById('btnOlcumRehberi').onclick = olcumEslemeRehberiGoster;
     document.getElementById('btnFotograflar').onclick = fotografSekmesi;
     const btnBitirGlobal = document.getElementById('btnBitirGlobal');
     if (btnBitirGlobal) btnBitirGlobal.onclick = async () => {
@@ -2905,17 +2917,15 @@ const UI = (() => {
     return FOTO_HATIRLATMALARI[bolum] || null;
   }
 
-  function sahaKanıtPlaniGoster() {
+  function olcumEslemeRehberiGoster() {
     const liste = (items, icon) => `<ul class="evidence-list">${items.map(item => `<li><span class="evidence-icon">${icon}</span><span>${esc(item)}</span></li>`).join('')}</ul>`;
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal evidence-modal">
       <button class="close" aria-label="Kapat">×</button>
-      <h3>Saha kanıt planı</h3>
+      <h3>Saha Ölçüm Eşleştirmesi</h3>
       <div class="evidence-source"><b>Kaynak statüsü:</b> ${esc(SAHA_KANIT_PLANI.kaynak)}<br>Bu ekran saha hatırlatıcısıdır; resmi standart veya otomatik uygunluk kararı üretmez.</div>
-      <section class="evidence-section"><h4>Denetime başlamadan önce güvenlik</h4>${liste(SAHA_KANIT_PLANI.guvenlik, '⚠')}</section>
       <section class="evidence-section"><h4>Proje–saha ölçüm eşleştirmesi</h4>${liste(SAHA_KANIT_PLANI.olcum, '📏')}</section>
-      <section class="evidence-section"><h4>Harici video kayıt planı</h4><div class="photo-help">Videolar AVES fotoğraf alanına yüklenmez. Kurumun belirlediği harici kayıt ve arşiv yöntemiyle saklanmalı; bu liste yalnız hangi testlerin görüntülü kanıtının düşünülmesi gerektiğini hatırlatır.</div>${liste(SAHA_KANIT_PLANI.videolar, '🎥')}</section>
       <button type="button" class="btn btn-primary evidence-close">Kapat</button>
     </div>`;
     document.body.appendChild(ov);
@@ -3205,7 +3215,7 @@ const UI = (() => {
     ov.innerHTML = `<div class="modal serial-modal">
       <button class="close" aria-label="Kapat">×</button>
       <h3>Ekipman seri numaraları</h3>
-      <div class="photo-help">Bu ekran denetimin her aşamasından açılabilir. Bilgiler fotoğraflardan bağımsızdır ve çevrimdışı olarak cihazda saklanır.</div>
+      <div class="photo-help">${esc(SERI_NUMARASI_YARDIMI)} Bilgiler fotoğraflardan bağımsızdır ve çevrimdışı olarak cihazda saklanır.</div>
       <div class="serial-groups">${SERI_GRUPLARI.map(groupHTML).join('')}</div>
       ${canEdit ? '<button class="btn btn-primary" id="serialSave">Kaydet ve kapat</button>' : '<button class="btn btn-primary" id="serialClose">Kapat</button>'}
     </div>`;
