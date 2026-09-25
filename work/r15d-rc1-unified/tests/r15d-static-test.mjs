@@ -83,10 +83,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.65 sürümü', index.includes('R15D-RC3.9.65</b>'));
-test('app R15D rc3.9.65 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.65'"));
-test('service worker rc3.9.65 cache', sw.includes("aves-saha-r15d-rc3965'"));
-test('uygulama manifesti rc3.9.65 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.65"'));
+test('index R15D rc3.9.66 sürümü', index.includes('R15D-RC3.9.66</b>'));
+test('app R15D rc3.9.66 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.66'"));
+test('service worker rc3.9.66 cache', sw.includes("aves-saha-r15d-rc3966'"));
+test('uygulama manifesti rc3.9.66 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.66"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -398,13 +398,14 @@ test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
 test('kullanıcı saha notları kontrollü taslak olarak kanıt planına bağlanıyor',
   app.includes('const SAHA_KANIT_PLANI = {') &&
   app.includes('kontrollü taslak (revizyon/onay doğrulanacak)') &&
-  app.includes('id="btnOlcumRehberi"') &&
-  app.includes('function olcumEslemeRehberiGoster()'));
-test('proje-saha ölçüm eşleştirmesi ayrı ölçüm rehberinde kalıyor',
-  app.includes('Proje–saha ölçüm eşleştirmesi') &&
-  app.includes('SAHA_KANIT_PLANI.olcum') &&
-  !app.includes('SAHA_KANIT_PLANI.guvenlik,') &&
-  !app.includes('SAHA_KANIT_PLANI.videolar,'));
+  app.includes('SAHA_KANIT_PLANI.guvenlik') &&
+  app.includes('SAHA_KANIT_PLANI.videolar'));
+test('saha ölçüm eşleştirmesi Modül G akışından kaldırıldı; yoğun ölçü/seri no kapsamı B/E/H1 için ayrı tutuluyor',
+  !app.includes('btnOlcumRehberi') &&
+  !app.includes('olcumEslemeRehberiGoster') &&
+  !app.includes('Proje–saha ölçüm eşleştirmesi') &&
+  !app.includes('SAHA_KANIT_PLANI.olcum') &&
+  app.includes('Yoğun ölçü/seri no eşleştirmesi Modül B/E/H1 için'));
 test('seri numarası talimatı seri numarası ekranında ekipman etiketlerini yönlendiriyor',
   app.includes('const SERI_NUMARASI_YARDIMI =') &&
   app.includes('Fotoğraflar > Genel Yerleşim ve Kimlik kategorisine ekleyin') &&

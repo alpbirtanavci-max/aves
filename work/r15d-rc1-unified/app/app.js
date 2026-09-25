@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.65';
+const APP_VERSION = 'R15D-rc3.9.66';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
@@ -54,22 +54,15 @@ const FOTOGRAF_KATEGORILERI = [
   ['kumanda_grubu', 'Elektrik ve Kumanda Grubu', 'Kumanda panosunu ve güç/dağıtım düzenini genel görünüşle kaydedin; kart, sürücü ve ana bileşen etiketleri okunabilsin. Pano sabitlemesi, kablo girişleri ve güzergâhı, koruyucu topraklama, MRL acil durum/test panosu ve yedek güç birimleri uygulanıyorsa ayrıca gösterilir. Her asansörde aranan alarm ve iki yönlü haberleşme tertibatını da genel yerleşimi ve birimleriyle kaydedin.'],
   ['ozel_sistemler', 'Uygulanabilir Özel Sistemler', 'Denetim kapsamına giriyorsa itfaiyeci erişim seviyesi ve kumandaları, eğik asansöre özgü düzenler, küçültülmüş üst-alt boşluk korumaları, hareketli durdurucular, sismik sabitlemeler ve uygulanabilir vandalizme dayanıklı çözümler genel yerleşimiyle kaydedilir. Vandalizmle ilişkili genel asansör şartları yalnız bu başlığa bırakılmaz; ilgili ana saha grubunda da kaydedilir.'],
 ];
-// Kullanıcının eklediği saha çalışma notları fotoğraf, video ve ölçüm kanıtının
-// asgari hatırlatıcısı olarak gösterilir. Kaynağın revizyonu/onayı doğrulanmadığı
-// için bu liste resmi standart, otomatik sonuç veya zorunlu kapanış koşulu değildir.
+// Kullanıcının eklediği saha notları, bu Modül G formunda fotoğraf/video ve
+// güvenlik hatırlatıcısıdır. Yoğun ölçü/seri no eşleştirmesi Modül B/E/H1 için
+// ayrı kapsamdır; G formunda saha ölçüm eşleştirmesi olarak gösterilmez.
+// Kaynağın revizyonu/onayı doğrulanmadığı için resmi standart/sonuç değildir.
 const SAHA_KANIT_PLANI = {
   kaynak: 'Kullanıcı saha çalışma notları · IMG_0240/IMG_0241 · kontrollü taslak (revizyon/onay doğrulanacak)',
   guvenlik: [
     'Sahaya başlamadan önce giriş ve çalışma alanını güvenli hale getirin; kabin içine çapraz emniyet bandı ve zemin girişine görünür uyarı levhası koyun.',
     'Kat butonları ve erişim noktalarında asansörün çalışma dışında olduğunu bildiren uyarıyı görünür tutun; test boyunca üçüncü kişilerin erişimini kontrol edin.',
-  ],
-  olcum: [
-    'Projede beyan edilen kuyu, kabin, karşı ağırlık, ray, kapı ve tampon ölçülerini sahadaki karşılıklarıyla birlikte kaydedin; makine/motor tipi ve etiket bilgilerini ayrıca doğrulayın.',
-    'Tampon kapasitesi/hız uygunluğu, fren bloğu ve ray bilgileri ile hız regülatörü beyanını teknik dosya ve saha kaydıyla eşleştirin.',
-    'Gerekiyorsa aydınlatma, akım, gerilim, ses ve diğer saha ölçümlerini ilgili Saha Ölçümü maddesine girin; bu panel ikinci bir ölçüm kaydı oluşturmaz.',
-    'Kabin ve karşı ağırlık alt/üst patenleri arasındaki düşey mesafe, tampon ve üst/alt boşluk güvenlik mesafeleri gibi görsel olarak kanıtlanması gereken ölçümleri fotoğraflı ölçüm olarak kaydedin.',
-    'Kabin en üst kattayken karşı ağırlık–tampon ve kuyu tavanı–kabin tavanı mesafelerini; en alt kattayken kuyu dibi/tampon güvenlik mesafelerini ölçek görünür fotoğraflarla belgeleyin.',
-    'Modül E/H1 çalışmalarında firmanın son kontrol raporunun gidilen saha ve teknik dosya ile uyumunu ayrıca kontrol edin.',
   ],
   videolar: [
     '1,25 katı yükle fren testi; makine dairesiz asansörde test kapısından/kuyu içinden gözlemi de içerecek şekilde.',
@@ -2724,7 +2717,6 @@ const UI = (() => {
     <div class="footbar">
       <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
       <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
-      <button class="btn btn-serial ready" id="btnOlcumRehberi">📏 Ölçüm Rehberi</button>
       <button class="btn btn-serial ready" id="btnFotograflar">📷 Fotoğraflar${fotografToplamSayisi() ? ` · ${fotografToplamSayisi()}` : ''}</button>
       ${inspectionReadOnly && normaldeDuzenleyebilir ? '<button class="btn btn-finish ready" id="btnDenetimeDon">↩ Denetime Geri Dön</button>' : ''}
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
@@ -2859,7 +2851,6 @@ const UI = (() => {
     });
     document.getElementById('btnOzet').onclick = showOzet;
     document.getElementById('btnSeriler').onclick = seriNumaralariGoster;
-    document.getElementById('btnOlcumRehberi').onclick = olcumEslemeRehberiGoster;
     document.getElementById('btnFotograflar').onclick = fotografSekmesi;
     const btnBitirGlobal = document.getElementById('btnBitirGlobal');
     if (btnBitirGlobal) btnBitirGlobal.onclick = async () => {
@@ -2915,24 +2906,6 @@ const UI = (() => {
       return 'Regülatör ve motor etiketlerinin fotoğraflarını çekmeyi unutmayın.';
     }
     return FOTO_HATIRLATMALARI[bolum] || null;
-  }
-
-  function olcumEslemeRehberiGoster() {
-    const liste = (items, icon) => `<ul class="evidence-list">${items.map(item => `<li><span class="evidence-icon">${icon}</span><span>${esc(item)}</span></li>`).join('')}</ul>`;
-    const ov = document.createElement('div');
-    ov.className = 'overlay';
-    ov.innerHTML = `<div class="modal evidence-modal">
-      <button class="close" aria-label="Kapat">×</button>
-      <h3>Saha Ölçüm Eşleştirmesi</h3>
-      <div class="evidence-source"><b>Kaynak statüsü:</b> ${esc(SAHA_KANIT_PLANI.kaynak)}<br>Bu ekran saha hatırlatıcısıdır; resmi standart veya otomatik uygunluk kararı üretmez.</div>
-      <section class="evidence-section"><h4>Proje–saha ölçüm eşleştirmesi</h4>${liste(SAHA_KANIT_PLANI.olcum, '📏')}</section>
-      <button type="button" class="btn btn-primary evidence-close">Kapat</button>
-    </div>`;
-    document.body.appendChild(ov);
-    const close = () => ov.remove();
-    ov.querySelector('.close').onclick = close;
-    ov.querySelector('.evidence-close').onclick = close;
-    ov.onclick = event => { if (event.target === ov) close(); };
   }
 
   // Senkron taslak günlüğü (Codex incelemesi, PR #26 sonrası): IndexedDB
