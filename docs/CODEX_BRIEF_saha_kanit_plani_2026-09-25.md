@@ -8,9 +8,11 @@ bilgisi doğrulanmadığı için içerik **kontrollü taslak / saha rehberi aday
 ele alınır; mevzuat, standart veya resmi uygunluk maddesi olarak yayımlanmaz.
 
 Fotoğraflardaki ölçü ve seri numarası yoğun saha yaklaşımı Modül B, E ve H1
-denetimleriyle ilişkilendirildi. Mevcut formun kapsamı Modül G olarak netleşti;
-bu nedenle ölçüm eşleştirme sekmesi Modül G akışında gösterilmeyecek. B/E/H1 için
-gereken ölçü ve seri numarası kapsamı ayrı tasarlanacak. El yazısı değerler şablon
+denetimleriyle ilişkilendirildi. Bu PR'deki saha rehberi yalnız Modül G formunda
+kullanılacak; ölçüm eşleştirme
+sekmesi bu akışta gösterilmeyecek. AVES'teki mevcut B/E/H1 denetim akışları
+korunacak; bu modüller için gereken yoğun ölçü ve seri numarası kapsamı ayrı
+tasarlanacak. El yazısı değerler şablon
 değeri, eşik veya otomatik sonuç olarak hiçbir modüle aktarılmayacaktır.
 
 ## İstenen çıktı
