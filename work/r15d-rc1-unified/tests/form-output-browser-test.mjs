@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -7,8 +8,7 @@ import { createRequire } from 'node:module';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const app = path.join(root, 'app');
-const out = path.join(root, 'test-artifacts', 'form-output');
-fs.mkdirSync(out, { recursive: true });
+const out = fs.mkdtempSync(path.join(os.tmpdir(), 'aves-form-output-'));
 const require = createRequire(import.meta.url);
 const { chromium } = require('C:/Users/alpbi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 
@@ -32,6 +32,38 @@ try {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${port}/test.html`);
+  const standardGate = await page.evaluate(async () => {
+    const snapshot = await FormOutput.createSnapshot('81-1/2+A3', 'Modül G');
+    let nonGSnapshotRejected = false;
+    try { await FormOutput.createSnapshot('81-1/2+A3', 'Modül B'); }
+    catch (error) { nonGSnapshotRejected = error.message.includes('yalnız Modül G'); }
+    const bSnapshot = await FormOutput.createSnapshot('81-20', 'Modül B');
+    const bSnapshotForms = await FormOutput.formsForInspection({
+      modul:'Modül B', denetim_turu:'Modül B - AB Tip İncelemesi', kontrol_profili:'modul_b_tip_inceleme',
+      ana_standart:'81-20', form_cikti_snapshot:bSnapshot,
+    });
+    const nonGLockedForms = await FormOutput.formsForInspection({
+      modul:'Modül B', ana_standart:'81-1/2+A3', form_cikti_snapshot:snapshot,
+    });
+    const nonGMismatchedSnapshotForms = await FormOutput.formsForInspection({
+      modul:'Modül B', ana_standart:'81-20', form_cikti_snapshot:snapshot,
+    });
+    const gForms = await FormOutput.formsForInspection({
+      modul:'Modül G', ana_standart:'81-1/2+A3', form_cikti_snapshot:snapshot,
+    });
+    return {
+      nonGSnapshotRejected,
+      bSnapshotEmpty:bSnapshot.forms.length === 0,
+      bSnapshotForms:bSnapshotForms.length,
+      nonGLockedForms:nonGLockedForms.length,
+      nonGMismatchedSnapshotForms:nonGMismatchedSnapshotForms.length,
+      gForm:gForms[0]?.key,
+    };
+  });
+  if (!standardGate.nonGSnapshotRejected || !standardGate.bSnapshotEmpty || standardGate.bSnapshotForms !== 0 || standardGate.nonGLockedForms !== 0 ||
+      standardGate.nonGMismatchedSnapshotForms !== 0 || standardGate.gForm !== 'UB_FR_39_R02') {
+    throw new Error(`Modül/A3 standardı kapısı hatalı: ${JSON.stringify(standardGate)}`);
+  }
   const noteCases = await page.evaluate(() => [
     FormOutput.rowNotes({diger_bulgu:'Ana uygunsuzluk açıklaması'}),
     FormOutput.rowNotes({bulgu_secenegi:'Kapı kilidi çalışmıyor',aciklama:'Ek saha notu'}),
@@ -77,7 +109,7 @@ try {
   for (const testCase of cases) for (const format of ['docx','pdf']) {
     const pending = page.waitForEvent('download');
     await page.evaluate(async ({format,fixture,rows}) => {
-      fixture.form_cikti_snapshot = await FormOutput.createSnapshot(fixture.ana_standart);
+      fixture.form_cikti_snapshot = await FormOutput.createSnapshot(fixture.ana_standart, fixture.modul);
       return FormOutput.download(format,fixture,rows);
     }, {format,fixture:testCase.fixture,rows:testCase.rows});
     const download = await pending;
@@ -88,4 +120,5 @@ try {
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
+  fs.rmSync(out, { recursive: true, force: true });
 }

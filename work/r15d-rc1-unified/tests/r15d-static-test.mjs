@@ -18,6 +18,18 @@ const updateHtml = fs.readFileSync(path.join(appDir, 'update.html'), 'utf8');
 const updateJs = fs.readFileSync(path.join(appDir, 'update.js'), 'utf8');
 const sectionMappingJs = fs.readFileSync(path.join(appDir, 'section-mapping.js'), 'utf8');
 const closureSummaryJs = fs.readFileSync(path.join(appDir, 'kapanis-guven-ozeti.js'), 'utf8');
+const technicalDocsJs = fs.readFileSync(path.join(appDir, 'teknik-dosya-formlari.js'), 'utf8');
+const denetimFormSetsJs = fs.readFileSync(path.join(appDir, 'denetim-form-setleri.js'), 'utf8');
+const formDraftJournalJs = fs.readFileSync(path.join(appDir, 'form-draft-journal.js'), 'utf8');
+const technicalDocsContext = {};
+vm.runInNewContext(technicalDocsJs, technicalDocsContext, { filename: 'teknik-dosya-formlari.js' });
+const technicalDocs = technicalDocsContext.AVES_TEKNIK_DOSYA_FORM;
+const denetimFormSetsContext = {};
+vm.runInNewContext(denetimFormSetsJs, denetimFormSetsContext, { filename: 'denetim-form-setleri.js' });
+const denetimFormSets = denetimFormSetsContext.AVES_DENETIM_FORM_SETI;
+const formDraftJournalContext = {};
+vm.runInNewContext(formDraftJournalJs, formDraftJournalContext, { filename: 'form-draft-journal.js' });
+const formDraftJournal = formDraftJournalContext.AVES_FORM_DRAFT_JOURNAL;
 const closureSummaryFixture = JSON.parse(fs.readFileSync(path.join(testDir, 'kapanis-guven-ozeti-fixture.json'), 'utf8'));
 const formOutput = fs.readFileSync(path.join(appDir, 'form-output.js'), 'utf8');
 const formManifest = JSON.parse(fs.readFileSync(path.join(appDir, 'form-assets', 'form-output-manifest.json'), 'utf8'));
@@ -49,6 +61,10 @@ const rc3940FollowupAuthMigration = fs.readFileSync(path.join(databaseDir, '79_r
 const rc3941AnonRevokeMigration = fs.readFileSync(path.join(databaseDir, '80_r15d_rc3941_anon_execute_revoke.sql'), 'utf8');
 const rc3946OutputRecordMigration = fs.readFileSync(path.join(databaseDir, '81_r15d_rc3946_resmi_cikti_kaydi.sql'), 'utf8');
 const rc3953ArchiveStatusMigration = fs.readFileSync(path.join(databaseDir, '82_r15d_rc3953_arsiv_durumu.sql'), 'utf8');
+const rc3968TechnicalDocsMigration = fs.readFileSync(path.join(databaseDir, '83_r15d_rc3968_teknik_dosya_kayitlari.sql'), 'utf8');
+const rc3969InspectionFormsMigration = fs.readFileSync(path.join(databaseDir, '84_r15d_rc3969_denetim_form_kayitlari.sql'), 'utf8');
+const rc3972ModuleRulesMigration = fs.readFileSync(path.join(databaseDir, '85_r15d_rc3972_modul_b_optional_a3_only_g.sql'), 'utf8');
+const rc3972ModuleRulesScenario = fs.readFileSync(path.join(testDir, 'database', '85_module_rules.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
 const archiveRlsScenario = fs.readFileSync(path.join(testDir, 'rls', '82_arsiv_durumu.sql'), 'utf8');
 const ci = fs.readFileSync(path.resolve(root, '..', '..', '.github', 'workflows', 'ci.yml'), 'utf8');
@@ -83,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.63 sürümü', index.includes('R15D-RC3.9.63</b>'));
-test('app R15D rc3.9.63 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.63'"));
-test('service worker rc3.9.63 cache', sw.includes("aves-saha-r15d-rc3963'"));
-test('uygulama manifesti rc3.9.63 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.63"'));
+test('index R15D rc3.9.72 sürümü', index.includes('R15D-RC3.9.72</b>'));
+test('app R15D rc3.9.72 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.72'"));
+test('service worker rc3.9.72 cache', sw.includes("aves-saha-r15d-rc3972'"));
+test('uygulama manifesti rc3.9.72 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.72"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -183,7 +199,53 @@ test('Codex incelemesi #4 (P1): kurtarma yalnız oturum yüklendikten sonra ve y
   app.includes('if (normEmail(entry.ownerEmail) !== normOwner) continue;') &&
   app.includes('try { await UI.recoverDrafts(API.email); } catch {}') &&
   app.includes('if (API.loggedIn) {') &&
-  app.indexOf('try { await UI.recoverDrafts(API.email); } catch {}') > app.indexOf('await API.loadSession();'));
+  app.indexOf('await Profile.load();') < app.indexOf('try { await UI.recoverDrafts(API.email); } catch {}') &&
+  app.indexOf('try { await UI.recoverDrafts(API.email); } catch {}') < app.indexOf('try { await Sync.pullKutuphane(); } catch (e)'));
+test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve madde taslaklarını koruyarak temizlenir', (() => {
+  const values = new Map();
+  const storage = {
+    getItem: key => values.has(key) ? values.get(key) : null,
+    setItem: (key, value) => values.set(key, String(value)),
+    removeItem: key => values.delete(key),
+  };
+  storage.setItem('aves_taslak_form-test', JSON.stringify({ 'saha:MAD-1:aciklama': { value: 'önceki madde taslağı', ts: 1, ownerEmail: 'a@aves.test' } }));
+  const payload = { forms: { FR65: { values: { beyan_yuku: '630 kg' } } } };
+  const wrote = formDraftJournal.writeForm(storage, 'form-test', payload, ' Denetci@Aves.Test ', 123, 'v1');
+  const entry = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
+  const foreignWrite = formDraftJournal.writeForm(storage, 'form-test', { forms: { FR65: { values: { beyan_yuku: 'YABANCI DEĞER' } } } }, 'diger@aves.test', 124, 'v1');
+  const preservedAfterForeignWrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
+  const foreignEntry = formDraftJournal.readForm(storage, 'form-test', 'diger@aves.test');
+  const staleRewrite = formDraftJournal.writeForm(storage, 'form-test', { forms: { FR65: { values: { beyan_yuku: 'ESKİ TASLAĞI EZ' } } } }, 'denetci@aves.test', 125, 'v2');
+  const preservedAfterStaleRewrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
+  const beforeClear = JSON.parse(storage.getItem('aves_taslak_form-test'));
+  const wrongOwnerClear = formDraftJournal.clearFormIfOwner(storage, 'form-test', 'ucuncu@aves.test');
+  const preservedAfterWrongOwner = !!formDraftJournal.readForm(storage, 'form-test');
+  const ownerClear = formDraftJournal.clearFormIfOwner(storage, 'form-test', 'DENETCI@AVES.TEST');
+  const cleared = formDraftJournal.clearForm(storage, 'form-test');
+  const afterClear = JSON.parse(storage.getItem('aves_taslak_form-test'));
+  const failingStorage = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
+  return wrote && entry.ts === 123 && entry.ownerEmail === 'denetci@aves.test' &&
+    entry.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
+    foreignWrite && preservedAfterForeignWrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
+    foreignEntry.payload.forms.FR65.values.beyan_yuku === 'YABANCI DEĞER' && !staleRewrite &&
+    preservedAfterStaleRewrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
+    !!beforeClear['saha:MAD-1:aciklama'] && !wrongOwnerClear && preservedAfterWrongOwner && ownerClear && cleared &&
+    !Object.keys(afterClear).some(key => key === 'form:record' || key.startsWith('form:record:')) &&
+    !!afterClear['saha:MAD-1:aciklama'] && !formDraftJournal.writeForm(failingStorage, 'x', payload, 'a@aves.test', 1);
+})());
+test('Modül form girişleri her input/değişimde senkron yerel günlüğe alınır, oturum sonrası kurtarılır ve başarılı kayıtta/terk onayında temizlenir',
+  app.includes("const formDraftFields = '[data-tech-prop],[data-tech-characteristic],[data-form-field],[data-form-rating],[data-form-item-status],[data-form-item-reference],[data-form-item-note],[data-form-row-field]'") &&
+  app.includes("ov.addEventListener('input', event => { if (event.target.matches(formDraftFields)) writeFormDraft(); });") &&
+  app.includes("ov.addEventListener('change', event => { if (event.target.matches(formDraftFields)) writeFormDraft(); });") &&
+  app.includes('const isFormDraft = key === formDraftKey || key.startsWith(`${formDraftKey}:`);') &&
+  app.includes('entry.baseUpdatedAt') && app.includes('Taslak otomatik uygulanmadı; formu açıp karşılaştırın.') &&
+  app.includes('AVES_FORM_DRAFT_JOURNAL.writeForm(localStorage, denetimId, next, API.email, Date.now(), originalInspectionUpdatedAt)') &&
+  app.includes('Bu cihazda eski bir form taslağı korunuyor') &&
+  app.includes('if (canEdit) AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);') &&
+  app.includes('AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);') &&
+  app.includes('if (!formDraftConflict) AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);') &&
+  !app.includes('AVES_FORM_DRAFT_JOURNAL.clearForm(localStorage, denetimId)') &&
+  app.includes('Acil form taslağı cihaza yazılamadı'));
 test('iOS ana ekrana ekleme meta etiketleri + apple-touch-icon index.html\'de',
   index.includes('name="apple-mobile-web-app-capable" content="yes"') &&
   index.includes('name="apple-mobile-web-app-status-bar-style"') &&
@@ -393,8 +455,127 @@ test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile ayn
   ['genel_kimlik','kuyu_dibi','kuyu_boyunca','durak_kapilari','kabin_kabin_ustu','makine_sase','hidrolik_grubu','kumanda_grubu','ozel_sistemler'].every(k => app.includes(`'${k}'`)) &&
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
 test('her fotoğraf kategorisinde Modül G esaslı yönlendirme metni var',
-  app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin yerleşimini") &&
+  app.includes("'kuyu_dibi', 'Kuyu Dibi', 'Kuyu dibinin ilk kattan") &&
   app.includes("'makine_sase', 'Makine, Şase ve Üst Donanım'") && app.includes('photo-add-camera'));
+test('kullanıcı saha notları kontrollü taslak olarak kanıt planına bağlanıyor',
+  app.includes('const SAHA_KANIT_PLANI = {') &&
+  app.includes('kontrollü taslak (revizyon/onay doğrulanacak)') &&
+  app.includes('SAHA_KANIT_PLANI.guvenlik') &&
+  app.includes('SAHA_KANIT_PLANI.videolar'));
+test('saha ölçüm eşleştirmesi Modül G akışından kaldırıldı; yoğun ölçü/seri no kapsamı B/E/H1 için ayrı tutuluyor',
+  !app.includes('btnOlcumRehberi') &&
+  !app.includes('olcumEslemeRehberiGoster') &&
+  !app.includes('Proje–saha ölçüm eşleştirmesi') &&
+  !app.includes('SAHA_KANIT_PLANI.olcum') &&
+  app.includes('Yoğun ölçü/seri no eşleştirmesi Modül B/E/H1 için'));
+test('birleşik denetim formu ortak formları ve modül bazlı form setlerini uygular', (() => {
+  const codes = (module, standard) => denetimFormSets.formsFor(module, standard).map(item => item.key);
+  const common = ['FR16', 'FR30', 'FR32', 'LS14', 'RP06', 'RP07'];
+  const b = codes('B', '81-20');
+  const g20 = codes('G', '81-20');
+  const gLegacy = codes('G', '81-1/2+A3');
+  const e = codes('E', '81-20');
+  const h1 = codes('H1', '81-20');
+  return [b, g20, gLegacy, e, h1].every(list => common.every(code => list.includes(code))) &&
+    ['FR34','FR65','FR35','FR50','FR47','FR48','FR37','RP14'].every(code => b.includes(code)) && !b.includes('FR38') &&
+    ['FR34','FR65','FR35','FR50','FR38','FR47','FR48','FR37'].every(code => g20.includes(code)) &&
+    gLegacy.includes('FR39') && gLegacy.includes('FR51') && !gLegacy.includes('FR38') &&
+    ['B','E','H1'].every(module => !codes(module, '81-1/2+A3').includes('FR39')) &&
+    e.includes('FR65') && !e.includes('FR38') && !e.includes('RP14') &&
+    h1.includes('FR65') && !h1.includes('FR38') && !h1.includes('RP14');
+})());
+test('elektrikli/hidrolik denetimde yalnız ilgili FR.47 veya FR.48 tasarım formu gösterilir', (() => {
+  const electric = denetimFormSets.formsFor('B', '81-20', 'Elektrikli').map(item => item.key);
+  const hydraulic = denetimFormSets.formsFor('B', '81-20', 'Hidrolik').map(item => item.key);
+  return electric.includes('FR47') && !electric.includes('FR48') && hydraulic.includes('FR48') && !hydraulic.includes('FR47');
+})());
+test('FR.65 kontrollü Rev.00 alan şeması teknik dosya, bileşen, ölçü ve kuyu verilerini içeriyor',
+  technicalDocs.FR65.code === 'ÜB.FR.65' && technicalDocs.FR65.revision === '00' &&
+  technicalDocs.FR65.sections.length >= 7 &&
+  technicalDocs.FR65.sections.flatMap(section => section.fields).length >= 55 &&
+  ['kuyu_genislik_derinlik','hidrolik_valfler','kat_kapisi_kilitleri','ray_konsol_araligi'].every(key =>
+    technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)));
+test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değerler normalize kayıtta korunuyor',
+  technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'elektrikli_tahrik') &&
+  !technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'hidrolik') &&
+  technicalDocs.visibleFr65Sections('Hidrolik').some(section => section.key === 'hidrolik') &&
+  technicalDocs.visibleFr65Sections('').some(section => section.key === 'hidrolik'));
+test('FR.65 sayaç yalnız denetçinin seçtiği kayıt durumlarını sayıyor', (() => {
+  const record = technicalDocs.emptyRecord();
+  record.fr65.values.beyan_yuku = { status: 'Eşleşti' };
+  record.fr65.values.kapasite = { status: 'Fark var' };
+  const count = technicalDocs.countFr65(record, 'Elektrikli');
+  return count.recorded === 2 && count.total > count.recorded;
+})());
+test('RP.14 Rev.01 Modül B kayıtları teknik dosya, ölçü cihazı, varyant ve bileşen başlıklarını kapsıyor',
+  technicalDocs.RP14.code === 'ÜB.RP.14' && technicalDocs.RP14.revision === '01' &&
+  technicalDocs.RP14.applicability === 'Modül B' && technicalDocs.RP14.instruments.length === 10 &&
+  technicalDocs.RP14.reviewSections.reduce((sum, section) => sum + section.items.length, 0) >= 15 &&
+  technicalDocs.RP14.safetyComponents.length >= 7 && technicalDocs.RP14.otherComponents.length >= 5 &&
+  !technicalDocsJs.includes('belge verilmez'));
+test('form seti şeması ortak/modül formlarını ayırıyor; FR.38/39 yalnız G ana checklistinde kalıyor', (() => {
+  const codes = ['FR16','FR30','FR32','LS14','FR34','FR35','FR37','FR38','FR39','FR47','FR48','FR50','FR65','FR51','RP06','RP07','RP14'];
+  const nonG = ['B','E','H1'].flatMap(module => denetimFormSets.formsFor(module, '81-20'));
+  return codes.every(code => !!denetimFormSets.FORMS[code]) &&
+    denetimFormSets.FORMS.FR38.special === 'mainChecklist' && denetimFormSets.FORMS.FR39.special === 'mainChecklist' &&
+    denetimFormSets.formsFor('G', '81-20').some(form => form.key === 'FR38') &&
+    nonG.every(form => form.key !== 'FR38' && form.key !== 'FR39') &&
+    denetimFormSets.FORMS.FR16.ratings.length >= 10 && denetimFormSets.FORMS.FR30.repeaters.length > 0 &&
+    denetimFormSets.FORMS.FR32.repeaters.length > 0 && denetimFormSets.FORMS.FR47.checklistSections.length > 0 &&
+    denetimFormSets.FORMS.RP06.repeaters.length > 0 && denetimFormSets.FORMS.RP07.repeaters.length > 0;
+})());
+test('birleşik form normalizasyonu eski FR.65/RP.14 verisini kayıpsız içeri alıyor', (() => {
+  const old = {
+    fr65: { values: { beyan_yuku: { file_value: '630 kg', field_value: '630 kg', status: 'Eşleşti' } } },
+    rp14: { checks: { inceleme_kapsami: { status: 'İncelendi', evidence: 'A-1' } }, characteristics: { ana_tip_varyant: 'T1' }, deviations: 'not' },
+  };
+  const record = denetimFormSets.normalize(null, old);
+  return record.forms.FR65.values.beyan_yuku.file_value === '630 kg' &&
+    record.forms.RP14.checks.inceleme_kapsami.evidence === 'A-1' &&
+    record.forms.RP14.characteristics.ana_tip_varyant === 'T1' && record.forms.RP14.deviations === 'not';
+})());
+test('birleşik form normalizasyonu iç içe verileri kopyalar; değişiklik karşılaştırması kaynağı mutasyona uğratmaz', (() => {
+  const source = { forms: { FR30: { fields: { client_representative: 'İlk değer' } } } };
+  const normalized = denetimFormSets.normalize(source);
+  normalized.forms.FR30.fields.client_representative = 'Düzenlendi';
+  return source.forms.FR30.fields.client_representative === 'İlk değer';
+})());
+test('tekrarlı form tablolarındaki alanlar doğru data-form-row-field kimliğiyle kaydedilir',
+  app.includes('data-form-row-field="${esc(field.key)}"') &&
+  app.includes("card.querySelectorAll('[data-form-row-field]')") &&
+  app.includes('input.dataset.formRowField'));
+test('form kayıt sayacı veri varlığını gösterir, uygunluk/tamamlanma sonucu veya kapanış şartı üretmez', (() => {
+  const record = denetimFormSets.emptyRecord();
+  record.forms.FR30 = { fields: { client_representative: 'Test' } };
+  const count = denetimFormSets.countForms(record, 'B', '81-20');
+  const closeFlow = app.slice(app.indexOf('async function denetimDurumuDegistir'), app.indexOf('async function showOzet'));
+  return count.started === 1 && count.total > count.started &&
+    app.includes('denetim_form_kayitlari: AVES_DENETIM_FORM_SETI.normalize') &&
+    !closeFlow.includes('denetimFormDurumu') &&
+    app.includes('uygunluk / belgelendirme kararının yerine geçmez') && app.includes('uygulama otomatik hesap ya da karar üretmez');
+})());
+test('birleşik form local-first kaydolur ve kapanış bütünlük özetinde normalize veri olarak bulunur',
+  app.includes('d.denetim_form_kayitlari = next;') &&
+  app.includes('d.teknik_dosya_kayitlari = { schema_version: 1, updated_at: now, fr65: next.forms.FR65, rp14: next.forms.RP14 }') &&
+  app.includes('await localWrite(\'denetimler\', d, \'denetimler\')') &&
+  app.includes('Kayıt cihazda tamamlanamadı; ekran açık bırakıldı') &&
+  app.includes('denetim_form_kayitlari: AVES_DENETIM_FORM_SETI.normalize'));
+test('seri numarası talimatı seri numarası ekranında ekipman etiketlerini yönlendiriyor',
+  app.includes('const SERI_NUMARASI_YARDIMI =') &&
+  app.includes('Fotoğraflar > Genel Yerleşim ve Kimlik kategorisine ekleyin') &&
+  app.includes('${esc(SERI_NUMARASI_YARDIMI)} Bilgiler fotoğraflardan bağımsızdır'));
+test('işlev testi video planı Fotoğraflar alanında açılır ve AVES fotoğraf yüklemesinden ayrı tutulur',
+  app.includes('<details class="photo-video-plan">') &&
+  app.includes('SAHA_KANIT_PLANI.videolar.map') &&
+  app.includes('Videolar bu AVES fotoğraf alanına yüklenmez') &&
+  app.includes('1,25 katı yükle fren testi') &&
+  app.includes('PTC, KRC, seviyeleme ve UPS testleri') &&
+  app.includes('UCM testi') && index.includes('.photo-video-plan summary'));
+test('saha güvenliği hatırlatması denetim başladıktan sonra aktif denetim ekranında görünür ve prosedürün yerini almaz',
+  app.includes('currentCanEdit && !tamamlandi ? `<aside class="saha-guvenlik"') &&
+  app.includes('SAHA_KANIT_PLANI.guvenlik.map') &&
+  app.includes('şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz') &&
+  index.includes('.saha-guvenlik{'));
 test('saha güvenilirliği: fotoğraf çekimi native kameraya değil uygulama içi kameraya (getUserMedia) yönleniyor',
   app.includes('const kameraIleFotografCek = async (kat) => {') &&
   app.includes('navigator.mediaDevices.getUserMedia({') &&
@@ -406,21 +587,28 @@ test('uygulama içi kamera çekimi de aynı sıkıştırma/kayıt/yükleme akı�
   app.includes('const fotografKaydet = async (kat, blob) => {') &&
   app.includes('await fotografKaydet(kat, blob);') &&
   app.includes('for (const file of files) await fotografKaydet(kat, file);'));
-test('fotoğraf silme: "onay verdim ama kaldırmadı" hatası düzeltildi — ağ/RLS hatası artık toast ile bildiriliyor, sessizce durmuyor',
+test('fotoğraf silme: Storage DELETE prefixes gövdesiyle gönderiliyor (tekli silme + arşiv temizliği)',
+  app.includes('async function fotografDepodanSil(objectPath)') &&
+  app.includes("API.authFetch('/storage/v1/object/denetim-fotograflari', {") &&
+  /method:\s*'DELETE',\s*body:\s*JSON\.stringify\(\{\s*prefixes:\s*\[objectPath\]\s*\}\),/.test(app) &&
+  (app.match(/await fotografDepodanSil\(foto\.object_path\);/g) || []).length === 2 &&
+  !app.includes("API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' }") &&
+  app.includes('console.error(\'Fotoğraf kaldırılamadı\', error);') &&
+  app.includes('Storage silme hatası (${response.status})'));
+test('fotoğraf silme: çevrimdışı uyarısı ve hata toastı korunuyor',
   app.includes("if (foto.sync_status !== 'pending' && !navigator.onLine) {") &&
   app.includes("toast('Bu fotoğraf zaten sunucuya yüklenmiş — silmek için internet gerekiyor, bağlantı gelince tekrar deneyin');") &&
-  app.includes("console.error('Fotoğraf kaldırılamadı', error);") &&
   app.includes("toast('Fotoğraf kaldırılamadı: ' + (error && error.message"));
 test('fotoğraf yönergesi denetçinin ilave kare ve muhakeme serbestisini koruyor',
   app.includes('Bu yönergeler sınırlayıcı bir liste değil') && app.includes('kuşkulu durumları ve uygunsuzlukları ayrıca kaydedin'));
 test('paraşüt fren izi kuyu boyunca fotoğraf yönergesinde',
-  app.includes('Paraşüt fren testi tamamlandıktan sonra frenin ray üzerinde oluşturduğu izi de fotoğraflayın'));
+  app.includes('Paraşüt fren testi tamamlandıktan sonra her iki raydaki frenleme izini'));
 test('alarm ve iki yönlü haberleşme özel değil her asansörde aranıyor',
   app.includes('Her asansörde aranan alarm ve iki yönlü haberleşme tertibatını') &&
   !app.slice(app.indexOf("'ozel_sistemler'"), app.indexOf('];', app.indexOf("'ozel_sistemler'"))).includes('alarm/iki yönlü haberleşme'));
 test('işlev testi videoları ayrı kurumsal aktarım ve arşive yönlendiriliyor',
-  app.includes('UCM testi, paraşüt fren testi, motor freni tek çene testi') &&
-  app.includes('kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle iletin'));
+  app.includes('Kurumun belirlediği ayrı aktarım ve arşiv yöntemiyle saklayın') &&
+  app.includes('photo-video-plan'));
 test('fotoğraflar yükleme öncesi küçültülüyor', app.includes('1600 / Math.max(bitmap.width, bitmap.height)') && app.includes("'image/jpeg', .82"));
 test('fotoğraflar sekmesi kategori bazlı grid ve tam görünüm sunuyor', app.includes('function fotografSekmesi') && app.includes('photo-kategori') && app.includes('photo-grid') && app.includes("window.open(url, '_blank')"));
 test('fotoğraf penceresinde başlık ve kapatma düğmesi içerik kayarken görünür kalıyor',
@@ -689,7 +877,8 @@ test('Ek Mühendislik maddelerinde Uygun Değil seçenek listesi yok, açıklama
   app.includes('const showUygDegilAciklama = uygunDegil && (avesMuhendislik ||') &&
   app.includes("row.durum !== 'Olumsuz bulgu' || row.kaynak_turu === 'Ek Mühendislik'"));
 
-test('tamamlanmış denetimde Yazdır düğmesi var', app.includes('id="btnYazdir"') && app.includes("tamamlandi ? '<button class=\"delbtn\" id=\"btnYazdir\""));
+test('tamamlanmış G checklist denetiminde Yazdır düğmesi var; form odaklı B/E/H1 için yanlış FR.38/39 çıktısı sunulmaz',
+  app.includes('id="btnYazdir"') && app.includes("tamamlandi && !formOnly ? '<button class=\"delbtn\" id=\"btnYazdir\""));
 test('10b: Yazdır çevrimdışı da çalışır — navigator.onLine engeli kalktı, tamamlanmış denetim şartı korundu',
   !formOutput.includes('yalnız çevrimiçiyken kullanılabilir') &&
   !/btnYazdir\.onclick = async \(\) => \{\s*\n\s*if \(!navigator\.onLine\)/.test(app) &&
@@ -700,8 +889,16 @@ test('10b: form şablonları + manifest + yazı tipi çevrimdışı önbellekte 
   app.includes("'./form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf'") &&
   app.includes("'./form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf'"));
 test('Yazdır PDF ve Word seçenekleri sunuyor', app.includes('data-print="pdf"') && app.includes('data-print="docx"'));
-test('form revizyonu yeni denetimde kilitleniyor', app.includes('form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart)'));
-test('takip denetimi ana kaydın kilitli form revizyonunu koruyor', app.includes('form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart)'));
+test('form revizyonu yeni denetimde modül bilgisiyle kilitleniyor', app.includes('form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart, f.modul)'));
+test('takip denetimi ana kaydın kilitli form revizyonunu modül bilgisiyle koruyor', app.includes('form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart, kaynak.modul)'));
+test('FR.39/A3 snapshotı ve çıktısı Modül G dışındaki denetimlere kapalı',
+  formOutput.includes("standard === '81-1/2+A3' && !isModuleG(modul)") &&
+  formOutput.includes("locked.some(item => item.key === 'UB_FR_39_R02' || item.standard === '81-1/2+A3')") &&
+  formOutput.includes('if (!modulG && a3Selected) return []'));
+test('yeni B/E/H1 denetimleri G’ye ait FR.38 snapshotını da almaz ve modülsüz eski G kayıtları korunur',
+  formOutput.includes('function isExplicitNonG(inspectionOrModule)') &&
+  formOutput.includes('if (isExplicitNonG(modul)) return { schema_version: 1') &&
+  formOutput.includes('if (isExplicitNonG(inspection)) return []'));
 test('form snapshot migration veri silmiyor ve RLS değiştirmiyor', rc39FormOutputMigration.includes('form_cikti_snapshot jsonb') && !/^\s*(delete|truncate|drop policy|create policy)\s+/mi.test(rc39FormOutputMigration));
 test('mevcut denetimler form revizyonuna bir kez bağlanıyor', rc39FormOutputMigration.includes("where ana_standart='81-20' and form_cikti_snapshot='{}'::jsonb") && rc39FormOutputMigration.includes("where ana_standart='81-1/2+A3' and form_cikti_snapshot='{}'::jsonb"));
 test('form snapshot backfill kimlik tetikleyicisini transaction içinde geri açıyor', rc39FormOutputMigration.includes('disable trigger trg_aves_denetim_kimligi') && rc39FormOutputMigration.includes('enable trigger trg_aves_denetim_kimligi') && rc39FormOutputMigration.indexOf('disable trigger trg_aves_denetim_kimligi') < rc39FormOutputMigration.indexOf('enable trigger trg_aves_denetim_kimligi'));
@@ -722,6 +919,39 @@ test('10d migration 82: 2 nullable kolon, RLS politikası ve veri değişikliği
   rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktarildi_at timestamptz') &&
   rc3953ArchiveStatusMigration.includes('add column if not exists arsive_aktaran_email text') &&
   !/^\s*(create policy|drop policy|update public\.|delete from|truncate)/mi.test(rc3953ArchiveStatusMigration));
+test('rc3.9.68 migration 83 teknik dosya JSONB alanını nullable ekler; RLS, trigger ve mevcut veriyi değiştirmez',
+  rc3968TechnicalDocsMigration.includes('add column if not exists teknik_dosya_kayitlari jsonb') &&
+  rc3968TechnicalDocsMigration.includes("teknik_dosya_kayitlari is null or jsonb_typeof(teknik_dosya_kayitlari) = 'object'") &&
+  !/^\s*(create policy|drop policy|create trigger|drop trigger|update public\.|delete from|truncate)/mi.test(rc3968TechnicalDocsMigration));
+test('rc3.9.69 migration 84 birleşik form JSONB alanını nullable ekler; RLS, trigger ve veriyi değiştirmez',
+  rc3969InspectionFormsMigration.includes('add column if not exists denetim_form_kayitlari jsonb') &&
+  rc3969InspectionFormsMigration.includes("denetim_form_kayitlari is null or jsonb_typeof(denetim_form_kayitlari) = 'object'") &&
+  rc3969InspectionFormsMigration.includes('add column if not exists teknik_dosya_kayitlari jsonb') &&
+  !/^\s*(create policy|drop policy|create trigger|drop trigger|update public\.|delete from|truncate)/mi.test(rc3969InspectionFormsMigration));
+test('rc3.9.72 migration 85 makes B type fields optional and DB-enforces A3 only for G without rewriting rows',
+  rc3972ModuleRulesMigration.includes('begin;') && rc3972ModuleRulesMigration.includes('commit;') &&
+  rc3972ModuleRulesMigration.includes('drop constraint if exists denetimler_modul_b_kimlik_check') &&
+  rc3972ModuleRulesMigration.includes('denetimler_a3_only_module_g_check') &&
+  rc3972ModuleRulesMigration.includes("kontrol_profili = 'modul_g_tam'") &&
+  rc3972ModuleRulesMigration.includes("ana_standart <> '81-1/2+A3'") &&
+  rc3972ModuleRulesMigration.includes('validate constraint denetimler_a3_only_module_g_check') &&
+  !/^\s*(create policy|drop policy|create trigger|drop trigger|update public\.|delete from|truncate)/mi.test(rc3972ModuleRulesMigration));
+test('migration 83-85 and live-rule behavioral SQL are part of the CI Postgres 17 job',
+  ci.includes('Migration 83 uygula') && ci.includes('Migration 84 uygula') &&
+  ci.includes('Migration 85 uygula') && ci.includes('tests/database/85_module_rules.sql') &&
+  rc3972ModuleRulesScenario.includes("'Modül B', 'Modül B - AB Tip İncelemesi', 'modul_b_tip_inceleme', null, null") &&
+  rc3972ModuleRulesScenario.includes("'Modül G', 'Modül G - Birim Doğrulaması', 'modul_g_tam'") &&
+  rc3972ModuleRulesScenario.includes('Modül B, TS EN 81-1/2+A3 ile kaydedildi') &&
+  rc3972ModuleRulesScenario.includes('Modül E, TS EN 81-1/2+A3 ile kaydedildi') &&
+  rc3972ModuleRulesScenario.includes('Modül H1, TS EN 81-1/2+A3 ile kaydedildi'));
+test('birleşik denetim formu scripti çevrimdışı paket ve HTML yükleme sırasına dahil',
+  index.includes('<script src="teknik-dosya-formlari.js"></script>') &&
+  index.includes('<script src="denetim-form-setleri.js"></script>') &&
+  index.includes('<script src="form-draft-journal.js"></script>') &&
+  index.indexOf('denetim-form-setleri.js') < index.indexOf('app.js') &&
+  app.includes("'./denetim-form-setleri.js'") && sw.includes("'./denetim-form-setleri.js'") &&
+  app.includes("'./form-draft-journal.js'") && sw.includes("'./form-draft-journal.js'") &&
+  app.includes("'denetim_form_kayitlari'") && app.includes("'teknik_dosya_kayitlari'"));
 test('10d migration 82: BEFORE UPDATE trigger arşiv alanlarını sunucu tarafında koruyor',
   rc3953ArchiveStatusMigration.includes('before update on public.denetimler') &&
   rc3953ArchiveStatusMigration.includes('trg_aves_arsiv_durumu_kilidi') &&
@@ -922,8 +1152,23 @@ test('JSON ve CSV rc3.9.7 doğrulama düzeltmelerini birlikte taşıyor',
 test('Modül B denetim türü ve kontrol profili tanımlı',
   app.includes("MODUL_B: 'Modül B - AB Tip İncelemesi'") &&
   app.includes("MODUL_B: 'modul_b_tip_inceleme'"));
-test('Modül B madde profili TAM gibi davranıyor (yeni madde eklenmedi)',
-  /if \(profil === KONTROL_PROFILLERI\.TAM \|\| profil === KONTROL_PROFILLERI\.MODUL_B\) return true;/.test(app));
+test('Modül B/E/H1 yeni denetimleri G checklist maddesi üretmeden aynı form akışına giriyor',
+  app.includes('function modulFormDenetimiMi(denetim)') &&
+  app.includes('function formOdakliDenetimMi(denetim, rows = [])') &&
+  app.includes('const sahaRows = (formOdakli ? [] : lib)') &&
+  app.includes('G tipi madde checklisti oluşturulmayacak') &&
+  app.includes('formOdakli ? \'Modül form seti hazırlandı\''));
+test('Form odaklı B/E/H1 hazırlığı çevrimdışı form tanımlarını doğrular; G madde kontrolü değişmez',
+  app.includes('forms_only: formsOnly') &&
+  app.includes('form_set_key_hash: formsOnly ? formSetKeyHash : null') &&
+  app.includes('if (!rows.length && formOdakliDenetimMi(d, rows))') &&
+  app.includes('Denetim maddeleri cihazda'));
+test('B/E/H1 kapanışında 0/0 checklist sonucu gösterilmez; gözden geçirme onayı gerekir ve form değişikliği onayı sıfırlar',
+  app.includes('form_seti_gozden_gecirildi_at') &&
+  app.includes('formReviewConfirm') &&
+  app.includes('Form setini gözden geçirdim; boş bırakılan veya sonraya bırakılan kayıtları değerlendirdim.') &&
+  app.includes('next.form_seti_gozden_gecirildi_at = null') &&
+  app.includes('Bu bir uygunluk veya tamlık sonucu değildir.'));
 test('Modül B için takip denetimi açık',
   app.includes('if (profil === KONTROL_PROFILLERI.TAM) return true;') &&
   app.includes('profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows)') &&
@@ -938,9 +1183,18 @@ test('Modül B takip muayenesi ÜB.FR.53 kapsamındaki uygunsuzluk satırlarıyl
 test('Modül B açıklaması ana form ile uygulanabilir ek standartları ayırıyor',
   app.includes('Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür.') &&
   app.includes('ilgili ek standart maddeleri ayrıca uygulanır'));
-test('Modül B formu ana tip / tip varyant kodu alanlarını zorunlu tutuyor',
+test('Modül B ana tip / tip varyant kodu alanları isteğe bağlı',
   app.includes('id="fAnaTip"') && app.includes('id="fTipVaryantKodu"') &&
-  app.includes("if (modulB && (!anaTip || !tipVaryantKodu)) { toast('Ana Tip ve Tip Varyant Kodu zorunlu'); return; }"));
+  app.includes('Ana Tip (isteğe bağlı)') && app.includes('Tip Varyant Kodu (isteğe bağlı)') &&
+  !app.includes("if (modulB && (!anaTip || !tipVaryantKodu)"));
+test('TS EN 81-1/2+A3 yalnız Modül G denetiminde açılır ve kayıtta doğrulanır', (() => {
+  const start = app.indexOf('function uygulaDenetimTuru()');
+  const end = app.indexOf("document.getElementById('fKaydet').onclick", start);
+  const flow = app.slice(start, end);
+  return flow.includes('else if (modulG)') && flow.includes("a3Butonu.style.display = ''") &&
+    flow.includes("a3Butonu.style.display = 'none'") && flow.includes('uygulaDenetimTuru();') &&
+    app.includes("single.sAna === '81-1/2+A3' && single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G");
+})());
 test('rc3.9.8 Modül B migration madde verisini değiştirmiyor, yalnız denetimler şemasını genişletiyor',
   !/delete\s+from/i.test(rc398ModulBMigration) &&
   !/update\s+public\.madde_kutuphanesi/i.test(rc398ModulBMigration) &&
