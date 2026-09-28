@@ -49,3 +49,13 @@ jobs:
         run: $PSQL -f work/r15d-rc1-unified/database/82_r15d_rc3953_arsiv_durumu.sql
       - name: Arsiv durumu senaryolari (dort-persona)
         run: $PSQL -f work/r15d-rc1-unified/tests/rls/82_arsiv_durumu.sql
+      - name: Migration 85 eski Modül B kimlik kısıtını kur
+        run: $PSQL -f work/r15d-rc1-unified/tests/database/85_legacy_constraint_fixture.sql
+      - name: Migration 83 uygula (teknik dosya kayıtları)
+        run: $PSQL -f work/r15d-rc1-unified/database/83_r15d_rc3968_teknik_dosya_kayitlari.sql
+      - name: Migration 84 uygula (denetim form kayıtları)
+        run: $PSQL -f work/r15d-rc1-unified/database/84_r15d_rc3969_denetim_form_kayitlari.sql
+      - name: Migration 85 uygula (Modül B kimlik / A3 kapsamı)
+        run: $PSQL -f work/r15d-rc1-unified/database/85_r15d_rc3972_modul_b_optional_a3_only_g.sql
+      - name: Migration 85 DB davranış senaryoları
+        run: $PSQL -f work/r15d-rc1-unified/tests/database/85_module_rules.sql
