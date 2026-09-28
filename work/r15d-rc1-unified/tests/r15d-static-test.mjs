@@ -590,7 +590,7 @@ test('uygulama içi kamera çekimi de aynı sıkıştırma/kayıt/yükleme akı�
 test('fotoğraf silme: Storage DELETE prefixes gövdesiyle gönderiliyor (tekli silme + arşiv temizliği)',
   app.includes('async function fotografDepodanSil(objectPath)') &&
   app.includes("API.authFetch('/storage/v1/object/denetim-fotograflari', {") &&
-  app.includes("method: 'DELETE',\n      body: JSON.stringify({ prefixes: [objectPath] }),") &&
+  /method:\s*'DELETE',\s*body:\s*JSON\.stringify\(\{\s*prefixes:\s*\[objectPath\]\s*\}\),/.test(app) &&
   (app.match(/await fotografDepodanSil\(foto\.object_path\);/g) || []).length === 2 &&
   !app.includes("API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' }") &&
   app.includes('console.error(\'Fotoğraf kaldırılamadı\', error);') &&
