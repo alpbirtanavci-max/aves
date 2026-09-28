@@ -108,7 +108,27 @@ const FormOutput = (() => {
     };
   }
 
-  async function createSnapshot(standard) {
+  function isModuleG(inspectionOrModule) {
+    const inspection = typeof inspectionOrModule === 'string' ? { modul: inspectionOrModule } : (inspectionOrModule || {});
+    return inspection.modul === 'Modül G' || inspection.modul === 'G' ||
+      inspection.denetim_turu === 'Modül G - Birim Doğrulaması' || inspection.kontrol_profili === 'modul_g_tam';
+  }
+
+  function isExplicitNonG(inspectionOrModule) {
+    const inspection = typeof inspectionOrModule === 'string' ? { modul: inspectionOrModule } : (inspectionOrModule || {});
+    const moduleValues = [inspection.modul, inspection.denetim_turu, inspection.kontrol_profili];
+    return moduleValues.some(value => [
+      'B', 'Modül B', 'Modül B - AB Tip İncelemesi', 'modul_b_tip_inceleme',
+      'E', 'Modül E', 'Modül E - Gözetim Saha Teyidi', 'saha_teyidi_e',
+      'H1', 'Modül H1', 'Modül H1 - Gözetim Saha Teyidi', 'saha_teyidi_h1',
+    ].includes(value));
+  }
+
+  async function createSnapshot(standard, modul) {
+    if (standard === '81-1/2+A3' && !isModuleG(modul)) {
+      throw new Error('TS EN 81-1/2+A3 yalnız Modül G için kullanılabilir');
+    }
+    if (isExplicitNonG(modul)) return { schema_version: 1, locked_at: new Date().toISOString(), forms: [] };
     const data = await manifest();
     const key = FORM_BY_STANDARD[standard];
     const form = key && data.forms[key];
@@ -120,6 +140,10 @@ const FormOutput = (() => {
     const data = await manifest();
     const locked = inspection && inspection.form_cikti_snapshot && Array.isArray(inspection.form_cikti_snapshot.forms)
       ? inspection.form_cikti_snapshot.forms : [];
+    const modulG = isModuleG(inspection);
+    const a3Selected = !!(inspection && inspection.ana_standart === '81-1/2+A3') ||
+      locked.some(item => item.key === 'UB_FR_39_R02' || item.standard === '81-1/2+A3');
+    if (!modulG && a3Selected) return [];
     if (locked.length) return locked.map(item => {
       const current = data.forms[item.key];
       if (!current || current.docx_sha256 !== item.template_docx_sha256 || current.pdf_sha256 !== item.template_pdf_sha256 || current.mapping_sha256 !== item.mapping_sha256) {
@@ -127,6 +151,7 @@ const FormOutput = (() => {
       }
       return Object.assign({}, item, { available: true });
     });
+    if (isExplicitNonG(inspection)) return [];
     const key = FORM_BY_STANDARD[inspection && inspection.ana_standart];
     const form = key && data.forms[key];
     return form ? [Object.assign(snapshotForm(key, form), { available: true, legacy_inferred: true })] : [];

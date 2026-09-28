@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.66';
+const APP_VERSION = 'R15D-rc3.9.72';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -853,7 +853,7 @@ const Sync = (() => {
 const GECMIS_ALANLARI = {
   denetimler: [
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
-    'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari',
+    'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari', 'teknik_dosya_kayitlari', 'denetim_form_kayitlari',
     'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
     'takip_atanan_email', 'takip_atanan_ad', 'takip_atama_at',
     'form_cikti_snapshot',
@@ -1038,6 +1038,21 @@ const UI = (() => {
     return resp.blob();
   }
 
+  async function fotografDepodanSil(objectPath) {
+    if (!objectPath) throw new Error('Fotoğrafın sunucu yolu bulunamadı');
+    // Supabase Storage silme API'si bucket endpoint'ine JSON prefixes listesi ister.
+    // Dosya yoluna boş gövdeli DELETE, Content-Type: application/json nedeniyle 400 döner.
+    const response = await API.authFetch('/storage/v1/object/denetim-fotograflari', {
+      method: 'DELETE',
+      body: JSON.stringify({ prefixes: [objectPath] }),
+    });
+    if (!response.ok && response.status !== 404) {
+      let detail = '';
+      try { detail = await response.text(); } catch {}
+      throw new Error(`Storage silme hatası (${response.status})${detail ? `: ${detail.slice(0, 180)}` : ''}`);
+    }
+  }
+
   async function fotografSekmesi() {
     await fotografOnbellekYenile(currentDenetimId);
     const denetim = await DB.get('denetimler', currentDenetimId);
@@ -1179,8 +1194,7 @@ const UI = (() => {
               remove.disabled = true;
               try {
                 if (foto.sync_status !== 'pending') {
-                  const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
-                  if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Sunucu reddetti (${storageDelete.status})`);
+                  await fotografDepodanSil(foto.object_path);
                   await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
                 }
                 await DB.del('fotograflar', foto.id);
@@ -1239,8 +1253,7 @@ const UI = (() => {
               for (const foto of [...tumFotograflar]) {
                 try {
                   if (foto.sync_status !== 'pending') {
-                    const storageDelete = await API.authFetch(`/storage/v1/object/denetim-fotograflari/${foto.object_path}`, { method: 'DELETE' });
-                    if (!storageDelete.ok && storageDelete.status !== 404) throw new Error(`Storage silme hatası (${storageDelete.status})`);
+                    await fotografDepodanSil(foto.object_path);
                     await API.del('denetim_fotograflari', `id=eq.${foto.id}`);
                   }
                   await DB.del('fotograflar', foto.id);
@@ -1439,6 +1452,13 @@ const UI = (() => {
     if (!marker) return { ready: false, detail: 'Bu cihazda hazırlık kontrolü yapılmadı.' };
     if (marker.device_id !== await getDeviceId()) return { ready: false, detail: 'Hazırlık başka bir cihazda yapılmış.' };
     if (marker.app_build_id !== APP_VERSION) return { ready: false, detail: 'Uygulama güncellendi; bu cihazda tekrar kontrol edilmeli.' };
+    if (!rows.length && formOdakliDenetimMi(d, rows)) {
+      const formKeys = modulFormSeti(d).map(form => form.key);
+      const formSetHash = await sha256Hex(formKeys.join('|'));
+      if (marker.forms_only !== true) return { ready: false, detail: 'Form seti için bu cihazda çevrimdışı hazırlık kontrolü yapılmadı.' };
+      if (!formKeys.length || marker.form_set_key_hash !== formSetHash) return { ready: false, detail: 'Bu modülün form seti bu cihazdaki hazırlık kaydıyla eşleşmiyor.' };
+      return { ready: true, detail: `${formKeys.length} form tanımı ve gerekli uygulama dosyaları bu cihazda doğrulandı.`, checkedAt: marker.checked_at };
+    }
     if (!rows.length) return { ready: false, detail: 'Checklist maddeleri bu cihazda bulunmuyor.' };
     if (rows.length !== marker.expected_item_count) return { ready: false, detail: `${rows.length}/${marker.expected_item_count} madde cihazda.` };
     const itemSetHash = await sha256Hex(rows.map(row => row.madde_id).sort().join('|'));
@@ -1473,7 +1493,7 @@ const UI = (() => {
   }
 
   function maddeKontrolProfilineUygun(m, profil) {
-    if (profil === KONTROL_PROFILLERI.TAM || profil === KONTROL_PROFILLERI.MODUL_B) return true;
+    if (profil === KONTROL_PROFILLERI.TAM) return true;
     const profiller = Array.isArray(m.denetim_profilleri) ? m.denetim_profilleri : [];
     return profiller.includes(profil);
   }
@@ -1481,6 +1501,70 @@ const UI = (() => {
   function sahaTeyidiProfiliMi(profil) {
     return profil === KONTROL_PROFILLERI.SAHA_TEYIDI_E ||
       profil === KONTROL_PROFILLERI.SAHA_TEYIDI_H1;
+  }
+
+  function denetimFormModulu(denetim) {
+    if (!denetim || denetim.takip_onceki_denetim_id) return null;
+    const profil = kontrolProfili(denetim);
+    const tur = String(denetim.denetim_turu || denetim.modul || '').toLocaleLowerCase('tr-TR');
+    if (profil === KONTROL_PROFILLERI.MODUL_B || tur.includes('modül b')) return 'B';
+    if (profil === KONTROL_PROFILLERI.SAHA_TEYIDI_E || tur.includes('modül e')) return 'E';
+    if (profil === KONTROL_PROFILLERI.SAHA_TEYIDI_H1 || tur.includes('h1')) return 'H1';
+    if (profil === KONTROL_PROFILLERI.TAM || tur.includes('modül g') || !denetim.kontrol_profili) return 'G';
+    return null;
+  }
+
+  function modulFormDenetimiMi(denetim) {
+    return ['B', 'E', 'H1'].includes(denetimFormModulu(denetim));
+  }
+
+  // Yeni B/E/H1 denetimleri form seti odaklıdır ve G checklist satırı üretmez.
+  // Eski kayıtlardaki mevcut satırlar korunur; bunları yeni ekranda gizleyip
+  // kapanışta sessizce yok saymamak için yalnız satırsız kayıtlar bu akıştadır.
+  function formOdakliDenetimMi(denetim, rows = []) {
+    return modulFormDenetimiMi(denetim) && rows.length === 0;
+  }
+
+  function modulFormSeti(denetim) {
+    const modul = denetimFormModulu(denetim);
+    return modul && typeof AVES_DENETIM_FORM_SETI !== 'undefined'
+      ? AVES_DENETIM_FORM_SETI.formsFor(modul, denetim.ana_standart, denetim.tahrik_tipi)
+      : [];
+  }
+
+  function formSetiGozdenGecirildiMi(denetim) {
+    const kayit = denetimFormKaydi(denetim);
+    return !!(kayit && kayit.form_seti_gozden_gecirildi_at);
+  }
+
+  function denetimFormKaydi(denetim) {
+    if (!denetim || typeof AVES_DENETIM_FORM_SETI === 'undefined') return null;
+    return AVES_DENETIM_FORM_SETI.normalize(denetim.denetim_form_kayitlari, denetim.teknik_dosya_kayitlari);
+  }
+
+  function denetimFormIstatistikleri(denetim) {
+    const modul = denetimFormModulu(denetim);
+    const formLib = AVES_DENETIM_FORM_SETI;
+    if (!modul || typeof formLib === 'undefined') return null;
+    const kayit = denetimFormKaydi(denetim);
+    const ozet = formLib.countForms(kayit, modul, denetim.ana_standart, denetim.tahrik_tipi);
+    const legacy = AVES_TEKNIK_DOSYA_FORM.normalize({
+      fr65: kayit.forms.FR65,
+      rp14: kayit.forms.RP14,
+    });
+    const fr65 = AVES_TEKNIK_DOSYA_FORM.countFr65(legacy, denetim.tahrik_tipi);
+    const rp14Toplam = modul === 'B'
+      ? AVES_TEKNIK_DOSYA_FORM.RP14.reviewSections.reduce((total, section) => total + section.items.length, 0)
+      : 0;
+    const rp14Kayit = modul === 'B'
+      ? AVES_TEKNIK_DOSYA_FORM.RP14.reviewSections.flatMap(section => section.items)
+        .filter(([key]) => !!(legacy.rp14.checks[key] && legacy.rp14.checks[key].status)).length
+      : 0;
+    return { modul, kayit, ozet, fr65, rp14Kayit, rp14Toplam };
+  }
+
+  function denetimFormKaydiVarMi(denetim) {
+    return !!(denetim && (denetim.denetim_form_kayitlari || denetim.teknik_dosya_kayitlari));
   }
 
   function standartOzeti(d) {
@@ -1562,6 +1646,11 @@ const UI = (() => {
       showLogin(msg);
       return;
     }
+    // Form taslaklarını yalnız Profile.load() tamamlandıktan sonra kurtar:
+    // canEditDenetim() rol/atanmış denetçi yetkisini Profile.current üzerinden
+    // değerlendirir. Login oturumu var ama profil henüz yüklenmemişse form
+    // taslağını atlamak, sonraki düzenlemede eski kayıtla ezilmesine yol açar.
+    try { await UI.recoverDrafts(API.email); } catch {}
     try { await Sync.pullKutuphane(); } catch (e) {
       // çevrimdışı ilk giriş: kütüphane yoksa uyar
       const have = await DB.kvGet('kutuphane_ok');
@@ -1626,7 +1715,10 @@ const UI = (() => {
     const hazirlikAktif = [];   // sahaya çıkılabilecek denetimler {d, ready}
     for (const d of denetimler) {
       const st = statsBy[d.id];
-      const offlineState = await cevrimdisiHazirlikDurumu(d, rowsBy[d.id] || []);
+      const denetimRows = rowsBy[d.id] || [];
+      const formOnly = formOdakliDenetimMi(d, denetimRows);
+      const formStats = formOnly ? denetimFormIstatistikleri(d) : null;
+      const offlineState = await cevrimdisiHazirlikDurumu(d, denetimRows);
       const canEdit = canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
@@ -1642,7 +1734,14 @@ const UI = (() => {
         ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
         ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
-        <div class="dstats">${st
+        <div class="dstats">${formOnly
+          ? `<span class="pill total">${formStats.ozet.started}/${formStats.ozet.total} formda kayıt</span>
+             <span class="pill na">Madde checklisti kullanılmıyor</span>
+             <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Çalışma tamamlandı' : (gozden ? 'Gözden geçirme' : 'Devam ediyor')}</span>
+             ${tamamlandi && d.arsive_aktarildi_at ? '<span class="pill ok">📁 arşivde</span>' : ''}
+             ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
+             <span class="pill cached">📱 cihazda</span>`
+          : st
           ? `<span class="pill total">${st.ok + st.bad + st.na}/${st.toplam}</span>
              <span class="pill ok">${st.ok} uygun</span>
              ${st.bad ? `<span class="pill bad">${st.bad} uygun değil</span>` : ''}
@@ -1723,6 +1822,7 @@ const UI = (() => {
     const modulBTakipUygunsuzlukSayisi = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
       ? tamamlananRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu').length
       : 0;
+    const formOnly = formOdakliDenetimMi(d, tamamlananRows);
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal completed-choice">
@@ -1734,8 +1834,8 @@ const UI = (() => {
         <div class="onay-satir"><span>Tarih</span><b>${esc(d.denetim_tarihi || '')}</b></div>
         <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
-      <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
-      <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.</span></button>
+      <button class="mode-choice" id="completedReview"><b>${formOnly ? 'Form kayıtlarını incele' : 'İnceleme'}</b><span>${formOnly ? 'Modül form setindeki kayıtları salt okunur açar. Bu ekran uygunluk kararı üretmez.' : 'Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.'}</span></button>
+      <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>${formOnly ? 'Form kayıt özeti, fotoğraf arşiv durumu ve takip bilgisini gösterir.' : 'Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.'}</span></button>
       <button class="mode-choice" id="completedHandover"><b>Devir Teslim</b><span>Denetimin tamamlandığını başka bir yetkiliye bildirir; ilk denetçi ve geçmiş kayıtları değişmez.</span></button>
       ${canStartFollowup(d, tamamlananRows) ? `<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B ? `ÜB.FR.53 kapsamındaki ${modulBTakipUygunsuzlukSayisi} uygunsuzluğu yeniden doğrulamak için bağlı takip muayenesi oluşturur.` : 'Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.'}</span></button>` : ''}
       ${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B && !modulBTakipUygunsuzlukSayisi ? '<div class="photo-help">Bu Modül B denetiminde takip muayenesine aktarılacak uygunsuzluk bulunmuyor.</div>' : ''}
@@ -1872,7 +1972,7 @@ const UI = (() => {
       butunluk_hash: null,
       butunluk_hesaplandi_at: null,
       seri_numaralari: { schema_version: 1 },
-      form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart),
+      form_cikti_snapshot: kaynak.form_cikti_snapshot || await FormOutput.createSnapshot(kaynak.ana_standart, kaynak.modul),
       olusturan_email: Profile.email,
       olusturan_ad: Profile.name,
       created_at: now,
@@ -1955,18 +2055,18 @@ const UI = (() => {
       <div class="form-card"><h3>Denetim türü *</h3>${seg('sDenetimTuru', [DENETIM_TURLERI.MODUL_G,DENETIM_TURLERI.MODUL_E,DENETIM_TURLERI.MODUL_H1,DENETIM_TURLERI.MODUL_B])}
         <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 AVES gözetim form setlerine bağlı saha teyidi akışıdır; Modül B ise ana saha formu ÜB.FR.38 olan AB Tip İncelemesi'dir.</p>
       </div>
-      <div class="form-card" id="modulBCard" style="display:none"><h3>AB Tip İncelemesi kimliği *</h3>
+      <div class="form-card" id="modulBCard" style="display:none"><h3>AB Tip İncelemesi kimliği (isteğe bağlı)</h3>
         <div class="grid2">
-          <div class="field full"><label for="fAnaTip">Ana Tip *</label><input id="fAnaTip" autocomplete="off"></div>
-          <div class="field full"><label for="fTipVaryantKodu">Tip Varyant Kodu *</label><input id="fTipVaryantKodu" autocomplete="off"></div>
+          <div class="field full"><label for="fAnaTip">Ana Tip (isteğe bağlı)</label><input id="fAnaTip" autocomplete="off" placeholder="Varsa girin"></div>
+          <div class="field full"><label for="fTipVaryantKodu">Tip Varyant Kodu (isteğe bağlı)</label><input id="fTipVaryantKodu" autocomplete="off" placeholder="Varsa girin"></div>
         </div>
       </div>
       <div class="form-card" id="standartCard"><h3>Ana standart *</h3>
         <div class="segs" id="sAna">
           <button type="button" class="seg" data-v="81-20">TS EN 81-20</button>
-          <button type="button" class="seg" data-v="81-1/2+A3">TS EN 81-1/2+A3</button>
+          <button type="button" class="seg" data-v="81-1/2+A3" style="display:none" disabled>TS EN 81-1/2+A3</button>
         </div>
-        <p id="standartAciklama" style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G için TS EN 81-20 veya TS EN 81-1/2+A3 seçilir. TS EN 81-70, TS EN 81-20 akışına otomatik ve zorunlu olarak eklenir.</p>
+        <p id="standartAciklama" style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Önce denetim türünü seçin. TS EN 81-1/2+A3 yalnız Modül G denetiminde kullanılabilir.</p>
       </div>
       <div class="form-card"><h3>Bina ve kabin düzeni *</h3>
         <div class="grid2">
@@ -2013,14 +2113,17 @@ const UI = (() => {
       const sahaTeyidi = single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ||
         single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1;
       const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
+      const modulG = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G;
       document.getElementById('modulBCard').style.display = modulB ? '' : 'none';
       const standartButonlari = [...document.querySelectorAll('#sAna .seg')];
+      const a3Butonu = standartButonlari.find(b => b.dataset.v === '81-1/2+A3');
       if (sahaTeyidi) {
         single.sAna = '81-20';
         standartButonlari.forEach(b => {
           b.classList.toggle('on', b.dataset.v === '81-20');
           b.disabled = true;
         });
+        a3Butonu.style.display = 'none';
         document.getElementById('standartAciklama').textContent =
           'AVES Modül E/H1 gözetim form setinde saha teyidi TS EN 81-20 üzerinden yürür. Standart denetçi tarafından değiştirilemez.';
       } else if (modulB) {
@@ -2029,15 +2132,24 @@ const UI = (() => {
           b.classList.toggle('on', b.dataset.v === '81-20');
           b.disabled = true;
         });
+        a3Butonu.style.display = 'none';
         document.getElementById('standartAciklama').textContent =
           'Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür. Asansörün tasarım ve kullanım özelliklerine göre ilgili ek standart maddeleri ayrıca uygulanır; ana standart denetçi tarafından değiştirilemez.';
-      } else {
+      } else if (modulG) {
         single.sAna = null;
         standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = false; });
+        a3Butonu.style.display = '';
         document.getElementById('standartAciklama').textContent =
           'Modül G için TS EN 81-20 veya TS EN 81-1/2+A3 seçilir. TS EN 81-70, TS EN 81-20 akışına otomatik ve zorunlu olarak eklenir.';
+      } else {
+        single.sAna = null;
+        standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = true; });
+        a3Butonu.style.display = 'none';
+        document.getElementById('standartAciklama').textContent =
+          'Önce denetim türünü seçin. TS EN 81-1/2+A3 yalnız Modül G denetiminde kullanılabilir.';
       }
     }
+    uygulaDenetimTuru();
 
     document.getElementById('fKaydet').onclick = async () => {
       const muhendis = Profile.name;
@@ -2057,7 +2169,9 @@ const UI = (() => {
       if (!musteri || !seri) { toast('Müşteri ünvanı ve seri no zorunlu'); return; }
       if (!adres) { toast('Adres zorunlu'); return; }
       if (!single.sDenetimTuru) { toast('Denetim türünü seçin'); return; }
-      if (modulB && (!anaTip || !tipVaryantKodu)) { toast('Ana Tip ve Tip Varyant Kodu zorunlu'); return; }
+      if (single.sAna === '81-1/2+A3' && single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G) {
+        toast('TS EN 81-1/2+A3 yalnız Modül G denetimlerinde kullanılabilir'); return;
+      }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
       if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
@@ -2092,21 +2206,25 @@ const UI = (() => {
       if (seriNoUyarisi) { toast(seriNoUyarisi); return; }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
-      // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
-      // olsa bile yeni denetim yanlış 08/09 özel bölümleriyle oluşturulmaz.
-      const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
-      const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
       const kontrolProfil = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G
         ? KONTROL_PROFILLERI.TAM
         : single.sDenetimTuru === DENETIM_TURLERI.MODUL_E
           ? KONTROL_PROFILLERI.SAHA_TEYIDI_E
           : single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1
-            ? KONTROL_PROFILLERI.SAHA_TEYIDI_H1
-            : KONTROL_PROFILLERI.MODUL_B;
-      const tahmini = lib.filter(m =>
-        m.aktif && secili.has(m.standart_grubu) && maddeKontrolProfilineUygun(m, kontrolProfil)
-      ).length;
-      if (sahaTeyidiProfiliMi(kontrolProfil) && tahmini === 0) {
+          ? KONTROL_PROFILLERI.SAHA_TEYIDI_H1
+          : KONTROL_PROFILLERI.MODUL_B;
+      const formOdakli = kontrolProfil !== KONTROL_PROFILLERI.TAM;
+      let tahmini = 0;
+      if (!formOdakli) {
+        // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
+        // olsa bile yeni G denetimi yanlış 08/09 özel bölümleriyle oluşturulmaz.
+        const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
+        const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
+        tahmini = lib.filter(m =>
+          m.aktif && secili.has(m.standart_grubu) && maddeKontrolProfilineUygun(m, kontrolProfil)
+        ).length;
+      }
+      if (!formOdakli && sahaTeyidiProfiliMi(kontrolProfil) && tahmini === 0) {
         toast('Saha teyidi madde profili henüz bu çalışma paketine eklenmedi');
         return;
       }
@@ -2140,6 +2258,11 @@ const UI = (() => {
     const ov = document.createElement('div');
     ov.className = 'overlay';
     const satir = (k, v) => v ? `<div class="onay-satir"><span>${esc(k)}</span><b>${esc(v)}</b></div>` : '';
+    const modulForm = ['Modül B', 'Modül E', 'Modül H1'].includes(f.modul);
+    const formKod = f.modul === 'Modül B' ? 'B' : f.modul === 'Modül E' ? 'E' : 'H1';
+    const uygulanacakFormlar = modulForm
+      ? AVES_DENETIM_FORM_SETI.formsFor(formKod, f.anaStandart, f.tahrik).length
+      : 0;
     ov.innerHTML = `<div class="modal">
       <h3>Denetimi başlatmadan önce kontrol edin</h3>
       <div class="onay-box">
@@ -2154,9 +2277,9 @@ const UI = (() => {
         ${satir('Ana Tip', f.anaTip)}
         ${satir('Tip Varyant Kodu', f.tipVaryantKodu)}
         ${satir('Ana standart', f.anaStandart)}
-        ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
-        ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
-        ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
+        ${!modulForm ? satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null) : ''}
+        ${!modulForm ? satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73') : ''}
+        ${!modulForm ? satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null) : ''}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}
         ${satir('Kapı açılma biçimi', f.kabinKapiAcilmaTipi)}
@@ -2166,7 +2289,9 @@ const UI = (() => {
         ${satir('Beyan hızı', f.hiz ? f.hiz + ' m/s' : null)}
         ${satir('Kapasite', f.kapasite ? f.kapasite + ' kişi' : null)}
         ${satir('Durak sayısı', f.durak)}
-        ${satir('Oluşturulacak madde', tahmini + ' madde')}
+        ${modulForm
+          ? satir('Uygulanacak form seti', `${uygulanacakFormlar} form · G tipi madde checklisti oluşturulmayacak`)
+          : satir('Oluşturulacak madde', tahmini + ' madde')}
       </div>
       <button class="btn btn-ghost" id="onDuzelt" style="margin-bottom:8px">‹ Bilgileri düzelt</button>
       <button class="btn btn-primary" id="onBaslat">Denetimi başlat</button>
@@ -2176,7 +2301,7 @@ const UI = (() => {
     ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
     ov.querySelector('#onBaslat').onclick = async () => {
       const btn = ov.querySelector('#onBaslat');
-      btn.disabled = true; btn.textContent = 'Maddeler hazırlanıyor…';
+      btn.disabled = true; btn.textContent = modulForm ? 'Form seti hazırlanıyor…' : 'Maddeler hazırlanıyor…';
       await olustur(f);
       ov.remove();
     };
@@ -2207,6 +2332,9 @@ const UI = (() => {
         kapasite_kisi: f.kapasite,
         durak_sayisi: f.durak,
         aski_tipi: f.aski,
+        denetim_form_kayitlari: [KONTROL_PROFILLERI.MODUL_B, KONTROL_PROFILLERI.SAHA_TEYIDI_E, KONTROL_PROFILLERI.SAHA_TEYIDI_H1].includes(f.kontrolProfili)
+          ? AVES_DENETIM_FORM_SETI.emptyRecord()
+          : null,
         denetimi_yapan: f.muhendis,
         denetim_tarihi: localDateISO(),
         denetim_durumu: 'Devam Ediyor',
@@ -2231,7 +2359,7 @@ const UI = (() => {
         butunluk_hesaplandi_at: null,
         offline_check: null,
         seri_numaralari: { schema_version: 1 },
-        form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart),
+        form_cikti_snapshot: await FormOutput.createSnapshot(f.anaStandart, f.modul),
         olusturan_email: Profile.email,
         olusturan_ad: Profile.name,
         created_at: new Date().toISOString(),
@@ -2239,9 +2367,10 @@ const UI = (() => {
       };
 
       // maddeleri CİHAZDA üret (offline-first'in kalbi)
-      const lib = await DB.all('kutuphane');
+      const formOdakli = modulFormDenetimiMi(d);
+      const lib = formOdakli ? [] : await DB.all('kutuphane');
       const secili = seciliStandartGruplari(d.ana_standart, d.ek_standartlar);
-      const sahaRows = lib
+      const sahaRows = (formOdakli ? [] : lib)
         .filter(m =>
           m.aktif && m.madde_id !== 'MAD-1010' && secili.has(m.standart_grubu) &&
           maddeKontrolProfilineUygun(m, kontrolProfili(d))
@@ -2330,7 +2459,7 @@ const UI = (() => {
       for (let i = 0; i < sahaRows.length; i += 200) {
         await localWrite('saha_kontrol', sahaRows.slice(i, i+200), 'saha');
       }
-      toast(`${sahaRows.length} madde hazırlandı`);
+      toast(formOdakli ? 'Modül form seti hazırlandı' : `${sahaRows.length} madde hazırlandı`);
       showDenetim(d.id);
   }
 
@@ -2339,19 +2468,28 @@ const UI = (() => {
     // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez.
     await DB.kvDel(`offline_ready_${d.id}`);
     const checks = [];
+    const formsOnly = formOdakliDenetimMi(d, rows);
     // advisory: kırmızı gösterilir ama "hazır" işaretini engellemez (ör. tarayıcı
     // kararına bağlı kalıcı depolama izni).
     const add = (name, ok, detail, advisory) => checks.push({ name, ok: !!ok, detail, advisory: !!advisory });
     const manifest = await DB.kvGet('kutuphane_manifest');
     const library = await DB.all('kutuphane');
+    const applicableForms = formsOnly ? modulFormSeti(d) : [];
+    const formKeys = applicableForms.map(form => form.key);
+    const formSetKeyHash = await sha256Hex(formKeys.join('|'));
     const itemIds = rows.map(r => r.madde_id).sort();
     const uniqueIds = new Set(itemIds);
     const itemSetHash = await sha256Hex(itemIds.join('|'));
 
-    add('Denetim maddeleri cihazda', rows.length > 0, `${rows.length} madde`);
-    add('Madde kimlikleri eksiksiz ve benzersiz', itemIds.every(Boolean) && uniqueIds.size === rows.length, `${uniqueIds.size}/${rows.length}`);
-    add('Madde snapshot alanları hazır', rows.every(r => r.id && r.denetim_id === d.id && r.bolum && r.kontrol_basligi), 'Kimlik, bölüm ve kontrol metni');
-    add('Kütüphane manifesti doğrulandı', !!manifest && manifest.count === library.length && !!manifest.content_hash, manifest ? `${library.length} madde · ${String(manifest.content_hash || '').slice(0,12)}…` : 'Manifest yok');
+    if (formsOnly) {
+      add(`Modül ${denetimFormModulu(d)} form seti cihazda`, formKeys.length > 0, `${formKeys.length} uygulanabilir form`);
+      add('Form şemaları eksiksiz', formKeys.every(key => !!AVES_DENETIM_FORM_SETI.FORMS[key]), 'Uygulanabilir tüm form tanımları yüklü');
+    } else {
+      add('Denetim maddeleri cihazda', rows.length > 0, `${rows.length} madde`);
+      add('Madde kimlikleri eksiksiz ve benzersiz', itemIds.every(Boolean) && uniqueIds.size === rows.length, `${uniqueIds.size}/${rows.length}`);
+      add('Madde snapshot alanları hazır', rows.every(r => r.id && r.denetim_id === d.id && r.bolum && r.kontrol_basligi), 'Kimlik, bölüm ve kontrol metni');
+      add('Kütüphane manifesti doğrulandı', !!manifest && manifest.count === library.length && !!manifest.content_hash, manifest ? `${library.length} madde · ${String(manifest.content_hash || '').slice(0,12)}…` : 'Manifest yok');
+    }
 
     const profileVerifiedAt = await DB.kvGet('profile_verified_at');
     const profileVerifiedEmail = await DB.kvGet('profile_verified_email');
@@ -2430,7 +2568,7 @@ const UI = (() => {
       d.expected_item_count = rows.length;
       d.expected_item_set_hash = itemSetHash;
       d.app_build_id = APP_VERSION;
-      d.kutuphane_content_hash = manifest.content_hash;
+      d.kutuphane_content_hash = manifest ? manifest.content_hash : null;
       d.offline_check = { checked_at: now, checks };
       d.updated_at = now;
       await DB.kvSet(`offline_ready_${d.id}`, {
@@ -2438,6 +2576,8 @@ const UI = (() => {
         app_build_id: APP_VERSION,
         expected_item_count: rows.length,
         item_set_hash: itemSetHash,
+        forms_only: formsOnly,
+        form_set_key_hash: formsOnly ? formSetKeyHash : null,
         kutuphane_content_hash: manifest.content_hash,
         checked_at: now,
       });
@@ -2558,6 +2698,10 @@ const UI = (() => {
     const rows = (await guncelKutuphaneMetadatasi(
       await DB.allByIndex('saha', 'byDenetim', currentDenetimId)
     )).sort(siraKarsilastir);
+    const denetimFormDurumu = denetimFormIstatistikleri(d);
+    const formOnly = formOdakliDenetimMi(d, rows);
+    const formDefinitions = formOnly ? modulFormSeti(d) : [];
+    const formRecord = formOnly ? denetimFormKaydi(d) : null;
     const offlineState = await cevrimdisiHazirlikDurumu(d, rows);
     const { items: inspectionOutbox, cakisma: conflictSync, korunan: protectedSync, bekleyen: waitingSync } = await Sync.denetimSyncOzeti(currentDenetimId);
     const done = rows.filter(isFlowComplete).length;
@@ -2592,9 +2736,10 @@ const UI = (() => {
       <div class="inspection-toolbar">
         <button class="backlink" id="back">‹ Denetimler</button>
         <div class="inspection-actions">
+          ${denetimFormDurumu ? `<button class="delbtn" id="btnDenetimFormu" title="Modül ${denetimFormDurumu.modul} için form seti veri kayıtları">📄 Denetim Formu${denetimFormDurumu.ozet.started ? ` · ${denetimFormDurumu.ozet.started} formda kayıt` : ''}</button>` : ''}
           ${currentCanEdit && !tamamlandi ? '<button class="delbtn" id="btnSahayaHazirla" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
           ${canReopenDenetim(d) ? '<button class="delbtn" id="btnYenidenAc" title="Düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
-          ${tamamlandi ? '<button class="delbtn" id="btnYazdir" title="Resmî formu PDF veya Word olarak hazırla">Yazdır</button>' : ''}
+          ${tamamlandi && !formOnly ? '<button class="delbtn" id="btnYazdir" title="Resmî formu PDF veya Word olarak hazırla">Yazdır</button>' : ''}
           ${d.takip_onceki_denetim_id ? '<button class="delbtn" id="btnTakipCikti" title="Yalnız takip maddelerini yazdır">Takip Çıktısı</button>' : ''}
           ${d.takip_onceki_denetim_id && Profile.canCorrectInspections ? '<button class="delbtn" id="btnTakipAta" title="Takip mühendisi ata">Takip Ata</button>' : ''}
           ${canDeleteDenetim(d) ? '<button class="delbtn" id="btnSil" title="Denetimi sil">🗑 Sil</button>' : ''}
@@ -2631,23 +2776,35 @@ const UI = (() => {
           : waitingSync || fotografBekleyenSayisi
             ? `✓ Cihaza kaydedildi · ${[waitingSync ? `${waitingSync} işlem` : null, fotografBekleyenSayisi ? `${fotografBekleyenSayisi} fotoğraf` : null].filter(Boolean).join(', ')} sunucu aktarımı bekliyor`
             : '✓ Cihaz ve sunucu eşit · Bekleyen işlem yok'}</div>
-        <div class="progressbar"><div style="width:${rows.length ? done/rows.length*100 : 0}%"></div></div>
-        <div class="pnums"><span>${done} / ${rows.length} madde</span><span>${bad} uygun değil${bakilmadiSayisi ? ` · ${bakilmadiSayisi} bakılmadı` : ''}</span></div>
+        ${formOnly
+          ? `<div class="form-record-progress"><b>${denetimFormDurumu.ozet.started}/${denetimFormDurumu.ozet.total} formda veri kaydı var</b><small>Bu sayaç kayıt varlığını gösterir; form tamlığı veya uygunluk değerlendirmesi değildir.</small></div>`
+          : `<div class="progressbar"><div style="width:${rows.length ? done/rows.length*100 : 0}%"></div></div>
+             <div class="pnums"><span>${done} / ${rows.length} madde</span><span>${bad} uygun değil${bakilmadiSayisi ? ` · ${bakilmadiSayisi} bakılmadı` : ''}</span></div>`}
       </div>
-      <input class="searchbox" id="srch" placeholder="Madde no veya kelime ara…" value="${esc(search)}">
+      ${formOnly ? `<section class="form-set-overview">
+        <div class="form-set-overview-head"><div><h3>Modül ${denetimFormDurumu.modul} · Denetim form seti</h3>
+          <p>Bu akışta G modülünün madde checklisti kullanılmaz. Her formun saha verisini aşağıdaki form ekranında kaydedin.</p></div>
+          <button type="button" class="btn btn-primary" id="btnFormSetMain">Form setini aç</button></div>
+        <div class="form-set-list">${formDefinitions.map(definition => {
+          const hasData = AVES_DENETIM_FORM_SETI.formHasData(formRecord, definition.key);
+          return `<div class="form-set-row ${hasData ? 'has-data' : ''}"><span class="form-set-mark">${hasData ? '✓' : '○'}</span>
+            <div><b>ÜB.${esc(definition.key)} · ${esc(definition.title)}</b><small>${esc(definition.description)}</small></div>
+            <span class="form-set-status">${hasData ? 'Kayıt var' : 'Henüz kayıt yok'}</span></div>`;
+        }).join('')}</div>
+        ${formOdakli && !formSetiGozdenGecirildiMi(d) ? '<div class="form-set-note">Kapanışta form setini ayrıca gözden geçirmeniz istenir. Veri girilmemiş alanlar otomatik olarak tamamlanmış sayılmaz.</div>' : ''}
+      </section>` : `<input class="searchbox" id="srch" placeholder="Madde no veya kelime ara…" value="${esc(search)}">
       <div class="filters">
         <button class="chip ${filter==='all'?'on':''}" data-f="all">Tümü</button>
         ${d.takip_onceki_denetim_id ? `<button class="chip ${filter==='previous_bad'?'on':''}" data-f="previous_bad">Önceki Uygun Değil</button>` : ''}
         <button class="chip ${filter==='empty'?'on':''}" data-f="empty">Bakılmadı</button>
         <button class="chip ${filter==='bad'?'on':''}" data-f="bad">Uygun Değil</button>
         ${icNot ? `<button class="chip ${filter==='internal'?'on':''}" data-f="internal">İç kontrol notu</button>` : ''}
-      </div>
-      <div id="bolums">`;
+      </div><div id="bolums">`}`;
 
     const notlar = d.bolum_aciklamalari || {};
     // sıralı akış: tamamlanmamış ilk bölümü bul; ilk açılışta o bölüm açık gelsin
     let firstIncompleteBolum = null;
-    for (const b of bolums) {
+    for (const b of (formOnly ? [] : bolums)) {
       if (byBolum[b].some(r => !isFlowComplete(r))) { firstIncompleteBolum = b; break; }
     }
     if (openBolums.size === 0 && !search && filter === 'all' && bolums.length) {
@@ -2709,18 +2866,18 @@ const UI = (() => {
         <div class="bolum-body">${bodyHtml}${freeMode ? '' : ''}</div>
       </div>`;
     }
-    html += `</div><div style="height:8px"></div></div>
+    html += `${formOnly ? '' : '</div>'}<div style="height:8px"></div></div>
     ${stickyNav ? `<div class="stickynav">
       <button class="sn-prev" data-sn="prev" ${stickyNav.canPrev?'':'disabled'}>‹ Önceki</button>
       <button class="sn-next" data-sn="next" ${stickyNav.canNext?'':'disabled'}>${stickyNav.nextLabel}</button>
     </div>` : ''}
     <div class="footbar">
-      <button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>
+      ${formOnly ? '<button class="btn btn-ozet" id="btnFormSetBottom">📄 Form setini aç</button>' : `<button class="btn btn-ozet" id="btnOzet">İnceleme Modu (${rows.length})</button>`}
       <button class="btn btn-serial ${seriEksikleri(d).length ? 'pending' : 'ready'}" id="btnSeriler">Seri No · ${seriNumarasiSayisi(d)}/${seriBeklenenMinimum(d)}</button>
       <button class="btn btn-serial ready" id="btnFotograflar">📷 Fotoğraflar${fotografToplamSayisi() ? ` · ${fotografToplamSayisi()}` : ''}</button>
       ${inspectionReadOnly && normaldeDuzenleyebilir ? '<button class="btn btn-finish ready" id="btnDenetimeDon">↩ Denetime Geri Dön</button>' : ''}
       ${currentCanEdit && !tamamlandi ? `<button class="btn btn-finish ${bakilmadiSayisi === 0 ? 'ready' : ''}" id="btnBitirGlobal">${bakilmadiSayisi === 0
-        ? (gozden ? 'Çalışmayı Tamamla' : 'Saha Kontrolünü Bitir')
+        ? (gozden ? 'Çalışmayı Tamamla' : formOnly ? 'Form Seti Gözden Geçirme' : 'Saha Kontrolünü Bitir')
         : 'Denetimi Bitir'}</button>` : ''}
     </div>`;
     document.getElementById('app').innerHTML = html;
@@ -2836,7 +2993,14 @@ const UI = (() => {
       if (!canReopenDenetim(d)) return;
       duzeltmeNedeniSec(d);
     };
-    document.getElementById('srch').oninput = (e) => { search = e.target.value.trim().toLowerCase(); renderDenetim(); };
+    const btnDenetimFormu = document.getElementById('btnDenetimFormu');
+    if (btnDenetimFormu) btnDenetimFormu.onclick = () => denetimFormuGoster();
+    const btnFormSetMain = document.getElementById('btnFormSetMain');
+    if (btnFormSetMain) btnFormSetMain.onclick = () => denetimFormuGoster();
+    const btnFormSetBottom = document.getElementById('btnFormSetBottom');
+    if (btnFormSetBottom) btnFormSetBottom.onclick = () => denetimFormuGoster();
+    const searchInput = document.getElementById('srch');
+    if (searchInput) searchInput.oninput = (e) => { search = e.target.value.trim().toLowerCase(); renderDenetim(); };
     document.querySelectorAll('.chip').forEach(c => c.onclick = () => { filter = c.dataset.f; renderDenetim(); });
     document.querySelectorAll('.bolum-head').forEach(h => h.onclick = () => {
       if (h.dataset.locked === '1') {
@@ -2849,7 +3013,8 @@ const UI = (() => {
       if (openBolums.has(b)) openBolums.delete(b); else openBolums.add(b);
       renderDenetim();
     });
-    document.getElementById('btnOzet').onclick = showOzet;
+    const btnOzet = document.getElementById('btnOzet');
+    if (btnOzet) btnOzet.onclick = showOzet;
     document.getElementById('btnSeriler').onclick = seriNumaralariGoster;
     document.getElementById('btnFotograflar').onclick = fotografSekmesi;
     const btnBitirGlobal = document.getElementById('btnBitirGlobal');
@@ -3002,7 +3167,33 @@ const UI = (() => {
       try {
         const value = (entry.value || '').trim();
         let basarili = false;
-        if (key.startsWith('bolum:')) {
+        const formDraftKey = AVES_FORM_DRAFT_JOURNAL.FORM_KEY;
+        const isFormDraft = key === formDraftKey || key.startsWith(`${formDraftKey}:`);
+        if (isFormDraft && entry.payload && typeof entry.payload === 'object') {
+          const d = await DB.get('denetimler', denetimId);
+          if (!d || !modulFormDenetimiMi(d) || !canEditDenetim(d)) continue;
+          const current = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+          const next = AVES_DENETIM_FORM_SETI.normalize(entry.payload, d.teknik_dosya_kayitlari);
+          const formsMatch = stableStringify(current.forms) === stableStringify(next.forms);
+          const baseChanged = !!entry.baseUpdatedAt && String(entry.baseUpdatedAt) !== String(d.updated_at || '');
+          if (baseChanged && !formsMatch) {
+            toast('Form taslağı korundu: denetim bu sırada başka bir oturumda değişmiş. Taslak otomatik uygulanmadı; formu açıp karşılaştırın.');
+            continue;
+          }
+          next.form_seti_gozden_gecirildi_at = null;
+          next.form_seti_gozden_geciren_email = null;
+          next.form_seti_gozden_geciren_ad = null;
+          if (!formsMatch) {
+            const now = new Date().toISOString();
+            next.updated_at = now;
+            d.denetim_form_kayitlari = next;
+            d.teknik_dosya_kayitlari = { schema_version: 1, updated_at: now, fr65: next.forms.FR65, rp14: next.forms.RP14 };
+            d.updated_at = now;
+            await localWrite('denetimler', d, 'denetimler');
+            kurtarilan++;
+          }
+          basarili = true;
+        } else if (key.startsWith('bolum:')) {
           const bolumAdi = key.slice('bolum:'.length);
           const d = await DB.get('denetimler', denetimId);
           if (!d) continue;
@@ -3164,6 +3355,7 @@ const UI = (() => {
     const canEdit = currentCanEdit;
     const original = seriNumaralariNormalize(d.seri_numaralari);
     const data = seriNumaralariNormalize(d.seri_numaralari);
+    let formReviewCleared = false;
     const ov = document.createElement('div');
     ov.className = 'overlay';
     const rowHTML = (key, item = {}) => {
@@ -3216,6 +3408,14 @@ const UI = (() => {
       const next = collect();
       if (stableStringify(next) === stableStringify(original)) return;
       d.seri_numaralari = next;
+      if (modulFormDenetimiMi(d)) {
+        const formRecord = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+        formReviewCleared = !!formRecord.form_seti_gozden_gecirildi_at;
+        formRecord.form_seti_gozden_gecirildi_at = null;
+        formRecord.form_seti_gozden_geciren_email = null;
+        formRecord.form_seti_gozden_geciren_ad = null;
+        d.denetim_form_kayitlari = formRecord;
+      }
       d.updated_at = new Date().toISOString();
       await localWrite('denetimler', d, 'denetimler');
       const button = document.getElementById('btnSeriler');
@@ -3232,6 +3432,7 @@ const UI = (() => {
       try {
         await persist();
         ov.remove();
+        if (formReviewCleared && formOdakliDenetimMi(d, await DB.allByIndex('saha', 'byDenetim', d.id))) await renderDenetim();
       } catch (error) {
         closing = false;
         toast('Seri numaraları cihazda kaydedilemedi; ekran açık bırakıldı');
@@ -3257,6 +3458,401 @@ const UI = (() => {
     if (save) save.onclick = close;
     const closeButton = ov.querySelector('#serialClose');
     if (closeButton) closeButton.onclick = () => ov.remove();
+  }
+
+  async function denetimFormuGoster(denetimId = currentDenetimId, forceReadOnly = false) {
+    const d = await DB.get('denetimler', denetimId);
+    const modul = denetimFormModulu(d);
+    if (!d || !modul) return;
+    const formLib = AVES_TEKNIK_DOSYA_FORM;
+    const setLib = AVES_DENETIM_FORM_SETI;
+    const canEdit = !forceReadOnly && denetimId === currentDenetimId && currentCanEdit && !inspectionReadOnly && canEditDenetim(d);
+    const originalInspectionUpdatedAt = d.updated_at || null;
+    const original = setLib.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+    const ownFormDraft = AVES_FORM_DRAFT_JOURNAL.readForm(localStorage, denetimId, API.email);
+    const ownDraftRecord = ownFormDraft
+      ? setLib.normalize(ownFormDraft.payload, d.teknik_dosya_kayitlari)
+      : null;
+    const formDraftConflict = !!(ownFormDraft && ownFormDraft.baseUpdatedAt &&
+      String(ownFormDraft.baseUpdatedAt) !== String(originalInspectionUpdatedAt || '') && ownDraftRecord &&
+      stableStringify(ownDraftRecord.forms) !== stableStringify(original.forms));
+    const legacyOriginal = formLib.normalize({ fr65: original.forms.FR65, rp14: original.forms.RP14 });
+    const applicableForms = setLib.formsFor(modul, d.ana_standart, d.tahrik_tipi);
+    const formPrefills = {
+      FR30: { work_file_no: d.dosya_no, inspection_address: d.denetim_adresi, scope_module_type: d.denetim_turu },
+      FR32: { client_name: d.musteri_unvani, inspection_address: d.denetim_adresi, scope: d.modul, audit_type: d.denetim_turu },
+      FR47: { capacity: d.beyan_yuku_kg, passenger_capacity: d.kapasite_kisi, speed: d.beyan_hizi_ms, stops: d.durak_sayisi },
+      FR48: { capacity: d.beyan_yuku_kg, passenger_capacity: d.kapasite_kisi, speed: d.beyan_hizi_ms, stops: d.durak_sayisi },
+      FR50: {
+        client_name: d.musteri_unvani, work_file_no: d.dosya_no, installation_address: d.denetim_adresi,
+        capacity_load: d.beyan_yuku_kg && d.kapasite_kisi ? `${d.beyan_yuku_kg} kg / ${d.kapasite_kisi} kişi` : '',
+        serial_no: d.asansor_seri_no, stops: d.durak_sayisi, speed: d.beyan_hizi_ms,
+        suspension: d.aski_tipi, drive_type: [d.tahrik_tipi, d.makine_dairesi_tipi].filter(Boolean).join(' · '),
+      },
+    };
+    const fr65Sections = formLib.visibleFr65Sections(d.tahrik_tipi);
+    const disabled = canEdit ? '' : 'disabled';
+    const fr65Statuses = ['', 'Eşleşti', 'Fark var', 'Uygulanmaz'];
+    const rp14Statuses = ['', 'İncelendi', 'Eksik / açıklama gerekli', 'Uygulanmaz'];
+    const makeStatus = (name, value, values) => `<select data-tech-prop="${name}" ${disabled}>
+      ${values.map(option => `<option value="${esc(option)}" ${value === option ? 'selected' : ''}>${esc(option || 'Durum seçin')}</option>`).join('')}
+    </select>`;
+    const makeText = (name, value, placeholder = '', multiline = false, type = 'text') => multiline
+      ? `<textarea data-tech-prop="${name}" placeholder="${esc(placeholder)}" ${disabled}>${esc(value || '')}</textarea>`
+      : `<input type="${type}" data-tech-prop="${name}" value="${esc(value || '')}" placeholder="${esc(placeholder)}" ${disabled}>`;
+    const fieldControl = (field, value, dataAttrs) => {
+      const attrs = `${dataAttrs} ${disabled} placeholder="${esc(field.placeholder || '')}"`;
+      if (field.type === 'textarea') return `<textarea ${attrs}>${esc(value || '')}</textarea>`;
+      if (field.type === 'select') return `<select ${attrs}><option value="">Seçin</option>${(field.options || []).filter(Boolean).map(option => `<option value="${esc(option)}" ${String(value) === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}</select>`;
+      return `<input type="${esc(field.type || 'text')}" ${attrs} value="${esc(value ?? '')}">`;
+    };
+    const genericInput = (code, field, value) => {
+      const prefilled = value ?? formPrefills[code]?.[field.key] ?? '';
+      return `<label>${esc(field.label)}${fieldControl(field, prefilled, `data-form-code="${esc(code)}" data-form-field="${esc(field.key)}"`)}</label>`;
+    };
+    const genericRow = (code, group, fields, value = {}) => `<div class="tech-component form-repeat-card" data-form-row-card data-form-code="${esc(code)}" data-form-group="${esc(group)}">
+      ${canEdit ? '<button type="button" class="tech-remove form-row-remove" aria-label="Satırı kaldır">×</button>' : ''}
+      <div class="tech-component-fields">${fields.map(field => `<label>${esc(field.label)}${fieldControl(field, value[field.key], `data-form-row-field="${esc(field.key)}"`)}</label>`).join('')}</div>
+    </div>`;
+
+    const fr65Html = fr65Sections.map((section, index) => `
+      <details class="tech-section" ${index === 0 ? 'open' : ''}>
+        <summary>${esc(section.title)} <span>${section.fields.length} alan</span></summary>
+        <div class="tech-section-body">
+          ${section.fields.map(([key, label]) => {
+            const value = legacyOriginal.fr65.values[key] || {};
+            return `<article class="tech-field" data-tech-fr65="${esc(key)}">
+              <b>${esc(label)}</b>
+              <div class="tech-pair">
+                <label>Teknik dosyadaki değer${makeText('file_value', value.file_value, 'Dosya / çizim / tablo referansı veya beyan edilen değer', true)}</label>
+                <label>Sahada görülen / ölçülen / doğrulanan bilgi${makeText('field_value', value.field_value, 'Saha değeri veya gözlem; ölçümse birimiyle birlikte', true)}</label>
+              </div>
+              <div class="tech-pair tech-status-row">
+                <label>Kayıt durumu${makeStatus('status', value.status || '', fr65Statuses)}</label>
+                <label>Açıklama / kanıt referansı${makeText('note', value.note, 'Örn. fotoğraf adı, çizim no veya fark açıklaması', true)}</label>
+              </div>
+            </article>`;
+          }).join('')}
+        </div>
+      </details>`).join('');
+
+    const rp14 = legacyOriginal.rp14;
+    const rp14ChecksHtml = formLib.RP14.reviewSections.map((section, index) => `
+      <details class="tech-section" ${index === 0 ? 'open' : ''}>
+        <summary>${esc(section.title)} <span>${section.items.length} kayıt</span></summary>
+        <div class="tech-section-body">
+          ${section.items.map(([key, label]) => {
+            const value = rp14.checks[key] || {};
+            return `<article class="tech-check" data-tech-check="${esc(key)}">
+              <b>${esc(label)}</b>
+              <div class="tech-pair">
+                <label>İnceleme kaydı${makeStatus('status', value.status || '', rp14Statuses)}</label>
+                <label>Dosya / sayfa / not${makeText('evidence', value.evidence, 'Kısa kanıt veya açıklama', true)}</label>
+              </div>
+            </article>`;
+          }).join('')}
+        </div>
+      </details>`).join('');
+    const characteristicHtml = formLib.RP14.characteristics.map(([key, label]) => `
+      <label class="tech-characteristic">${esc(label)}<input data-tech-characteristic="${esc(key)}" value="${esc(rp14.characteristics[key] || '')}" placeholder="Beyan edilen değer / varyant farkı" ${disabled}></label>`).join('');
+    const instrumentHtml = formLib.RP14.instruments.map(([key, label]) => {
+      const value = rp14.instruments[key] || {};
+      return `<article class="tech-instrument" data-tech-instrument="${esc(key)}">
+        <b>${esc(label)}</b><div class="tech-pair">
+          <label>Seri / kimlik no${makeText('serial_no', value.serial_no, 'Cihaz seri numarası')}</label>
+          <label>Kalibrasyon tarihi${makeText('calibration_date', value.calibration_date, '', false, 'date')}</label>
+          <label>Kalibrasyon sertifika no${makeText('certificate_no', value.certificate_no, 'Sertifika numarası')}</label>
+        </div>
+      </article>`;
+    }).join('');
+    const componentFields = (value, safety) => `
+      <label>Model / varyant kodları${makeText('variants', value.variants, 'İlgili model veya varyant kodları')}</label>
+      <label>Üretici / imalatçı${makeText('manufacturer', value.manufacturer, 'Üretici adı')}</label>
+      <label>Tip / model${makeText('type', value.type, 'Bileşen tipi / modeli')}</label>
+      <label>Seri numarası${makeText('serial_no', value.serial_no, 'Etiketteki seri numarası')}</label>
+      ${safety ? `<label>Tip inceleme sertifika no${makeText('certificate_no', value.certificate_no, 'Varsa sertifika numarası')}</label>
+        <label>Onaylanmış kuruluş no${makeText('notified_body', value.notified_body, 'Varsa kuruluş numarası')}</label>` : ''}
+      <label>Uyumluluk / dosya referansı${makeText('compatibility_note', value.compatibility_note, 'Teknik dosya referansı veya gözlem')}</label>`;
+    const componentCards = (key, label, safety) => {
+      const [area, itemKey] = key.split(':');
+      const list = Array.isArray(rp14[area] && rp14[area][itemKey]) && rp14[area][itemKey].length ? rp14[area][itemKey] : [{}];
+      return `<section class="tech-component-group" data-tech-component-list="${key}">
+        <div class="tech-component-head"><b>${esc(label)}</b>${canEdit ? `<button type="button" class="tech-add" data-tech-add-component="${key}" data-tech-kind="${safety ? 'safety' : 'other'}">+ Ekle</button>` : ''}</div>
+        ${list.map((value, index) => `<article class="tech-component" data-tech-component="${key}" data-tech-index="${index}">
+          ${canEdit && list.length > 1 ? '<button type="button" class="tech-remove" aria-label="Bileşen kaydını kaldır">×</button>' : ''}
+          <div class="tech-component-fields">${componentFields(value || {}, safety)}</div>
+        </article>`).join('')}
+      </section>`;
+    };
+    const safetyComponentsHtml = formLib.RP14.safetyComponents.map(([key, label]) => componentCards(`safety_components:${key}`, label, true)).join('');
+    const otherComponentsHtml = formLib.RP14.otherComponents.map(([key, label]) => componentCards(`other_components:${key}`, label, false)).join('');
+
+    const genericFormsHtml = applicableForms.map((definition, index) => {
+      const entry = original.forms[definition.key] || {};
+      if (definition.special === 'legacyFR65') return `<details class="tech-section" data-form-section="FR65" ${index === 0 ? 'open' : ''}>
+        <summary>ÜB.FR.65 · ${esc(definition.title)} <span>${fr65Sections.reduce((total, section) => total + section.fields.length, 0)} alan</span></summary>
+        <div class="tech-section-body"><p class="photo-help">Her satıra dosyadaki beyanı, sahada görülen/ölçülen değeri ve kanıt referansını yazın. Otomatik karşılaştırma yapılmaz.</p>${fr65Html}</div>
+      </details>`;
+      if (definition.special === 'legacyRP14') return `<details class="tech-section" data-form-section="RP14">
+        <summary>ÜB.RP.14 · ${esc(definition.title)} <span>Modül B</span></summary>
+        <div class="tech-section-body">
+          ${rp14ChecksHtml}
+          <details class="tech-section"><summary>Model ve varyant özellikleri</summary><div class="tech-section-body"><div class="tech-characteristics">${characteristicHtml}</div></div></details>
+          <details class="tech-section"><summary>Güvenlik bileşenleri</summary><div class="tech-section-body">${safetyComponentsHtml}</div></details>
+          <details class="tech-section"><summary>Diğer ana bileşenler</summary><div class="tech-section-body">${otherComponentsHtml}</div></details>
+          <details class="tech-section"><summary>C.1 Muayene cihazları ve kalibrasyon</summary><div class="tech-section-body">${instrumentHtml}</div></details>
+          <details class="tech-section"><summary>C.2.4 Sapma ve saha doğrulama notu</summary><div class="tech-section-body"><label class="tech-characteristic">Sapmalar / yerinde doğrulanan çözümler${makeText('deviations', rp14.deviations, 'Gözlem ve dosya referansını yazın', true)}</label></div></details>
+          <p class="photo-help">RP.14’ün resmî sonuç / belgelendirme önerisi bölümü bu ekrana alınmamıştır.</p>
+        </div>
+      </details>`;
+      const fieldHtml = (definition.fields || []).map(field => genericInput(definition.key, field, entry.fields?.[field.key])).join('');
+      const afterRatingsHtml = (definition.fieldsAfterRatings || []).map(field => genericInput(definition.key, field, entry.fields?.[field.key])).join('');
+      const ratingsHtml = (definition.ratings || []).map(([key, label]) => `<label class="tech-characteristic">${esc(label)}<select data-form-code="${esc(definition.key)}" data-form-rating="${esc(key)}" ${disabled}><option value="">Puan seçin</option>${[1, 2, 3, 4, 5].map(score => `<option value="${score}" ${String(entry.ratings?.[key] ?? '') === String(score) ? 'selected' : ''}>${score}</option>`).join('')}</select></label>`).join('');
+      const checksHtml = (definition.checklistSections || []).map(section => `<details class="tech-section" ${definition.checklistSections.length === 1 ? 'open' : ''}>
+        <summary>${esc(section.title)} <span>${section.items.length} kayıt</span></summary><div class="tech-section-body">
+          ${section.items.map(check => {
+            const value = entry.items?.[section.key]?.[check.key] || {};
+            return `<article class="tech-check" data-form-check-row data-form-code="${esc(definition.key)}" data-form-section-key="${esc(section.key)}" data-form-item-key="${esc(check.key)}"><b>${esc(check.label)}</b>
+              <div class="tech-pair"><label>Kayıt durumu<select data-form-item-status ${disabled}>${setLib.FORM_STATUS_OPTIONS.map(option => `<option value="${esc(option)}" ${value.status === option ? 'selected' : ''}>${esc(option || 'Durum seçin')}</option>`).join('')}</select></label>
+              <label>Belge / kanıt referansı<input data-form-item-reference value="${esc(value.reference || '')}" ${disabled}></label></div>
+              <label>Açıklama / not<textarea data-form-item-note ${disabled}>${esc(value.note || '')}</textarea></label>
+            </article>`;
+          }).join('')}
+        </div></details>`).join('');
+      const repeatersHtml = (definition.repeaters || []).map(group => {
+        const rows = Array.isArray(entry.rows?.[group.key]) && entry.rows[group.key].length ? entry.rows[group.key] : [{}];
+        return `<section class="tech-component-group" data-form-repeater="${esc(definition.key)}:${esc(group.key)}">
+          <div class="tech-component-head"><b>${esc(group.title)}</b>${canEdit ? `<button type="button" class="tech-add" data-form-add-row data-form-code="${esc(definition.key)}" data-form-group="${esc(group.key)}">+ Satır ekle</button>` : ''}</div>
+          ${rows.map(row => genericRow(definition.key, group.key, group.fields, row)).join('')}
+        </section>`;
+      }).join('');
+      const content = definition.special === 'mainChecklist'
+        ? `<div class="photo-help">${esc(definition.description)} Sonuç ve madde notları mevcut denetim checklist’inde tutulur.</div>`
+        : `${fieldHtml ? `<div class="tech-component-fields">${fieldHtml}</div>` : ''}${ratingsHtml ? `<h4>Değerlendirme puanları</h4><div class="tech-characteristics">${ratingsHtml}</div>` : ''}${afterRatingsHtml ? `<div class="tech-component-fields">${afterRatingsHtml}</div>` : ''}${checksHtml}${repeatersHtml}`;
+      return `<details class="tech-section" data-form-section="${esc(definition.key)}" ${index === 0 ? 'open' : ''}>
+        <summary>ÜB.${esc(definition.key)} · ${esc(definition.title)} <span>${setLib.formHasData(original, definition.key) ? 'kayıt var' : 'kayıt yok'}</span></summary>
+        <div class="tech-section-body"><p class="photo-help">${esc(definition.description)}</p>${content}</div>
+      </details>`;
+    }).join('');
+
+    const ov = document.createElement('div');
+    ov.className = 'overlay tech-overlay';
+    ov.innerHTML = `<div class="modal tech-modal">
+      <div class="tech-modal-head"><div><h3>Modül ${modul} · Denetim Formu</h3>
+        <small>${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</small></div>
+        <button class="close" aria-label="Kapat">×</button></div>
+      <div class="photo-help">Bu ekran, modülün form setinde istenen saha verilerini bir arada kaydeder. Resmî formların, teknik incelemenin veya uygunluk / belgelendirme kararının yerine geçmez; uygulama otomatik hesap ya da karar üretmez.</div>
+      ${formDraftConflict ? '<div class="integrity-card error"><b>Bu cihazda eski bir form taslağı korunuyor</b><small>Denetim başka bir oturumda değiştiği için taslak otomatik uygulanmadı. Güncel kayıt aşağıda; kaydetmek veya taslağı silerek kapatmak eski yerel taslağı kaldırır.</small></div>' : ''}
+      <div class="integrity-card pending"><b>Kaynak revizyonu teyidi gerekli</b><small>${esc(setLib.referenceWarning)}</small></div>
+      ${modul === 'E' ? '<div class="integrity-card pending"><b>FR.65 isteğe bağlı saha desteği</b><small>E modülünün mevcut gözetim form setinde FR.65 zorunlu olarak işaretli değildir; bu kayıt kullanıcı tercihiyle eklenen destek alanıdır.</small></div>' : ''}
+      <div class="tech-source"><b>Bu denetimin form seti</b><span>${applicableForms.map(definition => `ÜB.${definition.key}`).join(' · ')}</span><small>${modul === 'G' ? 'FR.38 / FR.39 sonuçları ana checklist’te tutulur; burada ikinci bir sonuç listesi açılmaz.' : 'Bu modülde G tipi ana checklist kullanılmaz; saha bilgileri form seti ve ilgili saha kayıt alanlarında tutulur.'}</small></div>
+      ${genericFormsHtml}
+      ${canEdit ? '<button class="btn btn-primary tech-save" id="denetimFormSave">Denetim formu kayıtlarını kaydet</button>' : '<button class="btn btn-primary" id="denetimFormClose">Kapat</button>'}
+    </div>`;
+    document.body.appendChild(ov);
+
+    const componentRecordHtml = (key, kind) => {
+      const safety = kind === 'safety';
+      const labels = formLib.RP14[safety ? 'safetyComponents' : 'otherComponents'];
+      const label = (labels.find(item => item[0] === key) || [key, key])[1];
+      const target = safety ? 'safety_components' : 'other_components';
+      return `<article class="tech-component" data-tech-component="${target}:${key}">
+        <button type="button" class="tech-remove" aria-label="Bileşen kaydını kaldır">×</button>
+        <b>${esc(label)}</b><div class="tech-component-fields">${componentFields({}, safety)}</div>
+      </article>`;
+    };
+    const collectLegacy = () => {
+      const next = formLib.normalize(legacyOriginal);
+      ov.querySelectorAll('[data-tech-fr65]').forEach(row => {
+        const value = {};
+        row.querySelectorAll('[data-tech-prop]').forEach(input => { value[input.dataset.techProp] = input.value.trim(); });
+        if (Object.values(value).some(Boolean)) next.fr65.values[row.dataset.techFr65] = value;
+        else delete next.fr65.values[row.dataset.techFr65];
+      });
+      if (applicableForms.some(definition => definition.key === 'RP14')) {
+        ov.querySelectorAll('[data-tech-check]').forEach(row => {
+          const value = {};
+          row.querySelectorAll('[data-tech-prop]').forEach(input => { value[input.dataset.techProp] = input.value.trim(); });
+          if (Object.values(value).some(Boolean)) next.rp14.checks[row.dataset.techCheck] = value;
+          else delete next.rp14.checks[row.dataset.techCheck];
+        });
+        ov.querySelectorAll('[data-tech-characteristic]').forEach(input => {
+          const value = input.value.trim();
+          if (value) next.rp14.characteristics[input.dataset.techCharacteristic] = value;
+          else delete next.rp14.characteristics[input.dataset.techCharacteristic];
+        });
+        ov.querySelectorAll('[data-tech-instrument]').forEach(row => {
+          const value = {};
+          row.querySelectorAll('[data-tech-prop]').forEach(input => { value[input.dataset.techProp] = input.value.trim(); });
+          if (Object.values(value).some(Boolean)) next.rp14.instruments[row.dataset.techInstrument] = value;
+          else delete next.rp14.instruments[row.dataset.techInstrument];
+        });
+        ['safety_components', 'other_components'].forEach(area => {
+          next.rp14[area] = {};
+          ov.querySelectorAll(`[data-tech-component^="${area}:"]`).forEach(card => {
+            const key = card.dataset.techComponent.slice(area.length + 1);
+            const value = {};
+            card.querySelectorAll('[data-tech-prop]').forEach(input => { value[input.dataset.techProp] = input.value.trim(); });
+            if (Object.values(value).some(Boolean)) {
+              if (!next.rp14[area][key]) next.rp14[area][key] = [];
+              next.rp14[area][key].push(value);
+            }
+          });
+        });
+        const deviations = ov.querySelector('[data-tech-prop="deviations"]');
+        next.rp14.deviations = deviations ? deviations.value.trim() : next.rp14.deviations;
+      }
+      return next;
+    };
+    const collectAll = () => {
+      const next = setLib.normalize(original);
+      const legacy = collectLegacy();
+      next.forms.FR65 = legacy.fr65;
+      next.forms.RP14 = legacy.rp14;
+      applicableForms.forEach(definition => {
+        if (definition.special) return;
+        const entry = next.forms[definition.key] || { fields: {}, items: {}, ratings: {}, rows: {} };
+        entry.fields = entry.fields || {}; entry.items = entry.items || {}; entry.ratings = entry.ratings || {}; entry.rows = entry.rows || {};
+        (definition.fields || []).concat(definition.fieldsAfterRatings || []).forEach(field => {
+          const input = [...ov.querySelectorAll('[data-form-field]')].find(node => node.dataset.formCode === definition.key && node.dataset.formField === field.key);
+          const value = input ? input.value.trim() : '';
+          const savedValue = original.forms[definition.key]?.fields?.[field.key];
+          const defaultValue = formPrefills[definition.key]?.[field.key];
+          if (value && ((savedValue != null && savedValue !== '') || value !== String(defaultValue ?? ''))) entry.fields[field.key] = value;
+          else delete entry.fields[field.key];
+        });
+        (definition.ratings || []).forEach(([key]) => {
+          const input = [...ov.querySelectorAll('[data-form-rating]')].find(node => node.dataset.formCode === definition.key && node.dataset.formRating === key);
+          const value = input ? input.value : '';
+          if (value) entry.ratings[key] = value; else delete entry.ratings[key];
+        });
+        (definition.checklistSections || []).forEach(section => {
+          entry.items[section.key] = entry.items[section.key] || {};
+          section.items.forEach(item => {
+            const row = [...ov.querySelectorAll('[data-form-check-row]')].find(node => node.dataset.formCode === definition.key && node.dataset.formSectionKey === section.key && node.dataset.formItemKey === item.key);
+            const value = row ? {
+              status: row.querySelector('[data-form-item-status]')?.value || '',
+              reference: row.querySelector('[data-form-item-reference]')?.value.trim() || '',
+              note: row.querySelector('[data-form-item-note]')?.value.trim() || '',
+            } : {};
+            if (Object.values(value).some(Boolean)) entry.items[section.key][item.key] = value;
+            else delete entry.items[section.key][item.key];
+          });
+          if (!Object.keys(entry.items[section.key]).length) delete entry.items[section.key];
+        });
+        (definition.repeaters || []).forEach(group => {
+          const rows = [...ov.querySelectorAll('[data-form-row-card]')]
+            .filter(card => card.dataset.formCode === definition.key && card.dataset.formGroup === group.key)
+            .map(card => Object.fromEntries([...card.querySelectorAll('[data-form-row-field]')].map(input => [input.dataset.formRowField, input.value.trim()]).filter(([, value]) => value)));
+          if (rows.length) entry.rows[group.key] = rows; else delete entry.rows[group.key];
+        });
+        next.forms[definition.key] = entry;
+      });
+      return setLib.normalize(next);
+    };
+    let closing = false;
+    let formDraftWarningShown = false;
+    const formDraftFields = '[data-tech-prop],[data-tech-characteristic],[data-form-field],[data-form-rating],[data-form-item-status],[data-form-item-reference],[data-form-item-note],[data-form-row-field]';
+    const writeFormDraft = () => {
+      if (!canEdit) return true;
+      const next = collectAll();
+      if (stableStringify(next) === stableStringify(original)) {
+        // Alanı eski değere döndürmek, çakışmalı bir taslağı açık onay olmadan
+        // silemez; bu durumda yalnız save/close onay akışı temizleyebilir.
+        if (!formDraftConflict) AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);
+        return true;
+      }
+      next.form_seti_gozden_gecirildi_at = null;
+      next.form_seti_gozden_geciren_email = null;
+      next.form_seti_gozden_geciren_ad = null;
+      next.updated_at = new Date().toISOString();
+      const saved = AVES_FORM_DRAFT_JOURNAL.writeForm(localStorage, denetimId, next, API.email, Date.now(), originalInspectionUpdatedAt);
+      if (!saved && !formDraftWarningShown) {
+        formDraftWarningShown = true;
+        toast('Acil form taslağı cihaza yazılamadı; Kaydet düğmesine basıp kaydın tamamlandığını bekleyin');
+      } else if (saved) formDraftWarningShown = false;
+      return saved;
+    };
+    ov.addEventListener('input', event => { if (event.target.matches(formDraftFields)) writeFormDraft(); });
+    ov.addEventListener('change', event => { if (event.target.matches(formDraftFields)) writeFormDraft(); });
+    const close = async (force = false) => {
+      if (closing) return;
+      const changed = stableStringify(collectAll()) !== stableStringify(original);
+      if (canEdit && formDraftConflict && !confirm(force && changed
+        ? 'Bu denetim başka bir oturumda değişmiş ve eski cihaz taslağı korunuyor. Açık ekrandaki güncel kaydı kaydetmek eski taslağı silecek. Devam edilsin mi?'
+        : 'Bu denetim başka bir oturumda değişmiş ve eski cihaz taslağı korunuyor. Kapatmak eski taslağı silecek. Devam edilsin mi?')) return;
+      if (canEdit && changed && !force && !confirm('Kaydedilmemiş denetim formu kayıtları var. Kaydetmeden kapatılsın mı?')) return;
+      if (force && changed) {
+        const next = collectAll();
+        const now = new Date().toISOString();
+        next.updated_at = now;
+        next.form_seti_gozden_gecirildi_at = null;
+        next.form_seti_gozden_geciren_email = null;
+        next.form_seti_gozden_geciren_ad = null;
+        d.denetim_form_kayitlari = next;
+        // Önceki FR.65/RP.14 alanı kullanan yerel sürümler için geriye uyumlu ayna.
+        d.teknik_dosya_kayitlari = { schema_version: 1, updated_at: now, fr65: next.forms.FR65, rp14: next.forms.RP14 };
+        d.updated_at = now;
+        closing = true;
+        const save = ov.querySelector('#denetimFormSave');
+        if (save) { save.disabled = true; save.textContent = 'Kaydediliyor…'; }
+        try {
+          await localWrite('denetimler', d, 'denetimler');
+          AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);
+          const button = document.getElementById('btnDenetimFormu');
+          const stats = denetimFormIstatistikleri(d);
+          if (button && stats) button.textContent = `📄 Denetim Formu${stats.ozet.started ? ` · ${stats.ozet.started} formda kayıt` : ''}`;
+          ov.remove();
+          toast('Denetim formu kayıtları cihaza kaydedildi');
+          const rows = denetimId === currentDenetimId ? await DB.allByIndex('saha', 'byDenetim', denetimId) : [];
+          if (denetimId === currentDenetimId && formOdakliDenetimMi(d, rows)) await renderDenetim();
+        } catch (error) {
+          closing = false;
+          if (save) { save.disabled = false; save.textContent = 'Denetim formu kayıtlarını kaydet'; }
+          console.error('Denetim formu kaydı başarısız', error);
+          toast('Kayıt cihazda tamamlanamadı; ekran açık bırakıldı');
+        }
+        return;
+      }
+      // Salt-okunur modalın kapatılması başka bir kullanıcının kurtarılabilir
+      // taslağına dokunmamalı. Düzenleyebilir kullanıcı da yalnız kendi
+      // taslağını discard/revert sırasında temizleyebilir.
+      if (canEdit) AVES_FORM_DRAFT_JOURNAL.clearFormIfOwner(localStorage, denetimId, API.email);
+      ov.remove();
+    };
+    ov.addEventListener('click', event => {
+      const add = event.target.closest('[data-tech-add-component]');
+      if (add) {
+        const area = add.dataset.techAddComponent;
+        const kind = add.dataset.techKind;
+        const key = add.dataset.techComponentKey || '';
+        const list = ov.querySelector(`[data-tech-component-list="${area}:${key}"]`);
+        if (list) { list.insertAdjacentHTML('beforeend', componentRecordHtml(key, kind)); writeFormDraft(); }
+      }
+      const addRow = event.target.closest('[data-form-add-row]');
+      if (addRow) {
+        const definition = applicableForms.find(item => item.key === addRow.dataset.formCode);
+        const group = (definition?.repeaters || []).find(item => item.key === addRow.dataset.formGroup);
+        const list = ov.querySelector(`[data-form-repeater="${addRow.dataset.formCode}:${addRow.dataset.formGroup}"]`);
+        if (group && list) { list.insertAdjacentHTML('beforeend', genericRow(definition.key, group.key, group.fields)); writeFormDraft(); }
+      }
+      const remove = event.target.closest('.tech-remove');
+      if (remove) {
+        const card = remove.closest('.tech-component');
+        if (card) { card.remove(); writeFormDraft(); }
+      }
+    });
+    ov.querySelectorAll('[data-tech-add-component]').forEach(button => {
+      const value = button.dataset.techAddComponent.split(':');
+      button.dataset.techComponentKey = value[1] || '';
+      button.dataset.techAddComponent = value[0];
+    });
+    ov.querySelector('.close').onclick = () => close();
+    ov.onclick = event => { if (event.target === ov) close(); };
+    const save = ov.querySelector('#denetimFormSave');
+    if (save) save.onclick = () => close(true);
+    const closeButton = ov.querySelector('#denetimFormClose');
+    if (closeButton) closeButton.onclick = () => close();
   }
 
   function gorselHTML(r) {
@@ -3828,6 +4424,9 @@ const UI = (() => {
       denetimi_yapan: d.denetimi_yapan || null,
       seri_numaralari: seriNumaralariNormalize(d.seri_numaralari),
       seri_numarasi_kayit_sayisi: seriNumarasiSayisi(d),
+      ...(denetimFormKaydiVarMi(d)
+        ? { denetim_form_kayitlari: AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari) }
+        : {}),
       degistirenler: actors,
       satirlar: sorted.map(row => ({
         madde_id: row.madde_id,
@@ -3848,6 +4447,12 @@ const UI = (() => {
   async function kapanisOzetiniGoster(yeniDurum) {
     const d = await DB.get('denetimler', currentDenetimId);
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
+    const formOnly = formOdakliDenetimMi(d, rows);
+    const formStats = formOnly ? denetimFormIstatistikleri(d) : null;
+    const formDefinitions = formOnly ? modulFormSeti(d) : [];
+    const formKaydiOlmayanlar = formOnly ? formDefinitions.filter(form =>
+      !AVES_DENETIM_FORM_SETI.formHasData(denetimFormKaydi(d), form.key)
+    ) : [];
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
     const eksikSeriler = seriEksikleri(d);
     if (bakilmadi.length || eksikSeriler.length) {
@@ -3884,7 +4489,11 @@ const UI = (() => {
         <div class="onay-satir"><span>Asansör seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
         <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi)}</b></div>
       </div>
-      <div class="integrity-card ok"><b>Sonuçlar</b><small>${sonuc.uygun} Uygun · ${sonuc.uygunDegil} Uygun Değil · ${sonuc.uygulanmaz} Uygulanmaz</small></div>
+      ${formOnly
+        ? `<div class="integrity-card pending"><b>Modül ${denetimFormModulu(d)} form seti</b><small>${formStats.ozet.started}/${formStats.ozet.total} formda veri kaydı var. Bu bir uygunluk veya tamlık sonucu değildir.</small></div>
+           ${formKaydiOlmayanlar.length ? `<div class="integrity-card pending"><b>Henüz veri kaydı bulunmayan formlar (${formKaydiOlmayanlar.length})</b><small>${formKaydiOlmayanlar.map(form => `ÜB.${esc(form.key)} · ${esc(form.title)}`).join('<br>')}</small></div>` : ''}
+           <label class="form-review-confirm"><input type="checkbox" id="formSetReviewConfirm"> <span>Form setini gözden geçirdim; boş bırakılan veya sonraya bırakılan kayıtları değerlendirdim.</span></label>`
+        : `<div class="integrity-card ok"><b>Sonuçlar</b><small>${sonuc.uygun} Uygun · ${sonuc.uygunDegil} Uygun Değil · ${sonuc.uygulanmaz} Uygulanmaz</small></div>`}
       ${guvenKartlari.map(kart => `<div class="integrity-card ${kart.durum}"><b>${esc(kart.baslik)}</b><small>${esc(kart.detay)}</small></div>`).join('')}
       <div class="photo-help">${esc(sonrakiAdim)}</div>
       <button class="btn btn-primary" id="kapanisOnay">Devam et</button>
@@ -3895,8 +4504,34 @@ const UI = (() => {
     ov.querySelector('.close').onclick = kapat;
     ov.querySelector('#kapanisVazgec').onclick = kapat;
     ov.onclick = event => { if (event.target === ov) kapat(); };
-    ov.querySelector('#kapanisOnay').onclick = async () => {
-      ov.querySelector('#kapanisOnay').disabled = true;
+    const confirmButton = ov.querySelector('#kapanisOnay');
+    const formReviewConfirm = ov.querySelector('#formSetReviewConfirm');
+    if (formReviewConfirm) {
+      confirmButton.disabled = true;
+      formReviewConfirm.onchange = () => { confirmButton.disabled = !formReviewConfirm.checked; };
+    }
+    confirmButton.onclick = async () => {
+      if (formOnly) {
+        if (!formReviewConfirm.checked) return;
+        confirmButton.disabled = true;
+        const latest = await DB.get('denetimler', currentDenetimId) || d;
+        const formRecord = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        const now = new Date().toISOString();
+        formRecord.form_seti_gozden_gecirildi_at = now;
+        formRecord.form_seti_gozden_geciren_email = Profile.email || API.email || null;
+        formRecord.form_seti_gozden_geciren_ad = Profile.name || null;
+        formRecord.updated_at = now;
+        latest.denetim_form_kayitlari = formRecord;
+        latest.updated_at = now;
+        try {
+          await localWrite('denetimler', latest, 'denetimler');
+        } catch (error) {
+          confirmButton.disabled = false;
+          toast('Form gözden geçirme kaydı cihazda saklanamadı');
+          console.error('Form seti gözden geçirme kaydı başarısız', error);
+          return;
+        }
+      } else confirmButton.disabled = true;
       await denetimDurumuDegistir(yeniDurum, ov, true);
     };
   }
@@ -3972,6 +4607,8 @@ const UI = (() => {
     const fotograflar = (await DB.allByIndex('fotograflar', 'byDenetim', d.id)).filter(foto => !foto.deleted_at);
     const bekleyenFotograflar = fotograflar.filter(foto => foto.sync_status === 'pending').length;
     const uygunsuzluklar = rows.filter(row => row.durum === 'Olumsuz bulgu');
+    const denetimFormDurumu = denetimFormIstatistikleri(d);
+    const formOnly = formOdakliDenetimMi(d, rows);
     const takipVar = !!d.takip_onceki_denetim_id || (await DB.all('denetimler')).some(item => item.takip_onceki_denetim_id === d.id);
     const tarihGoster = (value) => value ? new Date(value).toLocaleString('tr-TR') : '';
     const arsivDurumu = d.fotograf_arsiv_temizlendi_at
@@ -3991,11 +4628,14 @@ const UI = (() => {
         <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi || '')}</b></div>
         <div class="onay-satir"><span>Denetimi yapan</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
-      <div class="integrity-card ok"><b>Sonuç özeti</b><small>${rows.filter(row => row.durum === 'Kontrol tamamlandı').length} Uygun · ${uygunsuzluklar.length} Uygun Değil · ${rows.filter(row => row.durum === 'Uygulanmaz').length} Uygulanmaz</small></div>
+      ${formOnly
+        ? `<div class="integrity-card pending"><b>Form seti · Modül ${denetimFormDurumu.modul}</b><small>${denetimFormDurumu.ozet.started}/${denetimFormDurumu.ozet.total} formda veri kaydı var. Bu sayı uygunluk veya form tamlığı anlamına gelmez.</small></div>`
+        : `<div class="integrity-card ok"><b>Sonuç özeti</b><small>${rows.filter(row => row.durum === 'Kontrol tamamlandı').length} Uygun · ${uygunsuzluklar.length} Uygun Değil · ${rows.filter(row => row.durum === 'Uygulanmaz').length} Uygulanmaz</small></div>`}
       <div class="integrity-card ${d.fotograf_arsiv_temizlendi_at ? 'pending' : (bekleyenFotograflar ? 'pending' : 'ok')}"><b>Fotoğraf arşiv durumu</b><small>${esc(arsivDurumu)}<br>${esc(sonIndirme)}</small></div>
       <div class="integrity-card ${d.resmi_cikti_uretildi_at ? 'ok' : 'pending'}"><b>Resmî çıktı</b><small>${d.resmi_cikti_uretildi_at
         ? `${esc(d.resmi_cikti_snapshot_ozeti || 'Üretildi')} · ${tarihGoster(d.resmi_cikti_uretildi_at)}${d.resmi_cikti_hash ? `<br>Belge parmak izi: ${esc(String(d.resmi_cikti_hash).slice(0, 16))}…` : ''}`
         : 'Bu denetim için resmî PDF/Word henüz üretilmedi'}</small></div>
+      ${denetimFormDurumu ? `<div class="integrity-card"><b>Denetim Formu · Modül ${denetimFormDurumu.modul}</b><small>${denetimFormDurumu.ozet.started} formda veri kaydı var; bu sayı tamamlanma veya uygunluk göstergesi değildir.</small><button type="button" class="btn btn-ghost" id="completedDenetimForm">Denetim formunu aç</button></div>` : ''}
       <div class="integrity-card ${d.arsive_aktarildi_at ? 'ok' : 'pending'}"><b>${d.arsive_aktarildi_at ? '✓ Kurumsal arşive aktarıldı' : 'Kurumsal arşive aktarılmadı'}</b><small>${d.arsive_aktarildi_at
         ? `${tarihGoster(d.arsive_aktarildi_at)}${d.arsive_aktaran_email ? ` · ${esc(d.arsive_aktaran_email)}` : ''}`
         : 'Resmî dosya arşive konduğunda yönetim burada işaretler'}</small></div>
@@ -4007,6 +4647,8 @@ const UI = (() => {
     const close = () => ov.remove();
     ov.querySelector('.close').onclick = close;
     ov.onclick = event => { if (event.target === ov) close(); };
+    const completedForm = ov.querySelector('#completedDenetimForm');
+    if (completedForm) completedForm.onclick = () => { close(); denetimFormuGoster(d.id, true); };
     const badList = ov.querySelector('#completedBadList');
     if (badList) badList.onclick = () => { close(); uygunsuzlukListesiniGoster(d, uygunsuzluklar); };
     const arsivToggle = ov.querySelector('#arsivToggle');
@@ -4034,6 +4676,7 @@ const UI = (() => {
     await flushEditorWrites();
     const d = await DB.get('denetimler', currentDenetimId);
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
+    const formOnly = formOdakliDenetimMi(d, rows);
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
     if (bakilmadi.length) {
       toast(`${bakilmadi.length} sonuçsuz madde var`);
@@ -4049,6 +4692,11 @@ const UI = (() => {
       return;
     }
     if (!canEditDenetim(d)) { toast('Bu çalışma üzerinde değişiklik yetkiniz yok'); return; }
+    if (formOnly && !formSetiGozdenGecirildiMi(d)) {
+      toast('Çalışma durumunu değiştirmeden önce form seti gözden geçirilmeli');
+      await kapanisOzetiniGoster(yeniDurum);
+      return;
+    }
     const now = new Date().toISOString();
     if (yeniDurum === 'Gözden Geçirme') {
       if (!kapanisOzetiOnaylandi && !confirm('Saha kontrolü tamamlandı. Gözden Geçirme aşamasına geçilsin mi? Sonuçları bu aşamada düzeltebilirsiniz.')) return;
@@ -4088,6 +4736,7 @@ const UI = (() => {
     const eksikSeriler = seriEksikleri(d);
     const durum = d.denetim_durumu || 'Devam Ediyor';
     const currentIntegrity = await butunlukOzetiHesapla(d, rows, durum);
+    const denetimFormDurumu = denetimFormIstatistikleri(d);
     const integrityMatches = !!d.butunluk_hash && d.butunluk_hash === currentIntegrity.hash;
     const history = (await DB.allByIndex('gecmis', 'byDenetim', currentDenetimId))
       .sort((a,b) => (b.created_at || '').localeCompare(a.created_at || ''));
@@ -4165,6 +4814,7 @@ const UI = (() => {
         : inspectionOutbox.length
           ? `✓ Tüm yanıtlar cihazda · ${inspectionOutbox.length} işlem sunucu aktarımı bekliyor`
           : '✓ Tüm yanıtlar cihazda · Sunucuyla tamamen eşitlendi'}</div>
+      ${denetimFormDurumu ? `<div class="integrity-card"><b>Denetim Formu · Modül ${denetimFormDurumu.modul}</b><small>${denetimFormDurumu.ozet.started} formda veri kaydı var; bu sayı tamamlanma veya uygunluk göstergesi değildir.</small><button type="button" class="btn btn-ghost" id="ozDenetimFormu">Denetim formunu aç</button></div>` : ''}
       ${kapanis}
       <div class="oz-hazir ${eksikSeriler.length ? 'no' : 'ok'}">${eksikSeriler.length
         ? `⚠ <b>${eksikSeriler.length} seri numarası grubu eksik:</b> ${esc(eksikSeriler.join(' · '))}`
@@ -4256,6 +4906,8 @@ const UI = (() => {
     };
     const uygunsuzlukBtn = ov.querySelector('#ozUygunsuzluk');
     if (uygunsuzlukBtn) uygunsuzlukBtn.onclick = () => uygunsuzlukListesiniGoster(d, bad);
+    const denetimFormBtn = ov.querySelector('#ozDenetimFormu');
+    if (denetimFormBtn) denetimFormBtn.onclick = () => { ov.remove(); denetimFormuGoster(d.id); };
   }
 
   function uygunsuzlukListesiniGoster(d, bad) {
@@ -4404,12 +5056,6 @@ window.addEventListener('pagehide', flushOnHide);
   };
   Sync.start();
   if (API.loggedIn) {
-    // Bir önceki oturumdan artakalan senkron taslaklar (telefon donması,
-    // yanlışlıkla kapatma vb. yüzünden IndexedDB'ye hiç ulaşamamış alanlar)
-    // giriş yapıldıktan SONRA, yalnız oturumdaki e-postayla eşleşen
-    // taslaklar için geri yüklenir (Codex incelemesi — kimlik doğrulanmadan
-    // veya farklı kullanıcının taslağı otomatik uygulanmaz).
-    try { await UI.recoverDrafts(API.email); } catch {}
     await UI.afterLogin();
   } else {
     UI.showLogin();
