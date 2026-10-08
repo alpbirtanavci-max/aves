@@ -147,3 +147,28 @@ BS EN 81-50-2020.pdf taranmış görüntü olduğundan metin çıkarılamadı. S
   P_EC: boş kabin (hareketli kablo ve telafi hariç). Sismik yük durumunda kabin kütleleri (P_EC + Q_SE) k2 = 1,2 ile çarpılır.
   Çizelge D.1: yeni yük durumu "sismik koşul — seyir" (P_EC, Q_SE, M_cwt, M_g, F_p, M_aux, WL, F_SE). Çizelge D.2: ivme yönü (x ekseni eğilmesi için a_x = a_d, a_y = 0; y için tersi).
 - 5.8.2: sismik olay sırasında izin verilen gerilme ve sehimler ayrı hükümdür (Ek D ile birlikte okunmalı); bu notta formüle edilmedi.
+
+## (EN) ISO 8100-1/2:2026 geçişi — ELA/EEA karşılaştırma belgesinden (norm metni DEĞİL)
+Kaynak: Drive'daki "Introduction of (EN) ISO 8100-1/2:2026 — main differences compared with EN 81-20/50:2020" (European Elevator
+Association / European Lift Association, 144 sayfa). Bu bir tanıtım/özet belgesidir; **bağlayıcı değildir** ve norm yerine geçmez.
+Drive'daki ISO_FDIS_8100-1/-2 dosyaları taslaktır. ISO 8100:2026'nın Türkiye'de kabulü ve 2014/33/EU kapsamında uyumlaştırma/geçiş
+durumu **doğrulanmadı**; motor şu an yalnız EN 81-20/50:2020 profilini uygular (`standard` alanı sonuçlarda yazılıdır).
+
+Motoru etkileyen değişiklikler (özet):
+- **Halat (4.5):** çelik tel halat 4 mm ≤ d < 8 mm normatif olarak kapsanıyor; ISO 4344 halatlarında D/d ≥ 40 kuralı yorulma deneyi
+  olmadan geçerli; daha küçük D/d ve diğer askı elemanları için ISO 8100-2'ye göre **yorulma ömrü deneyi** gerekir. Güvenlik katsayısı
+  (Sf ≥ 16/12: 2'den çok halatta ≥ 12, aksi halde ≥ 16), halat sayısı ve kalan kopma kuvveti (RBF) birlikte değerlendirilir (4.5.2.2.3).
+  d ≤ 6 mm için çap azalması kontrolü + eğilme sayacı veya fiziksel dayanım izleme. Sonlandırma ≥ %80 MBF (değişmedi).
+  → AVES'in Ø6,5 mm istisnası bu yolla (kanıt = yorulma ömrü deneyi) norm içi bir güzergâha dönüşebilir; motor şimdiki davranışı koruyor
+  (kanıt referansı ile TEKNİK İNCELEME).
+- **Ray (4.7, 4.10):** asılı ray düzeni silindi; rüzgâr yükü kaldırıldı; yeni "sıçrama (bounce)" yük durumu, δperm = 10 mm (her iki yön);
+  k3·Maux yerine doğrudan F_aux; ISO 8100-33:2022'ye atıf; EN 81-50 Ek C örneği ISO 8100-2 Ek B oldu ve tüm yük durumlarını (tampon çarpması,
+  sıçrama) içermediği açıkça yazıldı. Binalarda >5 yıl için oturma kuvveti istenmiyor (ahşap hariç).
+- **Tampon (4.8):** azaltılmış strokta 2,5 m/s hız sınırı kaldırıldı; 1,0 m/s poliüretan tamponlar 1,75 m/s'ye kadar azaltılmış strok tamponu olarak kullanılabilir.
+- **Makine/fren (4.9):** fren torku: bir fren takımı arızalıyken kabin boşken yukarı yönde ve **anma yükü ile aşırı yük algılama ayarına karşılık gelen
+  yükün büyüğü** (en geç %110) ile aşağı yönde yavaşlatıp durdurup tutmalı; fren izleme ve ACOP/UCMP'de bağımsız fren takımı serbest bırakma.
+- **Çekiş:** hesap ISO 8100-2, 4.11 ve Tablo 1'e göre; Ek C (çekiş örneği) ve Ek D (Nequiv örnekleri) yeniden numaralandı.
+- **Yapı:** EN 81-50 Ek A (tip inceleme belgesi örneği) kaldırıldı; "inceleme/sertifika" yerine "doğrulama" dili.
+
+Motor için sonuç: kural kataloğuna bir `standardProfile` boyutu (EN-2020 / ISO-2026) eklenmeli; ISO 8100:2026 metni yetkili kaynaktan
+alınıp kural kural karşılaştırılmadan hiçbir EN-2020 kuralı “ISO-2026 sağlandı” diye sunulmamalıdır.

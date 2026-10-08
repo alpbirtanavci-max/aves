@@ -51,7 +51,8 @@ Kaynak paket depoda değil (kullanıcıdan alınan `AVES-Hesap-Claude-Inceleme-2
 3. Fren/makine (5.9.2.2.2): standart formül vermiyor → onaylı AVES yöntemi kararı (MUHENDISLIK_KABULU) gerekli.
 4. Ray: karşı ağırlık flanşı; ray yönelimi/Fx–Fy eşlemesinin standartla teyidi; anlık emniyet tertibatı kütle formülü (EN 81-50 5.3.2).
 5. Bileşen veri kayıtları (halat/ray/tampon/regülatör) — `COMPONENT_DATA_SCHEMA` biçimiyle, belge karması ve süre/izlenebilirlik kapıları.
-6. Arayüz (form girişi) — Saha uygulamasından **ayrı** tutulacak mı kararı.
+6. **Standart profili:** (EN) ISO 8100-1/2:2026 EN 81-20/50:2020'nin yerini alıyor olabilir (ELA/EEA karşılaştırma belgesi; Ø4–8 mm halat, bounce yük durumu, fren torku, tampon hız sınırı değişiklikleri — ayrıntı `hesap-motoru/docs/KAYNAK_NOTLARI.md`). Türkiye'de kabul/uyumlaştırma/geçiş durumu doğrulanmadı; kural kataloğuna `standardProfile` eklenmeli.
+7. Arayüz (form girişi) — Saha uygulamasından **ayrı** tutulacak mı kararı.
 
 ## 6. Kararlar
 
