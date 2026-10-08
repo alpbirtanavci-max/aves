@@ -2,7 +2,7 @@
 // İkinci kişi teknik gözden geçirmesi tamamlanmadan hiçbir kural 'REVIEWED' sayılmaz; rapor bunu açıkça yazar.
 // (AGENTS.md: kaynak sınıfı + doğrulama durumu zorunlu; Master Brief bölüm 4.)
 
-export const ENGINE_VERSION = '0.1.0';
+export const ENGINE_VERSION = '0.2.0';
 export const CATALOG_DATE = '2026-10-08';
 
 /**
@@ -11,6 +11,8 @@ export const CATALOG_DATE = '2026-10-08';
  *   independentReview — 'PENDING' | 'DONE'
  */
 export const RULE_CATALOG = Object.freeze([
+  { ruleId: 'CAR-AREA-001', title: 'Kullanılabilir kabin alanı üst sınırı', standard: 'EN 81-20:2020', clause: '5.4.2.1.1–5.4.2.1.3; Table 6', basis: 'Kullanıcının Drive alanındaki BS EN 81-20:2020 İngilizce çalışma kopyası; Table 6 ve 5.4.2 ölçüm kuralları', independentReview: 'PENDING' },
+  { ruleId: 'CAR-PAX-001', title: 'Beyan edilen kişi sayısı sınırı', standard: 'EN 81-20:2020', clause: '5.4.2.3.1; Table 8; 0.3.6', basis: 'Kullanıcının Drive alanındaki BS EN 81-20:2020 İngilizce çalışma kopyası; Table 8 ve 75 kg/kişi kabulü', independentReview: 'PENDING' },
   { ruleId: 'SUS-001', title: 'Halat anma çapı ve adedi', standard: 'EN 81-20:2020', clause: '5.5.1.2 a); 5.5.1.3', basis: 'EN 81-20:2020 İngilizce metin', independentReview: 'PENDING' },
   { ruleId: 'SUS-002', title: 'Kasnak/makara çapı oranı D/d', standard: 'EN 81-20:2020', clause: '5.5.2.1', basis: 'EN 81-20:2020 İngilizce metin', independentReview: 'PENDING' },
   { ruleId: 'SUS-003', title: 'Askı güvenlik katsayısı alt sınırı', standard: 'EN 81-20:2020', clause: '5.5.2.2', basis: 'EN 81-20:2020 İngilizce metin', independentReview: 'PENDING' },
@@ -39,6 +41,7 @@ export const RULE_CATALOG = Object.freeze([
 ]);
 
 export const OUT_OF_SCOPE = Object.freeze([
+  'Kabin alanı geometrisinin otomatik ölçümü (girinti/uzantı ve kapı dikmesi detayları, EN 81-20 5.4.2.1.2–5.4.2.1.3): ölçülen kullanılabilir alan kullanıcı tarafından girilir.',
   'Makine ve fren torku (EN 81-20 5.9): standart tek bir hesap formülü vermez; bu sürümde yok.',
   'Motor gücü ve termik uygunluk: mühendislik yöntemi gerektirir; bu sürümde yok.',
   'Kabin/karkas, kabin döşemesi, makine taşıyıcıları: onaylı yapısal yöntem seçilmedi; bu sürümde yok.',

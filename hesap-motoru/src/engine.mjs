@@ -6,8 +6,10 @@ import { checkSuspension } from './suspension.mjs';
 import { checkTraction } from './traction.mjs';
 import { checkCarRails, checkCounterweightRails } from './rails.mjs';
 import { checkProgressiveSafetyGear, checkGovernor, checkBuffers } from './safety.mjs';
+import { checkCarArea } from './car-area.mjs';
 
 export const MODULES = Object.freeze([
+  { key: 'carArea', label: 'Kabin kullanılabilir alanı ve kişi sayısı', run: checkCarArea },
   { key: 'suspension', label: 'Askı (halat, D/d, güvenlik katsayısı, sonlandırma)', run: checkSuspension },
   { key: 'traction', label: 'Çekiş (tahrik yeteneği)', run: checkTraction },
   { key: 'carRails', label: 'Kabin kılavuz rayı', run: checkCarRails },

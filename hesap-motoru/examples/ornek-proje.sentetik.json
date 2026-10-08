@@ -4,6 +4,11 @@
   "reportNo": "ORNEK-HESAP-001",
   "preparedAt": "2026-10-08T00:00:00.000Z",
   "inputs": {
+    "carArea": {
+      "ratedLoadKg": 630,
+      "availableAreaM2": 1.54,
+      "markedPassengerCount": 8
+    },
     "suspension": {
       "driveType": "traction",
       "reeving": 2,

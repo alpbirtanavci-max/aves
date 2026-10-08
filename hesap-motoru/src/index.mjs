@@ -4,6 +4,7 @@ export * from './suspension.mjs';
 export * from './traction.mjs';
 export * from './rails.mjs';
 export * from './safety.mjs';
+export * from './car-area.mjs';
 export * from './catalog.mjs';
 export * from './engine.mjs';
 export * from './report.mjs';
