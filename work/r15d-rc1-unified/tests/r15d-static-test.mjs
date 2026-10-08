@@ -99,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.72 sürümü', index.includes('R15D-RC3.9.72</b>'));
-test('app R15D rc3.9.72 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.72'"));
-test('service worker rc3.9.72 cache', sw.includes("aves-saha-r15d-rc3972'"));
-test('uygulama manifesti rc3.9.72 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.72"'));
+test('index R15D rc3.9.73 sürümü', index.includes('R15D-RC3.9.73</b>'));
+test('app R15D rc3.9.73 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.73'"));
+test('service worker rc3.9.73 cache', sw.includes("aves-saha-r15d-rc3973'"));
+test('uygulama manifesti rc3.9.73 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.73"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -388,6 +388,19 @@ test('Inter ve Montserrat çevrimdışı paketleniyor',
     fs.existsSync(path.join(appDir, 'fonts', name)) && sw.includes(`'./fonts/${name}'`)));
 test('giriş ekranında kutulu logo yerine AVES kurumsal başlığı var', app.includes('<div class="login-kicker">AVES Saha Denetim</div>') && !app.includes('<img src="logo.png" alt="AVES" style="height:34px'));
 test('denetim geri dönüşü belirgin gezinme çubuğunda', app.includes('<div class="inspection-toolbar">') && index.includes('.inspection-toolbar .backlink'));
+test('AVES logosu sabit başlıkta erişilebilir denetim listesi düğmesidir',
+  index.includes('position:-webkit-sticky;position:sticky;top:0') &&
+  index.includes('id="brandHome" disabled') &&
+  app.includes("button.setAttribute('aria-label', enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim')") &&
+  app.includes('setBrandHomeEnabled(true);'));
+test('logo yalnız açık denetimde listeye döner ve çıkmadan önce kayıtları tamamlar',
+  app.includes("if (currentView !== 'inspection' || !currentDenetimId) return;") &&
+  app.includes('try { await flushEditorWrites(); }') &&
+  app.includes('if (firstError) throw firstError'));
+test('denetim değişiklik olayları izlenir ve çıkış sırasında kullanıcı etkileşimi kilitlenir',
+  app.includes('trackEditorEvent') && app.includes('Promise.allSettled([...pendingEditorWrites])') &&
+  app.includes("app.style.pointerEvents = 'none'") &&
+  app.includes('denetim ekranında kaldınız. Tekrar deneyin.'));
 test('madde sonuçları tek segmentli kontrol olarak stilleniyor', index.includes('.mstates{display:grid;grid-template-columns:1fr 1fr 1fr auto'));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',

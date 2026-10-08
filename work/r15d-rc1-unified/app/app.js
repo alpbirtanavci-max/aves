@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.72';
+const APP_VERSION = 'R15D-rc3.9.73';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -1606,6 +1606,7 @@ const UI = (() => {
 
   /* ---- Login ---- */
   function showLogin(err) {
+    setBrandHomeEnabled(false);
     currentView = 'login';
     currentDenetimId = null;
     document.getElementById('btnLogout').classList.add('hidden');
@@ -1661,13 +1662,48 @@ const UI = (() => {
   }
 
   /* ---- Denetim listesi ---- */
+  function setBrandHomeEnabled(enabled) {
+    const button = document.getElementById('brandHome');
+    if (!button) return;
+    button.disabled = !enabled;
+    button.setAttribute('aria-label', enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim');
+    button.title = enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim';
+  }
+
   async function showList() {
+    const leavingInspection = currentView === 'inspection' && !!currentDenetimId;
+    let denetimler, sahaAll;
+    if (leavingInspection) app.style.pointerEvents = 'none';
+    if (leavingInspection) {
+      try { await flushEditorWrites(); }
+      catch (error) {
+        app.style.pointerEvents = '';
+        console.error('Denetimden çıkış öncesi kayıt tamamlanamadı:', error);
+        toast('Son kayıt tamamlanamadı; denetim ekranında kaldınız. Tekrar deneyin.');
+        return false;
+      }
+    }
+    try {
+      denetimler = (await DB.all('denetimler'))
+        .filter(denetimGorunebilirMi)
+        .sort((a,b) => (b.denetim_tarihi || b.created_at || '').localeCompare(a.denetim_tarihi || a.created_at || ''));
+      sahaAll = await DB.all('saha');
+    } catch (error) {
+      if (leavingInspection) {
+        app.style.pointerEvents = '';
+        console.error('Denetimler listesi okunamadı:', error);
+        toast('Denetimler listesi açılamadı; denetim ekranında kaldınız. Tekrar deneyin.');
+        return false;
+      }
+      throw error;
+    }
+    if (leavingInspection) {
+      if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+      transitioningId = null;
+    }
     currentView = 'list';
     currentDenetimId = null;
-    const denetimler = (await DB.all('denetimler'))
-      .filter(denetimGorunebilirMi)
-      .sort((a,b) => (b.denetim_tarihi || b.created_at || '').localeCompare(a.denetim_tarihi || a.created_at || ''));
-    const sahaAll = await DB.all('saha');
+    setBrandHomeEnabled(false);
     const statsBy = {};
     const rowsBy = {};
     for (const s of sahaAll) {
@@ -1696,6 +1732,7 @@ const UI = (() => {
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
+    app.style.pointerEvents = '';
     const dl = document.getElementById('dlist');
 
     // "Kaldığın yerden devam et" — en son açılan, tamamlanmamış, görünür denetim.
@@ -2035,6 +2072,7 @@ const UI = (() => {
     if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
+    setBrandHomeEnabled(false);
     const seg = (id, opts, multi) => `<div class="segs" id="${id}">${opts.map(o =>
       `<button type="button" class="seg" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     app.innerHTML = `
@@ -2608,6 +2646,7 @@ const UI = (() => {
   async function showDenetim(id, forceReadOnly = false, initialFilter = 'all') {
     currentView = 'inspection';
     currentDenetimId = id;
+    setBrandHomeEnabled(true);
     inspectionReadOnly = !!forceReadOnly;
     filter = initialFilter; search = ''; openBolums = new Set();
     const denetim = await DB.get('denetimler', id);
@@ -3323,7 +3362,12 @@ const UI = (() => {
     // yüzden arka plana alma/kapatma anında hâlâ kaybolabiliyordu.
     if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) active.blur();
     await new Promise(resolve => setTimeout(resolve, 0));
-    if (pendingEditorWrites.size) await Promise.all([...pendingEditorWrites]);
+    let firstError = null;
+    while (pendingEditorWrites.size) {
+      const settled = await Promise.allSettled([...pendingEditorWrites]);
+      if (!firstError) firstError = settled.find(result => result.status === 'rejected')?.reason || null;
+    }
+    if (firstError) throw firstError;
   }
 
   async function fotoKontrolUyarisi(bolum) {
@@ -4023,6 +4067,12 @@ const UI = (() => {
   }
 
   function bindMaddeEvents() {
+    const trackEditorEvent = (label, handler) => (event) => {
+      trackedEditorWrite(handler(event)).catch(error => {
+        console.error(`${label} kaydedilemedi:`, error);
+        toast('Değişiklik kaydedilemedi. Lütfen tekrar deneyin.');
+      });
+    };
     document.getElementById('bolums').addEventListener('input', (e) => {
       if (!currentCanEdit) return;
       // Aynı tuş vuruşu için tek bir zaman damgası: 700ms sonra yazım
@@ -4031,7 +4081,7 @@ const UI = (() => {
       if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);
       if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target, ts);
     });
-    document.getElementById('bolums').addEventListener('click', async (e) => {
+    document.getElementById('bolums').addEventListener('click', trackEditorEvent('Denetim işlemi', async (e) => {
       const stepBtn = e.target.closest('[data-step]');
       if (stepBtn && !stepBtn.disabled) {
         const b = stepBtn.dataset.b;
@@ -4080,8 +4130,8 @@ const UI = (() => {
         await save(row, mEl);
         return;
       }
-    });
-    document.getElementById('bolums').addEventListener('change', async (e) => {
+    }));
+    document.getElementById('bolums').addEventListener('change', trackEditorEvent('Denetim alanı', async (e) => {
       if (!currentCanEdit) {
         toast('Bu denetim salt okunur');
         await renderDenetim();
@@ -4135,7 +4185,7 @@ const UI = (() => {
         return; // açıklama tamamlanmayı etkilemez, otomatik geçiş tetiklenmez
       }
       await save(row, mEl);
-    });
+    }));
   }
 
   function kuralSaglanir(value, rule) {
@@ -4923,6 +4973,23 @@ const UI = (() => {
       bad.forEach((row, index) => lines.push(`${index + 1}. [${row.standart_madde_no || row.madde_id}] ${row.kontrol_basligi}${row.bulgu_secenegi ? ` — ${row.bulgu_secenegi}` : ''}${row.diger_bulgu ? `: ${row.diger_bulgu}` : ''}${row.aciklama ? ` (${row.aciklama})` : ''}`));
       navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Uygunsuzluk listesi panoya kopyalandı'));
     };
+  }
+
+  const brandHomeButton = document.getElementById('brandHome');
+  if (brandHomeButton) {
+    brandHomeButton.addEventListener('click', async () => {
+      if (currentView !== 'inspection' || !currentDenetimId) return;
+      brandHomeButton.disabled = true;
+      brandHomeButton.setAttribute('aria-busy', 'true');
+      try { await showList(); }
+      catch (error) {
+        console.error('Denetimler listesi açılamadı:', error);
+        toast('Denetimler listesi açılamadı. Tekrar deneyin.');
+      } finally {
+        brandHomeButton.removeAttribute('aria-busy');
+        setBrandHomeEnabled(currentView === 'inspection' && !!currentDenetimId);
+      }
+    });
   }
 
   return {

@@ -401,7 +401,11 @@ button:not(:disabled):active{transform:translateY(1px);}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{
   outline:3px solid rgba(234,0,72,.18);outline-offset:2px;
 }
-.topbar{min-height:58px;padding:calc(env(safe-area-inset-top) + 11px) 16px 11px;border-bottom-width:2px;box-shadow:0 2px 10px rgba(12,15,54,.14);}
+.topbar{position:-webkit-sticky;position:sticky;top:0;min-height:58px;padding:calc(env(safe-area-inset-top) + 11px) 16px 11px;border-bottom-width:2px;box-shadow:0 2px 10px rgba(12,15,54,.14);}
+.brand-home{display:flex;align-items:center;min-width:44px;min-height:44px;padding:0 4px;border:0;border-radius:6px;background:transparent;color:inherit;text-align:left;}
+.brand-home:hover{background:rgba(255,255,255,.08);}
+.brand-home:disabled{cursor:default;}
+.brand-home[aria-busy="true"]{opacity:.65;cursor:wait;}
 .brand-lockup{display:flex;align-items:center;gap:10px;min-width:0;}
 .brand-lockup img{height:24px;width:auto;display:block;}
 .brand-divider{border-left:1px solid rgba(255,255,255,.22);padding-left:10px;}
@@ -560,10 +564,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 </head>
 <body>
 <div class="topbar">
-  <div class="brand-lockup">
-    <img src="aves-logo-white.png" alt="AVES">
-  <div class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.72</b></div>
-  </div>
+  <button type="button" class="brand-home" id="brandHome" disabled aria-label="AVES Saha Denetim" title="AVES Saha Denetim">
+    <span class="brand-lockup">
+      <img src="aves-logo-white.png" alt="" aria-hidden="true">
+      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.73</b></span>
+    </span>
+  </button>
   <div class="spacer"></div>
   <button class="syncpill" id="syncPill" onclick="Sync.manual()">
     <span class="dot"></span><span id="syncLabel">—</span>
