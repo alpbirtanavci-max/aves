@@ -1,4 +1,4 @@
-# AVES Hesap Motoru (v0.1 — taslak)
+# AVES Hesap Motoru (v0.2 — taslak)
 
 Elektrikli, halatlı asansörler için **tasarım hesabı doğrulama** motoru. EN 81-20:2020 ve EN 81-50:2020
 hükümlerini saf fonksiyonlar olarak uygular, her sonucu kaynak maddesi, formül ve sayısal yerine koymayla
@@ -36,6 +36,7 @@ Motor saat okumaz (`preparedAt` çağıran verir); aynı girdi aynı rapor ve ay
 
 | Modül | Kural kimlikleri | Standart |
 |---|---|---|
+| `car-area.mjs` | CAR-AREA-001, CAR-PAX-001 | EN 81-20 5.4.2.1 / Table 6; 5.4.2.3 / Table 8; 0.3.6 |
 | `suspension.mjs` | SUS-001 … SUS-006 | EN 81-20 5.5; EN 81-50 5.12 (Çizelge 2, Şekil 10 denklemi); EN 13411 |
 | `traction.mjs` + `tension.mjs` | TRA-001 … TRA-005 | EN 81-50 5.11; EN 81-20 5.5.3 |
 | `rails.mjs` | RAIL-C-02…05 (kabin), RAIL-W-02/03/05 (karşı ağırlık) | EN 81-50 5.10, Ek C; EN 81-20 5.7 |
@@ -43,6 +44,8 @@ Motor saat okumaz (`preparedAt` çağıran verir); aynı girdi aynı rapor ve ay
 
 Kapsam dışı olanlar rapor başlığında **açıkça** listelenir (`OUT_OF_SCOPE`); girdisi verilmeyen modül
 “hesaplanmadı” olarak görünür, sessizce atlanmaz.
+
+`inputs.carArea` alanına anma yükü (kg), 5.4.2.1.2–5.4.2.1.3'e göre ölçülmüş kullanılabilir alan (m²) ve kabinde beyan edilen kişi sayısı girilir. Motor Table 6 azami alanını ve Table 8 / Q÷75 kişi sınırını hesaplar. Girinti/uzantı ile kapı dikmeleri alanı geometriden otomatik çıkartılmaz; ölçüm kuralı rapor notlarında açıkça belirtilir.
 
 ## Tasarım ilkeleri
 
@@ -64,8 +67,8 @@ Kapsam dışı olanlar rapor başlığında **açıkça** listelenir (`OUT_OF_SC
   EN 81-50:2020 aslıyla karşılaştırma bekliyor**.
 - Testlerin geçmesi mevzuat uygunluğu kanıtı değildir; `RULE_CATALOG` içindeki `independentReview` alanı ayrıdır.
 
-## Bilinen eksikler (v0.1)
+## Bilinen eksikler (v0.2)
 
-Makine/fren (5.9), motor, kabin/karkas yapısal hesapları, hidrolik, sismik, makine altta çekiş,
+Makine/fren (5.9), motor, kabin/karkas yapısal hesapları (kabin alanı/kişi sayısı dışındaki), hidrolik, sismik, makine altta çekiş,
 `m_DP`/PTD atalet terimleri, karşı ağırlık flanş/braket kontrolleri, anlık emniyet tertibatı kütle formülü.
 Tam liste: `docs/KAYNAK_NOTLARI.md` ve `docs/CLAUDE_BRIEF_hesap_motoru_2026-10-08.md`.

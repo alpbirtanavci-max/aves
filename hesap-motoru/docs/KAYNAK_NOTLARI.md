@@ -5,6 +5,15 @@ EN 81-50 için TS EN 81-50:2021 Türkçe çeviri (sayfa üstbilgisi EN 81-50:202
 BS EN 81-50-2020.pdf taranmış görüntü olduğundan metin çıkarılamadı. Sayısal değerler mühendis incelemesinde
 İngilizce aslıyla bir kez daha karşılaştırılmalıdır. Bu not uygunluk beyanı değildir.
 
+## 5.4.2 Kabin kullanılabilir alanı ve yolcu sayısı (EN 81-20:2020)
+
+- Kaynak: kullanıcının Drive alanındaki `BS EN 81-20-2020.pdf` (İngilizce, BS EN 81-20:2020); 5.4.2.1.1–5.4.2.1.4, Table 6; 5.4.2.3.1, Table 8; 0.3.6.
+- Table 6: `availableArea ≤ maximumArea(Q)`; 100–2500 kg arası ara anma yüklerinde doğrusal enterpolasyon. Table 6'nın notu uyarınca 2500 kg üzeri için her ilave 100 kg başına 0,16 m² eklenir. 100 kg altı tablo aralığı dışıdır ve bu sürümde bloklanır.
+- Table 8: 1–20 kişi için tabloda verilen asgari alan eşikleri; 20 kişiden sonra her kişi başına 0,115 m² artış. 5.4.2.3.1'deki kişi sınırı, aşağı yuvarlanmış `Q / 75 kg` ile alanın desteklediği kişi sayısının küçüğüdür; 0.3.6 ortalama kişi ağırlığını 75 kg olarak belirler.
+- 5.4.2.1.2'ye göre kullanılabilir alan, zeminden 1 m seviyesinde bitirmeler hariç kabin gövdesinin iç boyutlarıyla ölçülür. 5.4.2.1.3 girinti/uzantılar ile kapı çerçevesi dikmeleri arasındaki alan için ayrı dahil/çıkar kuralları verir. Basit hesap modülü bu geometrik düzeltmeleri otomatik yapmaz; `availableAreaM2` ölçüm kuralı uygulanarak girilmelidir.
+- Hidrolik yük-yolcu asansörlerine özel Table 7 ve 5.4.2.2.2–5.4.2.2.4 bu modülde yoktur. ISO 8100 profili bu sürümün kapsamına dahil edilmemiştir.
+- Kaynak kopyanın ulusal benimsenme/yürürlük durumu bu hesapta doğrulanmadı. İkinci kişi teknik incelemesi beklenmektedir; yeni kurallar `independentReview: 'PENDING'` ve rapor TASLAK olarak kalır.
+
 ## 5.12 Askı halatı güvenlik katsayısı (EN 81-50:2020)
 - Sf = 10^( 2,6834 − log10( 695,85·10^6 · Nequiv / (Dt/dr)^8,567 ) / log10( 77,09 · (Dt/dr)^−2,894 ) )
 - Nequiv = Nequiv(t) + Nequiv(p);  Nequiv(p) = Kp·(Nps + 4·Npr);  Kp = (Dt/Dp)^4
