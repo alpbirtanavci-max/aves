@@ -88,6 +88,8 @@ export function equivalentDeflectionPulleys({ tractionSheaveDiameterMm, pulleys 
 /** EN 81-50 5.12.3 Sf = 10^(2,6834 − log10(695,85·10^6·Nequiv/(Dt/dr)^8,567) / log10(77,09·(Dt/dr)^−2,894)) */
 export function minimumSafetyFactor({ DtOverDr, Nequiv }) {
   const x = DtOverDr;
+  const [lo, hi] = FIGURE10_DD_RANGE;
+  if (!isFiniteNumber(x) || x < lo || x > hi || !isFiniteNumber(Nequiv) || Nequiv <= 0) return null;
   const num = Math.log10((695.85e6 * Nequiv) / x ** 8.567);
   const den = Math.log10(77.09 * x ** -2.894);
   return 10 ** (2.6834 - num / den);
@@ -340,8 +342,20 @@ export function checkSuspension(input) {
     if (!Number.isInteger(passes) || passes < 1) p.push('tractionPasses ≥ 1 tam sayı olmalı');
     const Nt1 = equivalentTractionSheaves(s.groove);
     if (Nt1 === null) p.push('Oluk tipi/açısı Çizelge 2 aralığında değil (ekstrapolasyon yapılmaz)');
-    for (const [i, pu] of (s.pulleys ?? []).entries()) {
-      if (!(isFiniteNumber(pu.diameterMm) && pu.diameterMm > 0)) p.push(`Makara ${i + 1}: çap girilmemiş`);
+    if (!Array.isArray(s.pulleys)) {
+      p.push('Saptırma makaraları listesi gerekli; makara yoksa boş liste [] girilmeli');
+    } else {
+      for (const [i, pu] of s.pulleys.entries()) {
+        if (!(isFiniteNumber(pu?.diameterMm) && pu.diameterMm > 0)) p.push(`Makara ${i + 1}: çap girilmemiş`);
+        for (const key of ['simpleBends', 'reverseBends']) {
+          if (!Number.isInteger(pu?.[key]) || pu[key] < 0) {
+            p.push(`Makara ${i + 1}: ${key} sıfır veya pozitif tam sayı olarak belirtilmeli`);
+          }
+        }
+        if (Number.isInteger(pu?.simpleBends) && Number.isInteger(pu?.reverseBends) && pu.simpleBends + pu.reverseBends < 1) {
+          p.push(`Makara ${i + 1}: en az bir eğilme sayısı belirtilmeli`);
+        }
+      }
     }
     if (p.length) {
       results.push(blocked({ ruleId: 'SUS-004', title: 'EN 81-50 5.12 asgari güvenlik katsayısı', source: SRC81_50('5.12'), problems: p, inputs: summary(input) }));
@@ -350,45 +364,50 @@ export function checkSuspension(input) {
       const Nt = Nt1 * passes;
       const pul = equivalentDeflectionPulleys({ tractionSheaveDiameterMm: s.tractionDiameterMm, pulleys: s.pulleys });
       const Nequiv = Nt + pul.Nequiv_p;
-      const Sf = minimumSafetyFactor({ DtOverDr, Nequiv });
-      const staticMin = requiredStaticFactor('traction', rope.count);
-      const combinedMin = Math.max(Sf, staticMin ?? 0);
       const [lo, hi] = FIGURE10_DD_RANGE;
       const outside = DtOverDr < lo || DtOverDr > hi;
-      const notes = [];
-      let status = safetyFactor >= combinedMin ? STATUS.PASS : STATUS.FAIL;
       if (outside) {
-        notes.push(
-          `Dt/dr = ${fmt(DtOverDr, 2)}; EN 81-50 Şekil 10 yalnız ${lo}–${hi} aralığını gösterir. Formül bu aralık dışında hesaplandı; sonuç mühendis incelemesi gerektirir.`,
+        results.push(
+          blocked({
+            ruleId: 'SUS-004',
+            title: 'EN 81-50 5.12 asgari güvenlik katsayısı',
+            source: SRC81_50('5.12.2–5.12.3; Çizelge 2; Şekil 10'),
+            problems: [`Dt/dr = ${fmt(DtOverDr, 2)}; Şekil 10 yalnız ${lo}–${hi} aralığını kapsar. Aralık dışında ekstrapolasyon yapılmadı.`],
+            inputs: summary(input),
+          }),
         );
-        if (status === STATUS.PASS) status = STATUS.REVIEW;
+      } else {
+        const Sf = minimumSafetyFactor({ DtOverDr, Nequiv });
+        const staticMin = requiredStaticFactor('traction', rope.count);
+        const combinedMin = Math.max(Sf, staticMin ?? 0);
+        const status = !Number.isFinite(Sf) || !Number.isFinite(safetyFactor)
+          ? STATUS.BLOCKED
+          : safetyFactor >= combinedMin ? STATUS.PASS : STATUS.FAIL;
+        results.push(
+          makeResult({
+            ruleId: 'SUS-004',
+            title: 'EN 81-50 5.12 asgari güvenlik katsayısı',
+            status,
+            source: SRC81_50('5.12.2–5.12.3; Çizelge 2; Şekil 10'),
+            values: {
+              DtOverDr: { value: DtOverDr, unit: '1' },
+              NequivT: { value: Nt, unit: '1' },
+              Kp: { value: pul.Kp ?? 0, unit: '1' },
+              NequivP: { value: pul.Nequiv_p, unit: '1' },
+              Nequiv: { value: Nequiv, unit: '1' },
+              SfMin: { value: Sf, unit: '1' },
+              combinedMin: { value: combinedMin, unit: '1' },
+              safetyFactor: { value: safetyFactor, unit: '1' },
+            },
+            limit: { description: 'S ≥ max(5.5.2.2 alt sınırı, 5.12 Sf)', value: combinedMin, direction: 'min' },
+            margin: (safetyFactor - combinedMin) / combinedMin,
+            formula:
+              'Sf = 10^(2,6834 − log10(695,85·10⁶·Nequiv/(Dt/dr)^8,567) / log10(77,09·(Dt/dr)^−2,894)); Nequiv = Nequiv(t) + Kp·(Nps + 4·Npr); Kp = (Dt/Dp)⁴',
+            substitution: `Dt/dr=${fmt(DtOverDr, 2)}; Nequiv(t)=${fmt(Nt, 2)}; Kp=${fmt(pul.Kp ?? 0, 3)}; Nps=${pul.Nps}; Npr=${pul.Npr}; Nequiv=${fmt(Nequiv, 3)}; Sf=${fmt(Sf, 3)}; S=${fmt(safetyFactor, 3)}`,
+            inputs: summary(input),
+          }),
+        );
       }
-      if (!Number.isFinite(Sf) || !Number.isFinite(safetyFactor)) status = STATUS.BLOCKED;
-      results.push(
-        makeResult({
-          ruleId: 'SUS-004',
-          title: 'EN 81-50 5.12 asgari güvenlik katsayısı',
-          status,
-          source: SRC81_50('5.12.2–5.12.3; Çizelge 2; Şekil 10'),
-          values: {
-            DtOverDr: { value: DtOverDr, unit: '1' },
-            NequivT: { value: Nt, unit: '1' },
-            Kp: { value: pul.Kp ?? 0, unit: '1' },
-            NequivP: { value: pul.Nequiv_p, unit: '1' },
-            Nequiv: { value: Nequiv, unit: '1' },
-            SfMin: { value: Sf, unit: '1' },
-            combinedMin: { value: combinedMin, unit: '1' },
-            safetyFactor: { value: safetyFactor, unit: '1' },
-          },
-          limit: { description: 'S ≥ max(5.5.2.2 alt sınırı, 5.12 Sf)', value: combinedMin, direction: 'min' },
-          margin: (safetyFactor - combinedMin) / combinedMin,
-          formula:
-            'Sf = 10^(2,6834 − log10(695,85·10⁶·Nequiv/(Dt/dr)^8,567) / log10(77,09·(Dt/dr)^−2,894)); Nequiv = Nequiv(t) + Kp·(Nps + 4·Npr); Kp = (Dt/Dp)⁴',
-          substitution: `Dt/dr=${fmt(DtOverDr, 2)}; Nequiv(t)=${fmt(Nt, 2)}; Kp=${fmt(pul.Kp ?? 0, 3)}; Nps=${pul.Nps}; Npr=${pul.Npr}; Nequiv=${fmt(Nequiv, 3)}; Sf=${fmt(Sf, 3)}; S=${fmt(safetyFactor, 3)}`,
-          notes,
-          inputs: summary(input),
-        }),
-      );
     }
   }
 

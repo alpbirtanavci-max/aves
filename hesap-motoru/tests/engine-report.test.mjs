@@ -94,6 +94,9 @@ test('Sonuç yoksa genel durum BLOKE ve açıklama "Hesaplanan sonuç yok"', () 
   const { report } = run({});
   assert.equal(report.summary.overall, STATUS.BLOCKED);
   assert.equal(report.summary.overallText, 'Hesaplanan sonuç yok.');
+  assert.equal(report.status.draft, true);
+  assert.match(report.status.draftReason, /Hiçbir kural hesaplanmadı/);
+  assert.match(renderHtml(report), /TASLAK/);
 });
 
 test('Bir girdi bozulursa genel durum kötüleşir: FAIL en az FAIL, BLOKE en az BLOKE', () => {
@@ -111,7 +114,7 @@ test('Ø6,5 AVES istisnası uçtan uca: rapor “AVES_POLITIKASI” gösterir ve
   inputs.suspension.sheaves = {
     tractionDiameterMm: 240,
     groove: { type: 'v', angleDeg: 40 },
-    pulleys: [{ diameterMm: 240, simpleBends: 1 }],
+    pulleys: [{ diameterMm: 240, simpleBends: 1, reverseBends: 0 }],
   };
   inputs.suspension.termination = { type: 'wedge-13411-7', certificateRef: 'c', sizeRangeMm: [5, 6.5] };
   inputs.suspension.avesException = { enabled: true, bendingEnduranceEvidenceRef: 'EGILME-RAPORU-1' };

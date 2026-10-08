@@ -141,6 +141,9 @@ export function checkTraction(input) {
       decelerationMps2: { label: 'Acil fren gecikmesi a (m/s²)', min: 0.5 },
     }),
   );
+  if (input.ropeSpeedMps !== undefined) {
+    problems.push(...checkInputs(input, { ropeSpeedMps: { label: 'Halat hızı (m/s)', positive: true } }));
+  }
   problems.push(
     ...checkInputs(input.masses ?? {}, {
       P: { label: 'Boş kabin ve bileşenler P', positive: true },

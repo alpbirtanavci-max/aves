@@ -13,9 +13,9 @@
         "tractionDiameterMm": 400,
         "groove": { "type": "v", "angleDeg": 40 },
         "pulleys": [
-          { "name": "Kabin makarası 1", "diameterMm": 400, "simpleBends": 1 },
-          { "name": "Kabin makarası 2", "diameterMm": 400, "simpleBends": 1 },
-          { "name": "Karşı ağırlık makarası", "diameterMm": 400, "simpleBends": 1 }
+          { "name": "Kabin makarası 1", "diameterMm": 400, "simpleBends": 1, "reverseBends": 0 },
+          { "name": "Kabin makarası 2", "diameterMm": 400, "simpleBends": 1, "reverseBends": 0 },
+          { "name": "Karşı ağırlık makarası", "diameterMm": 400, "simpleBends": 1, "reverseBends": 0 }
         ]
       },
       "termination": { "type": "wedge-13411-7", "certificateRef": "SENTETIK-SOKET-BELGESI", "sizeRangeMm": [9, 11] }

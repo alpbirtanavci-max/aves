@@ -19,8 +19,8 @@ test('Ek E.1: 2:1, V oluk γ=40°, Dt=600, Dp=500 → Nequiv = 14,14', () => {
   const p = equivalentDeflectionPulleys({
     tractionSheaveDiameterMm: 600,
     pulleys: [
-      { diameterMm: 500, simpleBends: 1 },
-      { diameterMm: 500, simpleBends: 1 },
+      { diameterMm: 500, simpleBends: 1, reverseBends: 0 },
+      { diameterMm: 500, simpleBends: 1, reverseBends: 0 },
     ],
   });
   near(p.Kp, 2.0736, 1e-4);
@@ -33,7 +33,7 @@ test('Ek E.2: 1:1, U alttan kesik β=90°, Dt=600, Dp=400 → Nequiv = 10,06', (
   assert.equal(Nt, 5);
   const p = equivalentDeflectionPulleys({
     tractionSheaveDiameterMm: 600,
-    pulleys: [{ diameterMm: 400, simpleBends: 1 }],
+    pulleys: [{ diameterMm: 400, simpleBends: 1, reverseBends: 0 }],
   });
   near(p.Kp, 5.0625, 1e-4);
   near(Nt + p.Nequiv_p, 10.0625, 1e-4);
@@ -43,7 +43,7 @@ test('Ek E.3: çift sarım U oluk (alttan kesiksiz), Dt=Dp=400 → Nequiv = 4', 
   const Nt = equivalentTractionSheaves({ type: 'u' }) * 2; // halat çekme kasnağından iki kez geçer
   const p = equivalentDeflectionPulleys({
     tractionSheaveDiameterMm: 400,
-    pulleys: [{ diameterMm: 400, simpleBends: 2 }],
+    pulleys: [{ diameterMm: 400, simpleBends: 2, reverseBends: 0 }],
   });
   assert.equal(Nt + p.Nequiv_p, 4);
 });
@@ -68,6 +68,8 @@ test('Sf formülü Şekil 10 eğrileriyle uyumlu', () => {
   near(minimumSafetyFactor({ DtOverDr: 36, Nequiv: 3 }), 14.1, 0.15);
   near(minimumSafetyFactor({ DtOverDr: 40, Nequiv: 10 }), 18.7, 0.15);
   near(minimumSafetyFactor({ DtOverDr: 80, Nequiv: 10 }), 7.92, 0.05);
+  assert.equal(minimumSafetyFactor({ DtOverDr: 33.99, Nequiv: 10 }), null);
+  assert.equal(minimumSafetyFactor({ DtOverDr: 80.01, Nequiv: 10 }), null);
 });
 
 test('Sf: Nequiv arttıkça artar, Dt/dr arttıkça azalır', () => {
@@ -107,7 +109,8 @@ test('El hesabı: 1:1, 6×Ø10, D/d=40, V 40°', () => {
 
   const s4 = byId(r, 'SUS-004');
   near(s4.values.Nequiv.value, 10, 1e-12); // saptırma makarası yok
-  near(s4.values.SfMin.value, minimumSafetyFactor({ DtOverDr: 40, Nequiv: 10 }), 1e-12);
+  // Independent substitution of the EN 81-50 5.12.3 equation (not the production helper).
+  near(s4.values.SfMin.value, 18.67738182136364, 1e-12);
   assert.equal(s4.status, STATUS.PASS);
 
   for (const id of ['SUS-001', 'SUS-002', 'SUS-006']) assert.equal(byId(r, id).status, STATUS.PASS, id);
@@ -126,7 +129,7 @@ test('Her makara ayrı kontrol edilir: küçük saptırma makarası SUS-002’yi
       sheaves: {
         tractionDiameterMm: 400,
         groove: { type: 'v', angleDeg: 40 },
-        pulleys: [{ diameterMm: 350, simpleBends: 1 }],
+        pulleys: [{ diameterMm: 350, simpleBends: 1, reverseBends: 0 }],
       },
     }),
   );
@@ -165,7 +168,7 @@ test('2:1 askıda kabin tarafı kuvveti r’ye bölünür', () => {
   assert.ok(f2 < f1);
 });
 
-test('Şekil 10 aralığı dışı Dt/dr → PASS yerine REVIEW', () => {
+test('Şekil 10 aralığı dışı Dt/dr ekstrapole edilmez ve BLOKE olur', () => {
   const r = checkSuspension(
     baseInput({
       rope: { nominalDiameterMm: 6, count: 6, minimumBreakingLoadN: 50000, certificateRef: 'x' },
@@ -173,7 +176,34 @@ test('Şekil 10 aralığı dışı Dt/dr → PASS yerine REVIEW', () => {
     }),
   );
   // Dt/dr = 100 > 80
-  assert.equal(byId(r, 'SUS-004').status, STATUS.REVIEW);
+  const result = byId(r, 'SUS-004');
+  assert.equal(result.status, STATUS.BLOCKED);
+  assert.equal(result.values.SfMin, undefined);
+  assert.match(result.blockers.join(' '), /ekstrapolasyon yapılmadı/);
+});
+
+test('Saptırma makarası eğilme sayılarından biri eksikse 5.12 hesabı BLOKE', () => {
+  const r = checkSuspension(baseInput({
+    sheaves: {
+      tractionDiameterMm: 400,
+      groove: { type: 'v', angleDeg: 40 },
+      pulleys: [{ diameterMm: 400, simpleBends: 1 }],
+    },
+  }));
+  const result = byId(r, 'SUS-004');
+  assert.equal(result.status, STATUS.BLOCKED);
+  assert.match(result.blockers.join(' '), /reverseBends/);
+});
+
+test('Saptırma makarası eğilme sayısı negatifse 5.12 hesabı BLOKE', () => {
+  const r = checkSuspension(baseInput({
+    sheaves: {
+      tractionDiameterMm: 400,
+      groove: { type: 'v', angleDeg: 40 },
+      pulleys: [{ diameterMm: 400, simpleBends: -1, reverseBends: 0 }],
+    },
+  }));
+  assert.equal(byId(r, 'SUS-004').status, STATUS.BLOCKED);
 });
 
 // ---- AVES Ø6,5 mm istisnası: norm değil, asla PASS vermez ---------------------------------------
@@ -238,7 +268,7 @@ test('Ø6,5×320: istisna eşleşmesi değil, d < 8 mm olduğu için SUS-001 FAI
 test('İstisna: tüm kasnak/makara 210/240 olmalı; 350 mm saptırma makarası varsa SUS-001 FAIL', () => {
   const r = checkSuspension(
     aves65({
-      sheaves: { tractionDiameterMm: 240, groove: { type: 'v', angleDeg: 40 }, pulleys: [{ diameterMm: 350, simpleBends: 1 }] },
+      sheaves: { tractionDiameterMm: 240, groove: { type: 'v', angleDeg: 40 }, pulleys: [{ diameterMm: 350, simpleBends: 1, reverseBends: 0 }] },
       avesException: { enabled: true, bendingEnduranceEvidenceRef: 'rapor' },
     }),
   );

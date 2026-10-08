@@ -77,6 +77,13 @@ function ekD(over = {}) {
 }
 const alpha = (160 * Math.PI) / 180;
 
+test('Negatif halat hızı girdisi tüm çekiş sonuçlarını bloke eder', () => {
+  const results = checkTraction(ekD({ wrapAngleDeg: 90, ropeSpeedMps: -9 }));
+  for (const id of ['TRA-001', 'TRA-002', 'TRA-003', 'TRA-004', 'TRA-005']) {
+    assert.equal(byId(results, id).status, STATUS.BLOCKED, id);
+  }
+});
+
 test('Ek D yükleme: T1 = (P+1,25Q)/2·g + M_SRkabin·g ; T2 = Mkw/2·g', () => {
   const r = byId(checkTraction(ekD()), 'TRA-001');
   const T1 = ((P + 1.25 * Q) / 2) * g + 20 * g;
