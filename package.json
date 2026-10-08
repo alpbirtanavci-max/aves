@@ -5,7 +5,8 @@
   "description": "AVES Saha Denetim — offline-first PWA + Supabase. Uygulama kökü: work/r15d-rc1-unified/",
   "type": "module",
   "scripts": {
-    "test": "node work/r15d-rc1-unified/tests/r15d-static-test.mjs"
+    "test": "node work/r15d-rc1-unified/tests/r15d-static-test.mjs",
+    "test:hesap": "node --test \"hesap-motoru/tests/*.test.mjs\""
   },
   "engines": {
     "node": ">=22"

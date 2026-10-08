@@ -18,6 +18,17 @@ jobs:
       - name: r15d-static-test (AGENTS.md bolum 5 - her zaman yesil)
         run: node work/r15d-rc1-unified/tests/r15d-static-test.mjs
 
+  hesap-motoru-test:
+    name: Hesap motoru testi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: hesap-motoru birim testleri
+        run: node --test "hesap-motoru/tests/*.test.mjs"
+
   rls-test:
     name: RLS dort-persona senaryo testi
     runs-on: ubuntu-latest
