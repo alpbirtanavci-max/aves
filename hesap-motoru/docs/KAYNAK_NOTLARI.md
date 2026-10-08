@@ -134,8 +134,16 @@ BS EN 81-50-2020.pdf taranmış görüntü olduğundan metin çıkarılamadı. S
 ## EN 13411-7 (simetrik kamalı soket) ve -6
 - Kenetleme uzunluğu ≥ 7,3·d (13411-7). Verim ≥ %80 MBL, sokette deformasyon ve halatta kayma olmadan. Tasarım katsayısı: yük kaldırma ≥ 5, insan taşıma ≥ 10.
 - Soket boyutu halat çapı aralığına bağlı: 5→4–5 mm; 6,5→5–6,5; 8→6–8; 11→9–11; 14→12–14; 17→15–17; 20→18–20. Kama/soket açısı 13°. Farklı imalatçı parçaları karıştırılmaz.
-- EN 13411-6 (asimetrik) Drive'ın görülen sayfalarında bulunamadı; notlardaki 4,3d değeri doğrulanmadı.
+- EN 13411-6 (asimetrik kamalı soket, TS EN 13411-6+A1 Türkçe metin) okundu: kenetleme uzunluğu ≥ 4,3·d (5.1); verim ≥ %80 MBL (5.3.4); kama açısı α ile soket açısı β farkı ≤ 2°; halat yüke maruz kısmının ekseni pime dik.
 
 ## ANFOR soru-cevap (EN 81-20:2014 & EN 81-50:2014)
 - Fs yorumu (5.7.2.3.6): değerler "en kötü durum"; yolcu/yük/ağır hizmet ayrımı sözleşmeye bağlıdır; farklı yükleme için onaylanmış sapma gerekebilir.
 - Belgenin kalanı kapı, aydınlatma, sığınma alanı sorularıdır; hesap kuralı değişikliği içermez.
+
+## EN 81-77:2022 sismik durum (TS EN 81-77, Eylül 2022) — ilk sürümde kapsam dışı, sonraki modül için kayıt
+- Yapı: Ek A (normatif) sismik asansör kategorileri; Ek B (bilgi) tasarım ivmesi ad ve örnek hesap; Ek D (bilgi) sismik ray ispatı.
+- Ek D, EN 81-20 5.7 ve EN 81-50 5.10/Ek C hesabının sismik duruma uyarlanmasıdır:
+  Q_SE = k_SE·Q (k_SE = 0,4 yolcu; 0,8 yük-yolcu).  Kabin: F_SE = a_d·(P_EC + k_SE·Q);  karşı ağırlık: F_SE = a_d·(P_EC + q·Q).
+  P_EC: boş kabin (hareketli kablo ve telafi hariç). Sismik yük durumunda kabin kütleleri (P_EC + Q_SE) k2 = 1,2 ile çarpılır.
+  Çizelge D.1: yeni yük durumu "sismik koşul — seyir" (P_EC, Q_SE, M_cwt, M_g, F_p, M_aux, WL, F_SE). Çizelge D.2: ivme yönü (x ekseni eğilmesi için a_x = a_d, a_y = 0; y için tersi).
+- 5.8.2: sismik olay sırasında izin verilen gerilme ve sehimler ayrı hükümdür (Ek D ile birlikte okunmalı); bu notta formüle edilmedi.
