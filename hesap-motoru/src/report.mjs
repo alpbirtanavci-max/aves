@@ -48,6 +48,13 @@ export function buildReport({ project, results, modules, inputs, preparedAt, rep
   const overall = results.length ? worstStatus(results.map((r) => r.status)) : STATUS.BLOCKED;
   const used = [...new Set(results.map((r) => r.ruleId))].map((id) => catalogEntry(id) ?? { ruleId: id, title: '', independentReview: 'PENDING', basis: 'kataloğa kayıtlı değil' });
   const pendingReview = used.filter((u) => u.independentReview !== 'DONE');
+  const noCalculatedRules = used.length === 0;
+  const draft = pendingReview.length > 0 || noCalculatedRules;
+  const draftReason = pendingReview.length
+    ? `${pendingReview.length} kuralın ikinci kişi teknik gözden geçirmesi tamamlanmadı; bu rapor TASLAKTIR.`
+    : noCalculatedRules
+      ? 'Hiçbir kural hesaplanmadı; bu rapor TASLAKTIR.'
+      : '';
   return {
     schema: 'aves-hesap-raporu/1',
     header: {
@@ -60,10 +67,8 @@ export function buildReport({ project, results, modules, inputs, preparedAt, rep
       inputHash: hashInputs(inputs),
     },
     status: {
-      draft: pendingReview.length > 0,
-      draftReason: pendingReview.length
-        ? `${pendingReview.length} kuralın ikinci kişi teknik gözden geçirmesi tamamlanmadı; bu rapor TASLAKTIR.`
-        : '',
+      draft,
+      draftReason,
     },
     summary: { counts, overall, overallLabel: STATUS_LABEL_TR[overall], overallText: overallText(counts, results.length) },
     scope: { modules: modules ?? [], outOfScope: OUT_OF_SCOPE },

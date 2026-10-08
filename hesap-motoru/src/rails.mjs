@@ -180,6 +180,15 @@ function geometryProblems(c) {
     }),
   );
   const p = c.pushThroughForceN;
+  if (p !== undefined && !(isFiniteNumber(p) && p >= 0)) {
+    problems.push('İtme-geçme kuvveti Fp (N) girilmişse sonlu ve sıfır veya pozitif olmalı');
+  }
+  if (c.auxiliaryForceN !== undefined && !(isFiniteNumber(c.auxiliaryForceN) && c.auxiliaryForceN >= 0)) {
+    problems.push('Yardımcı donanım kuvveti Maux (N) sonlu ve sıfır veya pozitif olmalı');
+  }
+  if (c.k3 !== undefined && !(isFiniteNumber(c.k3) && c.k3 > 0)) {
+    problems.push('Yardımcı donanım darbe katsayısı k3 girilmişse sonlu ve pozitif olmalı');
+  }
   if (isFiniteNumber(c.travelHeightM) && c.travelHeightM > 40 && !(isFiniteNumber(p) && p >= 0)) {
     problems.push('Seyir > 40 m: itme-geçme kuvveti Fp (N) girilmeli (EN 81-20 5.7.2.3.5)');
   }

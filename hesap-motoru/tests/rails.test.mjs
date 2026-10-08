@@ -95,6 +95,21 @@ function carInput(over = {}) {
   };
 }
 
+test('Negatif Fp, ray gerilme/burkulma sonucunu PASS yerine BLOKE eder', () => {
+  const results = checkCarRails(carInput({ pushThroughForceN: -10000 }));
+  for (const id of ['RAIL-C-02', 'RAIL-C-03', 'RAIL-C-05']) {
+    assert.equal(byId(results, id).status, STATUS.BLOCKED, id);
+  }
+  assert.ok(byId(results, 'RAIL-C-03').blockers.some((problem) => problem.includes('Fp')));
+});
+
+test('Negatif ek kuvvet veya sıfır k3 ray hesabını BLOKE eder', () => {
+  const negativeForce = checkCarRails(carInput({ auxiliaryForceN: -1, k3: 1 }));
+  const zeroFactor = checkCarRails(carInput({ auxiliaryForceN: 1, k3: 0 }));
+  assert.equal(byId(negativeForce, 'RAIL-C-03').status, STATUS.BLOCKED);
+  assert.equal(byId(zeroFactor, 'RAIL-C-03').status, STATUS.BLOCKED);
+});
+
 test('Ek C.2.1: emniyet tertibatı durumunda moment kolu ray koordinatına göre (askı noktasına göre değil)', () => {
   const [, , safety] = carRailForces(carInput());
   // Fx = k1·g·(Q·xQ + P·xP)/(n·h), xQ = xC + Dx/8 = 687,5

@@ -244,6 +244,9 @@ export function checkBuffers(i) {
   const results = [];
   const v = i.ratedSpeedMps;
   const baseProblems = checkInputs(i, { ratedSpeedMps: { label: 'Anma hızı (m/s)', positive: true } });
+  if (i.slowdownMonitored !== undefined && typeof i.slowdownMonitored !== 'boolean') {
+    baseProblems.push('Son durak yavaşlaması izleniyor alanı true/false türünde olmalı');
+  }
   if (!['linear-storing', 'nonlinear-storing', 'dissipating'].includes(i.bufferType)) {
     baseProblems.push('Tampon enerji sınıfı (linear-storing / nonlinear-storing / dissipating) sertifikadan belirtilmeli');
   }
@@ -287,6 +290,9 @@ export function checkBuffers(i) {
     const src = SRC20('5.8.2.1.1; 5.8.2.2.1; 5.8.2.2.2');
     const p = [...baseProblems];
     p.push(...checkInputs(i, { strokeMm: { label: 'Toplam olası strok (mm)', positive: true } }));
+    if (i.contactSpeedMps !== undefined) {
+      p.push(...checkInputs(i, { contactSpeedMps: { label: 'Tampona temas hızı (m/s)', positive: true } }));
+    }
     if (p.length) {
       results.push(blocked({ ruleId: 'BUF-002', title: 'Tampon stroku', source: src, problems: p, inputs: copy(i) }));
     } else if (i.bufferType === 'nonlinear-storing') {

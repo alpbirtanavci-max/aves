@@ -173,6 +173,20 @@ test('Azaltılmış strok: v > 2,5 m/s ve son durak yavaşlaması izleniyorsa ma
   assert.equal(noContact.status, STATUS.BLOCKED);
 });
 
+test('İzleme bayrağı boolean değilse azaltılmış strok PASS alamaz', () => {
+  const malformed = byId(
+    checkBuffers(buf({ ratedSpeedMps: 3.0, slowdownMonitored: 'false', contactSpeedMps: 2.5, strokeMm: 420, certificate: cert({ maxSpeedMps: 3 }) })),
+    'BUF-002',
+  );
+  assert.equal(malformed.status, STATUS.BLOCKED);
+  const unmonitored = byId(
+    checkBuffers(buf({ ratedSpeedMps: 3.0, slowdownMonitored: false, contactSpeedMps: 2.5, strokeMm: 420, certificate: cert({ maxSpeedMps: 3 }) })),
+    'BUF-002',
+  );
+  near(unmonitored.values.minimumStroke.value, 606.6, 1e-9);
+  assert.equal(unmonitored.status, STATUS.FAIL);
+});
+
 test('Doğrusal olmayan enerji biriktiren: strok formülü yok → REVIEW', () => {
   const r = byId(checkBuffers(buf({ bufferType: 'nonlinear-storing', material: 'polyurethane' })), 'BUF-002');
   assert.equal(r.status, STATUS.REVIEW);
