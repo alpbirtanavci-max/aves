@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.72';
+const APP_VERSION = 'R15D-rc3.9.74';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -1438,16 +1438,14 @@ const UI = (() => {
   const canStartFollowup = (d, rows = null) => {
     if (!d || d.denetim_durumu !== 'Çalışma Tamamlandı' || !Profile.canCreate ||
         (!Profile.isAdmin && !denetimSahibiMi(d))) return false;
-    const profil = kontrolProfili(d);
-    if (profil === KONTROL_PROFILLERI.TAM) return true;
-    // ÜB.FR.53, Modül B takip muayenesini ilk muayenede tespit edilen
-    // uygunsuzlukların mevcut durumunun doğrulanması olarak tanımlar.
-    return profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows) &&
-      rows.some(row => effectiveDurum(row) === 'Olumsuz bulgu');
+    return sahaUygulamaModuluGMi(d) && kontrolProfili(d) === KONTROL_PROFILLERI.TAM;
   };
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
+    if (!sahaUygulamaModuluGMi(d)) {
+      return { ready: false, detail: 'Bu kayıt Modül G değil; bu uygulamada açılamaz.' };
+    }
     const marker = await DB.kvGet(`offline_ready_${d.id}`);
     if (!marker) return { ready: false, detail: 'Bu cihazda hazırlık kontrolü yapılmadı.' };
     if (marker.device_id !== await getDeviceId()) return { ready: false, detail: 'Hazırlık başka bir cihazda yapılmış.' };
@@ -1488,6 +1486,23 @@ const UI = (() => {
     return KONTROL_PROFILLERI.TAM;
   }
 
+  // Bu saha uygulaması yalnız Modül G içindir. Eski B/E/H1 kayıtları veritabanında
+  // korunur, ancak burada açılmaz veya düzenlenmez. Modül etiketi olmayan tarihsel
+  // kayıtlar, uygulamanın eski sürümlerinde yalnız G üretildiği için G kabul edilir.
+  function sahaUygulamaModuluGMi(d) {
+    if (!d) return false;
+    const profil = String(d.kontrol_profili || '');
+    const etiketler = [d.modul, d.denetim_turu].filter(Boolean)
+      .map(etiket => String(etiket).toLocaleLowerCase('tr-TR'));
+    for (const etiket of etiketler) {
+      const acikModul = etiket.match(/mod[uü]l\s*([a-z0-9]+)/i);
+      if (acikModul && acikModul[1].toLocaleLowerCase('tr-TR') !== 'g') return false;
+      if (/\bh1\b/i.test(etiket)) return false;
+    }
+    if (profil) return profil === KONTROL_PROFILLERI.TAM;
+    return true;
+  }
+
   function denetimTuruOzeti(d) {
     return (d && (d.denetim_turu || d.modul)) || '';
   }
@@ -1522,7 +1537,9 @@ const UI = (() => {
   // Eski kayıtlardaki mevcut satırlar korunur; bunları yeni ekranda gizleyip
   // kapanışta sessizce yok saymamak için yalnız satırsız kayıtlar bu akıştadır.
   function formOdakliDenetimMi(denetim, rows = []) {
-    return modulFormDenetimiMi(denetim) && rows.length === 0;
+    // Form seti girişi ayrı Form Doldurucu uygulamasına taşındı. Eski kayıtların
+    // form JSON'u korunur fakat AVES Saha artık form-only denetim başlatmaz.
+    return false;
   }
 
   function modulFormSeti(denetim) {
@@ -1543,24 +1560,8 @@ const UI = (() => {
   }
 
   function denetimFormIstatistikleri(denetim) {
-    const modul = denetimFormModulu(denetim);
-    const formLib = AVES_DENETIM_FORM_SETI;
-    if (!modul || typeof formLib === 'undefined') return null;
-    const kayit = denetimFormKaydi(denetim);
-    const ozet = formLib.countForms(kayit, modul, denetim.ana_standart, denetim.tahrik_tipi);
-    const legacy = AVES_TEKNIK_DOSYA_FORM.normalize({
-      fr65: kayit.forms.FR65,
-      rp14: kayit.forms.RP14,
-    });
-    const fr65 = AVES_TEKNIK_DOSYA_FORM.countFr65(legacy, denetim.tahrik_tipi);
-    const rp14Toplam = modul === 'B'
-      ? AVES_TEKNIK_DOSYA_FORM.RP14.reviewSections.reduce((total, section) => total + section.items.length, 0)
-      : 0;
-    const rp14Kayit = modul === 'B'
-      ? AVES_TEKNIK_DOSYA_FORM.RP14.reviewSections.flatMap(section => section.items)
-        .filter(([key]) => !!(legacy.rp14.checks[key] && legacy.rp14.checks[key].status)).length
-      : 0;
-    return { modul, kayit, ozet, fr65, rp14Kayit, rp14Toplam };
+    // Form verileri tarihsel olarak saklanır; bu uygulamada yeni form girişi yoktur.
+    return null;
   }
 
   function denetimFormKaydiVarMi(denetim) {
@@ -1606,6 +1607,7 @@ const UI = (() => {
 
   /* ---- Login ---- */
   function showLogin(err) {
+    setBrandHomeEnabled(false);
     currentView = 'login';
     currentDenetimId = null;
     document.getElementById('btnLogout').classList.add('hidden');
@@ -1661,13 +1663,48 @@ const UI = (() => {
   }
 
   /* ---- Denetim listesi ---- */
+  function setBrandHomeEnabled(enabled) {
+    const button = document.getElementById('brandHome');
+    if (!button) return;
+    button.disabled = !enabled;
+    button.setAttribute('aria-label', enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim');
+    button.title = enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim';
+  }
+
   async function showList() {
+    const leavingInspection = currentView === 'inspection' && !!currentDenetimId;
+    let denetimler, sahaAll;
+    if (leavingInspection) app.style.pointerEvents = 'none';
+    if (leavingInspection) {
+      try { await flushEditorWrites(); }
+      catch (error) {
+        app.style.pointerEvents = '';
+        console.error('Denetimden çıkış öncesi kayıt tamamlanamadı:', error);
+        toast('Son kayıt tamamlanamadı; denetim ekranında kaldınız. Tekrar deneyin.');
+        return false;
+      }
+    }
+    try {
+      denetimler = (await DB.all('denetimler'))
+        .filter(denetimGorunebilirMi)
+        .sort((a,b) => (b.denetim_tarihi || b.created_at || '').localeCompare(a.denetim_tarihi || a.created_at || ''));
+      sahaAll = await DB.all('saha');
+    } catch (error) {
+      if (leavingInspection) {
+        app.style.pointerEvents = '';
+        console.error('Denetimler listesi okunamadı:', error);
+        toast('Denetimler listesi açılamadı; denetim ekranında kaldınız. Tekrar deneyin.');
+        return false;
+      }
+      throw error;
+    }
+    if (leavingInspection) {
+      if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
+      transitioningId = null;
+    }
     currentView = 'list';
     currentDenetimId = null;
-    const denetimler = (await DB.all('denetimler'))
-      .filter(denetimGorunebilirMi)
-      .sort((a,b) => (b.denetim_tarihi || b.created_at || '').localeCompare(a.denetim_tarihi || a.created_at || ''));
-    const sahaAll = await DB.all('saha');
+    setBrandHomeEnabled(false);
     const statsBy = {};
     const rowsBy = {};
     for (const s of sahaAll) {
@@ -1684,6 +1721,7 @@ const UI = (() => {
     app.innerHTML = `
     <div class="screen">
       <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
+      <div class="scope-note"><b>AVES Saha yalnız Modül G içindir.</b> Modül B, E ve H1 formları Form Doldurucu programında hazırlanır.</div>
       <div class="inspection-list-tools">
         <input class="searchbox" id="listSearch" type="search" placeholder="Müşteri, adres, seri veya dosya no ara…" value="${esc(listSearch)}">
         <div class="inspection-date-filter">
@@ -1696,11 +1734,12 @@ const UI = (() => {
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
+    app.style.pointerEvents = '';
     const dl = document.getElementById('dlist');
 
     // "Kaldığın yerden devam et" — en son açılan, tamamlanmamış, görünür denetim.
     const sonKayit = await DB.kvGet('last_inspection');
-    const sonDenetim = sonKayit && denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı');
+    const sonDenetim = sonKayit && denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && sahaUygulamaModuluGMi(d));
     if (sonDenetim) {
       const sonPozisyon = await DB.kvGet(`last_position_${sonDenetim.id}`);
       const resume = document.createElement('button');
@@ -1716,15 +1755,19 @@ const UI = (() => {
     for (const d of denetimler) {
       const st = statsBy[d.id];
       const denetimRows = rowsBy[d.id] || [];
+      const modulG = sahaUygulamaModuluGMi(d);
       const formOnly = formOdakliDenetimMi(d, denetimRows);
       const formStats = formOnly ? denetimFormIstatistikleri(d) : null;
-      const offlineState = await cevrimdisiHazirlikDurumu(d, denetimRows);
-      const canEdit = canEditDenetim(d);
+      const offlineState = modulG
+        ? await cevrimdisiHazirlikDurumu(d, denetimRows)
+        : { ready: false, detail: 'Bu kayıt Modül G değil; bu uygulamada açılamaz.' };
+      const canEdit = modulG && canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
-      if (!tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
+      if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
       const card = document.createElement('button');
-      card.className = 'dcard';
+      card.className = `dcard${modulG ? '' : ' unsupported'}`;
+      card.disabled = !modulG;
       card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
       card.dataset.date = d.denetim_tarihi || '';
       card.innerHTML = `
@@ -1734,7 +1777,9 @@ const UI = (() => {
         ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
         ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
-        <div class="dstats">${formOnly
+        <div class="dstats">${!modulG
+          ? '<span class="pill na">Bu uygulama yalnız Modül G içindir</span>'
+          : formOnly
           ? `<span class="pill total">${formStats.ozet.started}/${formStats.ozet.total} formda kayıt</span>
              <span class="pill na">Madde checklisti kullanılmıyor</span>
              <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Çalışma tamamlandı' : (gozden ? 'Gözden geçirme' : 'Devam ediyor')}</span>
@@ -1751,8 +1796,10 @@ const UI = (() => {
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
-        <div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`;
-      card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
+        ${modulG
+          ? `<div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`
+          : '<div class="unsupported-card-note">Eski kayıt korundu; bu uygulamada açılmaz. B/E/H1 formları Form Doldurucu programında yürütülür.</div>'}`;
+      if (modulG) card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
       dl.appendChild(card);
     }
 
@@ -1809,6 +1856,10 @@ const UI = (() => {
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
+    if (!sahaUygulamaModuluGMi(d)) {
+      toast('Bu eski kayıt Modül G değil. B/E/H1 formları Form Doldurucu programında yürütülür.');
+      return;
+    }
     let tamamlananRows = rows;
     if (!tamamlananRows.length && navigator.onLine) {
       try {
@@ -1819,10 +1870,6 @@ const UI = (() => {
         // kaynak maddeler cihaza indikten sonra görünür olacaktır.
       }
     }
-    const modulBTakipUygunsuzlukSayisi = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
-      ? tamamlananRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu').length
-      : 0;
-    const formOnly = formOdakliDenetimMi(d, tamamlananRows);
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal completed-choice">
@@ -1834,12 +1881,11 @@ const UI = (() => {
         <div class="onay-satir"><span>Tarih</span><b>${esc(d.denetim_tarihi || '')}</b></div>
         <div class="onay-satir"><span>Denetçi</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
       </div>
-      <button class="mode-choice" id="completedReview"><b>${formOnly ? 'Form kayıtlarını incele' : 'İnceleme'}</b><span>${formOnly ? 'Modül form setindeki kayıtları salt okunur açar. Bu ekran uygunluk kararı üretmez.' : 'Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.'}</span></button>
-      <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>${formOnly ? 'Form kayıt özeti, fotoğraf arşiv durumu ve takip bilgisini gösterir.' : 'Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.'}</span></button>
+      <button class="mode-choice" id="completedReview"><b>İnceleme</b><span>Sonuçları, açıklamaları ve seri numaralarını salt okunur açar. Yetkiniz varsa içeriden iz bırakan düzeltme başlatabilirsiniz.</span></button>
+      <button class="mode-choice" id="completedSummary"><b>Tamamlanmış Denetim Özeti</b><span>Sonuçları, uygunsuzlukları, fotoğraf arşiv durumunu ve takip bilgisini kısa özet olarak gösterir.</span></button>
       <button class="mode-choice" id="completedHandover"><b>Devir Teslim</b><span>Denetimin tamamlandığını başka bir yetkiliye bildirir; ilk denetçi ve geçmiş kayıtları değişmez.</span></button>
-      ${canStartFollowup(d, tamamlananRows) ? `<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B ? `ÜB.FR.53 kapsamındaki ${modulBTakipUygunsuzlukSayisi} uygunsuzluğu yeniden doğrulamak için bağlı takip muayenesi oluşturur.` : 'Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.'}</span></button>` : ''}
-      ${kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B && !modulBTakipUygunsuzlukSayisi ? '<div class="photo-help">Bu Modül B denetiminde takip muayenesine aktarılacak uygunsuzluk bulunmuyor.</div>' : ''}
-      ${(kontrolProfili(d) !== KONTROL_PROFILLERI.TAM && kontrolProfili(d) !== KONTROL_PROFILLERI.MODUL_B) ? '<div class="photo-help">Takip denetimi yalnızca Modül G ve Modül B denetimlerinde kullanılabilir.</div>' : ''}
+      ${canStartFollowup(d, tamamlananRows) ? '<button class="mode-choice followup" id="completedFollowup"><b>Takip Denetimi</b><span>Önceki sonuçlara bağlı yeni ve bağımsız bir Modül G takip denetimi oluşturur.</span></button>' : ''}
+      ${kontrolProfili(d) !== KONTROL_PROFILLERI.TAM ? '<div class="photo-help">Takip denetimi yalnız Modül G için kullanılabilir.</div>' : ''}
     </div>`;
     document.body.appendChild(ov);
     const close = () => ov.remove();
@@ -1850,9 +1896,7 @@ const UI = (() => {
     ov.querySelector('#completedHandover').onclick = async () => { close(); await denetimDevirTesliminiGoster(d); };
     const followup = ov.querySelector('#completedFollowup');
     if (followup) followup.onclick = async () => {
-      const takipMesaji = kontrolProfili(d) === KONTROL_PROFILLERI.MODUL_B
-        ? `İlk muayenedeki ${modulBTakipUygunsuzlukSayisi} uygunsuzluk ÜB.FR.53 mantığıyla takip muayenesine aktarılsın mı? Önceki denetim değiştirilmeyecek.`
-        : 'Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir takip denetimi oluşturulsun mu?';
+      const takipMesaji = 'Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir Modül G takip denetimi oluşturulsun mu?';
       if (!confirm(takipMesaji)) return;
       followup.disabled = true;
       followup.querySelector('b').textContent = 'Takip hazırlanıyor…';
@@ -1905,17 +1949,13 @@ const UI = (() => {
   }
 
   async function takipDenetimiOlustur(kaynak) {
+    if (!sahaUygulamaModuluGMi(kaynak)) {
+      throw new Error('Bu uygulamada yalnız Modül G denetimlerine bağlı takip kaydı oluşturulabilir');
+    }
     const kaynakRows = (await DB.allByIndex('saha', 'byDenetim', kaynak.id)).sort(siraKarsilastir);
     if (!kaynakRows.length) throw new Error('Önceki denetimin maddeleri bu cihazda bulunmuyor');
-    if (!canStartFollowup(kaynak, kaynakRows)) {
-      throw new Error(kontrolProfili(kaynak) === KONTROL_PROFILLERI.MODUL_B
-        ? 'Modül B takip muayenesi için önceki denetimde en az bir uygunsuzluk bulunmalıdır'
-        : 'Takip denetimi oluşturma yetkiniz yok');
-    }
-    const modulBTakip = kontrolProfili(kaynak) === KONTROL_PROFILLERI.MODUL_B;
-    const takipKaynakRows = modulBTakip
-      ? kaynakRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu')
-      : kaynakRows;
+    if (!canStartFollowup(kaynak, kaynakRows)) throw new Error('Takip denetimi oluşturma yetkiniz yok');
+    const takipKaynakRows = kaynakRows;
 
     const tumDenetimler = await DB.all('denetimler');
     const anaId = kaynak.takip_ana_denetim_id || kaynak.id;
@@ -2035,6 +2075,7 @@ const UI = (() => {
     if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
+    setBrandHomeEnabled(false);
     const seg = (id, opts, multi) => `<div class="segs" id="${id}">${opts.map(o =>
       `<button type="button" class="seg" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`;
     app.innerHTML = `
@@ -2052,21 +2093,16 @@ const UI = (() => {
           <div class="field full"><label for="fAdres">Adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
-      <div class="form-card"><h3>Denetim türü *</h3>${seg('sDenetimTuru', [DENETIM_TURLERI.MODUL_G,DENETIM_TURLERI.MODUL_E,DENETIM_TURLERI.MODUL_H1,DENETIM_TURLERI.MODUL_B])}
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G tam birim doğrulaması; Modül E ve H1 AVES gözetim form setlerine bağlı saha teyidi akışıdır; Modül B ise ana saha formu ÜB.FR.38 olan AB Tip İncelemesi'dir.</p>
-      </div>
-      <div class="form-card" id="modulBCard" style="display:none"><h3>AB Tip İncelemesi kimliği (isteğe bağlı)</h3>
-        <div class="grid2">
-          <div class="field full"><label for="fAnaTip">Ana Tip (isteğe bağlı)</label><input id="fAnaTip" autocomplete="off" placeholder="Varsa girin"></div>
-          <div class="field full"><label for="fTipVaryantKodu">Tip Varyant Kodu (isteğe bağlı)</label><input id="fTipVaryantKodu" autocomplete="off" placeholder="Varsa girin"></div>
-        </div>
+      <div class="form-card"><h3>Denetim kapsamı</h3>
+        <b>${esc(DENETIM_TURLERI.MODUL_G)}</b>
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu uygulama yalnız Modül G saha denetimlerini yürütür. Modül B, E ve H1 formları Form Doldurucu programında hazırlanır.</p>
       </div>
       <div class="form-card" id="standartCard"><h3>Ana standart *</h3>
         <div class="segs" id="sAna">
           <button type="button" class="seg" data-v="81-20">TS EN 81-20</button>
-          <button type="button" class="seg" data-v="81-1/2+A3" style="display:none" disabled>TS EN 81-1/2+A3</button>
+          <button type="button" class="seg" data-v="81-1/2+A3">TS EN 81-1/2+A3</button>
         </div>
-        <p id="standartAciklama" style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Önce denetim türünü seçin. TS EN 81-1/2+A3 yalnız Modül G denetiminde kullanılabilir.</p>
+        <p id="standartAciklama" style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Modül G için TS EN 81-20 veya TS EN 81-1/2+A3 seçilir. TS EN 81-70, TS EN 81-20 akışına otomatik ve zorunlu olarak eklenir.</p>
       </div>
       <div class="form-card"><h3>Bina ve kabin düzeni *</h3>
         <div class="grid2">
@@ -2099,57 +2135,14 @@ const UI = (() => {
     document.getElementById('back').onclick = showList;
 
     // seçim davranışı
-    const single = { sItfaiyeci: 'hayir' };
-    ['sDenetimTuru','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci'].forEach(id => {
+    const single = { sDenetimTuru: DENETIM_TURLERI.MODUL_G, sItfaiyeci: 'hayir' };
+    ['sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         const b = e.target.closest('.seg'); if (!b) return;
         document.querySelectorAll(`#${id} .seg`).forEach(x => x.classList.remove('on'));
         b.classList.add('on'); single[id] = b.dataset.v;
-        if (id === 'sDenetimTuru') uygulaDenetimTuru();
       });
     });
-
-    function uygulaDenetimTuru() {
-      const sahaTeyidi = single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ||
-        single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1;
-      const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
-      const modulG = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G;
-      document.getElementById('modulBCard').style.display = modulB ? '' : 'none';
-      const standartButonlari = [...document.querySelectorAll('#sAna .seg')];
-      const a3Butonu = standartButonlari.find(b => b.dataset.v === '81-1/2+A3');
-      if (sahaTeyidi) {
-        single.sAna = '81-20';
-        standartButonlari.forEach(b => {
-          b.classList.toggle('on', b.dataset.v === '81-20');
-          b.disabled = true;
-        });
-        a3Butonu.style.display = 'none';
-        document.getElementById('standartAciklama').textContent =
-          'AVES Modül E/H1 gözetim form setinde saha teyidi TS EN 81-20 üzerinden yürür. Standart denetçi tarafından değiştirilemez.';
-      } else if (modulB) {
-        single.sAna = '81-20';
-        standartButonlari.forEach(b => {
-          b.classList.toggle('on', b.dataset.v === '81-20');
-          b.disabled = true;
-        });
-        a3Butonu.style.display = 'none';
-        document.getElementById('standartAciklama').textContent =
-          'Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür. Asansörün tasarım ve kullanım özelliklerine göre ilgili ek standart maddeleri ayrıca uygulanır; ana standart denetçi tarafından değiştirilemez.';
-      } else if (modulG) {
-        single.sAna = null;
-        standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = false; });
-        a3Butonu.style.display = '';
-        document.getElementById('standartAciklama').textContent =
-          'Modül G için TS EN 81-20 veya TS EN 81-1/2+A3 seçilir. TS EN 81-70, TS EN 81-20 akışına otomatik ve zorunlu olarak eklenir.';
-      } else {
-        single.sAna = null;
-        standartButonlari.forEach(b => { b.classList.remove('on'); b.disabled = true; });
-        a3Butonu.style.display = 'none';
-        document.getElementById('standartAciklama').textContent =
-          'Önce denetim türünü seçin. TS EN 81-1/2+A3 yalnız Modül G denetiminde kullanılabilir.';
-      }
-    }
-    uygulaDenetimTuru();
 
     document.getElementById('fKaydet').onclick = async () => {
       const muhendis = Profile.name;
@@ -2162,16 +2155,10 @@ const UI = (() => {
       const durak = parseInt(document.getElementById('fDurak').value) || null;
       const kimlikNo = document.getElementById('fKimlikNo').value.trim() || null;
       const binaAsansorSayisi = parseInt(document.getElementById('fBinaAsansorSayisi').value) || null;
-      const modulB = single.sDenetimTuru === DENETIM_TURLERI.MODUL_B;
-      const anaTip = modulB ? document.getElementById('fAnaTip').value.trim() : null;
-      const tipVaryantKodu = modulB ? document.getElementById('fTipVaryantKodu').value.trim() : null;
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
       if (!musteri || !seri) { toast('Müşteri ünvanı ve seri no zorunlu'); return; }
       if (!adres) { toast('Adres zorunlu'); return; }
-      if (!single.sDenetimTuru) { toast('Denetim türünü seçin'); return; }
-      if (single.sAna === '81-1/2+A3' && single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G) {
-        toast('TS EN 81-1/2+A3 yalnız Modül G denetimlerinde kullanılabilir'); return;
-      }
+      if (single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G) { toast('Bu uygulamada yalnız Modül G denetimi oluşturulabilir'); return; }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
       if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
@@ -2206,28 +2193,14 @@ const UI = (() => {
       if (seriNoUyarisi) { toast(seriNoUyarisi); return; }
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
-      const kontrolProfil = single.sDenetimTuru === DENETIM_TURLERI.MODUL_G
-        ? KONTROL_PROFILLERI.TAM
-        : single.sDenetimTuru === DENETIM_TURLERI.MODUL_E
-          ? KONTROL_PROFILLERI.SAHA_TEYIDI_E
-          : single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1
-          ? KONTROL_PROFILLERI.SAHA_TEYIDI_H1
-          : KONTROL_PROFILLERI.MODUL_B;
-      const formOdakli = kontrolProfil !== KONTROL_PROFILLERI.TAM;
+      const kontrolProfil = KONTROL_PROFILLERI.TAM;
       let tahmini = 0;
-      if (!formOdakli) {
-        // Cihazdaki son başarılı kütüphane canlı migration'dan önce indirilmiş
-        // olsa bile yeni G denetimi yanlış 08/09 özel bölümleriyle oluşturulmaz.
-        const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
-        const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
-        tahmini = lib.filter(m =>
-          m.aktif && secili.has(m.standart_grubu) && maddeKontrolProfilineUygun(m, kontrolProfil)
-        ).length;
-      }
-      if (!formOdakli && sahaTeyidiProfiliMi(kontrolProfil) && tahmini === 0) {
-        toast('Saha teyidi madde profili henüz bu çalışma paketine eklenmedi');
-        return;
-      }
+      // Eski kütüphane önbelleği yeni G denetimini yanlış fiziksel bölümlere ayırmamalı.
+      const lib = (await DB.all('kutuphane')).map(avesFizikselBolumUygula);
+      const secili = seciliStandartGruplari(single.sAna, ekStandartlar);
+      tahmini = lib.filter(m =>
+        m.aktif && secili.has(m.standart_grubu) && maddeKontrolProfilineUygun(m, kontrolProfil)
+      ).length;
 
       const formVals = {
         muhendis, musteri, seri, adres,
@@ -2235,10 +2208,8 @@ const UI = (() => {
         kimlikNo,
         denetimTuru: single.sDenetimTuru,
         kontrolProfili: kontrolProfil,
-        modul: single.sDenetimTuru === DENETIM_TURLERI.MODUL_G ? 'Modül G' :
-          single.sDenetimTuru === DENETIM_TURLERI.MODUL_E ? 'Modül E' :
-            single.sDenetimTuru === DENETIM_TURLERI.MODUL_H1 ? 'Modül H1' : 'Modül B',
-        anaTip, tipVaryantKodu,
+        modul: 'Modül G',
+        anaTip: null, tipVaryantKodu: null,
         anaStandart: single.sAna,
         ekStandartlar,
         binaAsansorSayisi,
@@ -2255,14 +2226,13 @@ const UI = (() => {
   }
 
   function showOnayEkrani(f, tahmini) {
+    if (!f || f.modul !== 'Modül G' || f.kontrolProfili !== KONTROL_PROFILLERI.TAM) {
+      toast('Bu uygulamada yalnız Modül G denetimi başlatılabilir');
+      return;
+    }
     const ov = document.createElement('div');
     ov.className = 'overlay';
     const satir = (k, v) => v ? `<div class="onay-satir"><span>${esc(k)}</span><b>${esc(v)}</b></div>` : '';
-    const modulForm = ['Modül B', 'Modül E', 'Modül H1'].includes(f.modul);
-    const formKod = f.modul === 'Modül B' ? 'B' : f.modul === 'Modül E' ? 'E' : 'H1';
-    const uygulanacakFormlar = modulForm
-      ? AVES_DENETIM_FORM_SETI.formsFor(formKod, f.anaStandart, f.tahrik).length
-      : 0;
     ov.innerHTML = `<div class="modal">
       <h3>Denetimi başlatmadan önce kontrol edin</h3>
       <div class="onay-box">
@@ -2271,15 +2241,11 @@ const UI = (() => {
         ${satir('Seri no', f.seri)}
         ${satir('Asansör kimlik no', f.kimlikNo)}
         ${satir('Denetim türü', f.denetimTuru)}
-        ${satir('Kontrol profili', f.kontrolProfili === KONTROL_PROFILLERI.TAM ? 'Tam saha kontrolü' :
-          f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_E ? 'Modül E saha teyidi' :
-            f.kontrolProfili === KONTROL_PROFILLERI.SAHA_TEYIDI_H1 ? 'Modül H1 saha teyidi' : 'Modül B AB Tip İncelemesi')}
-        ${satir('Ana Tip', f.anaTip)}
-        ${satir('Tip Varyant Kodu', f.tipVaryantKodu)}
+        ${satir('Kontrol profili', 'Tam Modül G saha kontrolü')}
         ${satir('Ana standart', f.anaStandart)}
-        ${!modulForm ? satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null) : ''}
-        ${!modulForm ? satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73') : ''}
-        ${!modulForm ? satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null) : ''}
+        ${satir('Zorunlu erişilebilirlik', f.anaStandart === '81-20' ? 'TS EN 81-70' : null)}
+        ${satir('Zorunlu ek standartlar', 'TS EN 81-71 + TS EN 81-73')}
+        ${satir('İtfaiyeci Asansörü', f.ekStandartlar.includes('81-72') ? 'Evet — TS EN 81-72' : null)}
         ${satir('Binadaki asansör sayısı', f.binaAsansorSayisi)}
         ${satir('Kabin giriş düzeni', f.kabinGirisDuzeni)}
         ${satir('Kapı açılma biçimi', f.kabinKapiAcilmaTipi)}
@@ -2289,9 +2255,7 @@ const UI = (() => {
         ${satir('Beyan hızı', f.hiz ? f.hiz + ' m/s' : null)}
         ${satir('Kapasite', f.kapasite ? f.kapasite + ' kişi' : null)}
         ${satir('Durak sayısı', f.durak)}
-        ${modulForm
-          ? satir('Uygulanacak form seti', `${uygulanacakFormlar} form · G tipi madde checklisti oluşturulmayacak`)
-          : satir('Oluşturulacak madde', tahmini + ' madde')}
+        ${satir('Oluşturulacak madde', tahmini + ' madde')}
       </div>
       <button class="btn btn-ghost" id="onDuzelt" style="margin-bottom:8px">‹ Bilgileri düzelt</button>
       <button class="btn btn-primary" id="onBaslat">Denetimi başlat</button>
@@ -2301,13 +2265,17 @@ const UI = (() => {
     ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
     ov.querySelector('#onBaslat').onclick = async () => {
       const btn = ov.querySelector('#onBaslat');
-      btn.disabled = true; btn.textContent = modulForm ? 'Form seti hazırlanıyor…' : 'Maddeler hazırlanıyor…';
+      btn.disabled = true; btn.textContent = 'Maddeler hazırlanıyor…';
       await olustur(f);
       ov.remove();
     };
   }
 
   async function olustur(f) {
+      if (!f || f.modul !== 'Modül G' || f.kontrolProfili !== KONTROL_PROFILLERI.TAM) {
+        toast('Bu uygulamada yalnız Modül G denetimi oluşturulabilir');
+        return;
+      }
       const d = {
         id: crypto.randomUUID(),
         dosya_no: f.dosya,
@@ -2332,9 +2300,7 @@ const UI = (() => {
         kapasite_kisi: f.kapasite,
         durak_sayisi: f.durak,
         aski_tipi: f.aski,
-        denetim_form_kayitlari: [KONTROL_PROFILLERI.MODUL_B, KONTROL_PROFILLERI.SAHA_TEYIDI_E, KONTROL_PROFILLERI.SAHA_TEYIDI_H1].includes(f.kontrolProfili)
-          ? AVES_DENETIM_FORM_SETI.emptyRecord()
-          : null,
+        denetim_form_kayitlari: null,
         denetimi_yapan: f.muhendis,
         denetim_tarihi: localDateISO(),
         denetim_durumu: 'Devam Ediyor',
@@ -2367,10 +2333,9 @@ const UI = (() => {
       };
 
       // maddeleri CİHAZDA üret (offline-first'in kalbi)
-      const formOdakli = modulFormDenetimiMi(d);
-      const lib = formOdakli ? [] : await DB.all('kutuphane');
+      const lib = await DB.all('kutuphane');
       const secili = seciliStandartGruplari(d.ana_standart, d.ek_standartlar);
-      const sahaRows = (formOdakli ? [] : lib)
+      const sahaRows = lib
         .filter(m =>
           m.aktif && m.madde_id !== 'MAD-1010' && secili.has(m.standart_grubu) &&
           maddeKontrolProfilineUygun(m, kontrolProfili(d))
@@ -2459,7 +2424,7 @@ const UI = (() => {
       for (let i = 0; i < sahaRows.length; i += 200) {
         await localWrite('saha_kontrol', sahaRows.slice(i, i+200), 'saha');
       }
-      toast(formOdakli ? 'Modül form seti hazırlandı' : `${sahaRows.length} madde hazırlandı`);
+      toast(`${sahaRows.length} madde hazırlandı`);
       showDenetim(d.id);
   }
 
@@ -2606,16 +2571,20 @@ const UI = (() => {
   }
 
   async function showDenetim(id, forceReadOnly = false, initialFilter = 'all') {
-    currentView = 'inspection';
-    currentDenetimId = id;
-    inspectionReadOnly = !!forceReadOnly;
-    filter = initialFilter; search = ''; openBolums = new Set();
     const denetim = await DB.get('denetimler', id);
     if (!denetimGorunebilirMi(denetim)) {
       toast('Bu denetimi görüntüleme yetkiniz yok');
-      showList();
       return;
     }
+    if (!sahaUygulamaModuluGMi(denetim)) {
+      toast('Bu eski kayıt Modül G değil. B/E/H1 formları Form Doldurucu programında yürütülür.');
+      return;
+    }
+    currentView = 'inspection';
+    currentDenetimId = id;
+    setBrandHomeEnabled(true);
+    inspectionReadOnly = !!forceReadOnly;
+    filter = initialFilter; search = ''; openBolums = new Set();
     let rows = await DB.allByIndex('saha', 'byDenetim', id);
     const pending = await DB.outboxCount();
     if (navigator.onLine && pending === 0) {
@@ -2691,6 +2660,11 @@ const UI = (() => {
   async function renderDenetim() {
     const d = await DB.get('denetimler', currentDenetimId);
     if (!d) { showList(); return; }
+    if (!sahaUygulamaModuluGMi(d)) {
+      toast('Bu uygulama yalnız Modül G denetimlerini açar.');
+      await showList();
+      return;
+    }
     await fotografOnbellekYenile(currentDenetimId);
     bekleyenFotograflariYukle();
     const normaldeDuzenleyebilir = canEditDenetim(d);
@@ -3323,7 +3297,12 @@ const UI = (() => {
     // yüzden arka plana alma/kapatma anında hâlâ kaybolabiliyordu.
     if (active && active.matches && active.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) active.blur();
     await new Promise(resolve => setTimeout(resolve, 0));
-    if (pendingEditorWrites.size) await Promise.all([...pendingEditorWrites]);
+    let firstError = null;
+    while (pendingEditorWrites.size) {
+      const settled = await Promise.allSettled([...pendingEditorWrites]);
+      if (!firstError) firstError = settled.find(result => result.status === 'rejected')?.reason || null;
+    }
+    if (firstError) throw firstError;
   }
 
   async function fotoKontrolUyarisi(bolum) {
@@ -3461,6 +3440,8 @@ const UI = (() => {
   }
 
   async function denetimFormuGoster(denetimId = currentDenetimId, forceReadOnly = false) {
+    toast('Denetim Formu özelliği bu uygulamadan kaldırıldı. Modül G kayıtları checklist üzerinden yürütülür.');
+    return;
     const d = await DB.get('denetimler', denetimId);
     const modul = denetimFormModulu(d);
     if (!d || !modul) return;
@@ -4023,6 +4004,12 @@ const UI = (() => {
   }
 
   function bindMaddeEvents() {
+    const trackEditorEvent = (label, handler) => (event) => {
+      trackedEditorWrite(handler(event)).catch(error => {
+        console.error(`${label} kaydedilemedi:`, error);
+        toast('Değişiklik kaydedilemedi. Lütfen tekrar deneyin.');
+      });
+    };
     document.getElementById('bolums').addEventListener('input', (e) => {
       if (!currentCanEdit) return;
       // Aynı tuş vuruşu için tek bir zaman damgası: 700ms sonra yazım
@@ -4031,7 +4018,7 @@ const UI = (() => {
       if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id],[data-bolumnot]')) taslakYaz(e.target, ts);
       if (e.target.matches('[data-diger],[data-aciklama],[data-olcum-id]')) scheduleEditorDraft(e.target, ts);
     });
-    document.getElementById('bolums').addEventListener('click', async (e) => {
+    document.getElementById('bolums').addEventListener('click', trackEditorEvent('Denetim işlemi', async (e) => {
       const stepBtn = e.target.closest('[data-step]');
       if (stepBtn && !stepBtn.disabled) {
         const b = stepBtn.dataset.b;
@@ -4080,8 +4067,8 @@ const UI = (() => {
         await save(row, mEl);
         return;
       }
-    });
-    document.getElementById('bolums').addEventListener('change', async (e) => {
+    }));
+    document.getElementById('bolums').addEventListener('change', trackEditorEvent('Denetim alanı', async (e) => {
       if (!currentCanEdit) {
         toast('Bu denetim salt okunur');
         await renderDenetim();
@@ -4135,7 +4122,7 @@ const UI = (() => {
         return; // açıklama tamamlanmayı etkilemez, otomatik geçiş tetiklenmez
       }
       await save(row, mEl);
-    });
+    }));
   }
 
   function kuralSaglanir(value, rule) {
@@ -4675,6 +4662,7 @@ const UI = (() => {
   async function denetimDurumuDegistir(yeniDurum, overlay, kapanisOzetiOnaylandi = false) {
     await flushEditorWrites();
     const d = await DB.get('denetimler', currentDenetimId);
+    if (!sahaUygulamaModuluGMi(d)) { toast('Bu uygulamada yalnız Modül G denetimi tamamlanabilir'); return; }
     const rows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);
     const formOnly = formOdakliDenetimMi(d, rows);
     const bakilmadi = rows.filter(r => !isFlowComplete(r));
@@ -4923,6 +4911,23 @@ const UI = (() => {
       bad.forEach((row, index) => lines.push(`${index + 1}. [${row.standart_madde_no || row.madde_id}] ${row.kontrol_basligi}${row.bulgu_secenegi ? ` — ${row.bulgu_secenegi}` : ''}${row.diger_bulgu ? `: ${row.diger_bulgu}` : ''}${row.aciklama ? ` (${row.aciklama})` : ''}`));
       navigator.clipboard.writeText(lines.join('\n')).then(() => toast('Uygunsuzluk listesi panoya kopyalandı'));
     };
+  }
+
+  const brandHomeButton = document.getElementById('brandHome');
+  if (brandHomeButton) {
+    brandHomeButton.addEventListener('click', async () => {
+      if (currentView !== 'inspection' || !currentDenetimId) return;
+      brandHomeButton.disabled = true;
+      brandHomeButton.setAttribute('aria-busy', 'true');
+      try { await showList(); }
+      catch (error) {
+        console.error('Denetimler listesi açılamadı:', error);
+        toast('Denetimler listesi açılamadı. Tekrar deneyin.');
+      } finally {
+        brandHomeButton.removeAttribute('aria-busy');
+        setBrandHomeEnabled(currentView === 'inspection' && !!currentDenetimId);
+      }
+    });
   }
 
   return {

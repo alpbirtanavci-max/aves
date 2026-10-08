@@ -99,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.72 sürümü', index.includes('R15D-RC3.9.72</b>'));
-test('app R15D rc3.9.72 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.72'"));
-test('service worker rc3.9.72 cache', sw.includes("aves-saha-r15d-rc3972'"));
-test('uygulama manifesti rc3.9.72 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.72"'));
+test('index R15D rc3.9.74 sürümü', index.includes('R15D-RC3.9.74</b>'));
+test('app R15D rc3.9.74 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.74'"));
+test('service worker rc3.9.74 cache', sw.includes("aves-saha-r15d-rc3974'"));
+test('uygulama manifesti rc3.9.74 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.74"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -121,7 +121,7 @@ test('tamamlanmış denetim özeti resmî çıktı durumunu gösterir',
   app.includes('resmî PDF/Word henüz üretilmedi'));
 test('liste ekranında toplu Sahaya Hazırlık rozeti: N/M hazır + tümünü doğrula',
   app.includes('const hazirlikAktif = [];') &&
-  app.includes('if (!tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });') &&
+  app.includes('if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });') &&
   app.includes("badge.className = `prep-badge") &&
   app.includes('Sahaya Hazırlık · ${hazirSayi}/${hazirlikAktif.length}') &&
   app.includes("id=\"prepVerifyAll\"") &&
@@ -133,7 +133,7 @@ test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
 test('liste ekranında "Kaldığın yerden devam et" kartı: görünür + tamamlanmamış denetim',
   app.includes("resume.className = 'resume-card'") &&
   app.includes('Kaldığın yerden devam et') &&
-  app.includes("denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı')") &&
+  app.includes("denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && sahaUygulamaModuluGMi(d))") &&
   index.includes('.resume-card{'));
 test('showDenetim kayıtlı maddeye scrollIntoView yapar (kaldığı satır)',
   app.includes('const positionValid = savedPosition && rows.some(r => r.id === savedPosition.item_id') &&
@@ -388,6 +388,19 @@ test('Inter ve Montserrat çevrimdışı paketleniyor',
     fs.existsSync(path.join(appDir, 'fonts', name)) && sw.includes(`'./fonts/${name}'`)));
 test('giriş ekranında kutulu logo yerine AVES kurumsal başlığı var', app.includes('<div class="login-kicker">AVES Saha Denetim</div>') && !app.includes('<img src="logo.png" alt="AVES" style="height:34px'));
 test('denetim geri dönüşü belirgin gezinme çubuğunda', app.includes('<div class="inspection-toolbar">') && index.includes('.inspection-toolbar .backlink'));
+test('AVES logosu sabit başlıkta erişilebilir denetim listesi düğmesidir',
+  index.includes('position:-webkit-sticky;position:sticky;top:0') &&
+  index.includes('id="brandHome" disabled') &&
+  app.includes("button.setAttribute('aria-label', enabled ? 'Denetimler listesine dön' : 'AVES Saha Denetim')") &&
+  app.includes('setBrandHomeEnabled(true);'));
+test('logo yalnız açık denetimde listeye döner ve çıkmadan önce kayıtları tamamlar',
+  app.includes("if (currentView !== 'inspection' || !currentDenetimId) return;") &&
+  app.includes('try { await flushEditorWrites(); }') &&
+  app.includes('if (firstError) throw firstError'));
+test('denetim değişiklik olayları izlenir ve çıkış sırasında kullanıcı etkileşimi kilitlenir',
+  app.includes('trackEditorEvent') && app.includes('Promise.allSettled([...pendingEditorWrites])') &&
+  app.includes("app.style.pointerEvents = 'none'") &&
+  app.includes('denetim ekranında kaldınız. Tekrar deneyin.'));
 test('madde sonuçları tek segmentli kontrol olarak stilleniyor', index.includes('.mstates{display:grid;grid-template-columns:1fr 1fr 1fr auto'));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
@@ -843,10 +856,10 @@ test('teknik müdür sunucuda yalnız kendi adına denetim oluşturabilir',
   !/^\s*(delete|update|truncate)\s+/mi.test(rc38TechnicalManagerMigration));
 test('teknik müdür iz bırakan düzeltme yapabilir', rc37WorkflowMigration.includes("kp.rol in ('yonetici','teknik_mudur')") && app.includes('duzeltmeNedeniSec'));
 test('tamamlanmış denetim iki modla açılıyor', app.includes('showTamamlananDenetimSecimi') && app.includes('Takip Denetimi') && app.includes('İnceleme'));
-test('Modül G takibi açık, Modül B takibi koşullu ve bağımsız denetim kaydıdır',
-  app.includes('if (profil === KONTROL_PROFILLERI.TAM) return true;') &&
+test('takip denetimi yalnız Modül G için açık, B/E/H1 kayıtları yeni takip başlatamaz',
   app.includes('takipDenetimiOlustur') &&
-  app.includes("profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows)"));
+  app.includes('return sahaUygulamaModuluGMi(d) && kontrolProfili(d) === KONTROL_PROFILLERI.TAM') &&
+  app.includes('if (!sahaUygulamaModuluGMi(kaynak))'));
 test('takip zinciri ve önceki sonuçlar korunuyor', rc37WorkflowMigration.includes('takip_ana_denetim_id') && rc37WorkflowMigration.includes('takip_kaynak_saha_kontrol_id') && app.includes('takip_onceki_durum'));
 test('düzeltme nedeni geçmiş olayına yazılıyor', app.includes('duzeltme_oturumu_id: context') && app.includes('duzeltme_nedeni: context') && rc37WorkflowMigration.includes('duzeltme_nedeni text'));
 test('düzeltme kimliği ve nedeni sunucuda doğrulanıyor', rc37WorkflowMigration.includes('new.duzeltme_oturumu_id := v_duzeltme_id') && rc37WorkflowMigration.includes('new.duzeltme_baslatan_email := v_email'));
@@ -1149,51 +1162,69 @@ test('JSON ve CSV rc3.9.7 doğrulama düzeltmelerini birlikte taşıyor',
   libraryCsv.includes('Kuyu dibi derinliği 2500 mm’den fazlaysa bu madde otomatik olarak Uygulanmaz işaretlenir.') &&
   libraryCsv.includes('Eksiklik varsa madde açıklamasına yazın.'));
 
-test('Modül B denetim türü ve kontrol profili tanımlı',
+test('eski B/E/H1 profil tanımları tarihsel kayıt uyumluluğu için korunuyor',
   app.includes("MODUL_B: 'Modül B - AB Tip İncelemesi'") &&
-  app.includes("MODUL_B: 'modul_b_tip_inceleme'"));
-test('Modül B/E/H1 yeni denetimleri G checklist maddesi üretmeden aynı form akışına giriyor',
-  app.includes('function modulFormDenetimiMi(denetim)') &&
-  app.includes('function formOdakliDenetimMi(denetim, rows = [])') &&
-  app.includes('const sahaRows = (formOdakli ? [] : lib)') &&
-  app.includes('G tipi madde checklisti oluşturulmayacak') &&
-  app.includes('formOdakli ? \'Modül form seti hazırlandı\''));
-test('Form odaklı B/E/H1 hazırlığı çevrimdışı form tanımlarını doğrular; G madde kontrolü değişmez',
-  app.includes('forms_only: formsOnly') &&
-  app.includes('form_set_key_hash: formsOnly ? formSetKeyHash : null') &&
-  app.includes('if (!rows.length && formOdakliDenetimMi(d, rows))') &&
-  app.includes('Denetim maddeleri cihazda'));
-test('B/E/H1 kapanışında 0/0 checklist sonucu gösterilmez; gözden geçirme onayı gerekir ve form değişikliği onayı sıfırlar',
-  app.includes('form_seti_gozden_gecirildi_at') &&
-  app.includes('formReviewConfirm') &&
-  app.includes('Form setini gözden geçirdim; boş bırakılan veya sonraya bırakılan kayıtları değerlendirdim.') &&
-  app.includes('next.form_seti_gozden_gecirildi_at = null') &&
-  app.includes('Bu bir uygunluk veya tamlık sonucu değildir.'));
-test('Modül B için takip denetimi açık',
-  app.includes('if (profil === KONTROL_PROFILLERI.TAM) return true;') &&
-  app.includes('profil === KONTROL_PROFILLERI.MODUL_B && Array.isArray(rows)') &&
-  rc398ModulBMigration.includes("kontrol_profili in ('modul_g_tam','modul_b_tip_inceleme')"));
-test('Modül B takip muayenesi yalnız önceki uygunsuzluklar varsa açılıyor',
-  app.includes("rows.some(row => effectiveDurum(row) === 'Olumsuz bulgu')") &&
-  rc399ModulBTakipMigration.includes("kaynak_madde.durum = 'Olumsuz bulgu'") &&
-  rc399ModulBTakipMigration.includes("onceki.kontrol_profili,'') = 'modul_b_tip_inceleme'"));
-test('Modül B takip muayenesi ÜB.FR.53 kapsamındaki uygunsuzluk satırlarıyla sınırlı',
-  app.includes("kaynakRows.filter(row => effectiveDurum(row) === 'Olumsuz bulgu')") &&
-  app.includes('ÜB.FR.53 kapsamındaki'));
-test('Modül B açıklaması ana form ile uygulanabilir ek standartları ayırıyor',
-  app.includes('Modül B ana saha kontrolü TS EN 81-20 üzerinden yürür.') &&
-  app.includes('ilgili ek standart maddeleri ayrıca uygulanır'));
-test('Modül B ana tip / tip varyant kodu alanları isteğe bağlı',
-  app.includes('id="fAnaTip"') && app.includes('id="fTipVaryantKodu"') &&
-  app.includes('Ana Tip (isteğe bağlı)') && app.includes('Tip Varyant Kodu (isteğe bağlı)') &&
-  !app.includes("if (modulB && (!anaTip || !tipVaryantKodu)"));
-test('TS EN 81-1/2+A3 yalnız Modül G denetiminde açılır ve kayıtta doğrulanır', (() => {
-  const start = app.indexOf('function uygulaDenetimTuru()');
-  const end = app.indexOf("document.getElementById('fKaydet').onclick", start);
+  app.includes("MODUL_B: 'modul_b_tip_inceleme'") &&
+  app.includes("SAHA_TEYIDI_E: 'saha_teyidi_e'") &&
+  app.includes("SAHA_TEYIDI_H1: 'saha_teyidi_h1'"));
+test('yeni denetim ekranı sadece Modül G üretir; B/E/H1 seçimi ve tip alanları yok', (() => {
+  const start = app.indexOf('function showYeniForm()');
+  const end = app.indexOf('function showOnayEkrani(f, tahmini)', start);
   const flow = app.slice(start, end);
-  return flow.includes('else if (modulG)') && flow.includes("a3Butonu.style.display = ''") &&
-    flow.includes("a3Butonu.style.display = 'none'") && flow.includes('uygulaDenetimTuru();') &&
-    app.includes("single.sAna === '81-1/2+A3' && single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G");
+  return flow.includes('sDenetimTuru: DENETIM_TURLERI.MODUL_G') &&
+    flow.includes('yalnız Modül G saha denetimlerini yürütür') &&
+    flow.includes('modul: \'Modül G\'') &&
+    flow.includes('const kontrolProfil = KONTROL_PROFILLERI.TAM') &&
+    !flow.includes("seg('sDenetimTuru'") && !flow.includes('id="fAnaTip"') &&
+    !flow.includes('id="fTipVaryantKodu"') &&
+    flow.includes('data-v="81-1/2+A3"');
+})());
+test('Modül G kapısı B/E/H1 ve bilinmeyen profilleri reddeder; eski etiketsiz G kayıtlarını korur', (() => {
+  const start = app.indexOf('function sahaUygulamaModuluGMi(d)');
+  const end = app.indexOf('function denetimTuruOzeti(d)', start);
+  const context = { KONTROL_PROFILLERI: { TAM: 'modul_g_tam' } };
+  vm.runInNewContext(`${app.slice(start, end)}; globalThis.checkModule = sahaUygulamaModuluGMi;`, context);
+  const check = context.checkModule;
+  return check({ modul: 'Modül G', kontrol_profili: 'modul_g_tam' }) &&
+    check({ denetim_turu: 'İlk Muayene' }) &&
+    !check({ modul: 'Modül B', kontrol_profili: 'modul_b_tip_inceleme' }) &&
+    !check({ denetim_turu: 'Modül E - Gözetim Saha Teyidi', kontrol_profili: 'saha_teyidi_e' }) &&
+    !check({ modul: 'Modül G', denetim_turu: 'Modül B - AB Tip İncelemesi', kontrol_profili: 'modul_g_tam' }) &&
+    !check({ modul: 'Modül H1' }) &&
+    !check({ kontrol_profili: 'beklenmeyen_profil' }) && !check(null);
+})());
+test('eski B/E/H1 kayıtları listede kilitli, devam/yeniden açma ve takip akışına kapalı',
+  app.includes('card.disabled = !modulG') &&
+  app.includes('Eski kayıt korundu; bu uygulamada açılmaz') &&
+  app.includes('AVES Saha yalnız Modül G içindir') &&
+  app.includes('if (!sahaUygulamaModuluGMi(denetim))') &&
+  app.includes('return sahaUygulamaModuluGMi(d) && kontrolProfili(d) === KONTROL_PROFILLERI.TAM') &&
+  app.includes('if (!sahaUygulamaModuluGMi(kaynak))'));
+test('Denetim Formu girişi kaldırıldı; tarihsel form verisi saklanır, G checklisti ve resmî çıktısı kalır',
+  app.includes('function denetimFormIstatistikleri(denetim)') &&
+  app.includes('// Form verileri tarihsel olarak saklanır; bu uygulamada yeni form girişi yoktur.') &&
+  app.includes('function formOdakliDenetimMi(denetim, rows = [])') &&
+  app.includes('// Form seti girişi ayrı Form Doldurucu uygulamasına taşındı.') &&
+  app.includes('Denetim Formu özelliği bu uygulamadan kaldırıldı') &&
+  app.includes('denetim_form_kayitlari: null') && app.includes('sahaRows = lib') &&
+  app.includes('id="btnYazdir"'));
+test('Modül G takip akışı kalır; Modül B takip verisi tarihsel migration ile korunur',
+  app.includes('return sahaUygulamaModuluGMi(d) && kontrolProfili(d) === KONTROL_PROFILLERI.TAM') &&
+  !app.includes('const modulBTakip =') &&
+  rc398ModulBMigration.includes("kontrol_profili in ('modul_g_tam','modul_b_tip_inceleme')") &&
+  rc399ModulBTakipMigration.includes("onceki.kontrol_profili,'') = 'modul_b_tip_inceleme'"));
+test('Modül B ana tip / tip varyant alanları üretim ekranından kaldırıldı; tarihsel DB alanları korunuyor',
+  !app.includes('id="fAnaTip"') && !app.includes('id="fTipVaryantKodu"') &&
+  rc398ModulBMigration.includes('add column if not exists ana_tip') &&
+  rc398ModulBMigration.includes('add column if not exists tip_varyant_kodu'));
+test('TS EN 81-1/2+A3 yeni denetim akışında yalnız Modül G ile mümkündür', (() => {
+  const start = app.indexOf('function showYeniForm()');
+  const end = app.indexOf('function showOnayEkrani(f, tahmini)', start);
+  const flow = app.slice(start, end);
+  return flow.includes('data-v="81-1/2+A3"') &&
+    flow.includes('const kontrolProfil = KONTROL_PROFILLERI.TAM') &&
+    flow.includes("single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G") &&
+    app.includes("f.modul !== 'Modül G' || f.kontrolProfili !== KONTROL_PROFILLERI.TAM");
 })());
 test('rc3.9.8 Modül B migration madde verisini değiştirmiyor, yalnız denetimler şemasını genişletiyor',
   !/delete\s+from/i.test(rc398ModulBMigration) &&
