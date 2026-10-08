@@ -172,3 +172,27 @@ Motoru etkileyen değişiklikler (özet):
 
 Motor için sonuç: kural kataloğuna bir `standardProfile` boyutu (EN-2020 / ISO-2026) eklenmeli; ISO 8100:2026 metni yetkili kaynaktan
 alınıp kural kural karşılaştırılmadan hiçbir EN-2020 kuralı “ISO-2026 sağlandı” diye sunulmamalıdır.
+
+## Savera Super kılavuz ray katalog kaydı — üretici verisi, normatif karar değil
+
+Birincil kaynak Savera'nın [resmî ürün sayfasındaki Super katalog indirme bağlantısı](https://saveragroup.com/en/home/products-and-services/)
+ve oradan açılan `Savera Super Standard Guide`, Rev. 08/26 PDF'sidir. İncelenen resmî PDF'nin SHA-256 özeti
+`4e630bafce661b9c7722d0e42d79715b79c79837d50abbc56db64128b23ed2c7` olarak katalog kaydında tutulur.
+Katalog; profil ölçülerini (PDF s. 3), delik/bağlantı geometrisini (s. 4), mekanik özellik aralıklarını ve
+paket kütlelerini (s. 5), kesit alanı, birim kütle, ağırlık merkezi, `I`, `W` ve yarıçap değerlerini (s. 6),
+5 m tedarik boyunu ve doğruluk/tolerans verisini (s. 7) yayımlar. Üretici, soğuk çekilmiş A serisi için
+0–1,0 m/s, işlenmiş B serisi için 0–1,6 m/s aralığı bildirir (s. 2).
+
+Katalog satırlarındaki `Wxx/Wyy` birimi cm³'tür; motordaki mm³ değerleri `1 cm³ = 1.000 mm³` dönüşümüyle
+oluşturulmuştur. Önceki AVES-HESAP pilot veri kaydında bu alanların çoğu 10 kat büyük yazılmıştı. Motor
+kataloğu bu değerleri PDF'den tekrar dönüştürerek düzeltir; `rail-catalog.test.mjs` 23 profilin her birini
+bağımsız beklenen listeye karşı denetler. Önceki pilotun yayımlanmış v35 sürümünde bu kaynak verisi hâlâ
+yanlış olduğundan, o sürümdeki ray gerilme/modül sonuçları bu profil girdileri için kullanılmamalı; canlı
+yayın değişikliği bu devir işi kapsamında yapılmamıştır.
+
+Katalogdaki çekme/kopma ve uzama aralıkları, kurulu partiye ait bitmiş ray `Rm/A5` çifti veya `A5` deney
+temelinin izlenebilir kanıtı değildir. Bu nedenle motor bunları malzeme dayanım girdisine dönüştürmez.
+5 m profil sayısı seyirden türetilen stok kestirimidir; kuyu üst/alt uzantısı ve gerçek kurulu uzunluk
+ayrıca doğrulanmalıdır. Üretici kataloğunda sabit son kullanma tarihi belirtilmediğinden geçerlilik sonu
+uydurulmamış; kaynak revizyonu, PDF özeti ve yeniden doğrulama gereği kaydedilmiştir. Bağımsız teknik
+inceleme hâlâ `PENDING` durumundadır.
