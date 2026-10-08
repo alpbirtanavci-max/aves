@@ -207,7 +207,10 @@ test('Flanş: döner pabuç σF = 1,85·Fx/c²; kayar pabuç formülü', () => {
   near(r.sigmaF, expected, 1e-9);
 });
 
-test('Flanş kuvveti tabanı: "x" yalnız Fx, "envelope" max(|Fx|,|Fy|)', () => {
+test('Flanş kuvveti tabanı: varsayılan standardın yalnız Fx formülü; "envelope" isteğe bağlı muhafazakâr zarf', () => {
+  const def = byId(checkCarRails(carInput()), 'RAIL-C-04').details.find((r) => r.case === 'safety');
+  const [, , sg] = carRailForces(carInput());
+  near(def.F, sg.Fx, 1e-9);
   const env = byId(checkCarRails(carInput({ flangeForceBasis: 'envelope' })), 'RAIL-C-04').details.find((r) => r.case === 'safety');
   const x = byId(checkCarRails(carInput({ flangeForceBasis: 'x' })), 'RAIL-C-04').details.find((r) => r.case === 'safety');
   const [, , safety] = carRailForces(carInput());

@@ -49,17 +49,26 @@ Kaynak paket depoda değil (kullanıcıdan alınan `AVES-Hesap-Claude-Inceleme-2
 1. **İkinci kişi teknik gözden geçirme** (kural başına; `catalog.mjs` → `DONE`). İngilizce EN 81-50:2020 ile karşılaştırma.
 2. Çekiş: m_DP ve PTD atalet terimleri; makine altta yerleşim (Şekil 9 b); konuma bağlı halat kütlesi yardımcısı.
 3. Fren/makine (5.9.2.2.2): standart formül vermiyor → onaylı AVES yöntemi kararı (MUHENDISLIK_KABULU) gerekli.
-4. Ray: karşı ağırlık flanşı; ray yönelimi/Fx–Fy eşlemesi kararı (`flangeForceBasis`); anlık emniyet tertibatı kütle formülü (EN 81-50 5.3.2).
+4. Ray: karşı ağırlık flanşı; ray yönelimi/Fx–Fy eşlemesinin standartla teyidi; anlık emniyet tertibatı kütle formülü (EN 81-50 5.3.2).
 5. Bileşen veri kayıtları (halat/ray/tampon/regülatör) — `COMPONENT_DATA_SCHEMA` biçimiyle, belge karması ve süre/izlenebilirlik kapıları.
 6. Arayüz (form girişi) — Saha uygulamasından **ayrı** tutulacak mı kararı.
 
-## 6. Doğrulanması gereken kararlar (tahminle çözülmedi)
+## 6. Kararlar
+
+Kullanıcı kararları (2026-10-08):
+
+- **Ø6,5 mm istisnası kalır.** Motorda mevcut davranış korunur: istisna açıkken ve üreticinin eğilme dayanım deney raporu
+  referansı girilmişse `TEKNİK İNCELEME` (kaynak sınıfı `AVES_POLITIKASI`); referans yoksa `BLOKE`; hiçbir koşulda `PASS` yok.
+  Yalnız Ø6,5 mm × 210/240 mm eşleşmesi için geçerli.
+- **Tampon: norm geçerlidir.** Strok için EN 81-20 5.8.2 formülü esastır; üretici satırı normatif asgarinin altındaysa `FAIL`
+  (bulgu 8 kapandı; Zorlu 2,0 m/s 247 mm < 269,6 mm bu kurala göre sağlanmaz).
+- **Flanş kuvveti tabanı: standardın yalnız Fx formülü** (varsayılan `flangeForceBasis: 'x'`). Muhafazakâr zarf
+  `'envelope'` yalnız isteğe bağlı.
+
+Açık (kullanıcı bilgisi yok, tahminle çözülmedi):
 
 - Hesap motoru bu depoda kalıcı mı kalacak, ayrı depoya mı taşınacak? (Saha PWA'sıyla yaşam döngüsü farklı.)
 - Rapor üstündeki imza yetkilileri ve rapor numaralandırma ÜB doküman sistemine nasıl bağlanacak?
-- Flanş kuvveti tabanı varsayılanı: `envelope` (muhafazakâr) mı, `x` (standart formülü) mı?
-- AVES Ø6,5 mm istisnası: kaldırılacak mı, yoksa üretici eğilme dayanım raporu ile `REVIEW` olarak mı sürecek?
-- Tampon: “üretici strok satırı kabul” politikası norm ile çelişiyor (bulgu 8) — AVES politikası mı, norm mu?
 
 ## 7. Test beklentisi
 

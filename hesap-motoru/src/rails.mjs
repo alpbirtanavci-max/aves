@@ -393,7 +393,7 @@ function deflectionResult(c, cases, prefix, label, limitMm, safetyDeviceActs) {
  * @param {{Dx:number,Dy:number,P:number,Q:number,C:{x,y},Pcg:{x,y},S:{x,y},doors:Array<{x,y}>,liftClass:string}} c.car
  * @param {{type:'roller'|'sliding',liningHalfWidthBMm?:number,liningLengthMm?:number}} c.shoe
  * @param {object} c.supportPath
- * @param {'x'|'envelope'} [c.flangeForceBasis='envelope']
+ * @param {'x'|'envelope'} [c.flangeForceBasis='x']  'x': standardın formülü (yalnız Fx); 'envelope': max(|Fx|,|Fy|) muhafazakâr zarf
  */
 export function checkCarRails(c) {
   const problems = geometryProblems(c);
@@ -450,7 +450,7 @@ function flangeResult(c, cases, prefix, label) {
   }
   if (problems.length) return blocked({ ruleId: `${prefix}-04`, title: `${label} · T-ray flanş yerel eğilmesi`, source: src, problems, inputs: copy(c) });
 
-  const basis = c.flangeForceBasis ?? 'envelope';
+  const basis = c.flangeForceBasis ?? 'x';
   const rows = cases.map((cs) => {
     const F = basis === 'x' ? Math.abs(cs.Fx) : Math.max(Math.abs(cs.Fx), Math.abs(cs.Fy));
     const sigmaF =
@@ -478,8 +478,8 @@ function flangeResult(c, cases, prefix, label) {
     substitution: rows.map((r) => `${r.title}: Fx=${fmt(r.F, 1)} N, σF=${fmt(r.sigmaF, 2)} ≤ ${fmt(r.sigmaPerm, 2)}`).join(' | '),
     notes: [
       basis === 'envelope'
-        ? 'Flanş kuvveti olarak max(|Fx|, |Fy|) zarfı alındı (ray yönelimi belirsizse muhafazakâr). Standart formülü Fx kullanır; basis:"x" ile değiştirilebilir.'
-        : 'Flanş kuvveti olarak yalnız Fx alındı (standart formülü).',
+        ? 'Flanş kuvveti olarak max(|Fx|, |Fy|) zarfı alındı (muhafazakâr seçim; standart formülü yalnız Fx kullanır).'
+        : 'Flanş kuvveti olarak yalnız Fx alındı (EN 81-50 5.10.5 ve Ek C formülü).',
       SCOPE_NOTE,
     ],
     details: rows,
