@@ -3,6 +3,7 @@ export * from './tension.mjs';
 export * from './suspension.mjs';
 export * from './traction.mjs';
 export * from './rails.mjs';
+export * from './rail-catalog.mjs';
 export * from './safety.mjs';
 export * from './catalog.mjs';
 export * from './engine.mjs';

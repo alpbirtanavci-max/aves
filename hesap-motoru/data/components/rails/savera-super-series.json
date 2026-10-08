@@ -1,0 +1,569 @@
+{
+  "component_id": "guide_rail.savera.super",
+  "component_type": "guide_rail",
+  "manufacturer": "Savera",
+  "series": "Super",
+  "catalogue_revision": "Rev. 08/26",
+  "catalogue_source": "https://saveragroup.com/wp-content/uploads/2026/09/GUIA-SUPER_Rev08.26.pdf",
+  "product_page": "https://saveragroup.com/en/home/products-and-services/",
+  "standard": "ISO 7465:2007 (catalogue reference)",
+  "standard_bar_length_m": 5,
+  "speed_scope_m_s": {
+    "cold_drawn_A": 1,
+    "machined_B": 1.6
+  },
+  "material_characteristics_by_catalogue_group": [
+    {
+      "group": "cold-drawn blade >5 mm and <=8 mm",
+      "tensile_strength_min_N_per_mm2": 470,
+      "tensile_strength_max_N_per_mm2": 840,
+      "yield_strength_min_N_per_mm2": 355,
+      "elongation_min_percent": 8
+    },
+    {
+      "group": "cold-drawn blade >8 mm and <=10 mm",
+      "tensile_strength_min_N_per_mm2": 470,
+      "tensile_strength_max_N_per_mm2": 840,
+      "yield_strength_min_N_per_mm2": 355,
+      "elongation_min_percent": 12,
+      "elongation_operator": ">"
+    },
+    {
+      "group": "cold-drawn blade >10 mm and <=16 mm",
+      "tensile_strength_min_N_per_mm2": 420,
+      "tensile_strength_max_N_per_mm2": 710,
+      "yield_strength_min_N_per_mm2": 300,
+      "elongation_min_percent": 12,
+      "elongation_operator": ">"
+    },
+    {
+      "group": "machined blade ≤16 mm",
+      "tensile_strength_min_N_per_mm2": 410,
+      "tensile_strength_max_N_per_mm2": 520,
+      "yield_strength_min_N_per_mm2": 275,
+      "elongation_min_percent": 22
+    },
+    {
+      "group": "machined blade >16 mm",
+      "tensile_strength_min_N_per_mm2": 410,
+      "tensile_strength_max_N_per_mm2": 520,
+      "yield_strength_min_N_per_mm2": 265,
+      "elongation_min_percent": 22
+    }
+  ],
+  "material_mapping_note": "The catalogue presents mechanical ranges by blade-thickness group, not a traceable measured Rm/A5 pair for each installed rail batch. Its elongation test basis is not identified as EN 81-20 A5. These catalogue values are retained as source data but are not silently substituted into the EN 81-20 Table 15 stress calculation.",
+  "property_units": {
+    "area": "mm2",
+    "mass_per_length": "kg/m",
+    "centroid_e": "mm",
+    "second_moment": "mm4",
+    "section_modulus": "mm3",
+    "radius_of_gyration": "mm",
+    "local_flange_c_h1_f": "mm"
+  },
+  "profiles": [
+    {
+      "designation": "T45/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 5,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 45,
+        "h1": 45,
+        "c": null,
+        "f": null
+      },
+      "area_mm2": 425,
+      "mass_kg_per_m": 3.34,
+      "centroid_e_mm": 13.1,
+      "Ixx_mm4": 80800,
+      "Wxx_mm3": 2530,
+      "ixx_mm": 13.8,
+      "Iyy_mm4": 38400,
+      "Wyy_mm3": 1710,
+      "iyy_mm": 9.5
+    },
+    {
+      "designation": "T50/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 5,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 50,
+        "h1": 50,
+        "c": null,
+        "f": null
+      },
+      "area_mm2": 475,
+      "mass_kg_per_m": 3.73,
+      "centroid_e_mm": 14.3,
+      "Ixx_mm4": 112400,
+      "Wxx_mm3": 3150,
+      "ixx_mm": 15.4,
+      "Iyy_mm4": 52500,
+      "Wyy_mm3": 2100,
+      "iyy_mm": 10.5
+    },
+    {
+      "designation": "T65/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 7.9,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 65,
+        "h1": 54,
+        "c": 5,
+        "f": 5.8
+      },
+      "area_mm2": 624,
+      "mass_kg_per_m": 4.9,
+      "centroid_e_mm": 17.1,
+      "Ixx_mm4": 200900,
+      "Wxx_mm3": 5440,
+      "ixx_mm": 17.9,
+      "Iyy_mm4": 109200,
+      "Wyy_mm3": 3360,
+      "iyy_mm": 13.2
+    },
+    {
+      "designation": "T70/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 9,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 70,
+        "h1": 65,
+        "c": 6,
+        "f": 8
+      },
+      "area_mm2": 940,
+      "mass_kg_per_m": 7.379,
+      "centroid_e_mm": 20.34,
+      "Ixx_mm4": 409500,
+      "Wxx_mm3": 9169,
+      "ixx_mm": 20.87,
+      "Iyy_mm4": 188600,
+      "Wyy_mm3": 5389,
+      "iyy_mm": 14.17
+    },
+    {
+      "designation": "T70-70-9/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 9,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 70,
+        "h1": 70,
+        "c": 7,
+        "f": 8.5
+      },
+      "area_mm2": 1125,
+      "mass_kg_per_m": 8.83,
+      "centroid_e_mm": 21.1,
+      "Ixx_mm4": 528100,
+      "Wxx_mm3": 10790,
+      "ixx_mm": 21.6,
+      "Iyy_mm4": 246200,
+      "Wyy_mm3": 7020,
+      "iyy_mm": 14.8
+    },
+    {
+      "designation": "T75/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 10,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 75,
+        "h1": 62,
+        "c": 8,
+        "f": 9
+      },
+      "area_mm2": 1091,
+      "mass_kg_per_m": 8.564,
+      "centroid_e_mm": 18.61,
+      "Ixx_mm4": 402900,
+      "Wxx_mm3": 9286,
+      "ixx_mm": 19.21,
+      "Iyy_mm4": 264700,
+      "Wyy_mm3": 7060,
+      "iyy_mm": 15.57
+    },
+    {
+      "designation": "T80-80-9/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 9,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 80,
+        "h1": 80,
+        "c": null,
+        "f": null
+      },
+      "area_mm2": 1356,
+      "mass_kg_per_m": 10.65,
+      "centroid_e_mm": 23.2,
+      "Ixx_mm4": 802000,
+      "Wxx_mm3": 14210,
+      "ixx_mm": 24.4,
+      "Iyy_mm4": 388300,
+      "Wyy_mm3": 9700,
+      "iyy_mm": 16.9
+    },
+    {
+      "designation": "T82/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 9,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 82,
+        "h1": 68,
+        "c": 7.5,
+        "f": 8.25
+      },
+      "area_mm2": 1091,
+      "mass_kg_per_m": 8.564,
+      "centroid_e_mm": 19.98,
+      "Ixx_mm4": 493100,
+      "Wxx_mm3": 10270,
+      "ixx_mm": 21.26,
+      "Iyy_mm4": 301700,
+      "Wyy_mm3": 7358,
+      "iyy_mm": 16.63
+    },
+    {
+      "designation": "T89/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 89,
+        "h1": 62,
+        "c": 10,
+        "f": 11
+      },
+      "area_mm2": 1577,
+      "mass_kg_per_m": 12.38,
+      "centroid_e_mm": 20.32,
+      "Ixx_mm4": 598300,
+      "Wxx_mm3": 14350,
+      "ixx_mm": 19.48,
+      "Iyy_mm4": 524100,
+      "Wyy_mm3": 11780,
+      "iyy_mm": 18.23
+    },
+    {
+      "designation": "T90/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 90,
+        "h1": 75,
+        "c": 10,
+        "f": 10
+      },
+      "area_mm2": 1725,
+      "mass_kg_per_m": 13.54,
+      "centroid_e_mm": 26.12,
+      "Ixx_mm4": 1020000,
+      "Wxx_mm3": 20860,
+      "ixx_mm": 24.31,
+      "Iyy_mm4": 524800,
+      "Wyy_mm3": 11660,
+      "iyy_mm": 17.44
+    },
+    {
+      "designation": "T125-L1/A",
+      "process": "cold-drawn",
+      "blade_thickness_mm": null,
+      "max_speed_m_s": 1,
+      "dimensions_mm": {
+        "b1": 125,
+        "h1": 68,
+        "c": 6,
+        "f": 8.25
+      },
+      "area_mm2": 1439,
+      "mass_kg_per_m": 11.29,
+      "centroid_e_mm": 16.5,
+      "Ixx_mm4": 564600,
+      "Wxx_mm3": 10970,
+      "ixx_mm": 19.8,
+      "Iyy_mm4": 1078800,
+      "Wyy_mm3": 17260,
+      "iyy_mm": 27.4
+    },
+    {
+      "designation": "T75/B",
+      "process": "machined",
+      "blade_thickness_mm": 10,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 75,
+        "h1": 62,
+        "c": 8,
+        "f": 9
+      },
+      "area_mm2": 1091,
+      "mass_kg_per_m": 8.564,
+      "centroid_e_mm": 18.61,
+      "Ixx_mm4": 402900,
+      "Wxx_mm3": 9286,
+      "ixx_mm": 19.21,
+      "Iyy_mm4": 264700,
+      "Wyy_mm3": 7060,
+      "iyy_mm": 15.57
+    },
+    {
+      "designation": "T78/B",
+      "process": "machined",
+      "blade_thickness_mm": 10,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 78,
+        "h1": 56,
+        "c": 7,
+        "f": 8.5
+      },
+      "area_mm2": 984.7,
+      "mass_kg_per_m": 7.73,
+      "centroid_e_mm": 16.45,
+      "Ixx_mm4": 299200,
+      "Wxx_mm3": 7564,
+      "ixx_mm": 17.43,
+      "Iyy_mm4": 263900,
+      "Wyy_mm3": 6766,
+      "iyy_mm": 16.37
+    },
+    {
+      "designation": "T82/B",
+      "process": "machined",
+      "blade_thickness_mm": 9,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 82,
+        "h1": 68,
+        "c": 7.5,
+        "f": 8.25
+      },
+      "area_mm2": 1091,
+      "mass_kg_per_m": 8.564,
+      "centroid_e_mm": 19.98,
+      "Ixx_mm4": 493100,
+      "Wxx_mm3": 10270,
+      "ixx_mm": 21.26,
+      "Iyy_mm4": 301700,
+      "Wyy_mm3": 7358,
+      "iyy_mm": 16.63
+    },
+    {
+      "designation": "T89/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 89,
+        "h1": 62,
+        "c": 10,
+        "f": 11
+      },
+      "area_mm2": 1577,
+      "mass_kg_per_m": 12.38,
+      "centroid_e_mm": 20.32,
+      "Ixx_mm4": 598300,
+      "Wxx_mm3": 14350,
+      "ixx_mm": 19.48,
+      "Iyy_mm4": 524100,
+      "Wyy_mm3": 11780,
+      "iyy_mm": 18.23
+    },
+    {
+      "designation": "T90/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 90,
+        "h1": 75,
+        "c": 10,
+        "f": 10
+      },
+      "area_mm2": 1725,
+      "mass_kg_per_m": 13.54,
+      "centroid_e_mm": 26.12,
+      "Ixx_mm4": 1020000,
+      "Wxx_mm3": 20860,
+      "ixx_mm": 24.31,
+      "Iyy_mm4": 524800,
+      "Wyy_mm3": 11660,
+      "iyy_mm": 17.44
+    },
+    {
+      "designation": "T114/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 114,
+        "h1": 89,
+        "c": 9.5,
+        "f": 11
+      },
+      "area_mm2": 2089,
+      "mass_kg_per_m": 16.4,
+      "centroid_e_mm": 28.65,
+      "Ixx_mm4": 1793000,
+      "Wxx_mm3": 29700,
+      "ixx_mm": 29.3,
+      "Iyy_mm4": 1086000,
+      "Wyy_mm3": 19050,
+      "iyy_mm": 22.8
+    },
+    {
+      "designation": "T125/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 125,
+        "h1": 82,
+        "c": 10,
+        "f": 12
+      },
+      "area_mm2": 2282,
+      "mass_kg_per_m": 17.91,
+      "centroid_e_mm": 24.3,
+      "Ixx_mm4": 1510000,
+      "Wxx_mm3": 26160,
+      "ixx_mm": 25.72,
+      "Iyy_mm4": 1591000,
+      "Wyy_mm3": 25460,
+      "iyy_mm": 26.41
+    },
+    {
+      "designation": "T127-1/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 127,
+        "h1": 89,
+        "c": 10,
+        "f": 11
+      },
+      "area_mm2": 2274,
+      "mass_kg_per_m": 17.85,
+      "centroid_e_mm": 27.7,
+      "Ixx_mm4": 1879000,
+      "Wxx_mm3": 30650,
+      "ixx_mm": 30.65,
+      "Iyy_mm4": 1499000,
+      "Wyy_mm3": 23610,
+      "iyy_mm": 23.61
+    },
+    {
+      "designation": "T127-2/B",
+      "process": "machined",
+      "blade_thickness_mm": 16,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 127,
+        "h1": 89,
+        "c": 12.7,
+        "f": 15.9
+      },
+      "area_mm2": 2872,
+      "mass_kg_per_m": 22.55,
+      "centroid_e_mm": 24.78,
+      "Ixx_mm4": 2017000,
+      "Wxx_mm3": 31170,
+      "ixx_mm": 26.4,
+      "Iyy_mm4": 2299000,
+      "Wyy_mm3": 36200,
+      "iyy_mm": 28.29
+    },
+    {
+      "designation": "T140-1/B",
+      "process": "machined",
+      "blade_thickness_mm": 19,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 140,
+        "h1": 108,
+        "c": 12.7,
+        "f": 15.9
+      },
+      "area_mm2": 3515,
+      "mass_kg_per_m": 27.59,
+      "centroid_e_mm": 32.36,
+      "Ixx_mm4": 4033000,
+      "Wxx_mm3": 53320,
+      "ixx_mm": 33.87,
+      "Iyy_mm4": 3097000,
+      "Wyy_mm3": 44240,
+      "iyy_mm": 29.68
+    },
+    {
+      "designation": "T140-2/B",
+      "process": "machined",
+      "blade_thickness_mm": 28.6,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 140,
+        "h1": 102,
+        "c": 17.5,
+        "f": 17.5
+      },
+      "area_mm2": 4321,
+      "mass_kg_per_m": 33.92,
+      "centroid_e_mm": 34.84,
+      "Ixx_mm4": 4567000,
+      "Wxx_mm3": 68010,
+      "ixx_mm": 32.51,
+      "Iyy_mm4": 3582000,
+      "Wyy_mm3": 51180,
+      "iyy_mm": 28.79
+    },
+    {
+      "designation": "T140-3/B",
+      "process": "machined",
+      "blade_thickness_mm": 31.75,
+      "max_speed_m_s": 1.6,
+      "dimensions_mm": {
+        "b1": 140,
+        "h1": 127,
+        "c": 19,
+        "f": 25.4
+      },
+      "area_mm2": 5752,
+      "mass_kg_per_m": 45.15,
+      "centroid_e_mm": 44.18,
+      "Ixx_mm4": 9475000,
+      "Wxx_mm3": 114400,
+      "ixx_mm": 40.59,
+      "Iyy_mm4": 4667000,
+      "Wyy_mm3": 66670,
+      "iyy_mm": 28.48
+    }
+  ],
+  "calculation_notes": [
+    "Section properties are transcribed from the dimensions and technical-characteristics tables in Savera Super Rev. 08/26; cm2, cm3, cm4 and cm values are converted to mm-based SI units.",
+    "Profile c, h1 and f dimensions are taken only from the matching Savera profile row. Blank catalogue dimensions remain null and are not inferred.",
+    "A 5 m nominal section is catalogue-confirmed. For this application, the displayed section count is ceil(travel height / 5 m) per rail line; it is not the count of parallel rails sharing load.",
+    "The catalogue supports section geometry, unit mass, nominal stock length, process and speed-class checks. It does not establish the installed rail batch, actual profile orientation, rail-joint condition, support/bracket capacity, or complete lift conformity."
+  ],
+  "verification_status": "Current Savera Super catalogue data transcribed from manufacturer source. Profile mechanical ranges are preserved, but not substituted for EN 81-20 A5 or an installed-batch Rm/A5 pair because the catalogue does not identify the elongation test basis or trace a project batch.",
+  "data_record_schema": "aves.component-data.v1",
+  "source_evidence": {
+    "publisher": "Savera",
+    "document_title": "Savera Super Standard Guide",
+    "revision": "Rev. 08/26",
+    "url": "https://saveragroup.com/wp-content/uploads/2026/09/GUIA-SUPER_Rev08.26.pdf",
+    "sha256": "4e630bafce661b9c7722d0e42d79715b79c79837d50abbc56db64128b23ed2c7",
+    "verified_at": "2026-10-08",
+    "valid_until": null,
+    "validity_note": "The manufacturer catalogue states no fixed expiry date; verify this is still the official current revision before publishing a new release.",
+    "verification_status": "PRIMARY_SOURCE_HASH_VERIFIED",
+    "independent_review": "PENDING"
+  }
+}

@@ -44,11 +44,8 @@
       }
     },
     "carRails": {
-      "rails": { "n": 2, "shoeSpacingMm": 3000, "bracketSpacingMm": 2000, "unitMassKgPerM": 10, "lineLengthM": 30 },
-      "profile": {
-        "designation": "T89/A", "areaMm2": 1577, "IxMm4": 598300, "IyMm4": 524100, "WxMm3": 14350, "WyMm3": 11780,
-        "ixMm": 19.48, "iyMm": 18.23, "neckWidthCMm": 10, "headHeightH1Mm": 62, "footDepthFMm": 11.1
-      },
+      "railCatalog": { "componentId": "guide_rail.savera.super", "designation": "T89/A" },
+      "rails": { "n": 2, "shoeSpacingMm": 3000, "bracketSpacingMm": 2000 },
       "material": { "RmN_mm2": 450, "A5pct": 14, "evidenceRef": "SENTETIK-DEGER-uretici-beyani-degildir" },
       "safetyDevice": "progressive",
       "travelHeightM": 30,
@@ -61,11 +58,8 @@
       }
     },
     "counterweightRails": {
-      "rails": { "n": 2, "shoeSpacingMm": 2500, "bracketSpacingMm": 2000, "unitMassKgPerM": 10, "lineLengthM": 30 },
-      "profile": {
-        "designation": "T89/A", "areaMm2": 1577, "IxMm4": 598300, "IyMm4": 524100, "WxMm3": 14350, "WyMm3": 11780,
-        "ixMm": 19.48, "iyMm": 18.23
-      },
+      "railCatalog": { "componentId": "guide_rail.savera.super", "designation": "T89/A" },
+      "rails": { "n": 2, "shoeSpacingMm": 2500, "bracketSpacingMm": 2000 },
       "material": { "RmN_mm2": 450, "A5pct": 14, "evidenceRef": "SENTETIK-DEGER-uretici-beyani-degildir" },
       "travelHeightM": 30,
       "supportPath": { "type": "direct-masonry-wall" },

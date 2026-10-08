@@ -155,6 +155,7 @@ export function counterweightRailForces(c) {
 // ---- ortak girdi doğrulaması ----------------------------------------------------------------------
 function geometryProblems(c) {
   const problems = [];
+  if (Array.isArray(c.catalogResolutionErrors)) problems.push(...c.catalogResolutionErrors);
   problems.push(
     ...checkInputs(c.rails ?? {}, {
       n: { label: 'Ray adedi', min: 2, integer: true },

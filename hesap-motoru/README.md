@@ -38,7 +38,7 @@ Motor saat okumaz (`preparedAt` çağıran verir); aynı girdi aynı rapor ve ay
 |---|---|---|
 | `suspension.mjs` | SUS-001 … SUS-006 | EN 81-20 5.5; EN 81-50 5.12 (Çizelge 2, Şekil 10 denklemi); EN 13411 |
 | `traction.mjs` + `tension.mjs` | TRA-001 … TRA-005 | EN 81-50 5.11; EN 81-20 5.5.3 |
-| `rails.mjs` | RAIL-C-02…05 (kabin), RAIL-W-02/03/05 (karşı ağırlık) | EN 81-50 5.10, Ek C; EN 81-20 5.7 |
+| `rails.mjs` + `rail-catalog.mjs` | RAIL-C-02…06 (kabin), RAIL-W-02/03/05/06 (karşı ağırlık) | EN 81-50 5.10, Ek C; EN 81-20 5.7; Savera Super üretici kataloğu |
 | `safety.mjs` | SG-001/002, GOV-001…003, BUF-001…003 | EN 81-50 5.3; EN 81-20 5.6, 5.8 |
 
 Kapsam dışı olanlar rapor başlığında **açıkça** listelenir (`OUT_OF_SCOPE`); girdisi verilmeyen modül
@@ -63,6 +63,28 @@ Kapsam dışı olanlar rapor başlığında **açıkça** listelenir (`OUT_OF_SC
   (TS EN 81-50:2021) ve İngilizce EN 81-50:2014 ile metin düzeyinde karşılaştırılarak okundu; **İngilizce
   EN 81-50:2020 aslıyla karşılaştırma bekliyor**.
 - Testlerin geçmesi mevzuat uygunluğu kanıtı değildir; `RULE_CATALOG` içindeki `independentReview` alanı ayrıdır.
+
+## Kılavuz ray katalog girdisi
+
+Kabin ve karşı ağırlık rayı girdisinde `railCatalog.componentId` ve üretici üzerindeki profil kodu (`designation`)
+seçildiğinde Savera Super kataloğundan kesit alanı, atalet değerleri, kesit modülleri, yarıçaplar, yerel flanş
+ölçüleri, birim kütle ve üretim türüne ait katalog hız sınırı çözülür. `hesap-motoru/data/components/rails/`
+altındaki kayıt 23 profili, Rev. 08/26 kaynağını ve PDF SHA-256 karmasını tutar.
+
+```json
+"railCatalog": { "componentId": "guide_rail.savera.super", "designation": "T89/A" },
+"rails": { "n": 2, "shoeSpacingMm": 3000, "bracketSpacingMm": 2000 }
+```
+
+`n`, yükü paylaşan paralel ray hattı sayısıdır; 5 m'lik fiziksel parça sayısı değildir. Parça adedi
+`ceil(travelHeightM / 5)` ile hat başına türetilir; hattın nominal kütlesi seçilen profilin kg/m değeriyle
+hesaplanır. Tabloda boş bırakılan `c`/`f` ölçüleri tahmin edilmez; bu yalnız ilgili yerel flanş hesabını bloke
+eder. Katalogdaki genel mekanik aralıklar bitmiş ray partisinin izlenebilir `Rm/A5` belgesi yerine geçmez.
+
+Hız kontrolü üretici kataloğunda yazan üst sınırı ayrı bir üretici kapsamı sonucu olarak gösterir: sınır içi
+`TEKNİK İNCELEME`, sınır üstü `KRİTER SAĞLANMADI`; sınır içi olması asansörün veya ray sisteminin genel
+uygunluğu anlamına gelmez. Stok metrajı yalnız seyir yüksekliğine dayanır; kuyu üst/alt uzantılarını
+modellemediğini sonuç notunda açıkça bildirir.
 
 ## Bilinen eksikler (v0.1)
 
