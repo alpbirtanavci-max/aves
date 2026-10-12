@@ -212,5 +212,32 @@
     return { recorded, total: fields.length };
   }
 
-  root.AVES_TEKNIK_DOSYA_FORM = Object.freeze({ FR65, RP14, visibleFr65Sections, emptyRecord, normalize, countFr65 });
+  function emptyFr65Capture(updatedAt = null) {
+    return {
+      schema_version: 2,
+      saha_veri_akisi: 'fr65_saha_v1',
+      source_form: 'ÜB.FR.65',
+      source_revision: FR65.revision,
+      updated_at: updatedAt,
+      forms: { FR65: { values: {} } },
+    };
+  }
+
+  function countFr65Capture(record, tractionType) {
+    const source = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+    const forms = source.forms && typeof source.forms === 'object' ? source.forms : {};
+    const capture = forms.FR65 && typeof forms.FR65 === 'object'
+      ? forms.FR65
+      : (source.fr65 && typeof source.fr65 === 'object' ? source.fr65 : {});
+    const values = capture.values && typeof capture.values === 'object' ? capture.values : {};
+    const fields = visibleFr65Sections(tractionType).flatMap(section => section.fields);
+    const recorded = fields.filter(([key]) => {
+      const value = values[key];
+      return !!(value && typeof value === 'object' &&
+        ['file_value', 'field_value', 'note'].some(field => String(value[field] || '').trim()));
+    }).length;
+    return { recorded, total: fields.length };
+  }
+
+  root.AVES_TEKNIK_DOSYA_FORM = Object.freeze({ FR65, RP14, visibleFr65Sections, emptyRecord, normalize, countFr65, emptyFr65Capture, countFr65Capture });
 })(globalThis);

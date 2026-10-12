@@ -99,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.74 sürümü', index.includes('R15D-RC3.9.74</b>'));
-test('app R15D rc3.9.74 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.74'"));
-test('service worker rc3.9.74 cache', sw.includes("aves-saha-r15d-rc3974'"));
-test('uygulama manifesti rc3.9.74 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.74"'));
+test('index R15D rc3.9.75 sürümü', index.includes('R15D-RC3.9.75</b>'));
+test('app R15D rc3.9.75 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.75'"));
+test('service worker rc3.9.75 cache', sw.includes("aves-saha-r15d-rc3975'"));
+test('uygulama manifesti rc3.9.75 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.75"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -133,7 +133,7 @@ test('showDenetim en son açılan denetimi kv last_inspection olarak yazar',
 test('liste ekranında "Kaldığın yerden devam et" kartı: görünür + tamamlanmamış denetim',
   app.includes("resume.className = 'resume-card'") &&
   app.includes('Kaldığın yerden devam et') &&
-  app.includes("denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && sahaUygulamaModuluGMi(d))") &&
+  app.includes("denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && (sahaUygulamaModuluGMi(d) || fr65SahaKaydiMi(d)))") &&
   index.includes('.resume-card{'));
 test('showDenetim kayıtlı maddeye scrollIntoView yapar (kaldığı satır)',
   app.includes('const positionValid = savedPosition && rows.some(r => r.id === savedPosition.item_id') &&
@@ -217,6 +217,20 @@ test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve 
   const foreignEntry = formDraftJournal.readForm(storage, 'form-test', 'diger@aves.test');
   const staleRewrite = formDraftJournal.writeForm(storage, 'form-test', { forms: { FR65: { values: { beyan_yuku: 'ESKİ TASLAĞI EZ' } } } }, 'denetci@aves.test', 125, 'v2');
   const preservedAfterStaleRewrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
+  const capturePayload = { saha_veri_akisi: 'fr65_saha_v1', forms: { FR65: { values: { beyan_yuku: { field_value: '630 kg' } } } } };
+  const captureWrote = formDraftJournal.writeFr65Capture(storage, 'form-test', capturePayload, 'denetci@aves.test', 126, 'v1');
+  const captureEntry = formDraftJournal.readFr65Capture(storage, 'form-test', 'DENETCI@AVES.TEST');
+  const legacyEntrySurvivesCaptureWrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
+  const captureConflict = formDraftJournal.inspectFr65Capture({}, captureEntry, 'v2');
+  const captureRecover = formDraftJournal.inspectFr65Capture({}, captureEntry, 'v1');
+  const captureSame = formDraftJournal.inspectFr65Capture(capturePayload.forms.FR65.values, captureEntry, 'v2');
+  const captureRebased = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v1.5');
+  const rebasedCapture = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test');
+  const staleRebase = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v3');
+  const unrelatedDraft = formDraftJournal.inspectFr65Capture({}, { payload: { forms: { FR65: { values: { beyan_yuku: 'eski form' } } } } }, 'v1');
+  const wrongCaptureClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'ucuncu@aves.test');
+  const captureOwnerClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test');
+  const legacySurvivesCaptureClear = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
   const beforeClear = JSON.parse(storage.getItem('aves_taslak_form-test'));
   const wrongOwnerClear = formDraftJournal.clearFormIfOwner(storage, 'form-test', 'ucuncu@aves.test');
   const preservedAfterWrongOwner = !!formDraftJournal.readForm(storage, 'form-test');
@@ -229,6 +243,13 @@ test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve 
     foreignWrite && preservedAfterForeignWrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
     foreignEntry.payload.forms.FR65.values.beyan_yuku === 'YABANCI DEĞER' && !staleRewrite &&
     preservedAfterStaleRewrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
+    captureWrote && captureEntry.payload.forms.FR65.values.beyan_yuku.field_value === '630 kg' &&
+    legacyEntrySurvivesCaptureWrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
+    captureConflict.kind === 'conflict' && captureRecover.kind === 'recover' && captureSame.kind === 'same' &&
+    captureRebased && rebasedCapture.baseUpdatedAt === 'v1.5' && rebasedCapture.ts === captureEntry.ts &&
+    rebasedCapture.payload.forms.FR65.values.beyan_yuku.field_value === '630 kg' && !staleRebase &&
+    unrelatedDraft.kind === 'none' && !wrongCaptureClear && captureOwnerClear &&
+    legacySurvivesCaptureClear.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
     !!beforeClear['saha:MAD-1:aciklama'] && !wrongOwnerClear && preservedAfterWrongOwner && ownerClear && cleared &&
     !Object.keys(afterClear).some(key => key === 'form:record' || key.startsWith('form:record:')) &&
     !!afterClear['saha:MAD-1:aciklama'] && !formDraftJournal.writeForm(failingStorage, 'x', payload, 'a@aves.test', 1);
@@ -513,6 +534,24 @@ test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değ
   !technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'hidrolik') &&
   technicalDocs.visibleFr65Sections('Hidrolik').some(section => section.key === 'hidrolik') &&
   technicalDocs.visibleFr65Sections('').some(section => section.key === 'hidrolik'));
+test('FR.65 saha kaydı teknik dosya değeri, saha değeri ve kanıt notunu ayrı tutar', (() => {
+  const capture = technicalDocs.emptyFr65Capture('2026-10-12T00:00:00.000Z');
+  const values = capture.forms.FR65.values;
+  values.kuyu_dibi = { file_value: '2400 mm', field_value: '2385 mm', note: 'Kuyu ölçüsü fotoğrafı' };
+  const count = technicalDocs.countFr65Capture(capture, 'Elektrikli');
+  return capture.saha_veri_akisi === 'fr65_saha_v1' && capture.source_form === 'ÜB.FR.65' &&
+    capture.source_revision === '00' && count.recorded === 1 && count.total > 1 &&
+    !Object.values(values.kuyu_dibi).some(value => ['Uygun','Uygun Değil','Eşleşti','Fark var'].includes(value));
+})());
+test('FR.65 veri sayacı tahrik tipine göre kapsamı daraltır, boş alanı saymaz', (() => {
+  const capture = { forms: { FR65: { values: {
+    makine_guc: { file_value: '', field_value: '', note: '' },
+    hidrolik_unite_konumu: { file_value: 'Makine dairesi', field_value: 'Alt kat', note: '' },
+  } } } };
+  const electric = technicalDocs.countFr65Capture(capture, 'Elektrikli');
+  const hydraulic = technicalDocs.countFr65Capture(capture, 'Hidrolik');
+  return electric.recorded === 0 && hydraulic.recorded === 1 && hydraulic.total > 0;
+})());
 test('FR.65 sayaç yalnız denetçinin seçtiği kayıt durumlarını sayıyor', (() => {
   const record = technicalDocs.emptyRecord();
   record.fr65.values.beyan_yuku = { status: 'Eşleşti' };
@@ -1167,12 +1206,13 @@ test('eski B/E/H1 profil tanımları tarihsel kayıt uyumluluğu için korunuyor
   app.includes("MODUL_B: 'modul_b_tip_inceleme'") &&
   app.includes("SAHA_TEYIDI_E: 'saha_teyidi_e'") &&
   app.includes("SAHA_TEYIDI_H1: 'saha_teyidi_h1'"));
-test('yeni denetim ekranı sadece Modül G üretir; B/E/H1 seçimi ve tip alanları yok', (() => {
+test('yeni denetim ekranı G checklistini korur; B/E/H1 için yalnız FR.65 saha kaydı açar', (() => {
   const start = app.indexOf('function showYeniForm()');
   const end = app.indexOf('function showOnayEkrani(f, tahmini)', start);
   const flow = app.slice(start, end);
-  return flow.includes('sDenetimTuru: DENETIM_TURLERI.MODUL_G') &&
-    flow.includes('yalnız Modül G saha denetimlerini yürütür') &&
+  return flow.includes("${seg('sModul', ['G','B','E','H1'])}") &&
+    flow.includes("if (single.module !== 'G')") &&
+    flow.includes("akış: 'fr65_saha_v1'") &&
     flow.includes('modul: \'Modül G\'') &&
     flow.includes('const kontrolProfil = KONTROL_PROFILLERI.TAM') &&
     !flow.includes("seg('sDenetimTuru'") && !flow.includes('id="fAnaTip"') &&
@@ -1193,10 +1233,119 @@ test('Modül G kapısı B/E/H1 ve bilinmeyen profilleri reddeder; eski etiketsiz
     !check({ modul: 'Modül H1' }) &&
     !check({ kontrol_profili: 'beklenmeyen_profil' }) && !check(null);
 })());
-test('eski B/E/H1 kayıtları listede kilitli, devam/yeniden açma ve takip akışına kapalı',
-  app.includes('card.disabled = !modulG') &&
+test('B/E/H1 erişimi yalnız yeni FR.65 akış işareti bulunan doğru modül kaydında açılır', (() => {
+  const start = app.indexOf('function fr65SahaKaydiMi(denetim)');
+  const end = app.indexOf('function formOdakliDenetimMi(', start);
+  const context = {
+    DENETIM_TURLERI: {
+      MODUL_B: 'Modül B - AB Tip İncelemesi',
+      MODUL_E: 'Modül E - Gözetim Saha Teyidi',
+      MODUL_H1: 'Modül H1 - Gözetim Saha Teyidi',
+    },
+    KONTROL_PROFILLERI: {
+      MODUL_B: 'modul_b_tip_inceleme',
+      SAHA_TEYIDI_E: 'saha_teyidi_e',
+      SAHA_TEYIDI_H1: 'saha_teyidi_h1',
+    },
+    denetimFormModulu: record => ({
+      modul_b_tip_inceleme: 'B', saha_teyidi_e: 'E', saha_teyidi_h1: 'H1', modul_g_tam: 'G',
+    })[record?.kontrol_profili] || null,
+  };
+  vm.runInNewContext(`${app.slice(start, end)}; globalThis.checkCapture = fr65SahaKaydiMi;`, context);
+  const check = context.checkCapture;
+  const marked = (module, type, profile) => ({ modul: module, denetim_turu: type, kontrol_profili: profile, denetim_form_kayitlari: { saha_veri_akisi: 'fr65_saha_v1' } });
+  return check(marked('Modül B','Modül B - AB Tip İncelemesi','modul_b_tip_inceleme')) &&
+    check(marked('Modül E','Modül E - Gözetim Saha Teyidi','saha_teyidi_e')) &&
+    check(marked('Modül H1','Modül H1 - Gözetim Saha Teyidi','saha_teyidi_h1')) &&
+    !check({ kontrol_profili: 'modul_b_tip_inceleme', denetim_form_kayitlari: { forms: { FR65: {} } } }) &&
+    !check(marked('Modül E','Modül B - AB Tip İncelemesi','saha_teyidi_e'));
+})());
+test('yeni FR.65 kaydı B/E/H1 profilini doğrular, G checklisti veya resmî çıktı snapshotı oluşturmaz', (() => {
+  const start = app.indexOf('async function olusturFr65Kaydi(f)');
+  const end = app.indexOf('function showYeniForm()', start);
+  const flow = app.slice(start, end);
+  return ['Modül B','Modül E','Modül H1'].every(module => flow.includes(`'${module}':`)) &&
+    flow.includes('emptyFr65Capture(now)') && flow.includes("ana_standart: '81-20'") &&
+    flow.includes('A3 hiçbir B/E/H1 kaydına yazılmaz') &&
+    flow.includes("await localWrite('denetimler', d, 'denetimler', { insert_only: true })") &&
+    !flow.includes('saha_kontrol') && !flow.includes('FormOutput');
+})());
+test('FR.65 alanları cihaz günlüğüne anında, IndexedDB/outbox’a debounce ve çıkışta flush ile yazılır', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage') &&
+    flow.includes('AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage') &&
+    flow.includes('setTimeout(() =>') && flow.includes('650') &&
+    flow.includes("await localWrite('denetimler', latest, 'denetimler', {") &&
+    flow.includes("data-fr65-capture-prop=\"file_value\"") &&
+    flow.includes("data-fr65-capture-prop=\"field_value\"") &&
+    flow.includes("data-fr65-capture-prop=\"note\"") &&
+    flow.includes('activeFr65Flush = flushCapture') &&
+    flow.includes('uygunluk veya tamlık kararı değildir');
+})());
+test('FR.65 yerel taslağı aynı kayıt sürümünde kurtarılır; çakışma ezilmeden korunur ve yalnız açık onayla geri yüklenir', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('inspectFr65Capture(originalValues, ownCaptureDraft, d.updated_at)') &&
+    flow.includes("const captureDraftConflict = captureDraft.kind === 'conflict'") &&
+    flow.includes('Bu cihazda çakışan FR.65 taslağı korunuyor') &&
+    flow.includes('Bu cihaz taslağını geri yükle') &&
+    flow.includes('if (!confirm(\'Bu cihazdaki FR.65 taslağı') &&
+    flow.includes('String(latest.updated_at || \'\') !== String(d.updated_at || \'\')') &&
+    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email)');
+})());
+test('FR.65 çevrimdışı güncellemeleri sunucuda updated_at karşılaştırmalı PATCH kullanır; çakışmada outbox korunur',
+  app.includes("method: 'PATCH'") &&
+  app.includes("id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(expectedUpdatedAt)}") &&
+  app.includes("headers: { 'Prefer': 'return=representation' }") &&
+  app.includes('rows.length !== 1') &&
+  app.includes("else if (item.conditional_update)") &&
+  app.includes("condition.expected_updated_at") &&
+  app.includes("item.sync_status = 'conflict'") &&
+  app.includes("await DB.outboxPut(item)") &&
+  app.includes("item.table !== 'denetimler'") &&
+  app.includes("rows[0].denetim_form_kayitlari.saha_veri_akisi !== 'fr65_saha_v1'"));
+test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler beklenen kayıt sürümüne bağlıdır', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  const createStart = app.indexOf('async function olusturFr65Kaydi(f)');
+  const createEnd = app.indexOf('function showYeniForm()', createStart);
+  const createFlow = app.slice(createStart, createEnd);
+  const correctionStart = app.indexOf('function duzeltmeNedeniSec(d)');
+  const correctionEnd = app.indexOf('async function takipDenetimiOlustur', correctionStart);
+  const correctionFlow = app.slice(correctionStart, correctionEnd);
+  return flow.includes('expected_updated_at: baseUpdatedAt') &&
+    flow.includes("expected_updated_at: expectedUpdatedAt") &&
+    flow.includes("fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at']") &&
+    flow.includes("fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'updated_at']") &&
+    correctionFlow.includes('const fr65Capture = fr65SahaKaydiMi(d)') &&
+    correctionFlow.includes('expected_updated_at: expectedUpdatedAt') &&
+    createFlow.includes('insert_only: true') &&
+    app.includes("else if (item.insert_only)") &&
+    app.includes('async function insertIgnoreDuplicates(table, rows)') &&
+    app.includes('if (options.conditional_update) outboxItem.conditional_update = options.conditional_update');
+})());
+test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  const baseline = flow.indexOf('baseUpdatedAt = latest.updated_at;');
+  const versionCheck = flow.indexOf('if (version === editVersion)', baseline);
+  return baseline >= 0 && versionCheck > baseline &&
+    flow.includes('baseFr65 = stableStringify(next.forms.FR65);') &&
+    flow.includes('Object.assign(originalValues, values);') &&
+    /rebaseFr65Capture\(\s*localStorage, d\.id, API\.email, committedBaseUpdatedAt, baseUpdatedAt\)/.test(flow) &&
+    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email)');
+})());
+test('eski B/E/H1 kayıtları kilitli; yalnız yeni işaretli FR.65 kaydı açılır, takip G ile sınırlı',
+  app.includes("function fr65SahaKaydiMi(denetim)") &&
+  app.includes("kayit.saha_veri_akisi === 'fr65_saha_v1'") &&
+  app.includes('const supported = modulG || fr65Capture') &&
+  app.includes('card.disabled = !supported') &&
   app.includes('Eski kayıt korundu; bu uygulamada açılmaz') &&
-  app.includes('AVES Saha yalnız Modül G içindir') &&
   app.includes('if (!sahaUygulamaModuluGMi(denetim))') &&
   app.includes('return sahaUygulamaModuluGMi(d) && kontrolProfili(d) === KONTROL_PROFILLERI.TAM') &&
   app.includes('if (!sahaUygulamaModuluGMi(kaynak))'));
@@ -1223,7 +1372,9 @@ test('TS EN 81-1/2+A3 yeni denetim akışında yalnız Modül G ile mümkündür
   const flow = app.slice(start, end);
   return flow.includes('data-v="81-1/2+A3"') &&
     flow.includes('const kontrolProfil = KONTROL_PROFILLERI.TAM') &&
-    flow.includes("single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G") &&
+    flow.includes("single.module !== 'G'") &&
+    app.includes("ana_standart: '81-20'") &&
+    app.includes("A3 hiçbir B/E/H1 kaydına yazılmaz") &&
     app.includes("f.modul !== 'Modül G' || f.kontrolProfili !== KONTROL_PROFILLERI.TAM");
 })());
 test('rc3.9.8 Modül B migration madde verisini değiştirmiyor, yalnız denetimler şemasını genişletiyor',
