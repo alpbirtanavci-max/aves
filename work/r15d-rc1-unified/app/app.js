@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.83';
+const APP_VERSION = 'R15D-rc3.9.84';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -3114,6 +3114,11 @@ function showYeniForm() {
           if (input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true' && !input.value.trim()) return;
           value[input.dataset.fr65CaptureProp] = input.value.trim();
         });
+        if (row.classList.contains('fr65-optional-serial')) {
+          const hasSerialData = ['marka', 'tip', 'seri_no'].some(prop => String(value[prop] || '').trim());
+          if (hasSerialData) value.var_mi = 'Var';
+          else if (value.var_mi === 'Var') delete value.var_mi;
+        }
         if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
         else delete values[row.dataset.fr65CaptureKey];
       });
@@ -3298,19 +3303,12 @@ function showYeniForm() {
         : '';
       const wrapperClose = condition ? '</div>' : '';
       if (section.kind === 'serial' && fieldType === 'optional_serial') {
-        const detailsOpen = value.var_mi === 'Var';
+        const detailsOpen = value.var_mi === 'Var' || ['marka', 'tip', 'seri_no'].some(prop => String(value[prop] || '').trim());
         return `<article class="tech-field fr65-optional-serial" data-fr65-capture-key="${esc(key)}">
-          <b>${esc(label)}</b>
-          <label>Bu konumda ek tampon durumu
-            <select data-fr65-capture-prop="var_mi" ${disabled}>
-              <option value="" ${value.var_mi ? '' : 'selected'}>Seçin</option>
-              <option value="Yok" ${value.var_mi === 'Yok' ? 'selected' : ''}>Yok</option>
-              <option value="Var" ${value.var_mi === 'Var' ? 'selected' : ''}>Var</option>
-            </select>
-          </label>
-          <div class="fr65-conditional fr65-extra-serial-fields" data-fr65-condition-key="${esc(key)}" data-fr65-condition-prop="var_mi" data-fr65-condition-value="Var" ${detailsOpen ? '' : 'hidden'}>
+          <details class="fr65-extra-serial-fields" ${detailsOpen ? 'open' : ''}>
+            <summary>${esc(label)} <span>Varsa bilgilerini ekle</span></summary>
             ${renderSerialInputs(value, disabled)}
-          </div>
+          </details>
         </article>`;
       }
       if (section.kind === 'serial' && fieldType === 'optional_gsm') {
@@ -3383,6 +3381,11 @@ function showYeniForm() {
       const legacyMovingBufferNotice = section.key === 'seri_numaralari' && legacyMovingText
         ? `<aside class="fr65-legacy-notice"><b>Önceki hareketli tampon kaydı korunuyor</b><span>${esc(legacyMovingText)}</span><small>Bu eski kaydın kabine mi karşı ağırlığa mı ait olduğu otomatik belirlenemiyor. Gerekirse bilgiyi yukarıdaki doğru ek tampon alanına aktarın.</small></aside>`
         : '';
+      const legacyRailSpacing = normalized.forms.FR65?.values?.raylar_arasi_mesafe || {};
+      const legacyRailSpacingText = [legacyRailSpacing.field_value, legacyRailSpacing.note].filter(Boolean).join(' · ');
+      const legacyRailSpacingNotice = section.key === 'kuyu' && legacyRailSpacingText
+        ? `<aside class="fr65-legacy-notice"><b>Önceki birleşik ray aralığı kaydı korunuyor</b><span>${esc(legacyRailSpacingText)}</span><small>Yeni kayıtta kabin ana rayları ve karşı ağırlık rayları ayrı alanlara girilir.</small></aside>`
+        : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
         const field = section.fields[fieldIndex];
@@ -3397,7 +3400,7 @@ function showYeniForm() {
             : field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
             : field[0] === 'kabin_kapi_genislik' ? 'Kabin kapısı net açıklığı'
               : 'Kat kapısı net açıklığı';
-          const hint = field[0] === 'kuyu_genislik' ? '<small class="fr65-field-help">Her satıra bir ölçüm girin; birimler mm.</small>'
+          const hint = field[0] === 'kuyu_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği birer sayı olarak cm cinsinden girin.</small>'
             : field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
             : '<small class="fr65-field-help">Net genişlik ve yüksekliği ayrı kutulara, mm olarak girin.</small>';
           const legacyKey = field[0] === 'kabin_kapi_genislik' ? 'kabin_kapi_acikligi'
@@ -3416,7 +3419,7 @@ function showYeniForm() {
       const nextSection = sections[index + 1];
       return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${section.key === activeSectionKey ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${legacyMovingBufferNotice}${fieldHtml.join('')}
+        <div class="tech-section-body">${legacyMovingBufferNotice}${legacyRailSpacingNotice}${fieldHtml.join('')}
           <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
         </div>
       </details>`;
