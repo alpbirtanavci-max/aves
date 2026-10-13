@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.74';
+const APP_VERSION = 'R15D-rc3.9.75';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -351,6 +351,80 @@ const API = (() => {
     }
   }
 
+  async function insertIgnoreDuplicates(table, rows) {
+    const resp = await authFetch(`/rest/v1/${table}`, {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=ignore-duplicates,return=minimal' },
+      body: JSON.stringify(rows),
+    });
+    if (!resp.ok) {
+      const text = await resp.text();
+      const err = new Error(`${table} eklenemedi (${resp.status}): ${text.slice(0,200)}`);
+      err.status = resp.status;
+      throw err;
+    }
+  }
+
+  async function conditionalUpdate(table, id, expectedUpdatedAt, patch, confirmationFields = Object.keys(patch || {})) {
+    if (!table || !id || !expectedUpdatedAt || !patch || typeof patch !== 'object') {
+      const err = new Error('Koşullu güncelleme için kayıt sürümü doğrulanamadı');
+      err.status = 409;
+      throw err;
+    }
+    const query = `id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(expectedUpdatedAt)}`;
+    const confirmApplied = async () => {
+      const fields = [...new Set((confirmationFields || []).filter(field =>
+        field !== 'updated_at' && !field.startsWith('son_degistiren_') &&
+        Object.prototype.hasOwnProperty.call(patch, field)))];
+      if (!fields.length) return null;
+      try {
+        const check = await authFetch(`/rest/v1/${table}?select=${encodeURIComponent(fields.join(','))}&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (!check.ok) return null;
+        const current = await check.json();
+        if (!Array.isArray(current) || current.length !== 1 ||
+            !fields.every(field => stableStringify(current[0][field] ?? null) === stableStringify(patch[field] ?? null))) return null;
+        return current[0];
+      } catch { return null; }
+    };
+    let resp;
+    try {
+      resp = await authFetch(`/rest/v1/${table}?${query}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(patch),
+      });
+    } catch {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
+      const err = new Error('Sunucu yanıtı alınamadı; FR.65 güncellemesinin sonucu doğrulanamadı ve cihazdaki veri korundu. Senkron merkezinden inceleyin.');
+      err.status = 409;
+      throw err;
+    }
+    if (!resp.ok) {
+      const text = await resp.text();
+      const err = new Error(`${table} koşullu güncellenemedi (${resp.status}): ${text.slice(0,200)}`);
+      err.status = resp.status;
+      throw err;
+    }
+    let rows;
+    try { rows = await resp.json(); }
+    catch {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
+      const err = new Error('Koşullu güncellemenin sonucu doğrulanamadı; yerel kayıt korunuyor.');
+      err.status = 409;
+      throw err;
+    }
+    if (!Array.isArray(rows) || rows.length !== 1) {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
+      const err = new Error('Kayıt başka bir oturumda değişti; cihazdaki FR.65 verisi korunuyor. Senkron merkezinden inceleyin.');
+      err.status = 409;
+      throw err;
+    }
+    return rows[0];
+  }
+
   async function del(table, filter) {
     const resp = await authFetch(`/rest/v1/${table}?${filter}`, { method: 'DELETE' });
     if (!resp.ok) {
@@ -360,7 +434,7 @@ const API = (() => {
     }
   }
 
-  return { loadSession, login, logout, select, selectPaged, upsert, del, authFetch,
+  return { loadSession, login, logout, select, selectPaged, upsert, insertIgnoreDuplicates, conditionalUpdate, del, authFetch,
     get email() { return session ? session.email : null; },
     get loggedIn() { return !!session; } };
 })();
@@ -495,6 +569,40 @@ const Sync = (() => {
               const deleted = (await DB.kvGet('deleted_ids')) || [];
               await DB.kvSet('deleted_ids', deleted.filter(x => x !== m[1]));
             }
+          } else if (item.insert_only) {
+            const rows = item.rows || [];
+            if (item.table !== 'denetimler' || rows.length !== 1 || !rows[0].id ||
+                rows[0].denetim_form_kayitlari?.saha_veri_akisi !== 'fr65_saha_v1') {
+              const err = new Error('FR.65 yeni kayıt senkronu doğrulanamadı; cihazdaki veri korundu.');
+              err.status = 409;
+              throw err;
+            }
+            await API.insertIgnoreDuplicates(item.table, rows);
+          } else if (item.conditional_update) {
+            const rows = item.rows || [];
+            const condition = item.conditional_update;
+            const allowedFields = new Set([
+              'denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at',
+              'denetim_durumu', 'calisma_tamamlandi_at', 'duzeltme_oturumu_id',
+              'duzeltme_nedeni', 'duzeltme_baslatildi_at', 'duzeltme_baslatan_email',
+              'duzeltme_baslatan_ad', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at',
+              'son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at',
+            ]);
+            if (item.table !== 'denetimler' || rows.length !== 1 || !rows[0].id ||
+                !rows[0].denetim_form_kayitlari || rows[0].denetim_form_kayitlari.saha_veri_akisi !== 'fr65_saha_v1' ||
+                !Array.isArray(condition.fields) || !condition.fields.length ||
+                !condition.expected_updated_at || condition.fields.some(field =>
+                  !allowedFields.has(field) || !Object.prototype.hasOwnProperty.call(rows[0], field))) {
+              const err = new Error('FR.65 koşullu senkron kaydı doğrulanamadı; cihazdaki veri korundu.');
+              err.status = 409;
+              throw err;
+            }
+            const patch = {};
+            for (const field of condition.fields) patch[field] = rows[0][field];
+            for (const field of ['son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at']) {
+              patch[field] = rows[0][field] ?? null;
+            }
+            await API.conditionalUpdate(item.table, rows[0].id, condition.expected_updated_at, patch, condition.fields);
           } else {
             await API.upsert(item.table, item.rows);
           }
@@ -908,7 +1016,7 @@ async function gecmisKayitlariHazirla(table, arr, store, now) {
   return events;
 }
 
-async function localWrite(table, rows, store) {
+async function localWrite(table, rows, store, options = {}) {
   const arr = Array.isArray(rows) ? rows : [rows];
   const operationId = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -938,6 +1046,8 @@ async function localWrite(table, rows, store) {
     attempt_count: 0,
     sync_status: 'pending',
   };
+  if (options.insert_only) outboxItem.insert_only = true;
+  if (options.conditional_update) outboxItem.conditional_update = options.conditional_update;
   const historyOutboxItem = historyItems.length ? {
     operation_id: crypto.randomUUID(),
     user_id: Profile.email || API.email || null,
@@ -966,6 +1076,57 @@ const UI = (() => {
   let currentDenetimId = null;
   let fotografSayilari = new Map();
   let fotografBekleyenSayisi = 0;
+  const fr65WriterIds = new Map();
+
+  function fr65KimlikKilitAl(lockName) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      navigator.locks.request(lockName, { ifAvailable: true }, lock => {
+        if (!lock) { settled = true; resolve(false); return; }
+        settled = true;
+        resolve(true);
+        // Keep this tab's writer identity reserved until the document closes.
+        return new Promise(() => {});
+      }).catch(error => { if (!settled) reject(error); });
+    });
+  }
+
+  async function fr65TaslakYazari(denetimId) {
+    const owner = String(API.email || '').trim().toLowerCase();
+    const mapKey = `${owner}:${denetimId}`;
+    if (fr65WriterIds.has(mapKey)) return fr65WriterIds.get(mapKey);
+    const storageKey = `aves_fr65_writer_${encodeURIComponent(owner)}_${encodeURIComponent(denetimId)}`;
+    let writerId = '';
+    let storedWriterId = '';
+    try {
+      storedWriterId = sessionStorage.getItem(storageKey) || '';
+    } catch {
+      storedWriterId = '';
+    }
+    const newWriterId = () => globalThis.crypto?.randomUUID?.() || `tab-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    writerId = storedWriterId || newWriterId();
+    let writerLockClaimed = false;
+    try {
+      if (navigator.locks && typeof navigator.locks.request === 'function') {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          writerLockClaimed = await fr65KimlikKilitAl(`aves-fr65-writer:${mapKey}:${writerId}`);
+          if (writerLockClaimed) break;
+          writerId = newWriterId();
+        }
+      }
+    } catch { writerLockClaimed = false; }
+    if (!writerLockClaimed) {
+      // sessionStorage can be copied by window.open. Without an exclusive
+      // browser lock, use a per-document identity; prior drafts remain available
+      // through the explicit protected-draft restore flow.
+      writerId = newWriterId();
+    }
+    if (writerLockClaimed) {
+      try { sessionStorage.setItem(storageKey, writerId); } catch { /* The in-memory identity still protects this document. */ }
+    }
+    fr65WriterIds.set(mapKey, writerId);
+    return writerId;
+  }
 
   async function fotografOnbellekYenile(denetimId) {
     if (navigator.onLine && API.loggedIn) {
@@ -1317,6 +1478,7 @@ const UI = (() => {
   let listDateFilter = 'all';
   const pendingEditorWrites = new Set();
   const editorDraftTimers = new Map();
+  let activeFr65Flush = null;
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeFilePart = (s) => (s ?? '').toString().trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 80) || 'denetim';
@@ -1533,6 +1695,21 @@ const UI = (() => {
     return ['B', 'E', 'H1'].includes(denetimFormModulu(denetim));
   }
 
+  function fr65SahaKaydiMi(denetim) {
+    if (!denetim) return false;
+    const modules = {
+      B: { name: 'Modül B', type: DENETIM_TURLERI.MODUL_B, profile: KONTROL_PROFILLERI.MODUL_B },
+      E: { name: 'Modül E', type: DENETIM_TURLERI.MODUL_E, profile: KONTROL_PROFILLERI.SAHA_TEYIDI_E },
+      H1: { name: 'Modül H1', type: DENETIM_TURLERI.MODUL_H1, profile: KONTROL_PROFILLERI.SAHA_TEYIDI_H1 },
+    };
+    const moduleKey = Object.keys(modules).find(key => modules[key].name === denetim.modul);
+    const expected = modules[moduleKey];
+    if (!expected || denetimFormModulu(denetim) !== moduleKey ||
+        denetim.denetim_turu !== expected.type || denetim.kontrol_profili !== expected.profile) return false;
+    const kayit = denetim.denetim_form_kayitlari;
+    return !!(kayit && typeof kayit === 'object' && kayit.saha_veri_akisi === 'fr65_saha_v1');
+  }
+
   // Yeni B/E/H1 denetimleri form seti odaklıdır ve G checklist satırı üretmez.
   // Eski kayıtlardaki mevcut satırlar korunur; bunları yeni ekranda gizleyip
   // kapanışta sessizce yok saymamak için yalnız satırsız kayıtlar bu akıştadır.
@@ -1557,6 +1734,12 @@ const UI = (() => {
   function denetimFormKaydi(denetim) {
     if (!denetim || typeof AVES_DENETIM_FORM_SETI === 'undefined') return null;
     return AVES_DENETIM_FORM_SETI.normalize(denetim.denetim_form_kayitlari, denetim.teknik_dosya_kayitlari);
+  }
+
+  function fr65SahaIstatistigi(denetim) {
+    if (!fr65SahaKaydiMi(denetim)) return null;
+    const record = denetimFormKaydi(denetim);
+    return AVES_TEKNIK_DOSYA_FORM.countFr65Capture(record, denetim.tahrik_tipi);
   }
 
   function denetimFormIstatistikleri(denetim) {
@@ -1701,6 +1884,7 @@ const UI = (() => {
     if (leavingInspection) {
       if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
       transitioningId = null;
+      activeFr65Flush = null;
     }
     currentView = 'list';
     currentDenetimId = null;
@@ -1721,7 +1905,7 @@ const UI = (() => {
     app.innerHTML = `
     <div class="screen">
       <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
-      <div class="scope-note"><b>AVES Saha yalnız Modül G içindir.</b> Modül B, E ve H1 formları Form Doldurucu programında hazırlanır.</div>
+      <div class="scope-note"><b>Modül G:</b> tam saha checklisti. <b>B / E / H1:</b> FR.65 referanslı ölçü ve kimlik veri kaydı. Eski B/E/H1 kayıtları açılmaz; resmî form üretimi Form Doldurucu’da kalır.</div>
       <div class="inspection-list-tools">
         <input class="searchbox" id="listSearch" type="search" placeholder="Müşteri, adres, seri veya dosya no ara…" value="${esc(listSearch)}">
         <div class="inspection-date-filter">
@@ -1739,7 +1923,7 @@ const UI = (() => {
 
     // "Kaldığın yerden devam et" — en son açılan, tamamlanmamış, görünür denetim.
     const sonKayit = await DB.kvGet('last_inspection');
-    const sonDenetim = sonKayit && denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && sahaUygulamaModuluGMi(d));
+    const sonDenetim = sonKayit && denetimler.find(d => d.id === sonKayit.id && d.denetim_durumu !== 'Çalışma Tamamlandı' && (sahaUygulamaModuluGMi(d) || fr65SahaKaydiMi(d)));
     if (sonDenetim) {
       const sonPozisyon = await DB.kvGet(`last_position_${sonDenetim.id}`);
       const resume = document.createElement('button');
@@ -1756,29 +1940,37 @@ const UI = (() => {
       const st = statsBy[d.id];
       const denetimRows = rowsBy[d.id] || [];
       const modulG = sahaUygulamaModuluGMi(d);
+      const fr65Capture = fr65SahaKaydiMi(d);
+      const supported = modulG || fr65Capture;
       const formOnly = formOdakliDenetimMi(d, denetimRows);
       const formStats = formOnly ? denetimFormIstatistikleri(d) : null;
+      const fr65Stats = fr65Capture ? fr65SahaIstatistigi(d) : null;
       const offlineState = modulG
         ? await cevrimdisiHazirlikDurumu(d, denetimRows)
-        : { ready: false, detail: 'Bu kayıt Modül G değil; bu uygulamada açılamaz.' };
-      const canEdit = modulG && canEditDenetim(d);
+        : { ready: false, detail: 'Saha verisi cihazda yerel olarak saklanır; çevrimdışı yazılabilir.' };
+      const canEdit = supported && canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
       if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
       const card = document.createElement('button');
-      card.className = `dcard${modulG ? '' : ' unsupported'}`;
-      card.disabled = !modulG;
+      card.className = `dcard${supported ? '' : ' unsupported'}`;
+      card.disabled = !supported;
       card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
       card.dataset.date = d.denetim_tarihi || '';
       card.innerHTML = `
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
         <span class="ddate">${esc(d.denetim_tarihi || '')}</span></div>
-        <div class="dmeta">${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${esc(standartOzeti(d))}</div>
+        <div class="dmeta">${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${fr65Capture ? 'FR.65 saha veri kaydı' : esc(standartOzeti(d))}</div>
         ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
         ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
-        <div class="dstats">${!modulG
+        <div class="dstats">${!supported
           ? '<span class="pill na">Bu uygulama yalnız Modül G içindir</span>'
+          : fr65Capture
+          ? `<span class="pill total">${fr65Stats.recorded}/${fr65Stats.total} FR.65 alanında veri</span>
+             <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Saha kaydı kapatıldı' : (gozden ? 'Düzenleme açık' : 'Veri toplama sürüyor')}</span>
+             ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
+             <span class="pill cached">📱 cihazda</span>`
           : formOnly
           ? `<span class="pill total">${formStats.ozet.started}/${formStats.ozet.total} formda kayıt</span>
              <span class="pill na">Madde checklisti kullanılmıyor</span>
@@ -1798,8 +1990,12 @@ const UI = (() => {
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
         ${modulG
           ? `<div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`
+          : fr65Capture
+          ? '<div class="offline-card-state ok"><b>✓ Çevrimdışı veri girişi</b><small>Değerler önce bu cihaza kaydedilir; bağlantı gelince senkronize edilir.</small></div>'
           : '<div class="unsupported-card-note">Eski kayıt korundu; bu uygulamada açılmaz. B/E/H1 formları Form Doldurucu programında yürütülür.</div>'}`;
-      if (modulG) card.onclick = () => tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d));
+      if (supported) card.onclick = () => fr65Capture
+        ? showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d))
+        : (tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d)));
       dl.appendChild(card);
     }
 
@@ -1928,6 +2124,8 @@ const UI = (() => {
     ov.onclick = e => { if (e.target === ov) close(); };
     ov.querySelectorAll('[data-reason]').forEach(btn => btn.onclick = async () => {
       btn.disabled = true;
+      const fr65Capture = fr65SahaKaydiMi(d);
+      const expectedUpdatedAt = d.updated_at;
       const now = new Date().toISOString();
       d.denetim_durumu = 'Gözden Geçirme';
       d.duzeltme_oturumu_id = crypto.randomUUID();
@@ -1940,7 +2138,16 @@ const UI = (() => {
       d.butunluk_hash = null;
       d.butunluk_hesaplandi_at = null;
       d.updated_at = now;
-      await localWrite('denetimler', d, 'denetimler');
+      await localWrite('denetimler', d, 'denetimler', fr65Capture ? {
+        conditional_update: {
+          expected_updated_at: expectedUpdatedAt,
+          fields: [
+            'denetim_durumu', 'duzeltme_oturumu_id', 'duzeltme_nedeni',
+            'duzeltme_baslatildi_at', 'duzeltme_baslatan_email', 'duzeltme_baslatan_ad',
+            'calisma_tamamlandi_at', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at', 'updated_at',
+          ],
+        },
+      } : undefined);
       close();
       inspectionReadOnly = false;
       toast('Denetim izlenebilir düzeltmeye açıldı');
@@ -2071,6 +2278,144 @@ const UI = (() => {
   }
 
   /* ---- Yeni denetim ---- */
+  async function yeniDenetimSeriNoUygunMu(seri) {
+    const seriAnahtari = normSeriNo(seri);
+    // Liste ekranı ile aynı görünürlük kuralı kullanılır. Cihazda eski bir
+    // oturumdan kalmış, kullanıcıya görünmeyen kayıt yeni denetimi engellemez.
+    let ayniSeriKayitlari = (await DB.all('denetimler'))
+      .filter(item => denetimGorunebilirMi(item) && normSeriNo(item.asansor_seri_no) === seriAnahtari);
+    if (navigator.onLine) {
+      try {
+        const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi,denetim_durumu&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
+        const birlesikKayitlar = new Map(ayniSeriKayitlari.map(item => [item.id, item]));
+        sunucudakiKayitlar.filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari)
+          .forEach(item => birlesikKayitlar.set(item.id, { ...birlesikKayitlar.get(item.id), ...item }));
+        ayniSeriKayitlari = [...birlesikKayitlari.values()];
+      } catch {
+        toast('Seri no tekrar kontrolü sunucuda yapılamadı; bağlantıyı kontrol edin');
+        return false;
+      }
+    }
+    const warning = seriNoTekrarUyarisi(ayniSeriKayitlari);
+    if (warning) { toast(warning); return false; }
+    return true;
+  }
+
+  function showFr65OnayEkrani(f) {
+    if (!f || f.akış !== 'fr65_saha_v1' || !['Modül B','Modül E','Modül H1'].includes(f.modul)) {
+      toast('FR.65 saha veri kaydı için modül seçimi doğrulanamadı');
+      return;
+    }
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    const row = (label, value) => `<div class="onay-satir"><span>${esc(label)}</span><b>${esc(value || '—')}</b></div>`;
+    ov.innerHTML = `<div class="modal">
+      <h3>Saha veri kaydını başlat</h3>
+      <div class="onay-box">${row('Mühendis', f.muhendis)}${row('Müşteri', f.musteri)}${row('Seri no', f.seri)}${row('Adres', f.adres)}${row('Modül', f.modul)}${row('Tahrik tipi', f.tahrik)}</div>
+      <div class="photo-help">Bu akış yalnız ÜB.FR.65 referanslı teknik dosya ve saha verilerini toplar. Uygunluk/belgelendirme değerlendirmesi veya resmî form üretmez.</div>
+      <button class="btn btn-ghost" id="fr65Cancel" style="margin-bottom:8px">‹ Bilgileri düzelt</button>
+      <button class="btn btn-primary" id="fr65Start">Saha kaydını başlat</button>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#fr65Cancel').onclick = () => ov.remove();
+    ov.onclick = event => { if (event.target === ov) ov.remove(); };
+    ov.querySelector('#fr65Start').onclick = async () => {
+      const button = ov.querySelector('#fr65Start');
+      button.disabled = true;
+      button.textContent = 'Kaydediliyor…';
+      try {
+        const id = await olusturFr65Kaydi(f);
+        ov.remove();
+        await showDenetim(id);
+      } catch (error) {
+        console.error('FR.65 saha kaydı oluşturulamadı', error);
+        button.disabled = false;
+        button.textContent = 'Saha kaydını başlat';
+        toast(error.message || 'Saha kaydı oluşturulamadı; bilgiler korunuyor');
+      }
+    };
+  }
+
+  async function olusturFr65Kaydi(f) {
+    const moduleMap = {
+      'Modül B': { type: DENETIM_TURLERI.MODUL_B, profile: KONTROL_PROFILLERI.MODUL_B },
+      'Modül E': { type: DENETIM_TURLERI.MODUL_E, profile: KONTROL_PROFILLERI.SAHA_TEYIDI_E },
+      'Modül H1': { type: DENETIM_TURLERI.MODUL_H1, profile: KONTROL_PROFILLERI.SAHA_TEYIDI_H1 },
+    };
+    const module = moduleMap[f.modul];
+    if (!module || f.akış !== 'fr65_saha_v1' || module.type !== f.denetimTuru || module.profile !== f.kontrolProfili) {
+      throw new Error('Modül ve saha veri akışı eşleşmiyor');
+    }
+    if (!f.musteri || !f.seri || !f.adres || !['Elektrikli','Hidrolik'].includes(f.tahrik)) {
+      throw new Error('Müşteri, seri no, adres ve tahrik tipi gerekli');
+    }
+    const now = new Date().toISOString();
+    const capture = AVES_TEKNIK_DOSYA_FORM.emptyFr65Capture(now);
+    const fr65 = capture.forms.FR65;
+    const d = {
+      id: crypto.randomUUID(),
+      dosya_no: f.dosya || null,
+      musteri_unvani: f.musteri,
+      denetim_adresi: f.adres,
+      asansor_seri_no: f.seri,
+      asansor_kimlik_no: f.kimlikNo || null,
+      modul: f.modul,
+      denetim_turu: module.type,
+      kontrol_profili: module.profile,
+      ana_tip: null,
+      tip_varyant_kodu: null,
+      // Mevcut DB sözleşmesinde ana_standart zorunludur. 81-20 burada yalnız
+      // bu alanı karşılayan uyum değeridir; FR.65 kaydı standart checklist'i
+      // veya uygunluk değerlendirmesi başlatmaz. A3 hiçbir B/E/H1 kaydına yazılmaz.
+      ana_standart: '81-20',
+      ek_standartlar: [],
+      bina_asansor_sayisi: null,
+      kabin_giris_duzeni: null,
+      kabin_kapi_acilma_tipi: null,
+      tahrik_tipi: f.tahrik,
+      makine_dairesi_tipi: null,
+      beyan_yuku_kg: null,
+      beyan_hizi_ms: null,
+      kapasite_kisi: null,
+      durak_sayisi: null,
+      aski_tipi: null,
+      denetim_form_kayitlari: capture,
+      teknik_dosya_kayitlari: { schema_version: 1, updated_at: now, fr65 },
+      denetimi_yapan: f.muhendis,
+      denetim_tarihi: localDateISO(),
+      denetim_durumu: 'Devam Ediyor',
+      saha_tamamlandi_at: null,
+      gozden_gecirme_at: null,
+      calisma_tamamlandi_at: null,
+      offline_hazir_at: null,
+      offline_hazirlayan_email: null,
+      expected_item_count: null,
+      expected_item_set_hash: null,
+      app_build_id: null,
+      kutuphane_content_hash: null,
+      snapshot_kilitli_at: null,
+      snapshot_app_build_id: APP_VERSION,
+      snapshot_kutuphane_hash: null,
+      snapshot_bolum_surumleri: null,
+      snapshot_madde_sayisi: null,
+      snapshot_madde_set_hash: null,
+      snapshot_content_hash: null,
+      butunluk_ozeti: null,
+      butunluk_hash: null,
+      butunluk_hesaplandi_at: null,
+      offline_check: null,
+      seri_numaralari: { schema_version: 1 },
+      form_cikti_snapshot: {},
+      olusturan_email: Profile.email,
+      olusturan_ad: Profile.name,
+      created_at: now,
+      updated_at: now,
+    };
+    await localWrite('denetimler', d, 'denetimler', { insert_only: true });
+    toast('FR.65 saha veri kaydı cihazda oluşturuldu');
+    return d.id;
+  }
+
   function showYeniForm() {
     if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
@@ -2093,9 +2438,17 @@ const UI = (() => {
           <div class="field full"><label for="fAdres">Adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
+      <div class="form-card"><h3>Denetim modülü</h3>
+        ${seg('sModul', ['G','B','E','H1'])}
+        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">G modülü tam saha checklistidir. B, E ve H1 için yalnız FR.65 referanslı ölçü ve kimlik verileri kaydedilir; uygunluk kararı verilmez.</p>
+      </div>
+      <div id="captureFields" class="form-card hidden"><h3>FR.65 saha veri kaydı</h3>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 2px 10px">Dosyadaki beyan ile sahada görülen/ölçülen değeri karşılaştırmadan, ayrı alanlara yazın. Ana tip ve tip varyant kodu zorunlu değildir. Bu akışta TS EN 81-1/2+A3 kullanılmaz.</p>
+        <div class="field full"><label>Tahrik tipi *</label>${seg('sCaptureTahrik', ['Elektrikli','Hidrolik'])}</div>
+      </div>
+      <div id="moduleGFields">
       <div class="form-card"><h3>Denetim kapsamı</h3>
         <b>${esc(DENETIM_TURLERI.MODUL_G)}</b>
-        <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu uygulama yalnız Modül G saha denetimlerini yürütür. Modül B, E ve H1 formları Form Doldurucu programında hazırlanır.</p>
       </div>
       <div class="form-card" id="standartCard"><h3>Ana standart *</h3>
         <div class="segs" id="sAna">
@@ -2129,20 +2482,36 @@ const UI = (() => {
         </div>
         <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">Bu asansör itfaiyeci asansörü olarak tasarlanmışsa "Evet" seçin; TS EN 81-72 maddeleri checklist'e eklenir. Kasıtlı tahribata dayanıklılık (TS EN 81-71) ve yangın anında davranış (TS EN 81-73) maddeleri her denetimde otomatik yer alır; uygulanmadıkları durum ilgili maddede belirlenir.</p>
       </div>
+      </div>
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>
     </div>`;
     document.getElementById('back').onclick = showList;
 
     // seçim davranışı
-    const single = { sDenetimTuru: DENETIM_TURLERI.MODUL_G, sItfaiyeci: 'hayir' };
-    ['sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci'].forEach(id => {
+    const single = { module: 'G', sDenetimTuru: DENETIM_TURLERI.MODUL_G, sItfaiyeci: 'hayir' };
+    const moduleTypes = {
+      G: { modul: 'Modül G', tur: DENETIM_TURLERI.MODUL_G, profil: KONTROL_PROFILLERI.TAM },
+      B: { modul: 'Modül B', tur: DENETIM_TURLERI.MODUL_B, profil: KONTROL_PROFILLERI.MODUL_B },
+      E: { modul: 'Modül E', tur: DENETIM_TURLERI.MODUL_E, profil: KONTROL_PROFILLERI.SAHA_TEYIDI_E },
+      H1: { modul: 'Modül H1', tur: DENETIM_TURLERI.MODUL_H1, profil: KONTROL_PROFILLERI.SAHA_TEYIDI_H1 },
+    };
+    const updateModuleFields = () => {
+      const isG = single.module === 'G';
+      document.getElementById('moduleGFields').classList.toggle('hidden', !isG);
+      document.getElementById('captureFields').classList.toggle('hidden', isG);
+      document.getElementById('fKaydet').textContent = isG ? 'Denetimi başlat' : 'Saha veri kaydını başlat';
+      single.sDenetimTuru = moduleTypes[single.module].tur;
+    };
+    ['sModul','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci','sCaptureTahrik'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         const b = e.target.closest('.seg'); if (!b) return;
         document.querySelectorAll(`#${id} .seg`).forEach(x => x.classList.remove('on'));
         b.classList.add('on'); single[id] = b.dataset.v;
+        if (id === 'sModul') { single.module = b.dataset.v; updateModuleFields(); }
       });
     });
+    document.querySelector('#sModul [data-v="G"]').classList.add('on');
 
     document.getElementById('fKaydet').onclick = async () => {
       const muhendis = Profile.name;
@@ -2158,7 +2527,20 @@ const UI = (() => {
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
       if (!musteri || !seri) { toast('Müşteri ünvanı ve seri no zorunlu'); return; }
       if (!adres) { toast('Adres zorunlu'); return; }
-      if (single.sDenetimTuru !== DENETIM_TURLERI.MODUL_G) { toast('Bu uygulamada yalnız Modül G denetimi oluşturulabilir'); return; }
+      if (single.module !== 'G') {
+        const module = moduleTypes[single.module];
+        if (!module || !['B','E','H1'].includes(single.module)) { toast('Bu modül için saha veri kaydı açılamaz'); return; }
+        if (!single.sCaptureTahrik) { toast('Tahrik tipini seçin'); return; }
+        const seriNoUygun = await yeniDenetimSeriNoUygunMu(seri);
+        if (!seriNoUygun) return;
+        showFr65OnayEkrani({
+          akış: 'fr65_saha_v1', muhendis, musteri, seri, adres,
+          dosya: document.getElementById('fDosya').value.trim() || null,
+          kimlikNo, modul: module.modul, denetimTuru: module.tur,
+          kontrolProfili: module.profil, tahrik: single.sCaptureTahrik,
+        });
+        return;
+      }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
       if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
@@ -2171,26 +2553,7 @@ const UI = (() => {
       // Devam eden kayıt varken yeni denetim açılmaz. Tamamlanan denetimlerden
       // sonra 365 gün geçince yeni, bağımsız denetim açılabilir. Takip denetimi
       // bu formdan değil, bağlı takip akışından üretildiği için bu kuralı aşar.
-      const seriAnahtari = normSeriNo(seri);
-      // Liste ekranı ile aynı görünürlük kuralı kullanılır. Cihazda eski bir
-      // oturumdan kalmış, kullanıcıya görünmeyen veya eksik üst bilgili kayıt
-      // yeni bir denetimi yanlışlıkla engellememelidir.
-      let ayniSeriKayitlari = (await DB.all('denetimler'))
-        .filter(item => denetimGorunebilirMi(item) && normSeriNo(item.asansor_seri_no) === seriAnahtari);
-      if (navigator.onLine) {
-        try {
-          const sunucudakiKayitlar = await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no,denetim_tarihi,denetim_durumu&asansor_seri_no=ilike.${encodeURIComponent(seri)}&limit=20`);
-          const birlesikKayitlar = new Map(ayniSeriKayitlari.map(item => [item.id, item]));
-          sunucudakiKayitlar.filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari)
-            .forEach(item => birlesikKayitlar.set(item.id, { ...birlesikKayitlar.get(item.id), ...item }));
-          ayniSeriKayitlari = [...birlesikKayitlar.values()];
-        } catch {
-          toast('Seri no tekrar kontrolü sunucuda yapılamadı; bağlantıyı kontrol edin');
-          return;
-        }
-      }
-      const seriNoUyarisi = seriNoTekrarUyarisi(ayniSeriKayitlari);
-      if (seriNoUyarisi) { toast(seriNoUyarisi); return; }
+      if (!await yeniDenetimSeriNoUygunMu(seri)) return;
 
       const ekStandartlar = single.sItfaiyeci === 'evet' ? ['81-72'] : [];
       const kontrolProfil = KONTROL_PROFILLERI.TAM;
@@ -2570,10 +2933,352 @@ const UI = (() => {
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
   }
 
+  async function renderFr65SahaKaydi(initialDenetim = null) {
+    const d = initialDenetim || await DB.get('denetimler', currentDenetimId);
+    if (!d || d.id !== currentDenetimId || !fr65SahaKaydiMi(d)) {
+      activeFr65Flush = null;
+      toast('Bu kayıt yeni B/E/H1 FR.65 saha veri akışı değil.');
+      await showList();
+      return;
+    }
+    const editPermission = canEditDenetim(d) && !inspectionReadOnly;
+    const normalized = denetimFormKaydi(d);
+    const originalValues = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
+    let baseFr65 = stableStringify(normalized.forms.FR65 || { values: {} });
+    let baseUpdatedAt = d.updated_at || '';
+    const captureWriterId = await fr65TaslakYazari(d.id);
+    const ownCaptureDraft = AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email, captureWriterId);
+    const captureDraftWriterConflict = !!(ownCaptureDraft?.writerId && ownCaptureDraft.writerId !== captureWriterId);
+    const inspectedCaptureDraft = AVES_FORM_DRAFT_JOURNAL.inspectFr65Capture(originalValues, ownCaptureDraft, d.updated_at);
+    const captureDraft = captureDraftWriterConflict
+      ? { kind: 'conflict', values: ownCaptureDraft.payload?.forms?.FR65?.values || null }
+      : inspectedCaptureDraft;
+    if (ownCaptureDraft && !captureDraftWriterConflict && inspectedCaptureDraft.kind === 'same') {
+      AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(
+        localStorage, d.id, API.email, ownCaptureDraft.ts, ownCaptureDraft.writerId || null);
+    }
+    const draftIsFr65 = captureDraft.kind !== 'none';
+    const draftValues = captureDraft.values;
+    const draftDiffers = captureDraft.kind === 'recover' || captureDraft.kind === 'conflict';
+    const captureDraftConflict = captureDraft.kind === 'conflict';
+    const restoreDraftAllowed = captureDraftConflict && editPermission;
+    const canEdit = editPermission && !captureDraftConflict;
+    currentCanEdit = canEdit;
+    if (draftIsFr65 && draftDiffers && !captureDraftConflict) {
+      normalized.forms.FR65 = { ...(normalized.forms.FR65 || {}), values: draftValues };
+    }
+    let ownsCaptureDraft = !!ownCaptureDraft && !captureDraftWriterConflict && inspectedCaptureDraft.kind !== 'same';
+    let lastCaptureDraftTs = ownsCaptureDraft ? ownCaptureDraft.ts : null;
+    let editVersion = 0;
+    let saveTimer = null;
+    let saveChain = Promise.resolve();
+    let draftWarningShown = false;
+    const sections = AVES_TEKNIK_DOSYA_FORM.visibleFr65Sections(d.tahrik_tipi);
+    const valuesAreSame = values => stableStringify(values || {}) === stableStringify(originalValues);
+    const collectValues = () => {
+      const values = {};
+      document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
+        const value = {};
+        row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
+          value[input.dataset.fr65CaptureProp] = input.value.trim();
+        });
+        if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
+      });
+      return values;
+    };
+    const updateSummary = () => {
+      const values = collectValues();
+      const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture({ forms: { FR65: { values } } }, d.tahrik_tipi);
+      const summary = document.getElementById('fr65CaptureCount');
+      if (summary) summary.textContent = `${count.recorded}/${count.total} FR.65 alanında veri var`;
+      document.querySelectorAll('[data-fr65-section-key]').forEach(section => {
+        const keys = JSON.parse(section.dataset.fr65SectionKey);
+        const done = keys.filter(key => values[key] && Object.values(values[key]).some(Boolean)).length;
+        const badge = section.querySelector('[data-fr65-section-count]');
+        if (badge) badge.textContent = `${done}/${keys.length} alan`;
+      });
+    };
+    const status = message => {
+      const element = document.getElementById('fr65CaptureSaveStatus');
+      if (element) element.textContent = message;
+    };
+    const persistValues = async version => {
+      if (version !== editVersion || !canEdit) return;
+      const values = collectValues();
+      if (valuesAreSame(values)) {
+        if (ownsCaptureDraft) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, lastCaptureDraftTs, captureWriterId);
+        status('✓ Değerler cihazda kayıtlı');
+        return;
+      }
+      const payload = AVES_DENETIM_FORM_SETI.normalize(normalized);
+      payload.saha_veri_akisi = 'fr65_saha_v1';
+      payload.source_form = 'ÜB.FR.65';
+      payload.source_revision = AVES_TEKNIK_DOSYA_FORM.FR65.revision;
+      payload.forms.FR65 = { ...(payload.forms.FR65 || {}), values };
+      payload.updated_at = new Date().toISOString();
+      const draftTs = Date.now();
+      const draftSaved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, payload, API.email, draftTs, baseUpdatedAt, captureWriterId);
+      if (draftSaved) { ownsCaptureDraft = true; lastCaptureDraftTs = draftTs; }
+      if (!draftSaved && !draftWarningShown) {
+        draftWarningShown = true;
+        toast('Taslak cihaz günlüğüne yazılamadı; ekranı kapatmadan tekrar deneyin');
+      }
+      status('Kaydediliyor…');
+      const task = saveChain.then(async () => {
+        if (version !== editVersion) return;
+        const latest = await DB.get('denetimler', d.id);
+        if (!latest || !fr65SahaKaydiMi(latest)) throw new Error('FR.65 saha kaydı bulunamadı');
+        if (!canEditDenetim(latest)) throw new Error('Bu kayıt artık düzenlemeye açık değil');
+        const current = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        const currentFr65 = stableStringify(current.forms.FR65 || { values: {} });
+        if (String(latest.updated_at || '') !== String(baseUpdatedAt) && currentFr65 !== baseFr65) {
+          throw new Error('Kayıt başka bir oturumda değişti; cihaz taslağı korunuyor. Güncel veriyi kontrol edin.');
+        }
+        const next = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        next.saha_veri_akisi = 'fr65_saha_v1';
+        next.source_form = 'ÜB.FR.65';
+        next.source_revision = AVES_TEKNIK_DOSYA_FORM.FR65.revision;
+        next.forms.FR65 = { ...(next.forms.FR65 || {}), values };
+        next.updated_at = payload.updated_at;
+        latest.denetim_form_kayitlari = next;
+        latest.teknik_dosya_kayitlari = { schema_version: 1, updated_at: payload.updated_at, fr65: next.forms.FR65 };
+        latest.updated_at = payload.updated_at;
+        await localWrite('denetimler', latest, 'denetimler', {
+          conditional_update: {
+            expected_updated_at: baseUpdatedAt,
+            fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at'],
+          },
+        });
+        const committedBaseUpdatedAt = baseUpdatedAt;
+        baseUpdatedAt = latest.updated_at;
+        baseFr65 = stableStringify(next.forms.FR65);
+        Object.keys(originalValues).forEach(key => delete originalValues[key]);
+        Object.assign(originalValues, values);
+        if (version === editVersion) {
+          if (draftSaved) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, draftTs, captureWriterId);
+          ownsCaptureDraft = false;
+          lastCaptureDraftTs = null;
+          draftWarningShown = false;
+          status('✓ Cihaza kaydedildi · sunucu eşitlemesi bekleyebilir');
+          refreshSyncState();
+        } else {
+          if (ownsCaptureDraft && !AVES_FORM_DRAFT_JOURNAL.rebaseFr65Capture(
+            localStorage, d.id, API.email, committedBaseUpdatedAt, baseUpdatedAt, captureWriterId)) {
+            draftWarningShown = true;
+            toast('Daha yeni FR.65 taslağının sürüm bağı yenilenemedi; taslak korunuyor');
+          }
+        }
+      });
+      saveChain = task.catch(() => undefined);
+      try { await task; }
+      catch (error) {
+        console.warn('FR.65 saha verisi yazılamadı; cihaz taslağı korunuyor', error);
+        status('⚠ Cihaza kayıt tamamlanmadı · taslak korunuyor');
+        toast(error.message || 'FR.65 saha verisi kaydedilemedi');
+        throw error;
+      }
+    };
+    const flushCapture = async () => {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      if (canEdit && !valuesAreSame(collectValues())) {
+        editVersion++;
+        await persistValues(editVersion);
+      }
+      await saveChain;
+    };
+    activeFr65Flush = flushCapture;
+
+    const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(normalized, d.tahrik_tipi);
+    const { items: outbox, korunan: protectedCount, bekleyen: waitingCount } = await Sync.denetimSyncOzeti(d.id);
+    const localState = protectedCount
+      ? `⚠ ${protectedCount} işlem cihazda korumada · senkron incelemesi gerekiyor`
+      : waitingCount
+        ? `✓ Cihaza kaydedildi · ${waitingCount} işlem sunucu aktarımını bekliyor`
+        : '✓ Cihaz ve sunucu eşit · Bekleyen işlem yok';
+    const readonlyBanner = canEdit || captureDraftConflict ? '' : `<div class="readonly-banner">${d.denetim_durumu === 'Çalışma Tamamlandı'
+      ? 'Saha veri kaydı kapatıldı · Yetkiniz varsa iz bırakan düzeltme ile yeniden açabilirsiniz.'
+      : 'Salt okunur · Bu kayıtta değişiklik yetkiniz yok.'}</div>`;
+    const captureDraftBanner = captureDraftConflict ? `<div class="integrity-card error"><b>Çakışan FR.65 taslağı korunuyor</b><small>${captureDraftWriterConflict
+      ? 'Bu taslak başka bir sekme veya önceki uygulama oturumu tarafından yazılmış. Bu ekranda düzenleme kilitli; diğer sekmede çalışmayı durdurup taslağı gözden geçirin.'
+      : 'Kayıt cihaz taslağı oluşturulduktan sonra değişmiş veya taslağın dayandığı kayıt sürümü doğrulanamıyor.'} Güncel kayıt aşağıda gösteriliyor; cihaz taslağı hiçbir alanı ezmeden saklanıyor.${restoreDraftAllowed ? ' Açık onayla geri yüklemek güncel FR.65 alanlarının yerine taslak değerlerini yazar ve değişikliği denetim geçmişine kaydeder.' : ' Taslağı geri yüklemek için kayıt üzerinde düzenleme yetkisi gerekir.'}</small>${restoreDraftAllowed ? '<button type="button" class="btn btn-ghost" id="fr65RestoreDraft">Korunan cihaz taslağını geri yükle</button>' : ''}</div>` : '';
+    const sectionsHtml = sections.map((section, index) => {
+      const keys = section.fields.map(([key]) => key);
+      return `<details class="tech-section" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
+        <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
+        <div class="tech-section-body">${section.fields.map(([key, label]) => {
+          const value = normalized.forms.FR65?.values?.[key] || {};
+          const disabled = canEdit ? '' : 'disabled';
+          return `<article class="tech-field" data-fr65-capture-key="${esc(key)}">
+            <b>${esc(label)}</b>
+            <div class="tech-pair">
+              <label>Teknik dosyadaki beyan
+                <textarea data-fr65-capture-prop="file_value" placeholder="Değer veya belge / çizim referansı" ${disabled}>${esc(value.file_value || '')}</textarea>
+              </label>
+              <label>Sahada görülen / ölçülen değer
+                <textarea data-fr65-capture-prop="field_value" placeholder="Gözlem ya da ölçü; ölçüyse birimiyle" ${disabled}>${esc(value.field_value || '')}</textarea>
+              </label>
+            </div>
+            <label>Açıklama / kanıt referansı
+              <textarea data-fr65-capture-prop="note" placeholder="İsteğe bağlı: fotoğraf adı, etiket veya kısa not" ${disabled}>${esc(value.note || '')}</textarea>
+            </label>
+          </article>`;
+        }).join('')}</div>
+      </details>`;
+    }).join('');
+    const safetyHtml = SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('');
+    app.innerHTML = `<div class="screen">
+      <div class="inspection-toolbar">
+        <button class="backlink" id="fr65Back">‹ Denetimler</button>
+        <div class="inspection-actions">${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}</div>
+      </div>
+      ${readonlyBanner}
+      ${captureDraftBanner}
+      <div class="det-head">
+        <div class="inspection-eyebrow">${esc(d.modul)} · ÜB.FR.65 saha veri kaydı</div>
+        <div class="dtitle">${esc(d.musteri_unvani)}</div>
+        <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)} · ${esc(d.denetim_adresi || '')}</div>
+        <div class="dmeta"><b>Tahrik:</b> ${esc(d.tahrik_tipi)} · <b>Tarih:</b> ${esc(d.denetim_tarihi || '')}</div>
+        <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
+        ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
+        <div class="local-sync-state ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
+      </div>
+      <div class="tech-source"><b>FR.65 saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} FR.65 alanında veri var</span><small>Dosya ve saha değerleri ayrı kaydedilir. Bu özet yalnız veri girilmiş alan sayısını gösterir; uygunluk veya tamlık kararı değildir. Yeni B/E/H1 saha kaydı dışında eski modül kayıtları burada açılmaz.</small></div>
+      ${sectionsHtml}
+      <div id="fr65CaptureSaveStatus" class="photo-help">${canEdit ? 'Alanları yazdıkça cihaza otomatik kaydedilir.' : 'Salt okunur gösterim.'}</div>
+      <div class="fr65-capture-actions">${canEdit ? '<button class="btn btn-ghost" id="fr65SaveNow">Şimdi kaydet</button><button class="btn btn-primary" id="fr65Complete">Saha veri kaydını tamamla</button>' : '<button class="btn btn-ghost" id="fr65BackBottom">Denetimlere dön</button>'}</div>
+    </div>`;
+    updateSummary();
+    document.getElementById('fr65Back').onclick = showList;
+    const backBottom = document.getElementById('fr65BackBottom');
+    if (backBottom) backBottom.onclick = showList;
+    const reopen = document.getElementById('fr65Reopen');
+    if (reopen) reopen.onclick = () => duzeltmeNedeniSec(d);
+    const restoreDraft = document.getElementById('fr65RestoreDraft');
+    if (restoreDraft) restoreDraft.onclick = async event => {
+      event.currentTarget.disabled = true;
+      try {
+        if (!confirm('Bu cihazdaki FR.65 taslağı, ekranda gösterilen güncel FR.65 değerlerinin yerine yazılacak ve denetim geçmişine kaydedilecek. Geri yükleyelim mi?')) return;
+        const latest = await DB.get('denetimler', d.id);
+        const freshDraft = AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email);
+        if (!latest || !fr65SahaKaydiMi(latest) || !canEditDenetim(latest) ||
+            String(latest.updated_at || '') !== String(d.updated_at || '') ||
+            !freshDraft || freshDraft.ts !== ownCaptureDraft?.ts ||
+            freshDraft.writerId !== ownCaptureDraft?.writerId ||
+            freshDraft.payload?.saha_veri_akisi !== 'fr65_saha_v1') {
+          toast('Kayıt veya cihaz taslağı bu sırada değişmiş. Hiçbir veri ezilmedi; ekranı yenileyip yeniden kontrol edin.');
+          await renderFr65SahaKaydi(await DB.get('denetimler', d.id));
+          return;
+        }
+        const restored = AVES_DENETIM_FORM_SETI.normalize(freshDraft.payload, latest.teknik_dosya_kayitlari);
+        const expectedUpdatedAt = latest.updated_at;
+        const next = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        next.saha_veri_akisi = 'fr65_saha_v1';
+        next.source_form = 'ÜB.FR.65';
+        next.source_revision = AVES_TEKNIK_DOSYA_FORM.FR65.revision;
+        next.forms.FR65 = { ...(next.forms.FR65 || {}), values: restored.forms.FR65?.values || {} };
+        const now = new Date().toISOString();
+        next.updated_at = now;
+        latest.denetim_form_kayitlari = next;
+        latest.teknik_dosya_kayitlari = { schema_version: 1, updated_at: now, fr65: next.forms.FR65 };
+        latest.updated_at = now;
+        await localWrite('denetimler', latest, 'denetimler', {
+          conditional_update: {
+            expected_updated_at: expectedUpdatedAt,
+            fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at'],
+          },
+        });
+        AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, freshDraft.ts, freshDraft.writerId || null);
+        toast('Cihazdaki FR.65 taslağı geri yüklendi ve denetim geçmişine kaydedildi');
+        await showDenetim(d.id);
+      } catch (error) {
+        console.warn('FR.65 cihaz taslağı geri yüklenemedi; taslak korundu', error);
+        toast(error.message || 'Taslak geri yüklenemedi; cihazdaki kopya korundu');
+      } finally {
+        if (document.getElementById('fr65RestoreDraft')) document.getElementById('fr65RestoreDraft').disabled = false;
+      }
+    };
+    if (canEdit) {
+      app.oninput = event => {
+        if (!event.target.matches('[data-fr65-capture-prop]')) return;
+        editVersion++;
+        const version = editVersion;
+        updateSummary();
+        const next = AVES_DENETIM_FORM_SETI.normalize(normalized);
+        next.saha_veri_akisi = 'fr65_saha_v1';
+        next.source_form = 'ÜB.FR.65';
+        next.source_revision = AVES_TEKNIK_DOSYA_FORM.FR65.revision;
+        const draftValues = collectValues();
+        next.forms.FR65 = { ...(next.forms.FR65 || {}), values: draftValues };
+        next.updated_at = new Date().toISOString();
+        const draftTs = Date.now();
+        const saved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, next, API.email, draftTs, baseUpdatedAt, captureWriterId);
+        if (saved) { ownsCaptureDraft = true; lastCaptureDraftTs = draftTs; }
+        if (!saved && !draftWarningShown) {
+          draftWarningShown = true;
+          toast('Taslak cihaz günlüğüne yazılamadı; alanı kaydetmek için bağlantı durumunu kontrol edin');
+        }
+        status('Taslak cihaz günlüğünde · kaydetme bekleniyor…');
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          saveTimer = null;
+          persistValues(version).catch(() => {});
+        }, 650);
+      };
+      document.getElementById('fr65SaveNow').onclick = async event => {
+        event.currentTarget.disabled = true;
+        try { await flushCapture(); }
+        catch { /* Draft journal keeps the unsaved values on this device. */ }
+        finally { event.currentTarget.disabled = false; }
+      };
+      document.getElementById('fr65Complete').onclick = async event => {
+        event.currentTarget.disabled = true;
+        try {
+          await flushCapture();
+          const latest = await DB.get('denetimler', d.id);
+          if (!canEditDenetim(latest)) { toast('Bu kayıt üzerinde değişiklik yetkiniz yok'); return; }
+          const latestRecord = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+          const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(latestRecord, latest.tahrik_tipi);
+          if (!confirm(`${total.recorded}/${total.total} FR.65 alanında veri var. Bu işlem yalnız veri toplama kaydını kapatır; uygunluk veya belgelendirme kararı vermez. Kaydı kapatmak istiyor musunuz?`)) return;
+          const now = new Date().toISOString();
+          const expectedUpdatedAt = latest.updated_at;
+          latest.denetim_durumu = 'Çalışma Tamamlandı';
+          latest.calisma_tamamlandi_at = now;
+          latest.updated_at = now;
+          await localWrite('denetimler', latest, 'denetimler', {
+            conditional_update: {
+              expected_updated_at: expectedUpdatedAt,
+              fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'updated_at'],
+            },
+          });
+          activeFr65Flush = null;
+          toast('Saha veri kaydı kapatıldı');
+          await showList();
+        } catch (error) {
+          toast(error.message || 'Kayıt kapatılamadı; veriler korundu');
+        } finally {
+          if (document.getElementById('fr65Complete')) document.getElementById('fr65Complete').disabled = false;
+        }
+      };
+    }
+    if (canEdit && draftDiffers && draftIsFr65) {
+      status('Cihazdaki kaydedilmemiş FR.65 taslağı bulundu · geri yükleniyor…');
+      editVersion++;
+      persistValues(editVersion).catch(() => {});
+    }
+  }
+
   async function showDenetim(id, forceReadOnly = false, initialFilter = 'all') {
     const denetim = await DB.get('denetimler', id);
     if (!denetimGorunebilirMi(denetim)) {
       toast('Bu denetimi görüntüleme yetkiniz yok');
+      return;
+    }
+    if (fr65SahaKaydiMi(denetim)) {
+      currentView = 'inspection';
+      currentDenetimId = id;
+      setBrandHomeEnabled(true);
+      inspectionReadOnly = !!forceReadOnly;
+      await renderFr65SahaKaydi(denetim);
       return;
     }
     if (!sahaUygulamaModuluGMi(denetim)) {
@@ -2660,6 +3365,10 @@ const UI = (() => {
   async function renderDenetim() {
     const d = await DB.get('denetimler', currentDenetimId);
     if (!d) { showList(); return; }
+    if (fr65SahaKaydiMi(d)) {
+      await renderFr65SahaKaydi(d);
+      return;
+    }
     if (!sahaUygulamaModuluGMi(d)) {
       toast('Bu uygulama yalnız Modül G denetimlerini açar.');
       await showList();
@@ -3291,6 +4000,7 @@ const UI = (() => {
   }
 
   async function flushEditorWrites() {
+    if (activeFr65Flush) await activeFr65Flush();
     const active = document.activeElement;
     // Codex incelemesi: data-bolumnot (Bölüm açıklaması) burada eksikti —
     // yalnız change'te (blur) yazılıyor, debounce'a hiç girmiyordu; bu
@@ -4945,7 +5655,12 @@ const UI = (() => {
     // döndürür; bu yüzden yalnız veri listesi veya açık denetim yenilenir.
     refresh: () => {
       if (!UI.canRefreshSafely()) return;
-      if (currentView === 'inspection' && currentDenetimId) renderDenetim();
+      if (currentView === 'inspection' && currentDenetimId && activeFr65Flush) {
+        flushEditorWrites().then(() => {
+          if (currentView === 'inspection' && currentDenetimId) renderDenetim();
+        }).catch(error => console.warn('Saha veri kaydı yenilenmeden önce kaydedilemedi', error));
+      }
+      else if (currentView === 'inspection' && currentDenetimId) renderDenetim();
       else if (currentView === 'list') showList();
     },
   };
