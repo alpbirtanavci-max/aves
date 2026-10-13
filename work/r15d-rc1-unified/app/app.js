@@ -3677,6 +3677,20 @@ function showYeniForm() {
           const latest = await DB.get('denetimler', d.id);
           if (!canEditDenetim(latest)) { toast('Bu kayıt üzerinde değişiklik yetkiniz yok'); return; }
           const latestRecord = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+          const gsmIdentity = latestRecord.forms.FR65?.values?.gsm_modulu || {};
+          const gsmMissing = ['marka', 'tip', 'imei'].filter(prop => !String(gsmIdentity[prop] || '').trim());
+          if (gsmMissing.length) {
+            const serialSection = document.querySelector('[data-fr65-section-id="seri_numaralari"]');
+            if (serialSection) {
+              serialSection.open = true;
+              rememberCaptureSection('seri_numaralari');
+              const gsmRow = serialSection.querySelector('[data-fr65-capture-key="gsm_modulu"]');
+              gsmRow?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              gsmRow?.querySelector(`[data-fr65-capture-prop="${gsmMissing[0]}"]`)?.focus({ preventScroll: true });
+            }
+            toast('Kaydı kapatmak için GSM modülünün marka, tip ve IMEI bilgilerini tamamlayın');
+            return;
+          }
           const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(latestRecord, latest.tahrik_tipi);
           if (!confirm(`${total.recorded}/${total.total} FR.65 alanında veri var. Bu işlem yalnız veri toplama kaydını kapatır; uygunluk veya belgelendirme kararı vermez. Kaydı kapatmak istiyor musunuz?`)) return;
           const now = new Date().toISOString();
