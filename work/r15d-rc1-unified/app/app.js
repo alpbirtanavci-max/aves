@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.79';
+const APP_VERSION = 'R15D-rc3.9.80';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -2467,7 +2467,7 @@ const UI = (() => {
   function fr65SahaSayisalAlanlariGecerliMi(f) {
     const pozitifTamSayi = value => Number.isInteger(value) && value > 0;
     const opsiyonelPozitifTamSayi = value => value === null || pozitifTamSayi(value);
-    const opsiyonelOlcu = value => value === null || (Number.isFinite(value) && value >= 0);
+    const opsiyonelOlcu = value => value == null || (Number.isFinite(value) && value >= 0);
     return pozitifTamSayi(f.yuk) && pozitifTamSayi(f.kapasite) &&
       Number.isFinite(f.hiz) && f.hiz > 0 && pozitifTamSayi(f.durak) &&
       opsiyonelPozitifTamSayi(f.kat) && opsiyonelPozitifTamSayi(f.binaAsansorSayisi) &&
@@ -2520,8 +2520,6 @@ function showYeniForm() {
           <div class="field"><label for="fCaptureDurak">Durak sayısı *</label><input id="fCaptureDurak" type="number" min="1" step="1" inputmode="numeric"></div>
           <div class="field"><label for="fCaptureKat">Kat sayısı</label><input id="fCaptureKat" type="number" min="1" step="1" inputmode="numeric"></div>
           <div class="field"><label for="fCaptureBinaAsansorSayisi">Binadaki toplam asansör sayısı</label><input id="fCaptureBinaAsansorSayisi" type="number" min="1" step="1" inputmode="numeric"></div>
-          <div class="field"><label for="fCaptureSeyir">Seyir mesafesi (m)</label><input id="fCaptureSeyir" type="number" min="0" step="0.01" inputmode="decimal"></div>
-          <div class="field"><label for="fCaptureKuyu">Kuyu yüksekliği (m)</label><input id="fCaptureKuyu" type="number" min="0" step="0.01" inputmode="decimal"></div>
         </div>
       </div>
       <div id="moduleGFields">
@@ -2609,8 +2607,6 @@ function showYeniForm() {
       const captureDurak = denetimSayisiOku(document.getElementById('fCaptureDurak'));
       const captureKat = denetimSayisiOku(document.getElementById('fCaptureKat'));
       const captureBinaAsansorSayisi = denetimSayisiOku(document.getElementById('fCaptureBinaAsansorSayisi'));
-      const captureSeyir = denetimSayisiOku(document.getElementById('fCaptureSeyir'));
-      const captureKuyu = denetimSayisiOku(document.getElementById('fCaptureKuyu'));
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
       if (!musteri || !seri) { toast('Asansör firması adı ve seri no zorunlu'); return; }
       if (!firmaAdresi || !adres) { toast('Firma adresi ve asansörün bulunduğu adres zorunlu'); return; }
@@ -2622,9 +2618,8 @@ function showYeniForm() {
         if (!fr65SahaSayisalAlanlariGecerliMi({
           yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
           kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
-          seyirMesafesi: captureSeyir, kuyuYuksekligi: captureKuyu,
         })) {
-          toast('Yük, kapasite ve durak tam sayı olmalı; hız ve ölçü alanlarını kontrol edin'); return;
+          toast('Yük, kapasite ve durak tam sayı olmalı; hız alanını kontrol edin'); return;
         }
         const seriNoUygun = await yeniDenetimSeriNoUygunMu(seri);
         if (!seriNoUygun) return;
@@ -2635,7 +2630,6 @@ function showYeniForm() {
           kontrolProfili: module.profil, tahrik: single.sCaptureTahrik, md: single.sCaptureMD || null,
           yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
           kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
-          seyirMesafesi: captureSeyir, kuyuYuksekligi: captureKuyu,
         });
         return;
       }
@@ -3084,6 +3078,7 @@ function showYeniForm() {
       document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
         const value = { ...(values[row.dataset.fr65CaptureKey] || {}) };
         row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
+          if (input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true' && !input.value.trim()) return;
           value[input.dataset.fr65CaptureProp] = input.value.trim();
         });
         if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
@@ -3091,17 +3086,39 @@ function showYeniForm() {
       });
       return values;
     };
+    const updateCaptureConditions = () => {
+      document.querySelectorAll('[data-fr65-condition-key]').forEach(wrapper => {
+        const sourceRow = Array.from(document.querySelectorAll('[data-fr65-capture-key]'))
+          .find(row => row.dataset.fr65CaptureKey === wrapper.dataset.fr65ConditionKey);
+        const prop = wrapper.dataset.fr65ConditionProp || 'field_value';
+        const source = sourceRow?.querySelector(`[data-fr65-capture-prop="${prop}"]`);
+        wrapper.hidden = !source || source.value !== wrapper.dataset.fr65ConditionValue;
+      });
+    };
     const updateSummary = () => {
       const values = collectValues();
       const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture({ forms: { FR65: { values } } }, d.tahrik_tipi);
       const summary = document.getElementById('fr65CaptureCount');
       if (summary) summary.textContent = `${count.recorded}/${count.total} saha alanında veri var`;
-      document.querySelectorAll('[data-fr65-section-key]').forEach(section => {
-        const keys = JSON.parse(section.dataset.fr65SectionKey);
-        const done = keys.filter(key => values[key] && ['field_value', 'note', 'marka', 'tip', 'seri_no']
-          .some(prop => String(values[key][prop] || '').trim())).length;
+      document.querySelectorAll('[data-fr65-section-id]').forEach(section => {
+        const sectionCount = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(
+          { forms: { FR65: { values } } }, d.tahrik_tipi, section.dataset.fr65SectionId);
         const badge = section.querySelector('[data-fr65-section-count]');
-        if (badge) badge.textContent = `${done}/${keys.length} alan`;
+        if (badge) badge.textContent = `${sectionCount.recorded}/${sectionCount.total} alan`;
+        const progress = section.querySelector('[data-fr65-section-progress]');
+        if (progress) progress.textContent = sectionCount.recorded === sectionCount.total
+          ? 'Bölüm hazır ✓'
+          : `${sectionCount.total - sectionCount.recorded} alan boş`;
+        const next = section.querySelector('[data-fr65-next]');
+        if (next) {
+          const nextKey = next.dataset.fr65NextKey;
+          const nextSection = sections.find(item => item.key === nextKey);
+          next.textContent = nextSection
+            ? (sectionCount.recorded === sectionCount.total
+              ? `Bölümü tamamla · ${nextSection.tab || nextSection.title} →`
+              : `Sonrakine geç · ${nextSection.tab || nextSection.title} →`)
+            : (sectionCount.recorded === sectionCount.total ? 'Bölümü tamamla ✓' : 'Bölüm kaydını bitir');
+        }
       });
     };
     const status = message => {
@@ -3218,39 +3235,148 @@ function showYeniForm() {
     const captureDraftBanner = captureDraftConflict ? `<div class="integrity-card error"><b>Çakışan FR.65 taslağı korunuyor</b><small>${captureDraftWriterConflict
       ? 'Bu taslak başka bir sekme veya önceki uygulama oturumu tarafından yazılmış. Bu ekranda düzenleme kilitli; diğer sekmede çalışmayı durdurup taslağı gözden geçirin.'
       : 'Kayıt cihaz taslağı oluşturulduktan sonra değişmiş veya taslağın dayandığı kayıt sürümü doğrulanamıyor.'} Güncel kayıt aşağıda gösteriliyor; cihaz taslağı hiçbir alanı ezmeden saklanıyor.${restoreDraftAllowed ? ' Açık onayla geri yüklemek güncel FR.65 alanlarının yerine taslak değerlerini yazar ve değişikliği denetim geçmişine kaydeder.' : ' Taslağı geri yüklemek için kayıt üzerinde düzenleme yetkisi gerekir.'}</small>${restoreDraftAllowed ? '<button type="button" class="btn btn-ghost" id="fr65RestoreDraft">Korunan cihaz taslağını geri yükle</button>' : ''}</div>` : '';
-    const quickNavHtml = `<nav class="fr65-quick-nav" aria-label="Genel bilgiler, seri numaraları ve ölçü sekmeleri">
+    const quickNavHtml = `<nav class="fr65-quick-nav" aria-label="FR.65 saha bölümleri">
       ${sections.map(section => `<button type="button" data-fr65-jump="${esc(section.key)}">${esc(section.tab || section.title)}</button>`).join('')}
     </nav>`;
+    const fieldOptions = AVES_TEKNIK_DOSYA_FORM.FR65_FIELD_OPTIONS;
+    const fieldHelp = AVES_TEKNIK_DOSYA_FORM.FR65_FIELD_HELP;
+    const fieldConditions = AVES_TEKNIK_DOSYA_FORM.FR65_FIELD_CONDITIONS;
+    const renderSerialInputs = (value, disabled, thirdLabel = 'Seri no', thirdProp = 'seri_no') => `
+      <div class="fr65-serial-fields">
+        <label>Marka / üretici<input data-fr65-capture-prop="marka" value="${esc(value.marka || '')}" autocomplete="off" ${disabled}></label>
+        <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
+        <label>${thirdLabel}<input data-fr65-capture-prop="${thirdProp}" value="${esc(value[thirdProp] || '')}" autocomplete="off" ${disabled}></label>
+      </div>`;
+    const renderCaptureField = (section, field) => {
+      const [key, label, fieldType] = field;
+      const value = normalized.forms.FR65?.values?.[key] || {};
+      const legacyDetailParent = ({
+        kismen_kapali_kuyu_detay: 'kismen_kapali_kuyu',
+        kuyu_alti_kullanim_yuk_detay: 'kuyu_alti_kullanim_yuk',
+      })[key];
+      const legacyParentValue = legacyDetailParent
+        ? String(normalized.forms.FR65?.values?.[legacyDetailParent]?.field_value || '') : '';
+      const inheritedLegacyDetail = legacyParentValue && !['Var', 'Yok'].includes(legacyParentValue)
+        ? legacyParentValue : '';
+      const disabled = canEdit && fieldType !== 'readonly' ? '' : 'disabled';
+      const condition = fieldConditions[key];
+      const wrapperOpen = condition
+        ? `<div class="fr65-conditional" data-fr65-condition-key="${esc(condition.key)}" data-fr65-condition-value="${esc(condition.value)}" ${String(normalized.forms.FR65?.values?.[condition.key]?.field_value || '') === condition.value ? '' : 'hidden'}>`
+        : '';
+      const wrapperClose = condition ? '</div>' : '';
+      if (section.kind === 'serial' && fieldType === 'optional_serial') {
+        const detailsOpen = value.var_mi === 'Var';
+        return `<article class="tech-field fr65-optional-serial" data-fr65-capture-key="${esc(key)}">
+          <b>${esc(label)}</b>
+          <label>Bu konumda ek tampon durumu
+            <select data-fr65-capture-prop="var_mi" ${disabled}>
+              <option value="" ${value.var_mi ? '' : 'selected'}>Seçin</option>
+              <option value="Yok" ${value.var_mi === 'Yok' ? 'selected' : ''}>Yok</option>
+              <option value="Var" ${value.var_mi === 'Var' ? 'selected' : ''}>Var</option>
+            </select>
+          </label>
+          <div class="fr65-conditional fr65-extra-serial-fields" data-fr65-condition-key="${esc(key)}" data-fr65-condition-prop="var_mi" data-fr65-condition-value="Var" ${detailsOpen ? '' : 'hidden'}>
+            ${renderSerialInputs(value, disabled)}
+          </div>
+        </article>`;
+      }
+      if (section.kind === 'serial' && fieldType === 'optional_gsm') {
+        return `<article class="tech-field fr65-optional-gsm" data-fr65-capture-key="${esc(key)}">
+          <b>${esc(label)}</b>
+          <label>GSM modülü durumu
+            <select data-fr65-capture-prop="var_mi" ${disabled}>
+              <option value="" ${value.var_mi ? '' : 'selected'}>Seçin</option>
+              <option value="Yok" ${value.var_mi === 'Yok' ? 'selected' : ''}>Yok</option>
+              <option value="Var" ${value.var_mi === 'Var' ? 'selected' : ''}>Var</option>
+            </select>
+          </label>
+          <div class="fr65-conditional" data-fr65-condition-key="${esc(key)}" data-fr65-condition-prop="var_mi" data-fr65-condition-value="Var" ${value.var_mi === 'Var' ? '' : 'hidden'}>
+            ${renderSerialInputs(value, disabled, 'IMEI', 'imei')}
+          </div>
+        </article>`;
+      }
+      if (section.kind === 'serial' || fieldType === 'serial') {
+        return `<article class="tech-field fr65-serial-row" data-fr65-capture-key="${esc(key)}">
+          <b>${esc(label)}</b>${renderSerialInputs(value, disabled)}
+        </article>`;
+      }
+      const options = fieldOptions[key] || [];
+      let fieldControl = '';
+      if (fieldType === 'readonly') {
+        fieldControl = `<input data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`;
+      } else if (fieldType === 'select') {
+        const rawCurrent = String(value.field_value || '');
+        const oldFreeTextChoice = ['kismen_kapali_kuyu', 'kuyu_alti_kullanim_yuk'].includes(key) &&
+          rawCurrent && !options.includes(rawCurrent);
+        const current = oldFreeTextChoice ? 'Var' : rawCurrent;
+        const legacyOption = current && !options.includes(current)
+          ? `<option value="${esc(current)}" selected>${esc(current)} · önceki kayıt</option>`
+          : '';
+        fieldControl = `<select data-fr65-capture-prop="field_value" ${disabled}>
+          <option value="" ${current ? '' : 'selected'}>Seçin</option>${legacyOption}${options.map(option => `<option value="${esc(option)}" ${current === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}
+        </select>`;
+      } else if (fieldType === 'number') {
+        const raw = String(value.field_value || '');
+        const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
+        const preserveLegacy = !!raw && !numberValue;
+        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
+      } else {
+        fieldControl = `<textarea data-fr65-capture-prop="field_value" placeholder="Sahada görülen / ölçülen değer${section.group === 'olcu' ? '; ölçüyse birimiyle' : ''}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
+      }
+      const help = fieldHelp[key] ? `<small class="fr65-field-help">${esc(fieldHelp[key])}</small>` : '';
+      return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
+        <b>${esc(label)}</b>
+        <label>Saha verisi${fieldControl}</label>${help}
+        <details class="fr65-capture-note" ${value.note ? 'open' : ''}>
+          <summary>✎ Açıklama ekle / düzenle</summary>
+          <label>Açıklama veya saha notu<textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea></label>
+        </details>
+      </article>${wrapperClose}`;
+    };
     const sectionsHtml = sections.map((section, index) => {
       const keys = section.fields.map(([key]) => key);
+      const legacyMovingBuffer = normalized.forms.FR65?.values?.hareketli_tampon || {};
+      const legacyMovingText = [
+        legacyMovingBuffer.field_value,
+        legacyMovingBuffer.marka && `Marka: ${legacyMovingBuffer.marka}`,
+        legacyMovingBuffer.tip && `Tip: ${legacyMovingBuffer.tip}`,
+        legacyMovingBuffer.seri_no && `Seri no: ${legacyMovingBuffer.seri_no}`,
+        legacyMovingBuffer.note,
+      ].filter(Boolean).join(' · ');
+      const legacyMovingBufferNotice = section.key === 'seri_numaralari' && legacyMovingText
+        ? `<aside class="fr65-legacy-notice"><b>Önceki hareketli tampon kaydı korunuyor</b><span>${esc(legacyMovingText)}</span><small>Bu eski kaydın kabine mi karşı ağırlığa mı ait olduğu otomatik belirlenemiyor. Gerekirse bilgiyi yukarıdaki doğru ek tampon alanına aktarın.</small></aside>`
+        : '';
+      const fieldHtml = [];
+      for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
+        const field = section.fields[fieldIndex];
+        const pairedKey = section.key === 'kabin_kapilar' ? ({
+          kabin_genislik: 'kabin_derinlik',
+          kabin_kapi_genislik: 'kabin_kapi_yukseklik',
+          kat_kapisi_genislik: 'kat_kapisi_yukseklik',
+        })[field[0]] : null;
+        const nextField = section.fields[fieldIndex + 1];
+        if (pairedKey && nextField?.[0] === pairedKey) {
+          const pairLabel = field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
+            : field[0] === 'kabin_kapi_genislik' ? 'Kabin kapısı net açıklığı'
+              : 'Kat kapısı net açıklığı';
+          const hint = field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
+            : '<small class="fr65-field-help">Net genişlik ve yüksekliği ayrı kutulara, mm olarak girin.</small>';
+          const legacyKey = field[0] === 'kabin_kapi_genislik' ? 'kabin_kapi_acikligi'
+            : field[0] === 'kat_kapisi_genislik' ? 'kat_kapisi_acikligi' : null;
+          const legacyValue = legacyKey ? normalized.forms.FR65?.values?.[legacyKey]?.field_value : '';
+          const legacyNote = legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
+          fieldHtml.push(`<div class="fr65-measure-group" role="group" aria-label="${esc(pairLabel)}">
+            <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}${legacyNote}
+          </div>`);
+          fieldIndex++;
+        } else fieldHtml.push(renderCaptureField(section, field));
+      }
+      const nextSection = sections[index + 1];
       return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${section.fields.map(([key, label, fieldType]) => {
-          const value = normalized.forms.FR65?.values?.[key] || {};
-          const disabled = canEdit && fieldType !== 'readonly' ? '' : 'disabled';
-          if (section.kind === 'serial') return `<article class="tech-field fr65-serial-row" data-fr65-capture-key="${esc(key)}">
-            <b>${esc(label)}</b>
-            <div class="fr65-serial-fields">
-              <label>Marka / üretici<input data-fr65-capture-prop="marka" value="${esc(value.marka || '')}" autocomplete="off" ${disabled}></label>
-              <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
-              <label>Seri no<input data-fr65-capture-prop="seri_no" value="${esc(value.seri_no || '')}" autocomplete="off" ${disabled}></label>
-            </div>
-          </article>`;
-          const fieldControl = fieldType === 'readonly'
-            ? `<input data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`
-            : fieldType === 'number'
-            ? `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" placeholder="Sahada görülen / ölçülen değer" ${disabled}>`
-            : `<textarea data-fr65-capture-prop="field_value" placeholder="Sahada görülen / ölçülen değer${section.group === 'olcu' ? '; ölçüyse birimiyle' : ''}" ${disabled}>${esc(value.field_value || '')}</textarea>`;
-          return `<article class="tech-field" data-fr65-capture-key="${esc(key)}">
-            <b>${esc(label)}</b>
-            <label>Saha verisi
-              ${fieldControl}
-            </label>
-            <label>Saha notu (isteğe bağlı)
-              <textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea>
-            </label>
-          </article>`;
-        }).join('')}</div>
+        <div class="tech-section-body">${legacyMovingBufferNotice}${fieldHtml.join('')}
+          <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
+        </div>
       </details>`;
     }).join('');
     const safetyHtml = SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('');
@@ -3272,12 +3398,14 @@ function showYeniForm() {
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
         <div class="local-sync-state ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
       </div>
-      <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span><small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez.</small></div>
+      <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span><small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez. Önerilen akış kuyu bölümünden başlar; sabit bölüm düğmeleriyle ilerleyin.</small></div>
       ${quickNavHtml}
       ${sectionsHtml}
       <div id="fr65CaptureSaveStatus" class="photo-help">${canEdit ? 'Alanları yazdıkça cihaza otomatik kaydedilir.' : 'Salt okunur gösterim.'}</div>
       <div class="fr65-capture-actions">${canEdit ? '<button class="btn btn-ghost" id="fr65SaveNow">Şimdi kaydet</button><button class="btn btn-primary" id="fr65Complete">Saha veri kaydını tamamla</button>' : '<button class="btn btn-ghost" id="fr65BackBottom">Denetimlere dön</button>'}</div>
     </div>`;
+    updateSummary();
+    updateCaptureConditions();
     updateSummary();
     document.querySelectorAll('[data-fr65-jump]').forEach(button => {
       button.onclick = () => {
@@ -3285,6 +3413,32 @@ function showYeniForm() {
         if (!target) return;
         target.open = true;
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    });
+    document.querySelectorAll('[data-fr65-next]').forEach(button => {
+      button.onclick = async () => {
+        const sectionKey = button.dataset.fr65Next;
+        const section = sections.find(item => item.key === sectionKey);
+        const progress = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(
+          { forms: { FR65: { values: collectValues() } } }, d.tahrik_tipi, sectionKey);
+        if (progress.recorded < progress.total &&
+            !confirm(`Bu bölümde ${progress.total - progress.recorded} alan boş. Boş alanları daha sonra tamamlamak üzere sonraki bölüme geçilsin mi?`)) return;
+        try { await flushCapture(); }
+        catch { return; }
+        const nextKey = button.dataset.fr65NextKey;
+        if (!nextKey) {
+          toast(progress.recorded === progress.total
+            ? `${section?.title || 'Bölüm'} tamamlandı ve cihaza kaydedildi`
+            : `${section?.title || 'Bölüm'} kaydedildi; boş alanları daha sonra tamamlayabilirsiniz`);
+          return;
+        }
+        const current = document.getElementById(`fr65Section-${sectionKey}`);
+        const target = document.getElementById(`fr65Section-${nextKey}`);
+        if (current) current.open = false;
+        if (target) {
+          target.open = true;
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       };
     });
     document.getElementById('fr65Back').onclick = showList;
@@ -3339,8 +3493,12 @@ function showYeniForm() {
     if (canEdit) {
       app.oninput = event => {
         if (!event.target.matches('[data-fr65-capture-prop]')) return;
+        if (event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()) {
+          event.target.dataset.fr65LegacyTouched = 'true';
+        }
         editVersion++;
         const version = editVersion;
+        updateCaptureConditions();
         updateSummary();
         const next = AVES_DENETIM_FORM_SETI.normalize(normalized);
         next.saha_veri_akisi = 'fr65_saha_v1';
@@ -3363,6 +3521,21 @@ function showYeniForm() {
           persistValues(version).catch(() => {});
         }, 650);
       };
+      app.onchange = event => {
+        if (event.target.matches('select[data-fr65-capture-prop]')) updateCaptureConditions();
+      };
+      document.querySelectorAll('[data-fr65-clear-legacy]').forEach(button => {
+        button.onclick = () => {
+          const key = button.dataset.fr65ClearLegacy;
+          const row = Array.from(document.querySelectorAll('[data-fr65-capture-key]'))
+            .find(item => item.dataset.fr65CaptureKey === key);
+          const input = row?.querySelector('input[data-fr65-capture-prop="field_value"]');
+          if (!input) return;
+          input.dataset.fr65LegacyTouched = 'true';
+          input.value = '';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+      });
       document.getElementById('fr65SaveNow').onclick = async event => {
         event.currentTarget.disabled = true;
         try { await flushCapture(); }

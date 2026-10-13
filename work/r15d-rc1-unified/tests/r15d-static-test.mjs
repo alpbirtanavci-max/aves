@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.79 sürümü', index.includes('R15D-RC3.9.79</b>'));
-test('app R15D rc3.9.79 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.79'"));
-test('service worker rc3.9.79 cache', sw.includes("aves-saha-r15d-rc3979'"));
-test('uygulama manifesti rc3.9.79 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.79"'));
+test('index R15D rc3.9.80 sürümü', index.includes('R15D-RC3.9.80</b>'));
+test('app R15D rc3.9.80 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.80'"));
+test('service worker rc3.9.80 cache', sw.includes("aves-saha-r15d-rc3980'"));
+test('uygulama manifesti rc3.9.80 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.80"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -572,8 +572,86 @@ test('FR.65 Rev.00 saha veri şeması genel bilgi, seri no ve ölçüm sekmeleri
   technicalDocs.FR65.sections.length >= 7 &&
   technicalDocs.FR65.sections.flatMap(section => section.fields).length >= 55 &&
   technicalDocs.FR65.title === 'FR.65 Saha Veri Toplama' &&
-  ['yuk','hiz','durak_sayisi','hidrolik_valfler','kat_kapisi_kilitleri','ray_konsol_araligi'].every(key =>
-    technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)));
+  ['yuk','hiz','durak_sayisi','hidrolik_valfler','kat_kapisi_kilitleri','kabin_ray_tip_olcu'].every(key =>
+    technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)) &&
+  !technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === 'ray_konsol_araligi'));
+test('FR.65 saha düzeni: başlangıç ölçüsü kaldırıldı, ek tampon/GSM koşullu ve hidrolik seri alanları sonda', (() => {
+  const allSections = technicalDocs.FR65.sections;
+  const serials = allSections.find(section => section.key === 'seri_numaralari').fields;
+  const hydraulic = allSections.find(section => section.key === 'hidrolik');
+  return technicalDocs.visibleFr65Sections('Elektrikli')[0].key === 'kuyu' &&
+    technicalDocs.visibleFr65Sections('Hidrolik').at(-1).key === 'hidrolik' &&
+    serials.some(([key, , type]) => key === 'kabin_ek_tampon' && type === 'optional_serial') &&
+    serials.some(([key, , type]) => key === 'karsi_agirlik_ek_tampon' && type === 'optional_serial') &&
+    serials.some(([key, , type]) => key === 'gsm_modulu' && type === 'optional_gsm') &&
+    !serials.some(([key]) => ['hareketli_tampon','hidrolik_motor','hidrolik_boru_kirilma'].includes(key)) &&
+    hydraulic.fields.slice(-2).every(([, , type]) => type === 'serial') &&
+    ['seyir_mesafesi','kuyu_yuksekligi'].every(key => allSections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key));
+})());
+test('FR.65 koşullu bölüm sayacı ikinci kapı, ek tampon ve GSM var/yok seçimini dikkate alır', (() => {
+  const values = {
+    ikinci_kapi_var: { field_value: 'Yok' },
+    ikinci_kapi_yon: { field_value: 'Karşılıklı' },
+    kabin_ek_tampon: { var_mi: 'Yok' },
+    gsm_modulu: { var_mi: 'Var', marka: 'X', tip: 'Y', imei: '123456789012345' },
+  };
+  const door = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kabin_kapilar');
+  const serial = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'seri_numaralari');
+  return door.recorded === 1 && door.total === 10 && serial.recorded === 2 &&
+    !technicalDocs.fr65CaptureFieldActive(['ikinci_kapi_yon'], values);
+})());
+test('FR.65 ray profilleri istenen T serisi seçenekleriyle sınırlı; eski A/B ve konsol aralığı alanı yok', (() => {
+  const expected = ['T50','T70','T89','T90','T125','T140','Diğer / açıklama'];
+  const fields = technicalDocs.FR65.sections.flatMap(section => section.fields);
+  return JSON.stringify(technicalDocs.FR65_FIELD_OPTIONS.kabin_ray_tip_olcu) === JSON.stringify(expected) &&
+    JSON.stringify(technicalDocs.FR65_FIELD_OPTIONS.karsi_agirlik_ray_tip_olcu) === JSON.stringify(expected) &&
+    !fields.some(([key]) => key === 'ray_konsol_araligi') &&
+    !fields.some(([, label]) => /\bA\s*\/\s*B\b/.test(label));
+})());
+test('FR.65 kuyu seçeneklerinde açıklama yalnız Var seçilince açılır; iki alanın kapsamı ayrı tutulur', (() => {
+  const fields = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields;
+  const find = key => fields.find(([fieldKey]) => fieldKey === key);
+  const values = {
+    kismen_kapali_kuyu: { field_value: 'Yok' },
+    kuyu_alti_kullanim_yuk: { field_value: 'Var' },
+  };
+  return find('kismen_kapali_kuyu')[2] === 'select' &&
+    find('kuyu_alti_kullanim_yuk')[2] === 'select' &&
+    technicalDocs.FR65_FIELD_OPTIONS.kismen_kapali_kuyu.join(',') === 'Yok,Var' &&
+    technicalDocs.FR65_FIELD_OPTIONS.kuyu_alti_kullanim_yuk.join(',') === 'Yok,Var' &&
+    !technicalDocs.fr65CaptureFieldActive(find('kismen_kapali_kuyu_detay'), values) &&
+    technicalDocs.fr65CaptureFieldActive(find('kuyu_alti_kullanim_yuk_detay'), values) &&
+    app.includes('inheritedLegacyDetail');
+})());
+test('FR.65 Var/Yok alanı yalnız seçim yapıldığında tamamlanır; not tek başına yeterli sayılmaz', (() => {
+  const fields = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields;
+  const selectField = fields.find(([key]) => key === 'kismen_kapali_kuyu');
+  const emptyWithNote = { kismen_kapali_kuyu: { field_value: '', note: 'Daha sonra bakılacak' } };
+  const selectedNo = { kismen_kapali_kuyu: { field_value: 'Yok', note: '' } };
+  const emptyCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: emptyWithNote } } }, 'Elektrikli', 'kuyu');
+  const selectedCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: selectedNo } } }, 'Elektrikli', 'kuyu');
+  return selectField[2] === 'select' && emptyCount.recorded === 0 && selectedCount.recorded === 1;
+})());
+test('FR.65 sayı alanlarındaki okunamayan eski değerler yeni değer girilene veya açıkça silinene kadar korunur', (() => {
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return flow.includes('data-fr65-preserve-legacy=') &&
+    flow.includes("input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true'") &&
+    flow.includes("event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()") &&
+    flow.includes("event.target.dataset.fr65LegacyTouched = 'true'") &&
+    flow.includes('data-fr65-clear-legacy=') &&
+    flow.includes('input.dispatchEvent(new Event(\'input\', { bubbles: true }))');
+})());
+test('FR.65 eski hareketli tampon kaydı silinmeden görünür ve doğru ek tampon alanına aktarılabilir', (() => {
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return !technicalDocs.FR65.sections.flatMap(section => section.fields).some(([key]) => key === 'hareketli_tampon') &&
+    flow.includes('normalized.forms.FR65?.values?.hareketli_tampon') &&
+    flow.includes('Önceki hareketli tampon kaydı korunuyor') &&
+    flow.includes('bilgiyi yukarıdaki doğru ek tampon alanına aktarın');
+})());
 test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değerler normalize kayıtta korunuyor',
   technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'elektrikli_tahrik') &&
   !technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'hidrolik') &&
@@ -1347,9 +1425,10 @@ test('B/E/H1 FR.65 saha ekranında dosya değeri yok; sade bileşen kimliği ve 
   const end = app.indexOf('async function showDenetim(', start);
   const flow = app.slice(start, end);
   return flow.includes('data-fr65-jump=') && flow.includes('fr65-quick-nav') &&
+    flow.includes('data-fr65-next=') && flow.includes('fr65-section-footer') && flow.includes('fr65-capture-note') &&
     flow.includes('target.scrollIntoView') && flow.includes('data-fr65-capture-prop="field_value"') &&
     flow.includes('data-fr65-capture-prop="marka"') && flow.includes('data-fr65-capture-prop="tip"') &&
-    flow.includes('data-fr65-capture-prop="seri_no"') &&
+    flow.includes('${thirdProp}') &&
     !flow.includes('data-fr65-capture-prop="file_value"') && !flow.includes('Teknik dosya') &&
     !flow.includes('dosyadaki beyan') && !flow.includes('Eşleşti') && !flow.includes('Fark var') &&
     index.includes('.fr65-quick-nav{position:sticky') && index.includes('.fr65-capture .tech-section>summary{position:static');
@@ -1365,12 +1444,15 @@ test('FR.65 yeni kayıtta MR/MRL zorunlu ve sayısal veriler kesilmeden doğrula
   const speed = context.readNumber({ value: '1.6', valueAsNumber: 1.6 });
   const capture = { yuk: 1000, kapasite: 8, hiz: speed, durak: 5, kat: 6, binaAsansorSayisi: 2, seyirMesafesi: 18.35, kuyuYuksekligi: null };
   const general = { yuk: 1000, hiz: speed, kapasite: 8, durak: 5, binaAsansorSayisi: 2 };
-  return speed === 1.6 && context.validCapture(capture) && context.validGeneral(general) &&
+  const withoutStartMeasurements = { ...capture, seyirMesafesi: null, kuyuYuksekligi: null };
+  const startForm = app.slice(app.indexOf('function showYeniForm()'), app.indexOf('function showOnayEkrani(f, tahmini)'));
+  return speed === 1.6 && context.validCapture(capture) && context.validCapture(withoutStartMeasurements) && context.validGeneral(general) &&
     !context.validCapture({ ...capture, yuk: 1000.5 }) &&
     !context.validCapture({ ...capture, kat: 6.5 }) &&
     !context.validGeneral({ ...general, kapasite: 8.5 }) &&
     app.includes('Makine dairesi tipi *</label>') &&
     app.includes("if (!single.sCaptureMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }") &&
+    !startForm.includes('id="fCaptureSeyir"') && !startForm.includes('id="fCaptureKuyu"') &&
     createFlow.includes("!['MR','MRL'].includes(f.md)") &&
     createFlow.includes('!fr65SahaSayisalAlanlariGecerliMi(sayisalAlanlar)');
 })());
