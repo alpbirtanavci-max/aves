@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.85';
+const APP_VERSION = 'R15D-rc3.9.86';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -3110,6 +3110,14 @@ function showYeniForm() {
       const values = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
       document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
         const value = { ...(values[row.dataset.fr65CaptureKey] || {}) };
+        if (row.dataset.fr65CaptureType === 'positioned_measurements') {
+          const points = Array.from(row.querySelectorAll('[data-fr65-measurement-row]')).map(pointRow => ({
+            position: pointRow.querySelector('[data-fr65-measurement-prop="position"]')?.value.trim() || '',
+            distance_cm: pointRow.querySelector('[data-fr65-measurement-prop="distance_cm"]')?.value.trim() || '',
+          })).filter(point => point.position || point.distance_cm);
+          if (points.length) value.points = points;
+          else delete value.points;
+        }
         row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
           if (input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true' && !input.value.trim()) return;
           value[input.dataset.fr65CaptureProp] = input.value.trim();
@@ -3284,6 +3292,11 @@ function showYeniForm() {
         <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
         <label>${thirdLabel}<input data-fr65-capture-prop="${thirdProp}" value="${esc(value[thirdProp] || '')}" autocomplete="off" ${disabled}></label>
       </div>`;
+    const renderRayDoorMeasureRow = point => `<div class="fr65-positioned-measure-row" data-fr65-measurement-row>
+      <label>Konum / kat<input data-fr65-measurement-prop="position" value="${esc(point.position || '')}" placeholder="Ör. 1. kat" autocomplete="off" ${canEdit ? '' : 'disabled'}></label>
+      <label>Mesafe (cm)<input type="number" min="0" step="any" inputmode="decimal" data-fr65-measurement-prop="distance_cm" value="${esc(point.distance_cm ?? '')}" placeholder="cm" ${canEdit ? '' : 'disabled'}></label>
+      <button type="button" class="fr65-remove-measurement" data-fr65-remove-measurement aria-label="Ölçüm satırını kaldır" ${canEdit ? '' : 'disabled'}>×</button>
+    </div>`;
     const renderCaptureField = (section, field) => {
       const [key, label, fieldType] = field;
       const value = normalized.forms.FR65?.values?.[key] || {};
@@ -3343,20 +3356,29 @@ function showYeniForm() {
       } else if (fieldType === 'multi_measure') {
         const raw = String(value.field_value || '');
         fieldControl = `<textarea class="fr65-multi-measure" rows="1" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="Ölçüleri cm olarak girin" ${disabled}>${esc(raw)}</textarea>`;
+      } else if (fieldType === 'positioned_measurements') {
+        const points = Array.isArray(value.points) && value.points.length ? value.points : [{}];
+        fieldControl = `<div class="fr65-positioned-measurements"><div data-fr65-measurement-list>${points.map(renderRayDoorMeasureRow).join('')}</div>
+          <button type="button" class="btn btn-ghost fr65-add-measurement" data-fr65-add-measurement ${disabled}>+ Ölçüm noktası ekle</button>
+          <small class="fr65-field-help">Her ray–kapı ölçümünü bulunduğu kat/konum ve cm değeriyle ayrı satıra ekleyin.</small></div>`;
       } else if (fieldType === 'number') {
         const raw = String(value.field_value || '');
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
         const preserveLegacy = !!raw && !numberValue;
-        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
+        const integerCount = key === 'kabin_giris_sayisi';
+        fieldControl = `<input type="number" min="${integerCount ? '1' : '0'}" step="${integerCount ? '1' : 'any'}" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
       } else {
         const compactMeasure = section.group === 'olcu';
         const compactPlaceholder = label.includes('(cm') ? 'Ölçüyü cm olarak girin' : 'Sahada görülen bilgi';
         fieldControl = `<textarea class="${compactMeasure ? 'fr65-compact-measure-input' : ''}" rows="${compactMeasure ? '1' : '2'}" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="${compactMeasure ? compactPlaceholder : 'Sahada görülen bilgi'}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
       }
       const help = fieldHelp[key] ? `<small class="fr65-field-help">${esc(fieldHelp[key])}</small>` : '';
-      return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
+      const fieldControlHtml = fieldType === 'positioned_measurements'
+        ? `<div class="fr65-field-control">${fieldControl}</div>`
+        : `<label class="fr65-field-control">${section.group === 'olcu' ? '' : 'Saha verisi'}${fieldControl}</label>`;
+      return `${wrapperOpen}<article class="tech-field ${fieldType === 'positioned_measurements' ? 'fr65-positioned-measurements-field' : ''}" data-fr65-capture-key="${esc(key)}" ${fieldType === 'positioned_measurements' ? 'data-fr65-capture-type="positioned_measurements"' : ''}>
         <b>${esc(label)}</b>
-        <label class="fr65-field-control">${section.group === 'olcu' ? '' : 'Saha verisi'}${fieldControl}</label>${help}
+        ${fieldControlHtml}${help}
         <details class="fr65-capture-note ${section.group === 'olcu' ? 'fr65-measure-note' : ''}" ${value.note ? 'open' : ''}>
           <summary>✎ Açıklama ekle / düzenle</summary>
           <label>Açıklama veya saha notu<textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea></label>
@@ -3385,6 +3407,7 @@ function showYeniForm() {
         genel: [
           ['seyir_mesafesi', 'Seyir mesafesi (önceki m)'],
           ['kuyu_yuksekligi', 'Kuyu yüksekliği (önceki m)'],
+          ['kabin_giris_sayisi_yeri', 'Önceki kabin giriş sayısı/konumu kaydı'],
         ],
         elektrikli_tahrik: [
           ['halat_tipi', 'Önceki halat kaydı'],
@@ -3394,12 +3417,22 @@ function showYeniForm() {
           ['kabin_genislik', 'Kabin genişliği (önceki mm)'],
           ['kabin_derinlik', 'Kabin derinliği (önceki mm)'],
           ['kabin_yukseklik', 'Kabin yüksekliği (önceki mm)'],
+          ['kabin_kapi_genislik_cm', 'Önceki kabin kapısı genişliği (cm)'],
+          ['kabin_kapi_yukseklik_cm', 'Önceki kabin kapısı yüksekliği (cm)'],
+          ['kat_kapisi_genislik_cm', 'Önceki kat kapısı genişliği (cm)'],
+          ['kat_kapisi_yukseklik_cm', 'Önceki kat kapısı yüksekliği (cm)'],
           ['kabin_kapi_genislik', 'Kabin kapısı genişliği (önceki mm)'],
           ['kabin_kapi_yukseklik', 'Kabin kapısı yüksekliği (önceki mm)'],
           ['kat_kapisi_genislik', 'Kat kapısı genişliği (önceki mm)'],
           ['kat_kapisi_yukseklik', 'Kat kapısı yüksekliği (önceki mm)'],
           ['kabin_kapi_acikligi', 'Önceki tek alanlı kabin kapısı açıklığı'],
           ['kat_kapisi_acikligi', 'Önceki tek alanlı kat kapısı açıklığı'],
+          ['kabin_kapi_yonu', 'Önceki kabin kapısı yönü'],
+          ['kabin_kapi_tipi', 'Önceki kabin kapısı tipi'],
+          ['kabin_kapi_panel_sayisi', 'Önceki kabin kapısı panel sayısı'],
+          ['kat_kapisi_yonu', 'Önceki kat kapısı yönü'],
+          ['kat_kapisi_tipi', 'Önceki kat kapısı tipi'],
+          ['kat_kapisi_panel_sayisi', 'Önceki kat kapısı panel sayısı'],
           ['kilavuz_pabucu_araligi', 'Önceki kılavuz pabucu aralığı'],
           ['kapi_yon_tip_panel', 'Önceki kapı yönü/tipi/panel bilgisi'],
         ],
@@ -3414,9 +3447,12 @@ function showYeniForm() {
           ['kabin_raylar_arasi', 'Kabin ray aralığı (önceki mm)'],
           ['karsi_agirlik_raylar_arasi', 'Karşı ağırlık ray aralığı (önceki mm)'],
           ['ray_kapi_mesafesi', 'Önceki ray–kapı mesafeleri'],
+          ['ray_kapi_mesafeleri_cm', 'Önceki serbest metin ray–kapı mesafeleri'],
           ['karsi_agirlik_adet_olcu', 'Önceki karşı ağırlık adet/ölçü kaydı'],
           ['tampon_strok_konum', 'Önceki tampon tipi/strok/konum kaydı'],
           ['ust_alt_guvenli_bosluk', 'Önceki üst/alt güvenli boşluk kaydı'],
+          ['ust_guvenli_bosluk_cm', 'Önceki kuyu üstü güvenli çalışma boşluğu (artık ölçülmüyor)'],
+          ['alt_guvenli_bosluk_cm', 'Önceki kuyu altı güvenli çalışma boşluğu (artık ölçülmüyor)'],
         ],
         hidrolik: [
           ['hidrolik_halat', 'Önceki hidrolik halat kaydı'],
@@ -3431,15 +3467,14 @@ function showYeniForm() {
         return parts.length ? `${label}: ${parts.join(' · ')}` : '';
       }).filter(Boolean).join(' · ');
       const legacyMeasurementNotice = legacyMeasurementText
-        ? `<aside class="fr65-legacy-notice"><b>Önceki ölçü ve saha kayıtları korunuyor</b><span>${esc(legacyMeasurementText)}</span><small>Eski değerler yeni alanlara dönüştürülmedi. Yeni ölçüleri alan etiketinde belirtilen birimle yeniden girin.</small></aside>`
+        ? `<aside class="fr65-legacy-notice"><b>Önceki ölçü ve saha kayıtları korunuyor</b><span>${esc(legacyMeasurementText)}</span><small>Eski değerler dönüştürülmeden korunur. Yeni alanlarda etiketteki birimi kullanın; “artık ölçülmüyor” olarak belirtilen kalemler yalnızca geçmiş bilgidir.</small></aside>`
         : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
         const field = section.fields[fieldIndex];
         const pairedKey = section.key === 'kabin_kapilar' ? ({
           kabin_genislik_cm: 'kabin_derinlik_cm',
-          kabin_kapi_genislik_cm: 'kabin_kapi_yukseklik_cm',
-          kat_kapisi_genislik_cm: 'kat_kapisi_yukseklik_cm',
+          kabin_kat_kapi_genislik_cm: 'kabin_kat_kapi_yukseklik_cm',
         })[field[0]] : section.key === 'kuyu' ? ({
           kuyu_genislik_cm: 'kuyu_derinlik_cm',
           karsi_agirlik_genislik_cm: 'karsi_agirlik_derinlik_cm',
@@ -3449,8 +3484,8 @@ function showYeniForm() {
           const pairLabel = field[0] === 'kuyu_genislik_cm' ? 'Kuyu ölçüleri'
             : field[0] === 'kabin_genislik_cm' ? 'Kabin iç ölçüleri'
             : field[0] === 'karsi_agirlik_genislik_cm' ? 'Karşı ağırlık ölçüleri'
-              : field[0] === 'kabin_kapi_genislik_cm' ? 'Kabin kapısı ölçüleri'
-                : 'Kat kapısı ölçüleri';
+              : field[0] === 'kabin_kat_kapi_genislik_cm' ? 'Kabin ve kat kapısı ölçüleri'
+                : 'Ölçüler';
           const hint = '<small class="fr65-field-help">Her değeri ayrı kutuya, cm olarak girin.</small>';
           fieldHtml.push(`<div class="fr65-measure-group" role="group" aria-label="${esc(pairLabel)}">
             <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}
@@ -3619,8 +3654,28 @@ function showYeniForm() {
       }
     };
     if (canEdit) {
+      app.onclick = event => {
+        const addMeasurement = event.target.closest?.('[data-fr65-add-measurement]');
+        if (addMeasurement) {
+          event.preventDefault();
+          const list = addMeasurement.closest('[data-fr65-capture-key]')?.querySelector('[data-fr65-measurement-list]');
+          if (!list) return;
+          list.insertAdjacentHTML('beforeend', renderRayDoorMeasureRow({}));
+          list.lastElementChild?.querySelector('[data-fr65-measurement-prop="position"]')?.focus();
+          return;
+        }
+        const removeMeasurement = event.target.closest?.('[data-fr65-remove-measurement]');
+        if (!removeMeasurement) return;
+        event.preventDefault();
+        const list = removeMeasurement.closest('[data-fr65-measurement-list]');
+        const row = removeMeasurement.closest('[data-fr65-measurement-row]');
+        if (!list || !row) return;
+        if (list.children.length > 1) row.remove();
+        else row.querySelectorAll('[data-fr65-measurement-prop]').forEach(input => { input.value = ''; });
+        list.querySelector('[data-fr65-measurement-prop]')?.dispatchEvent(new Event('input', { bubbles: true }));
+      };
       app.oninput = event => {
-        if (!event.target.matches('[data-fr65-capture-prop]')) return;
+        if (!event.target.matches('[data-fr65-capture-prop], [data-fr65-measurement-prop]')) return;
         if (event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()) {
           event.target.dataset.fr65LegacyTouched = 'true';
         }
