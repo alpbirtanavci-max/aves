@@ -602,7 +602,7 @@ test('FR.65 kuyu genişliği, derinliği ve kuyu dibi tekil cm sayılarıdır; e
     flow.includes("['kuyu_genislik', 'Kuyu genişliği (önceki mm)']") &&
     flow.includes("['kuyu_dibi', 'Önceki kuyu dibi derinliği']") &&
     flow.includes('legacyMeasurementKeys') && flow.includes('Önceki ölçü ve saha kayıtları korunuyor') &&
-    flow.includes('Eski değerler yeni cm alanlarına dönüştürülmedi');
+    flow.includes('Eski değerler yeni alanlara dönüştürülmedi. Yeni ölçüleri alan etiketinde belirtilen birimle yeniden girin.');
 })());
 test('FR.65 kabin ve karşı ağırlık ray aralıkları ayrı sayısal alanlardır; eski birleşik kayıt korunur', (() => {
   const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
@@ -726,7 +726,7 @@ test('FR.65 ek tampon kutuları isteğe bağlı açılır; boş tampon alanı va
     legacyNoBuffer.total === emptySerial.total && legacyBuffer.total === emptySerial.total + 1 && legacyBuffer.recorded === 0 &&
     app.includes("if (hasSerialData) value.var_mi = 'Var'") && !app.includes("else if (value.var_mi === 'Var') delete value.var_mi");
 })());
-test('FR.65 GSM modülü alanları daima görünür; Var/Yok seçimi yok, marka/tip/IMEI kaydı gerekir', (() => {
+test('FR.65 GSM modülü her kayıtta yer alır; Var/Yok seçimi yok, marka/tip/IMEI zorunlu', (() => {
   const serials = technicalDocs.FR65.sections.find(section => section.key === 'seri_numaralari').fields;
   const gsm = serials.find(([key]) => key === 'gsm_modulu');
   const flowStart = app.indexOf("if (section.kind === 'serial' && fieldType === 'gsm') {");
@@ -738,6 +738,7 @@ test('FR.65 GSM modülü alanları daima görünür; Var/Yok seçimi yok, marka/
   const emptyCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: { gsm_modulu: empty } } } }, 'Elektrikli', 'seri_numaralari');
   return gsm?.[2] === 'gsm' && !gsm?.[1].includes('(varsa)') &&
     completeCount.recorded === 1 && emptyCount.recorded === 0 &&
+    completeCount.total === emptyCount.total && emptyCount.total > 0 &&
     gsmUi.includes('fr65-gsm-row') && gsmUi.includes("renderSerialInputs(value, disabled, 'IMEI', 'imei')") &&
     gsmUi.includes('Önceki kayıtta GSM için') && !gsmUi.includes('<select') &&
     !gsmUi.includes('data-fr65-capture-prop="var_mi"') && !app.includes('optional_gsm');

@@ -3431,7 +3431,7 @@ function showYeniForm() {
         return parts.length ? `${label}: ${parts.join(' · ')}` : '';
       }).filter(Boolean).join(' · ');
       const legacyMeasurementNotice = legacyMeasurementText
-        ? `<aside class="fr65-legacy-notice"><b>Önceki ölçü ve saha kayıtları korunuyor</b><span>${esc(legacyMeasurementText)}</span><small>Eski değerler yeni cm alanlarına dönüştürülmedi. Yeni alanları cm cinsinden yeniden girin.</small></aside>`
+        ? `<aside class="fr65-legacy-notice"><b>Önceki ölçü ve saha kayıtları korunuyor</b><span>${esc(legacyMeasurementText)}</span><small>Eski değerler yeni alanlara dönüştürülmedi. Yeni ölçüleri alan etiketinde belirtilen birimle yeniden girin.</small></aside>`
         : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
