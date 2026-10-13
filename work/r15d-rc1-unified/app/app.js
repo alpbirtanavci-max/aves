@@ -3117,7 +3117,6 @@ function showYeniForm() {
         if (row.classList.contains('fr65-optional-serial')) {
           const hasSerialData = ['marka', 'tip', 'seri_no'].some(prop => String(value[prop] || '').trim());
           if (hasSerialData) value.var_mi = 'Var';
-          else if (value.var_mi === 'Var') delete value.var_mi;
         }
         if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
         else delete values[row.dataset.fr65CaptureKey];
@@ -3304,9 +3303,11 @@ function showYeniForm() {
       const wrapperClose = condition ? '</div>' : '';
       if (section.kind === 'serial' && fieldType === 'optional_serial') {
         const detailsOpen = value.var_mi === 'Var' || ['marka', 'tip', 'seri_no'].some(prop => String(value[prop] || '').trim());
+        const detailsHint = value.var_mi === 'Yok' ? 'Önceki kayıt: Yok'
+          : value.var_mi === 'Var' ? 'Önceki ek tampon kaydı' : 'Varsa bilgilerini ekle';
         return `<article class="tech-field fr65-optional-serial" data-fr65-capture-key="${esc(key)}">
           <details class="fr65-extra-serial-fields" ${detailsOpen ? 'open' : ''}>
-            <summary>${esc(label)} <span>Varsa bilgilerini ekle</span></summary>
+            <summary>${esc(label)} <span>${detailsHint}</span></summary>
             ${renderSerialInputs(value, disabled)}
           </details>
         </article>`;
@@ -3386,6 +3387,16 @@ function showYeniForm() {
       const legacyRailSpacingNotice = section.key === 'kuyu' && legacyRailSpacingText
         ? `<aside class="fr65-legacy-notice"><b>Önceki birleşik ray aralığı kaydı korunuyor</b><span>${esc(legacyRailSpacingText)}</span><small>Yeni kayıtta kabin ana rayları ve karşı ağırlık rayları ayrı alanlara girilir.</small></aside>`
         : '';
+      const legacyWellValues = normalized.forms.FR65?.values || {};
+      const legacyWellText = [
+        legacyWellValues.kuyu_genislik?.field_value && `Önceki kuyu genişliği (mm): ${legacyWellValues.kuyu_genislik.field_value}`,
+        legacyWellValues.kuyu_derinlik?.field_value && `Önceki kuyu derinliği (mm): ${legacyWellValues.kuyu_derinlik.field_value}`,
+        legacyWellValues.kuyu_dibi?.field_value && `Önceki kuyu dibi derinliği: ${legacyWellValues.kuyu_dibi.field_value}`,
+        legacyWellValues.kuyu_genislik_derinlik?.field_value && `Önceki birleşik kuyu ölçüsü: ${legacyWellValues.kuyu_genislik_derinlik.field_value}`,
+      ].filter(Boolean).join(' · ');
+      const legacyWellNotice = section.key === 'kuyu' && legacyWellText
+        ? `<aside class="fr65-legacy-notice"><b>Önceki kuyu ölçüleri korunuyor</b><span>${esc(legacyWellText)}</span><small>Eski kayıtlar otomatik cm’ye çevrilmez. Yeni tek değerli cm kutularına sahada yeniden girin.</small></aside>`
+        : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
         const field = section.fields[fieldIndex];
@@ -3393,23 +3404,20 @@ function showYeniForm() {
           kabin_genislik: 'kabin_derinlik',
           kabin_kapi_genislik: 'kabin_kapi_yukseklik',
           kat_kapisi_genislik: 'kat_kapisi_yukseklik',
-        })[field[0]] : section.key === 'kuyu' ? ({ kuyu_genislik: 'kuyu_derinlik' })[field[0]] : null;
+        })[field[0]] : section.key === 'kuyu' ? ({ kuyu_genislik_cm: 'kuyu_derinlik_cm' })[field[0]] : null;
         const nextField = section.fields[fieldIndex + 1];
         if (pairedKey && nextField?.[0] === pairedKey) {
-          const pairLabel = field[0] === 'kuyu_genislik' ? 'Kuyu ölçüleri'
+          const pairLabel = field[0] === 'kuyu_genislik_cm' ? 'Kuyu ölçüleri'
             : field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
             : field[0] === 'kabin_kapi_genislik' ? 'Kabin kapısı net açıklığı'
               : 'Kat kapısı net açıklığı';
-          const hint = field[0] === 'kuyu_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği birer sayı olarak cm cinsinden girin.</small>'
+          const hint = field[0] === 'kuyu_genislik_cm' ? '<small class="fr65-field-help">Genişlik ve derinliği birer sayı olarak cm cinsinden girin.</small>'
             : field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
             : '<small class="fr65-field-help">Net genişlik ve yüksekliği ayrı kutulara, mm olarak girin.</small>';
           const legacyKey = field[0] === 'kabin_kapi_genislik' ? 'kabin_kapi_acikligi'
             : field[0] === 'kat_kapisi_genislik' ? 'kat_kapisi_acikligi' : null;
           const legacyValue = legacyKey ? normalized.forms.FR65?.values?.[legacyKey]?.field_value : '';
-          const previousWellMeasure = field[0] === 'kuyu_genislik' ? normalized.forms.FR65?.values?.kuyu_genislik_derinlik?.field_value : '';
-          const legacyNote = previousWellMeasure
-            ? `<small class="fr65-legacy-value">Önceki birleşik kuyu ölçüsü korunuyor: ${esc(previousWellMeasure)}</small>`
-            : legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
+          const legacyNote = legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
           fieldHtml.push(`<div class="fr65-measure-group" role="group" aria-label="${esc(pairLabel)}">
             <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}${legacyNote}
           </div>`);
@@ -3419,7 +3427,7 @@ function showYeniForm() {
       const nextSection = sections[index + 1];
       return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${section.key === activeSectionKey ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${legacyMovingBufferNotice}${legacyRailSpacingNotice}${fieldHtml.join('')}
+        <div class="tech-section-body">${legacyMovingBufferNotice}${legacyRailSpacingNotice}${legacyWellNotice}${fieldHtml.join('')}
           <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
         </div>
       </details>`;

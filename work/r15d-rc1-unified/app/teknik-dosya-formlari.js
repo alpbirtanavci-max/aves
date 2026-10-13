@@ -77,9 +77,9 @@
       },
       {
         key: 'kuyu', tab: 'Kuyu', group: 'olcu', title: 'Kuyu, boşluklar ve karşı ağırlık ölçüleri', fields: [
-          ['kuyu_genislik', 'Kuyu genişliği (cm)', 'number'],
-          ['kuyu_derinlik', 'Kuyu derinliği (cm)', 'number'],
-          ['kuyu_dibi', 'Kuyu dibi derinliği (cm)', 'number'],
+          ['kuyu_genislik_cm', 'Kuyu genişliği (cm)', 'number'],
+          ['kuyu_derinlik_cm', 'Kuyu derinliği (cm)', 'number'],
+          ['kuyu_dibi_cm', 'Kuyu dibi derinliği (cm)', 'number'],
           ['ust_bosluk', 'Üst kat / kuyu üst boşluğu'],
           ['toplam_kuyu_olcusu', 'Toplam kuyu ölçüsü ve seyir mesafesi'],
           ['kabin_raylar_arasi', 'Kabin ana rayları arası (mm)', 'number'],
