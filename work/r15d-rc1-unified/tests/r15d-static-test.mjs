@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.78 sürümü', index.includes('R15D-RC3.9.78</b>'));
-test('app R15D rc3.9.78 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.78'"));
-test('service worker rc3.9.78 cache', sw.includes("aves-saha-r15d-rc3978'"));
-test('uygulama manifesti rc3.9.78 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.78"'));
+test('index R15D rc3.9.79 sürümü', index.includes('R15D-RC3.9.79</b>'));
+test('app R15D rc3.9.79 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.79'"));
+test('service worker rc3.9.79 cache', sw.includes("aves-saha-r15d-rc3979'"));
+test('uygulama manifesti rc3.9.79 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.79"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -1322,9 +1322,9 @@ test('yeni FR.65 kaydı B/E/H1 profilini doğrular, G checklisti veya resmî ç�
   return ['Modül B','Modül E','Modül H1'].every(module => flow.includes(`'${module}':`)) &&
     flow.includes('emptyFr65Capture(now)') && flow.includes("ana_standart: '81-20'") &&
     flow.includes('firma_adresi: f.firmaAdresi') && flow.includes('denetim_adresi: f.adres') &&
-    flow.includes('beyan_yuku_kg: Number(f.yuk)') && flow.includes('beyan_hizi_ms: Number(f.hiz)') &&
-    flow.includes('kapasite_kisi: Number(f.kapasite)') && flow.includes('durak_sayisi: Number(f.durak)') &&
-    flow.includes('bina_asansor_sayisi: f.binaAsansorSayisi') &&
+    flow.includes('beyan_yuku_kg: sayisalAlanlar.yuk') && flow.includes('beyan_hizi_ms: sayisalAlanlar.hiz') &&
+    flow.includes('kapasite_kisi: sayisalAlanlar.kapasite') && flow.includes('durak_sayisi: sayisalAlanlar.durak') &&
+    flow.includes('bina_asansor_sayisi: sayisalAlanlar.binaAsansorSayisi') &&
     flow.includes('A3 hiçbir B/E/H1 kaydına yazılmaz') &&
     flow.includes("await localWrite('denetimler', d, 'denetimler', { insert_only: true })") &&
     !flow.includes('saha_kontrol') && !flow.includes('FormOutput');
@@ -1353,6 +1353,26 @@ test('B/E/H1 FR.65 saha ekranında dosya değeri yok; sade bileşen kimliği ve 
     !flow.includes('data-fr65-capture-prop="file_value"') && !flow.includes('Teknik dosya') &&
     !flow.includes('dosyadaki beyan') && !flow.includes('Eşleşti') && !flow.includes('Fark var') &&
     index.includes('.fr65-quick-nav{position:sticky') && index.includes('.fr65-capture .tech-section>summary{position:static');
+})());
+test('FR.65 yeni kayıtta MR/MRL zorunlu ve sayısal veriler kesilmeden doğrulanır', (() => {
+  const start = app.indexOf('function denetimSayisiOku(alan)');
+  const end = app.indexOf('function showYeniForm()', start);
+  const createStart = app.indexOf('async function olusturFr65Kaydi(f)');
+  const createEnd = app.indexOf('function showYeniForm()', createStart);
+  const createFlow = app.slice(createStart, createEnd);
+  const context = { Number };
+  vm.runInNewContext(`${app.slice(start, end)}; globalThis.readNumber = denetimSayisiOku; globalThis.validCapture = fr65SahaSayisalAlanlariGecerliMi; globalThis.validGeneral = genelDenetimSayisalAlanlariGecerliMi;`, context);
+  const speed = context.readNumber({ value: '1.6', valueAsNumber: 1.6 });
+  const capture = { yuk: 1000, kapasite: 8, hiz: speed, durak: 5, kat: 6, binaAsansorSayisi: 2, seyirMesafesi: 18.35, kuyuYuksekligi: null };
+  const general = { yuk: 1000, hiz: speed, kapasite: 8, durak: 5, binaAsansorSayisi: 2 };
+  return speed === 1.6 && context.validCapture(capture) && context.validGeneral(general) &&
+    !context.validCapture({ ...capture, yuk: 1000.5 }) &&
+    !context.validCapture({ ...capture, kat: 6.5 }) &&
+    !context.validGeneral({ ...general, kapasite: 8.5 }) &&
+    app.includes('Makine dairesi tipi *</label>') &&
+    app.includes("if (!single.sCaptureMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }") &&
+    createFlow.includes("!['MR','MRL'].includes(f.md)") &&
+    createFlow.includes('!fr65SahaSayisalAlanlariGecerliMi(sayisalAlanlar)');
 })());
 test('FR.65 alanları cihaz günlüğüne anında, IndexedDB/outbox’a debounce ve çıkışta flush ile yazılır', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
@@ -1493,7 +1513,7 @@ test('denetim onay ekranı yalnız gerçekten zorunlu 81-71/81-73 standartların
 
 test('durak sayısı yeni denetim formunda zorunlu',
   app.includes('<label>Durak sayısı *</label>') &&
-  app.includes("if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }"));
+  app.includes('Number.isInteger(f.durak) && f.durak > 0'));
 test('asansör kimlik no alanı opsiyonel olarak formda ve kayıtta var',
   app.includes('id="fKimlikNo"') && !app.includes('for="fKimlikNo">Asansör kimlik no *') &&
   app.includes('asansor_kimlik_no: f.kimlikNo') &&

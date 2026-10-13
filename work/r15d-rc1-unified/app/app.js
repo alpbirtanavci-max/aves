@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.78';
+const APP_VERSION = 'R15D-rc3.9.79';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -2365,27 +2365,31 @@ const UI = (() => {
     if (!module || f.akış !== 'fr65_saha_v1' || module.type !== f.denetimTuru || module.profile !== f.kontrolProfili) {
       throw new Error('Modül ve saha veri akışı eşleşmiyor');
     }
+    const sayisalAlanlar = {
+      yuk: Number(f.yuk), kapasite: Number(f.kapasite), hiz: Number(f.hiz), durak: Number(f.durak),
+      kat: f.kat == null || f.kat === '' ? null : Number(f.kat),
+      binaAsansorSayisi: f.binaAsansorSayisi == null || f.binaAsansorSayisi === '' ? null : Number(f.binaAsansorSayisi),
+      seyirMesafesi: f.seyirMesafesi == null || f.seyirMesafesi === '' ? null : Number(f.seyirMesafesi),
+      kuyuYuksekligi: f.kuyuYuksekligi == null || f.kuyuYuksekligi === '' ? null : Number(f.kuyuYuksekligi),
+    };
     if (!f.musteri || !f.firmaAdresi || !f.seri || !f.adres || !['Elektrikli','Hidrolik'].includes(f.tahrik) ||
-        !Number.isFinite(Number(f.yuk)) || Number(f.yuk) <= 0 ||
-        !Number.isFinite(Number(f.kapasite)) || Number(f.kapasite) <= 0 ||
-        !Number.isFinite(Number(f.hiz)) || Number(f.hiz) <= 0 ||
-        !Number.isInteger(Number(f.durak)) || Number(f.durak) < 1) {
-      throw new Error('Firma ve asansör adresleri, seri no, tahrik tipi, yük, kapasite, hız ve durak sayısı gerekli');
+        !['MR','MRL'].includes(f.md) || !fr65SahaSayisalAlanlariGecerliMi(sayisalAlanlar)) {
+      throw new Error('Firma ve asansör adresleri, seri no, tahrik ve makine dairesi tipi, tam sayı yük/kapasite/durak ile geçerli hız ve ölçüler gerekli');
     }
     const now = new Date().toISOString();
     const capture = AVES_TEKNIK_DOSYA_FORM.emptyFr65Capture(now);
     const fr65 = capture.forms.FR65;
     const generalValues = {
       tahrik_tipi: f.tahrik,
-      makine_dairesi: f.md || null,
-      yuk: f.yuk,
-      kapasite: f.kapasite,
-      hiz: f.hiz,
-      durak_sayisi: f.durak,
-      kat_sayisi: f.kat,
-      bina_asansor_sayisi: f.binaAsansorSayisi,
-      seyir_mesafesi: f.seyirMesafesi,
-      kuyu_yuksekligi: f.kuyuYuksekligi,
+      makine_dairesi: f.md,
+      yuk: sayisalAlanlar.yuk,
+      kapasite: sayisalAlanlar.kapasite,
+      hiz: sayisalAlanlar.hiz,
+      durak_sayisi: sayisalAlanlar.durak,
+      kat_sayisi: sayisalAlanlar.kat,
+      bina_asansor_sayisi: sayisalAlanlar.binaAsansorSayisi,
+      seyir_mesafesi: sayisalAlanlar.seyirMesafesi,
+      kuyu_yuksekligi: sayisalAlanlar.kuyuYuksekligi,
     };
     fr65.values = Object.fromEntries(Object.entries(generalValues)
       .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
@@ -2408,15 +2412,15 @@ const UI = (() => {
       // veya uygunluk değerlendirmesi başlatmaz. A3 hiçbir B/E/H1 kaydına yazılmaz.
       ana_standart: '81-20',
       ek_standartlar: [],
-      bina_asansor_sayisi: f.binaAsansorSayisi,
+      bina_asansor_sayisi: sayisalAlanlar.binaAsansorSayisi,
       kabin_giris_duzeni: null,
       kabin_kapi_acilma_tipi: null,
       tahrik_tipi: f.tahrik,
-      makine_dairesi_tipi: f.md || null,
-      beyan_yuku_kg: Number(f.yuk),
-      beyan_hizi_ms: Number(f.hiz),
-      kapasite_kisi: Number(f.kapasite),
-      durak_sayisi: Number(f.durak),
+      makine_dairesi_tipi: f.md,
+      beyan_yuku_kg: sayisalAlanlar.yuk,
+      beyan_hizi_ms: sayisalAlanlar.hiz,
+      kapasite_kisi: sayisalAlanlar.kapasite,
+      durak_sayisi: sayisalAlanlar.durak,
       aski_tipi: null,
       denetim_form_kayitlari: capture,
       teknik_dosya_kayitlari: { schema_version: 1, updated_at: now, fr65 },
@@ -2455,7 +2459,30 @@ const UI = (() => {
     return d.id;
   }
 
-  function showYeniForm() {
+  function denetimSayisiOku(alan) {
+    if (!alan || alan.value === '') return null;
+    return alan.valueAsNumber;
+  }
+
+  function fr65SahaSayisalAlanlariGecerliMi(f) {
+    const pozitifTamSayi = value => Number.isInteger(value) && value > 0;
+    const opsiyonelPozitifTamSayi = value => value === null || pozitifTamSayi(value);
+    const opsiyonelOlcu = value => value === null || (Number.isFinite(value) && value >= 0);
+    return pozitifTamSayi(f.yuk) && pozitifTamSayi(f.kapasite) &&
+      Number.isFinite(f.hiz) && f.hiz > 0 && pozitifTamSayi(f.durak) &&
+      opsiyonelPozitifTamSayi(f.kat) && opsiyonelPozitifTamSayi(f.binaAsansorSayisi) &&
+      opsiyonelOlcu(f.seyirMesafesi) && opsiyonelOlcu(f.kuyuYuksekligi);
+  }
+
+  function genelDenetimSayisalAlanlariGecerliMi(f) {
+    return Number.isInteger(f.yuk) && f.yuk > 0 &&
+      Number.isFinite(f.hiz) && f.hiz > 0 &&
+      Number.isInteger(f.kapasite) && f.kapasite > 0 &&
+      Number.isInteger(f.durak) && f.durak > 0 &&
+      Number.isInteger(f.binaAsansorSayisi) && f.binaAsansorSayisi > 0;
+  }
+
+function showYeniForm() {
     if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
@@ -2485,7 +2512,7 @@ const UI = (() => {
       <div id="captureFields" class="form-card hidden"><h3>FR.65 saha veri toplama</h3>
         <p style="font-size:11.5px;color:var(--muted);margin:0 2px 10px">Yalnız sahada görülen bilgileri ve ölçüleri kaydedin. Ana tip ve tip varyant kodu istenmez. Bu akışta TS EN 81-1/2+A3 kullanılmaz.</p>
         <div class="field full"><label>Tahrik tipi *</label>${seg('sCaptureTahrik', ['Elektrikli','Hidrolik'])}</div>
-        <div class="field full"><label>Makine dairesi tipi</label>${seg('sCaptureMD', ['MR','MRL'])}</div>
+        <div class="field full"><label>Makine dairesi tipi *</label>${seg('sCaptureMD', ['MR','MRL'])}</div>
         <div class="grid2">
           <div class="field"><label for="fCaptureYuk">Sahada görülen anma yükü (kg) *</label><input id="fCaptureYuk" type="number" min="1" step="1" inputmode="numeric"></div>
           <div class="field"><label for="fCaptureKapasite">Kişi kapasitesi *</label><input id="fCaptureKapasite" type="number" min="1" step="1" inputmode="numeric"></div>
@@ -2570,20 +2597,20 @@ const UI = (() => {
       const firmaAdresi = document.getElementById('fFirmaAdres').value.trim();
       const seri = document.getElementById('fSeri').value.trim();
       const adres = document.getElementById('fAdres').value.trim();
-      const yuk = parseInt(document.getElementById('fYuk').value) || null;
-      const hiz = parseFloat(document.getElementById('fHiz').value) || null;
-      const kapasite = parseInt(document.getElementById('fKapasite').value) || null;
-      const durak = parseInt(document.getElementById('fDurak').value) || null;
+      const yuk = denetimSayisiOku(document.getElementById('fYuk'));
+      const hiz = denetimSayisiOku(document.getElementById('fHiz'));
+      const kapasite = denetimSayisiOku(document.getElementById('fKapasite'));
+      const durak = denetimSayisiOku(document.getElementById('fDurak'));
       const kimlikNo = document.getElementById('fKimlikNo').value.trim() || null;
-      const binaAsansorSayisi = parseInt(document.getElementById('fBinaAsansorSayisi').value) || null;
-      const captureYuk = parseInt(document.getElementById('fCaptureYuk').value) || null;
-      const captureKapasite = parseInt(document.getElementById('fCaptureKapasite').value) || null;
-      const captureHiz = parseFloat(document.getElementById('fCaptureHiz').value) || null;
-      const captureDurak = parseInt(document.getElementById('fCaptureDurak').value) || null;
-      const captureKat = parseInt(document.getElementById('fCaptureKat').value) || null;
-      const captureBinaAsansorSayisi = parseInt(document.getElementById('fCaptureBinaAsansorSayisi').value) || null;
-      const captureSeyir = parseFloat(document.getElementById('fCaptureSeyir').value) || null;
-      const captureKuyu = parseFloat(document.getElementById('fCaptureKuyu').value) || null;
+      const binaAsansorSayisi = denetimSayisiOku(document.getElementById('fBinaAsansorSayisi'));
+      const captureYuk = denetimSayisiOku(document.getElementById('fCaptureYuk'));
+      const captureKapasite = denetimSayisiOku(document.getElementById('fCaptureKapasite'));
+      const captureHiz = denetimSayisiOku(document.getElementById('fCaptureHiz'));
+      const captureDurak = denetimSayisiOku(document.getElementById('fCaptureDurak'));
+      const captureKat = denetimSayisiOku(document.getElementById('fCaptureKat'));
+      const captureBinaAsansorSayisi = denetimSayisiOku(document.getElementById('fCaptureBinaAsansorSayisi'));
+      const captureSeyir = denetimSayisiOku(document.getElementById('fCaptureSeyir'));
+      const captureKuyu = denetimSayisiOku(document.getElementById('fCaptureKuyu'));
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
       if (!musteri || !seri) { toast('Asansör firması adı ve seri no zorunlu'); return; }
       if (!firmaAdresi || !adres) { toast('Firma adresi ve asansörün bulunduğu adres zorunlu'); return; }
@@ -2591,8 +2618,13 @@ const UI = (() => {
         const module = moduleTypes[single.module];
         if (!module || !['B','E','H1'].includes(single.module)) { toast('Bu modül için saha veri kaydı açılamaz'); return; }
         if (!single.sCaptureTahrik) { toast('Tahrik tipini seçin'); return; }
-        if (!captureYuk || !captureKapasite || !captureHiz || !captureDurak) {
-          toast('Sahada görülen yük, kişi kapasitesi, hız ve durak sayısını girin'); return;
+        if (!single.sCaptureMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
+        if (!fr65SahaSayisalAlanlariGecerliMi({
+          yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
+          kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
+          seyirMesafesi: captureSeyir, kuyuYuksekligi: captureKuyu,
+        })) {
+          toast('Yük, kapasite ve durak tam sayı olmalı; hız ve ölçü alanlarını kontrol edin'); return;
         }
         const seriNoUygun = await yeniDenetimSeriNoUygunMu(seri);
         if (!seriNoUygun) return;
@@ -2608,13 +2640,14 @@ const UI = (() => {
         return;
       }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
-      if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
+      if (!Number.isInteger(binaAsansorSayisi) || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını tam sayı olarak girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
       if (!single.sKapiAcilma) { toast('Kabin kapısı açılma biçimini seçin'); return; }
       if (!single.sTahrik) { toast('Tahrik tipi seçin'); return; }
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
-      if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
-      if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }
+      if (!genelDenetimSayisalAlanlariGecerliMi({ yuk, hiz, kapasite, durak, binaAsansorSayisi })) {
+        toast('Yük, kapasite, durak ve bina asansör sayısı tam sayı olmalı; hız sıfırdan büyük olmalı'); return;
+      }
 
       // Devam eden kayıt varken yeni denetim açılmaz. Tamamlanan denetimlerden
       // sonra 365 gün geçince yeni, bağımsız denetim açılabilir. Takip denetimi
