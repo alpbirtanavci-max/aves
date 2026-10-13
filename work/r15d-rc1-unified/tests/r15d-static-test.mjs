@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.85 sürümü', index.includes('R15D-RC3.9.85</b>'));
-test('app R15D rc3.9.85 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.85'"));
-test('service worker rc3.9.85 cache', sw.includes("aves-saha-r15d-rc3985'"));
-test('uygulama manifesti rc3.9.85 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.85"'));
+test('index R15D rc3.9.86 sürümü', index.includes('R15D-RC3.9.86</b>'));
+test('app R15D rc3.9.86 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.86'"));
+test('service worker rc3.9.86 cache', sw.includes("aves-saha-r15d-rc3986'"));
+test('uygulama manifesti rc3.9.86 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.86"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -602,7 +602,7 @@ test('FR.65 kuyu genişliği, derinliği ve kuyu dibi tekil cm sayılarıdır; e
     flow.includes("['kuyu_genislik', 'Kuyu genişliği (önceki mm)']") &&
     flow.includes("['kuyu_dibi', 'Önceki kuyu dibi derinliği']") &&
     flow.includes('legacyMeasurementKeys') && flow.includes('Önceki ölçü ve saha kayıtları korunuyor') &&
-    flow.includes('Eski değerler yeni alanlara dönüştürülmedi. Yeni ölçüleri alan etiketinde belirtilen birimle yeniden girin.');
+    flow.includes('Eski değerler dönüştürülmeden korunur. Yeni alanlarda etiketteki birimi kullanın; “artık ölçülmüyor” olarak belirtilen kalemler yalnızca geçmiş bilgidir.');
 })());
 test('FR.65 kabin ve karşı ağırlık ray aralıkları ayrı sayısal alanlardır; eski birleşik kayıt korunur', (() => {
   const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
@@ -624,22 +624,57 @@ test('FR.65 bütün doğrusal ölçüler cm; yalnız halat çapları mm seçenek
   const linear = fields.filter(([, label]) => /(seyir mesafesi|kuyu yüksekliği|genişliği|derinliği|yüksekliği|çapı|boyu|aralığı|boşluğu|stroku|ölçüleri|mesafeleri)/i.test(label) && !label.includes('(m/s)'));
   const convertedKeys = [
     'seyir_mesafesi_cm','kuyu_yuksekligi_cm','tahrik_kasnak_capi_cm','saptirma_kasnak_capi_cm',
-    'kabin_genislik_cm','kabin_derinlik_cm','kabin_yukseklik_cm','kabin_kapi_genislik_cm',
-    'kabin_kapi_yukseklik_cm','kat_kapisi_genislik_cm','kat_kapisi_yukseklik_cm',
+    'kabin_genislik_cm','kabin_derinlik_cm','kabin_yukseklik_cm','kabin_kat_kapi_genislik_cm',
+    'kabin_kat_kapi_yukseklik_cm',
     'kilavuz_pabucu_araligi_cm','ray_toplam_boy_cm','kuyu_genislik_cm','kuyu_derinlik_cm',
     'kuyu_dibi_cm','son_kat_yuksekligi_cm','kabin_raylar_arasi_cm','karsi_agirlik_raylar_arasi_cm',
     'karsi_agirlik_genislik_cm','karsi_agirlik_derinlik_cm','karsi_agirlik_yukseklik_cm',
-    'kabin_tampon_stroku_cm','karsi_agirlik_tampon_stroku_cm','ust_guvenli_bosluk_cm',
-    'alt_guvenli_bosluk_cm','hidrolik_piston_capi_cm','hidrolik_makara_capi_cm',
+    'kabin_tampon_stroku_cm','karsi_agirlik_tampon_stroku_cm','ana_ray_karsi_agirlik_ray_mesafesi_cm',
+    'hidrolik_piston_capi_cm','hidrolik_makara_capi_cm',
   ];
   const mmFields = fields.filter(([, label]) => label.includes('(mm'));
   return convertedKeys.every(key => fields.some(([fieldKey, label, type]) =>
     fieldKey === key && label.includes('(cm)') && type === 'number')) &&
     linear.every(([, label]) => label.includes('(cm') || label.includes('(mm')) &&
     mmFields.map(([key]) => key).sort().join(',') === 'halat_capi_mm,hidrolik_halat_capi_mm' &&
-    fields.some(([key, label]) => key === 'ray_kapi_mesafeleri_cm' && label.includes('(cm;'));
+    fields.some(([key, label, type]) => key === 'ray_kapi_mesafe_noktalari_cm' && label.includes('(cm;') && type === 'positioned_measurements') &&
+    !fields.some(([key]) => ['ust_guvenli_bosluk_cm','alt_guvenli_bosluk_cm'].includes(key));
 })());
-test('FR.65 kapılar yön/tip/panel sayısını seçenekli toplar; iki kapı ölçü grubu da cm ve paneller 1–8', (() => {
+test('FR.65 ray-kapı mesafesi konum + cm satırlarıyla kaydedilir; ana ray-karşı ağırlık ray mesafesi hemen sonrasındadır', (() => {
+  const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
+  const fields = well.fields;
+  const key = 'ray_kapi_mesafe_noktalari_cm';
+  const index = fields.findIndex(([fieldKey]) => fieldKey === key);
+  const values = { [key]: { points: [{ position: '1. kat', distance_cm: '16.5' }] } };
+  const incomplete = { [key]: { points: [{ position: '1. kat', distance_cm: '' }] } };
+  const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kuyu');
+  const incompleteCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: incomplete } } }, 'Elektrikli', 'kuyu');
+  const previous = { ray_kapi_mesafeleri_cm: { field_value: '1. kat: 16 cm' } };
+  const oldCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: previous } } }, 'Elektrikli', 'kuyu');
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return index >= 0 && fields[index][2] === 'positioned_measurements' &&
+    fields[index + 1]?.[0] === 'ana_ray_karsi_agirlik_ray_mesafesi_cm' &&
+    fields[index + 1]?.[2] === 'number' && fields[index + 1]?.[1].includes('(cm)') &&
+    count.recorded === 1 && incompleteCount.recorded === 0 && oldCount.recorded === 0 &&
+    flow.includes('data-fr65-measurement-prop="position"') &&
+    flow.includes('data-fr65-measurement-prop="distance_cm"') &&
+    flow.includes('data-fr65-add-measurement') && flow.includes('data-fr65-remove-measurement') &&
+    flow.includes('data-fr65-measurement-row') && flow.includes("event.target.matches('[data-fr65-capture-prop], [data-fr65-measurement-prop]')") &&
+    flow.includes("fieldType === 'positioned_measurements'") && flow.includes('<div class="fr65-field-control">${fieldControl}</div>') &&
+    flow.includes("['ray_kapi_mesafeleri_cm', 'Önceki serbest metin ray–kapı mesafeleri']");
+})());
+test('FR.65 kabin giriş sayısı sayısal ve konum sorusu olmadan; önceki birleşik kayıt korunur', (() => {
+  const general = technicalDocs.FR65.sections.find(section => section.key === 'genel');
+  const field = general.fields.find(([key]) => key === 'kabin_giris_sayisi');
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return field?.[2] === 'number' && !field[1].includes('konum') &&
+    flow.includes("key === 'kabin_giris_sayisi'") && flow.includes("['kabin_giris_sayisi_yeri', 'Önceki kabin giriş sayısı/konumu kaydı']");
+})());
+test('FR.65 kabin ve kat kapısı ölçüleri ortak çift; kapı ayrıntıları ortak etiket ve seçeneklerle tutulur', (() => {
   const section = technicalDocs.FR65.sections.find(item => item.key === 'kabin_kapilar');
   const fields = section.fields;
   const field = key => fields.find(([fieldKey]) => fieldKey === key);
@@ -647,13 +682,20 @@ test('FR.65 kapılar yön/tip/panel sayısını seçenekli toplar; iki kapı öl
   const panels = ['1','2','3','4','5','6','7','8'];
   const values = { ikinci_kapi_var: { field_value: 'Yok' } };
   const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kabin_kapilar');
-  return ['kabin_kapi_genislik_cm','kabin_kapi_yukseklik_cm','kat_kapisi_genislik_cm','kat_kapisi_yukseklik_cm']
+  const withSecondDoor = technicalDocs.countFr65Capture({ forms: { FR65: { values: { ikinci_kapi_var: { field_value: 'Var' } } } } }, 'Elektrikli', 'kabin_kapilar');
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return ['kabin_kat_kapi_genislik_cm','kabin_kat_kapi_yukseklik_cm']
       .every(key => field(key)?.[2] === 'number' && field(key)?.[1].includes('(cm)')) &&
-    ['kabin_kapi_yonu','kat_kapisi_yonu','ikinci_kapi_yon'].every(key => JSON.stringify(options[key]) === JSON.stringify(['Sağ','Sol','Merkezi'])) &&
-    ['kabin_kapi_tipi','kat_kapisi_tipi','ikinci_kapi_tip'].every(key => JSON.stringify(options[key]) === JSON.stringify(['Teleskopik','Merkezi'])) &&
-    ['kabin_kapi_panel_sayisi','kat_kapisi_panel_sayisi','ikinci_kapi_panel_sayisi'].every(key =>
+    ['kabin_kat_kapi_yonu','ikinci_kapi_yon'].every(key => JSON.stringify(options[key]) === JSON.stringify(['Sağ','Sol','Merkezi'])) &&
+    ['kabin_kat_kapi_tipi','ikinci_kapi_tip'].every(key => JSON.stringify(options[key]) === JSON.stringify(['Teleskopik','Merkezi'])) &&
+    ['kabin_kat_kapi_panel_sayisi','ikinci_kapi_panel_sayisi'].every(key =>
       field(key)?.[2] === 'select' && JSON.stringify(options[key]) === JSON.stringify(panels)) &&
-    !fields.some(([key]) => key === 'kapi_yon_tip_panel') && count.total === 15;
+    !fields.some(([key]) => ['kabin_kapi_genislik_cm','kabin_kapi_yukseklik_cm','kat_kapisi_genislik_cm','kat_kapisi_yukseklik_cm','kabin_kapi_yonu','kat_kapisi_yonu','kabin_kapi_tipi','kat_kapisi_tipi','kabin_kapi_panel_sayisi','kat_kapisi_panel_sayisi'].includes(key)) &&
+    fields.findIndex(([key]) => key === 'kabin_kat_kapi_genislik_cm') < fields.findIndex(([key]) => key === 'kabin_kat_kapi_yukseklik_cm') &&
+    count.total === 10 && withSecondDoor.total === 13 &&
+    flow.includes("'Kabin ve kat kapısı ölçüleri'") && flow.includes('Önceki kat kapısı genişliği (cm)');
 })());
 test('FR.65 tamponlar kabin/karşı ağırlık bazında tür ve cm strokla; belirsiz konum alanı kaldırıldı', (() => {
   const fields = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields;
@@ -716,7 +758,7 @@ test('FR.65 ek tampon kutuları isteğe bağlı açılır; boş tampon alanı va
   const legacyNoBuffer = technicalDocs.countFr65Capture({ forms: { FR65: { values: legacyNoBufferValues } } }, 'Elektrikli', 'seri_numaralari');
   const legacyBufferValues = { kabin_ek_tampon: { var_mi: 'Var' } };
   const legacyBuffer = technicalDocs.countFr65Capture({ forms: { FR65: { values: legacyBufferValues } } }, 'Elektrikli', 'seri_numaralari');
-  return door.recorded === 1 && door.total === 15 && serial.recorded === 1 &&
+  return door.recorded === 1 && door.total === 10 && serial.recorded === 1 &&
     !technicalDocs.fr65CaptureFieldActive(['ikinci_kapi_yon'], values) &&
     optionalUi.includes('<details class="fr65-extra-serial-fields"') && optionalUi.includes("'Varsa bilgilerini ekle'") &&
     optionalUi.includes("value.var_mi === 'Yok' ? 'Önceki kayıt: Yok'") &&
