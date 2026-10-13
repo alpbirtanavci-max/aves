@@ -3451,8 +3451,6 @@ function showYeniForm() {
     updateSummary();
     activeFr65PositionSaver = () => {
       if (currentView !== 'inspection' || currentDenetimId !== d.id) return;
-      const openSection = app.querySelector('[data-fr65-section-id][open]');
-      if (openSection) rememberCaptureSection(openSection.dataset.fr65SectionId);
       try { localStorage.setItem(captureScrollStorageKey, String(Math.max(0, Math.round(window.scrollY || window.pageYOffset || 0)))); }
       catch (error) { console.warn('FR.65 kaydırma konumu saklanamadı', error); }
     };

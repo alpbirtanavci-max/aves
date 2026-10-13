@@ -1464,7 +1464,8 @@ test('FR.65 son açık bölümü denetim bazında saklar ve yeniden açıldığ�
     flow.includes("sectionElement.querySelector(':scope > summary')?.addEventListener('click'") &&
     flow.includes("sectionElement.addEventListener('toggle'") &&
     flow.includes('rememberCaptureSection(button.dataset.fr65Jump)') &&
-    flow.includes('rememberCaptureSection(nextKey)');
+    flow.includes('rememberCaptureSection(nextKey)') &&
+    !flow.includes("app.querySelector('[data-fr65-section-id][open]')");
 })());
 test('FR.65 sayfadan ayrılıp dönünce son kaydırma konumunu cihazda saklar ve geri yükler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
