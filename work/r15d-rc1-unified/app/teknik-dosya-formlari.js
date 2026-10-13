@@ -18,8 +18,8 @@
           ['durak_sayisi', 'Durak sayısı', 'number'],
           ['kat_sayisi', 'Kat sayısı', 'number'],
           ['bina_asansor_sayisi', 'Binadaki toplam asansör sayısı', 'number'],
-          ['seyir_mesafesi', 'Seyir mesafesi (m)', 'number'],
-          ['kuyu_yuksekligi', 'Kuyu yüksekliği (m)', 'number'],
+          ['seyir_mesafesi_cm', 'Seyir mesafesi (cm)', 'number'],
+          ['kuyu_yuksekligi_cm', 'Kuyu yüksekliği (cm)', 'number'],
           ['makine_dairesi', 'Makine dairesi (MR / MRL)', 'readonly'],
           ['kabin_giris_sayisi_yeri', 'Kabin giriş sayısı ve konumu'],
         ],
@@ -36,7 +36,7 @@
           ['ucm', 'UCM tertibatı'],
           ['yukari_hiz_koruma', 'Yukarı yönde aşırı hız koruma tertibatı'],
           ['elektrikli_makine', 'Elektrikli makine / motor', 'electric'],
-          ['gsm_modulu', 'GSM modülü (varsa)', 'optional_gsm'],
+          ['gsm_modulu', 'GSM modülü', 'gsm'],
         ],
       },
       {
@@ -44,27 +44,34 @@
           ['elektrikli_tahrik_yontemi', 'Sahada görülen tahrik yöntemi', 'select'],
           ['makine_konumu', 'Makine / motor konumu', 'select'],
           ['makine_guc', 'Makine / motor gücü (kW)'],
-          ['halat_tipi', 'Halat tipi, kol sayısı ve çapı'],
+          ['halat_sayisi', 'Halat sayısı', 'select'],
+          ['halat_capi_mm', 'Halat çapı (mm)', 'select'],
           ['aski_duzeni', 'Askı oranı / askı düzeni', 'select'],
-          ['kasnak_caplari', 'Tahrik ve saptırma kasnağı çapları'],
+          ['tahrik_kasnak_capi_cm', 'Tahrik kasnağı çapı (cm)', 'number'],
+          ['saptirma_kasnak_capi_cm', 'Saptırma kasnağı çapı (cm)', 'number'],
           ['halat_sarma_acisi', 'Halat sarım açısı (°)', 'number'],
         ],
       },
       {
         key: 'kabin_kapilar', tab: 'Kabin', group: 'olcu', title: 'Kabin ve kapı ölçüleri', fields: [
-          ['kabin_genislik', 'Kabin iç genişliği (mm)', 'number'],
-          ['kabin_derinlik', 'Kabin iç derinliği (mm)', 'number'],
-          ['kabin_yukseklik', 'Kabin iç yüksekliği (mm)', 'number'],
-          ['kabin_kapi_genislik', 'Kabin kapısı net genişliği (mm)', 'number'],
-          ['kabin_kapi_yukseklik', 'Kabin kapısı net yüksekliği (mm)', 'number'],
-          ['kat_kapisi_genislik', 'Kat kapısı net genişliği (mm)', 'number'],
-          ['kat_kapisi_yukseklik', 'Kat kapısı net yüksekliği (mm)', 'number'],
-          ['kilavuz_pabucu_araligi', 'Kabin kılavuz pabuçları düşey aralığı'],
-          ['kapi_yon_tip_panel', 'Mevcut kapıların yönü, tipi ve panel sayısı'],
+          ['kabin_genislik_cm', 'Kabin iç genişliği (cm)', 'number'],
+          ['kabin_derinlik_cm', 'Kabin iç derinliği (cm)', 'number'],
+          ['kabin_yukseklik_cm', 'Kabin iç yüksekliği (cm)', 'number'],
+          ['kabin_kapi_genislik_cm', 'Kabin kapısı net genişliği (cm)', 'number'],
+          ['kabin_kapi_yukseklik_cm', 'Kabin kapısı net yüksekliği (cm)', 'number'],
+          ['kat_kapisi_genislik_cm', 'Kat kapısı net genişliği (cm)', 'number'],
+          ['kat_kapisi_yukseklik_cm', 'Kat kapısı net yüksekliği (cm)', 'number'],
+          ['kilavuz_pabucu_araligi_cm', 'Kabin kılavuz pabuçları düşey aralığı (cm)', 'number'],
+          ['kabin_kapi_yonu', 'Kabin kapısı yönü', 'select'],
+          ['kabin_kapi_tipi', 'Kabin kapısı tipi', 'select'],
+          ['kabin_kapi_panel_sayisi', 'Kabin kapısı panel sayısı', 'select'],
+          ['kat_kapisi_yonu', 'Kat kapısı yönü', 'select'],
+          ['kat_kapisi_tipi', 'Kat kapısı tipi', 'select'],
+          ['kat_kapisi_panel_sayisi', 'Kat kapısı panel sayısı', 'select'],
           ['ikinci_kapi_var', 'İkinci kabin kapısı var mı?', 'select'],
           ['ikinci_kapi_yon', 'İkinci kapının yönü', 'select'],
           ['ikinci_kapi_tip', 'İkinci kapının tipi', 'select'],
-          ['ikinci_kapi_panel_sayisi', 'İkinci kapının panel sayısı', 'number'],
+          ['ikinci_kapi_panel_sayisi', 'İkinci kapının panel sayısı', 'select'],
         ],
       },
       {
@@ -72,7 +79,7 @@
           ['kabin_ray_tip_olcu', 'Kabin kılavuz rayı profili', 'select'],
           ['karsi_agirlik_ray_tip_olcu', 'Karşı ağırlık kılavuz rayı profili', 'select'],
           ['ray_konum_aski', 'Rayların konumu ve askı düzeni'],
-          ['ray_toplam_boy', 'Toplam ray boyu'],
+          ['ray_toplam_boy_cm', 'Toplam ray boyu (cm)', 'number'],
         ],
       },
       {
@@ -80,28 +87,36 @@
           ['kuyu_genislik_cm', 'Kuyu genişliği (cm)', 'number'],
           ['kuyu_derinlik_cm', 'Kuyu derinliği (cm)', 'number'],
           ['kuyu_dibi_cm', 'Kuyu dibi derinliği (cm)', 'number'],
-          ['ust_bosluk', 'Üst kat / kuyu üst boşluğu'],
-          ['toplam_kuyu_olcusu', 'Toplam kuyu ölçüsü ve seyir mesafesi'],
-          ['kabin_raylar_arasi', 'Kabin ana rayları arası (mm)', 'number'],
-          ['karsi_agirlik_raylar_arasi', 'Karşı ağırlık rayları arası (mm)', 'number'],
-          ['ray_kapi_mesafesi', 'Ray–kapı mesafeleri'],
-          ['karsi_agirlik_adet_olcu', 'Karşı ağırlık adedi ve ölçüleri'],
+          ['son_kat_yuksekligi_cm', 'Son kat yüksekliği (cm)', 'number'],
+          ['kabin_raylar_arasi_cm', 'Kabin ana rayları arası (cm)', 'number'],
+          ['karsi_agirlik_raylar_arasi_cm', 'Karşı ağırlık rayları arası (cm)', 'number'],
+          ['ray_kapi_mesafeleri_cm', 'Ray–kapı mesafeleri (cm; konumlarıyla)'],
+          ['karsi_agirlik_parca_sayisi', 'Karşı ağırlık parça sayısı', 'number'],
+          ['karsi_agirlik_genislik_cm', 'Karşı ağırlık genişliği (cm)', 'number'],
+          ['karsi_agirlik_derinlik_cm', 'Karşı ağırlık derinliği (cm)', 'number'],
+          ['karsi_agirlik_yukseklik_cm', 'Karşı ağırlık yüksekliği (cm)', 'number'],
           ['kismen_kapali_kuyu', 'Kuyu kısmen çevrili mi?', 'select'],
           ['kismen_kapali_kuyu_detay', 'Kısmen çevrili kuyu açıklaması'],
           ['kuyu_alti_kullanim_yuk', 'Kuyu altında kullanılabilir alan / yük bulunan hacim var mı?', 'select'],
           ['kuyu_alti_kullanim_yuk_detay', 'Kuyu altındaki kullanılabilir alan / yük bilgisi'],
-          ['tampon_strok_konum', 'Tampon tipi, stroku ve konumu'],
-          ['ust_alt_guvenli_bosluk', 'Kuyu üstü ve altı güvenli çalışma boşlukları'],
+          ['kabin_tampon_tipi', 'Kabin tamponu tipi', 'select'],
+          ['kabin_tampon_stroku_cm', 'Kabin tamponu stroku (cm)', 'number'],
+          ['karsi_agirlik_tampon_tipi', 'Karşı ağırlık tamponu tipi', 'select'],
+          ['karsi_agirlik_tampon_stroku_cm', 'Karşı ağırlık tamponu stroku (cm)', 'number'],
+          ['ust_guvenli_bosluk_cm', 'Kuyu üstü güvenli çalışma boşluğu (cm)', 'number'],
+          ['alt_guvenli_bosluk_cm', 'Kuyu altı güvenli çalışma boşluğu (cm)', 'number'],
         ],
       },
       {
         key: 'hidrolik', tab: 'Hidrolik', group: 'olcu', title: 'Hidrolik tahrik ölçüleri', traction: 'Hidrolik', fields: [
           ['hidrolik_unite_konumu', 'Güç ünitesi konumu'],
           ['hidrolik_motor_guc', 'Motor gücü (kW)'],
-          ['hidrolik_halat', 'Varsa halat tipi, adedi, çapı ve askı düzeni'],
-          ['piston_makara_cap', 'Piston / üst makara çapları'],
-          ['piston_cap_adet_konum', 'Piston çapı, adedi ve konumu'],
-          ['hidrolik_kapi', 'Kapı düzeni ve açıklık bilgileri'],
+          ['hidrolik_halat_sayisi', 'Hidrolik asansör halat sayısı (varsa)', 'optional_select'],
+          ['hidrolik_halat_capi_mm', 'Hidrolik asansör halat çapı (mm; varsa)', 'optional_select'],
+          ['hidrolik_piston_capi_cm', 'Piston çapı (cm)', 'number'],
+          ['hidrolik_makara_capi_cm', 'Üst makara çapı (cm)', 'number'],
+          ['hidrolik_piston_adedi', 'Piston adedi', 'number'],
+          ['hidrolik_piston_konumu', 'Piston konumu'],
           ['hidrolik_valfler', 'Hidrolik valf ve boru kırılma tertibatı saha bilgisi'],
           ['hidrolik_motor', 'Hidrolik güç ünitesi / motor', 'serial'],
           ['hidrolik_boru_kirilma', 'Hidrolik valf / boru kırılma tertibatı', 'serial'],
@@ -115,8 +130,21 @@
     makine_konumu: ['Makine dairesi', 'Kuyu içi'],
     aski_duzeni: ['1:1', '2:1', '4:1', 'Diğer'],
     ikinci_kapi_var: ['Yok', 'Var'],
-    ikinci_kapi_yon: ['Karşılıklı', 'Bitişik yan duvarda', 'Diğer'],
-    ikinci_kapi_tip: ['Teleskopik', 'Merkezi açılır', 'Diğer'],
+    ikinci_kapi_yon: ['Sağ', 'Sol', 'Merkezi'],
+    ikinci_kapi_tip: ['Teleskopik', 'Merkezi'],
+    ikinci_kapi_panel_sayisi: ['1', '2', '3', '4', '5', '6', '7', '8'],
+    halat_sayisi: ['1', '2', '3', '4', '5', '6', '7', '8'],
+    halat_capi_mm: ['6', '6.5', '8', '10', '12'],
+    hidrolik_halat_sayisi: ['1', '2', '3', '4', '5', '6', '7', '8'],
+    hidrolik_halat_capi_mm: ['6', '6.5', '8', '10', '12'],
+    kabin_kapi_yonu: ['Sağ', 'Sol', 'Merkezi'],
+    kat_kapisi_yonu: ['Sağ', 'Sol', 'Merkezi'],
+    kabin_kapi_tipi: ['Teleskopik', 'Merkezi'],
+    kat_kapisi_tipi: ['Teleskopik', 'Merkezi'],
+    kabin_kapi_panel_sayisi: ['1', '2', '3', '4', '5', '6', '7', '8'],
+    kat_kapisi_panel_sayisi: ['1', '2', '3', '4', '5', '6', '7', '8'],
+    kabin_tampon_tipi: ['Hidrolik', 'Poliüretan'],
+    karsi_agirlik_tampon_tipi: ['Hidrolik', 'Poliüretan'],
     kismen_kapali_kuyu: ['Yok', 'Var'],
     kuyu_alti_kullanim_yuk: ['Yok', 'Var'],
     kabin_ray_tip_olcu: ['T50', 'T70', 'T89', 'T90', 'T125', 'T140', 'Diğer / açıklama'],
@@ -231,15 +259,12 @@
   function fr65CaptureFieldRecorded(field, value) {
     if (!value || typeof value !== 'object') return false;
     const fieldType = field[2];
-    if (fieldType === 'select') return !!String(value.field_value || '').trim();
+    if (fieldType === 'select' || fieldType === 'optional_select') return !!String(value.field_value || '').trim();
     if (fieldType === 'optional_serial') {
       if (value.var_mi === 'Yok') return true;
       return value.var_mi === 'Var' && ['marka', 'tip', 'seri_no'].every(prop => String(value[prop] || '').trim());
     }
-    if (fieldType === 'optional_gsm') {
-      if (value.var_mi === 'Yok') return true;
-      return value.var_mi === 'Var' && ['marka', 'tip', 'imei'].every(prop => String(value[prop] || '').trim());
-    }
+    if (fieldType === 'gsm') return ['marka', 'tip', 'imei'].every(prop => String(value[prop] || '').trim());
     if (fieldType === 'serial' || field[0] === 'elektrikli_makine' ||
         (FR65.sections.find(section => section.key === 'seri_numaralari')?.fields.some(([key]) => key === field[0]))) {
       return ['marka', 'tip', 'seri_no'].some(prop => String(value[prop] || '').trim());
@@ -309,6 +334,10 @@
         if (field[2] !== 'optional_serial') return true;
         const value = values[field[0]];
         return value?.var_mi === 'Var' || ['marka', 'tip', 'seri_no'].some(prop => String(value?.[prop] || '').trim());
+      })
+      .filter(field => {
+        if (field[2] !== 'optional_select') return true;
+        return !!String(values[field[0]]?.field_value || '').trim();
       });
     const recorded = fields.filter(field => {
       const [key] = field;
