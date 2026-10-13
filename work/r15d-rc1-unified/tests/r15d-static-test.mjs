@@ -99,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.76 sürümü', index.includes('R15D-RC3.9.76</b>'));
-test('app R15D rc3.9.76 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.76'"));
-test('service worker rc3.9.76 cache', sw.includes("aves-saha-r15d-rc3976'"));
-test('uygulama manifesti rc3.9.76 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.76"'));
+test('index R15D rc3.9.77 sürümü', index.includes('R15D-RC3.9.77</b>'));
+test('app R15D rc3.9.77 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.77'"));
+test('service worker rc3.9.77 cache', sw.includes("aves-saha-r15d-rc3977'"));
+test('uygulama manifesti rc3.9.77 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.77"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -419,6 +419,14 @@ test('seri no sunucu sorgusu hatasında yanıltıcı bağlantı mesajı yerine g
     flow.includes('Kayıt açılmadı.`, 10000)') &&
     flow.includes('return false;') &&
     !flow.includes('bağlantıyı kontrol edin');
+})());
+test('seri no sunucu sonuçlarını birleştiren Map aynı tanımlı değişken adıyla okunur', (() => {
+  const start = app.indexOf('async function yeniDenetimSeriNoUygunMu(');
+  const end = app.indexOf('\n  function showFr65OnayEkrani(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('const birlesikKayitlar = new Map(') &&
+    flow.includes('ayniSeriKayitlari = [...birlesikKayitlar.values()]') &&
+    !flow.includes('birlesikKayitlari');
 })());
 test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti var',
   app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
