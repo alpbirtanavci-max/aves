@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.75';
+const APP_VERSION = 'R15D-rc3.9.76';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -2291,8 +2291,12 @@ const UI = (() => {
         sunucudakiKayitlar.filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari)
           .forEach(item => birlesikKayitlar.set(item.id, { ...birlesikKayitlar.get(item.id), ...item }));
         ayniSeriKayitlari = [...birlesikKayitlari.values()];
-      } catch {
-        toast('Seri no tekrar kontrolü sunucuda yapılamadı; bağlantıyı kontrol edin');
+      } catch (error) {
+        const detail = error instanceof Error
+          ? `${error.name}${error.message ? `: ${error.message}` : ''}`
+          : `Bilinmeyen hata: ${String(error)}`;
+        console.error('[AVES] Seri no kontrol hatası', error);
+        toast(`Seri no kontrol hatası: ${detail.replace(/\s+/g, ' ').slice(0, 120)}. Kayıt açılmadı.`, 10000);
         return false;
       }
     }
@@ -5668,11 +5672,11 @@ const UI = (() => {
 
 /* ================= Toast ================= */
 let toastTimer;
-function toast(msg) {
+function toast(msg, duration = 2200) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
 }
 
 // Native kabukta (Capacitor — bkz. native/ fizibilite denemesi) uygulama

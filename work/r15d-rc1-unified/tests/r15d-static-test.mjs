@@ -99,10 +99,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.75 sürümü', index.includes('R15D-RC3.9.75</b>'));
-test('app R15D rc3.9.75 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.75'"));
-test('service worker rc3.9.75 cache', sw.includes("aves-saha-r15d-rc3975'"));
-test('uygulama manifesti rc3.9.75 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.75"'));
+test('index R15D rc3.9.76 sürümü', index.includes('R15D-RC3.9.76</b>'));
+test('app R15D rc3.9.76 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.76'"));
+test('service worker rc3.9.76 cache', sw.includes("aves-saha-r15d-rc3976'"));
+test('uygulama manifesti rc3.9.76 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.76"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -409,6 +409,17 @@ test('fotoğraf arşiv durumu migrationı mevcut kayıt silmeden ek alanlar aça
   rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_son_indirme_at') && rc3935PhotoArchiveStatusMigration.includes('fotograf_arsiv_temizlendi_at') && !/\b(delete|truncate)\b/i.test(rc3935PhotoArchiveStatusMigration));
 test('seri no tekrarında yalnız görünür kayıtlar, devam eden kayıt ve 365 gün kuralı var; boş eşleşme yeni denetimi engellemez',
   app.includes('if (!kayitlar.length) return \'\';') && app.includes('denetimGorunebilirMi(item) && normSeriNo(item.asansor_seri_no) === seriAnahtari') && app.includes("denetim_durumu !== 'Çalışma Tamamlandı'") && app.includes('365 * 24 * 60 * 60 * 1000') && app.includes('Yeni bağımsız denetim 365 gün sonra açılabilir') && app.includes('Takip denetimi'));
+test('seri no sunucu sorgusu hatasında yanıltıcı bağlantı mesajı yerine gerçek istemci nedeni gösterilir; kayıt fail-closed kalır', (() => {
+  const start = app.indexOf('async function yeniDenetimSeriNoUygunMu(');
+  const end = app.indexOf('\n  function showFr65OnayEkrani(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('catch (error)') &&
+    flow.includes("console.error('[AVES] Seri no kontrol hatası', error)") &&
+    flow.includes('detail.replace(/\\s+/g, \' \').slice(0, 120)') &&
+    flow.includes('Kayıt açılmadı.`, 10000)') &&
+    flow.includes('return false;') &&
+    !flow.includes('bağlantıyı kontrol edin');
+})());
 test('fotoğrafsız uygunsuzluk listesi ve tamamlanmış denetim sonuç özeti var',
   app.includes('Uygunsuzluk Listesi') && app.includes('fotoğraf içermez') && app.includes('Sonuç özeti'));
 test('fotoğraf ZIP adı seri no ve tarih içeriyor', app.includes('arsivKimligi') && app.includes('_fotograflar.zip'));
