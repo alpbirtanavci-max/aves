@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.77';
+const APP_VERSION = 'R15D-rc3.9.79';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -583,6 +583,7 @@ const Sync = (() => {
             const condition = item.conditional_update;
             const allowedFields = new Set([
               'denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at',
+              'beyan_yuku_kg', 'kapasite_kisi', 'beyan_hizi_ms', 'durak_sayisi', 'bina_asansor_sayisi',
               'denetim_durumu', 'calisma_tamamlandi_at', 'duzeltme_oturumu_id',
               'duzeltme_nedeni', 'duzeltme_baslatildi_at', 'duzeltme_baslatan_email',
               'duzeltme_baslatan_ad', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at',
@@ -960,6 +961,7 @@ const Sync = (() => {
 /* ================= Yerel yazma (local-first) ================= */
 const GECMIS_ALANLARI = {
   denetimler: [
+    'firma_adresi', 'denetim_adresi',
     'denetim_durumu', 'saha_tamamlandi_at', 'gozden_gecirme_at', 'calisma_tamamlandi_at',
     'offline_hazir_at', 'expected_item_count', 'expected_item_set_hash', 'butunluk_hash', 'seri_numaralari', 'teknik_dosya_kayitlari', 'denetim_form_kayitlari',
     'takip_ana_denetim_id', 'takip_onceki_denetim_id', 'takip_sira_no',
@@ -1955,12 +1957,13 @@ const UI = (() => {
       const card = document.createElement('button');
       card.className = `dcard${supported ? '' : ' unsupported'}`;
       card.disabled = !supported;
-      card.dataset.search = `${d.musteri_unvani || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
+      card.dataset.search = `${d.musteri_unvani || ''} ${d.firma_adresi || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
       card.dataset.date = d.denetim_tarihi || '';
       card.innerHTML = `
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
         <span class="ddate">${esc(d.denetim_tarihi || '')}</span></div>
-        <div class="dmeta">${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${fr65Capture ? 'FR.65 saha veri kaydı' : esc(standartOzeti(d))}</div>
+        <div class="dmeta"><b>Asansör adresi:</b> ${esc(d.denetim_adresi || '')} ${denetimTuruOzeti(d) ? '· ' + esc(denetimTuruOzeti(d)) : ''} · ${fr65Capture ? 'FR.65 saha veri kaydı' : esc(standartOzeti(d))}</div>
+        ${d.firma_adresi ? `<div class="dmeta"><b>Firma adresi:</b> ${esc(d.firma_adresi)}</div>` : ''}
         ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${Profile.canSeeAllInspections ? `<div class="dmeta"><b>Denetçi:</b> ${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</div>` : ''}
         ${d.takip_sira_no ? `<div class="dmeta"><b>Takip denetimi:</b> T${esc(d.takip_sira_no)}</div>` : ''}
@@ -2094,10 +2097,21 @@ const UI = (() => {
     if (followup) followup.onclick = async () => {
       const takipMesaji = 'Önceki denetim değiştirilmeyecek. Ona bağlı yeni bir Modül G takip denetimi oluşturulsun mu?';
       if (!confirm(takipMesaji)) return;
+      const takipKaynak = { ...d };
+      if (!takipKaynak.firma_adresi) {
+        takipKaynak.firma_adresi = window.prompt('Takip denetimi için asansör firmasının adresini girin:')?.trim() || '';
+      }
+      if (!takipKaynak.denetim_adresi) {
+        takipKaynak.denetim_adresi = window.prompt('Takip denetimi için asansörün bulunduğu adresi girin:')?.trim() || '';
+      }
+      if (!takipKaynak.firma_adresi || !takipKaynak.denetim_adresi) {
+        toast('Takip denetimi için firma ve asansör adresleri gerekli');
+        return;
+      }
       followup.disabled = true;
       followup.querySelector('b').textContent = 'Takip hazırlanıyor…';
       try {
-        const yeniId = await takipDenetimiOlustur(d);
+        const yeniId = await takipDenetimiOlustur(takipKaynak);
         close();
         await showDenetim(yeniId, false, 'previous_bad');
       } catch (error) {
@@ -2176,6 +2190,7 @@ const UI = (() => {
       dosya_no: kaynak.dosya_no || null,
       asansor_kimlik_no: kaynak.asansor_kimlik_no || null,
       musteri_unvani: kaynak.musteri_unvani,
+      firma_adresi: kaynak.firma_adresi || null,
       denetim_adresi: kaynak.denetim_adresi,
       asansor_seri_no: kaynak.asansor_seri_no,
       modul: kaynak.modul,
@@ -2315,8 +2330,8 @@ const UI = (() => {
     const row = (label, value) => `<div class="onay-satir"><span>${esc(label)}</span><b>${esc(value || '—')}</b></div>`;
     ov.innerHTML = `<div class="modal">
       <h3>Saha veri kaydını başlat</h3>
-      <div class="onay-box">${row('Mühendis', f.muhendis)}${row('Müşteri', f.musteri)}${row('Seri no', f.seri)}${row('Adres', f.adres)}${row('Modül', f.modul)}${row('Tahrik tipi', f.tahrik)}</div>
-      <div class="photo-help">Bu akış yalnız ÜB.FR.65 referanslı teknik dosya ve saha verilerini toplar. Uygunluk/belgelendirme değerlendirmesi veya resmî form üretmez.</div>
+      <div class="onay-box">${row('Mühendis', f.muhendis)}${row('Asansör firması', f.musteri)}${row('Firma adresi', f.firmaAdresi)}${row('Asansörün bulunduğu adres', f.adres)}${row('Asansör seri no', f.seri)}${row('Modül', f.modul)}${row('Tahrik tipi', f.tahrik)}${row('Makine dairesi', f.md)}${row('Anma yükü', f.yuk ? `${f.yuk} kg` : '')}${row('Kişi kapasitesi', f.kapasite ? `${f.kapasite} kişi` : '')}${row('Hız', f.hiz ? `${f.hiz} m/s` : '')}${row('Durak sayısı', f.durak)}${row('Kat sayısı', f.kat)}</div>
+      <div class="photo-help">Bu kayıt yalnız sahada görülen ve ölçülen bilgileri toplar. Uygunluk veya belgelendirme kararı üretmez.</div>
       <button class="btn btn-ghost" id="fr65Cancel" style="margin-bottom:8px">‹ Bilgileri düzelt</button>
       <button class="btn btn-primary" id="fr65Start">Saha kaydını başlat</button>
     </div>`;
@@ -2350,16 +2365,40 @@ const UI = (() => {
     if (!module || f.akış !== 'fr65_saha_v1' || module.type !== f.denetimTuru || module.profile !== f.kontrolProfili) {
       throw new Error('Modül ve saha veri akışı eşleşmiyor');
     }
-    if (!f.musteri || !f.seri || !f.adres || !['Elektrikli','Hidrolik'].includes(f.tahrik)) {
-      throw new Error('Müşteri, seri no, adres ve tahrik tipi gerekli');
+    const sayisalAlanlar = {
+      yuk: Number(f.yuk), kapasite: Number(f.kapasite), hiz: Number(f.hiz), durak: Number(f.durak),
+      kat: f.kat == null || f.kat === '' ? null : Number(f.kat),
+      binaAsansorSayisi: f.binaAsansorSayisi == null || f.binaAsansorSayisi === '' ? null : Number(f.binaAsansorSayisi),
+      seyirMesafesi: f.seyirMesafesi == null || f.seyirMesafesi === '' ? null : Number(f.seyirMesafesi),
+      kuyuYuksekligi: f.kuyuYuksekligi == null || f.kuyuYuksekligi === '' ? null : Number(f.kuyuYuksekligi),
+    };
+    if (!f.musteri || !f.firmaAdresi || !f.seri || !f.adres || !['Elektrikli','Hidrolik'].includes(f.tahrik) ||
+        !['MR','MRL'].includes(f.md) || !fr65SahaSayisalAlanlariGecerliMi(sayisalAlanlar)) {
+      throw new Error('Firma ve asansör adresleri, seri no, tahrik ve makine dairesi tipi, tam sayı yük/kapasite/durak ile geçerli hız ve ölçüler gerekli');
     }
     const now = new Date().toISOString();
     const capture = AVES_TEKNIK_DOSYA_FORM.emptyFr65Capture(now);
     const fr65 = capture.forms.FR65;
+    const generalValues = {
+      tahrik_tipi: f.tahrik,
+      makine_dairesi: f.md,
+      yuk: sayisalAlanlar.yuk,
+      kapasite: sayisalAlanlar.kapasite,
+      hiz: sayisalAlanlar.hiz,
+      durak_sayisi: sayisalAlanlar.durak,
+      kat_sayisi: sayisalAlanlar.kat,
+      bina_asansor_sayisi: sayisalAlanlar.binaAsansorSayisi,
+      seyir_mesafesi: sayisalAlanlar.seyirMesafesi,
+      kuyu_yuksekligi: sayisalAlanlar.kuyuYuksekligi,
+    };
+    fr65.values = Object.fromEntries(Object.entries(generalValues)
+      .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== '')
+      .map(([key, value]) => [key, { field_value: String(value) }]));
     const d = {
       id: crypto.randomUUID(),
       dosya_no: f.dosya || null,
       musteri_unvani: f.musteri,
+      firma_adresi: f.firmaAdresi,
       denetim_adresi: f.adres,
       asansor_seri_no: f.seri,
       asansor_kimlik_no: f.kimlikNo || null,
@@ -2373,15 +2412,15 @@ const UI = (() => {
       // veya uygunluk değerlendirmesi başlatmaz. A3 hiçbir B/E/H1 kaydına yazılmaz.
       ana_standart: '81-20',
       ek_standartlar: [],
-      bina_asansor_sayisi: null,
+      bina_asansor_sayisi: sayisalAlanlar.binaAsansorSayisi,
       kabin_giris_duzeni: null,
       kabin_kapi_acilma_tipi: null,
       tahrik_tipi: f.tahrik,
-      makine_dairesi_tipi: null,
-      beyan_yuku_kg: null,
-      beyan_hizi_ms: null,
-      kapasite_kisi: null,
-      durak_sayisi: null,
+      makine_dairesi_tipi: f.md,
+      beyan_yuku_kg: sayisalAlanlar.yuk,
+      beyan_hizi_ms: sayisalAlanlar.hiz,
+      kapasite_kisi: sayisalAlanlar.kapasite,
+      durak_sayisi: sayisalAlanlar.durak,
       aski_tipi: null,
       denetim_form_kayitlari: capture,
       teknik_dosya_kayitlari: { schema_version: 1, updated_at: now, fr65 },
@@ -2420,7 +2459,30 @@ const UI = (() => {
     return d.id;
   }
 
-  function showYeniForm() {
+  function denetimSayisiOku(alan) {
+    if (!alan || alan.value === '') return null;
+    return alan.valueAsNumber;
+  }
+
+  function fr65SahaSayisalAlanlariGecerliMi(f) {
+    const pozitifTamSayi = value => Number.isInteger(value) && value > 0;
+    const opsiyonelPozitifTamSayi = value => value === null || pozitifTamSayi(value);
+    const opsiyonelOlcu = value => value === null || (Number.isFinite(value) && value >= 0);
+    return pozitifTamSayi(f.yuk) && pozitifTamSayi(f.kapasite) &&
+      Number.isFinite(f.hiz) && f.hiz > 0 && pozitifTamSayi(f.durak) &&
+      opsiyonelPozitifTamSayi(f.kat) && opsiyonelPozitifTamSayi(f.binaAsansorSayisi) &&
+      opsiyonelOlcu(f.seyirMesafesi) && opsiyonelOlcu(f.kuyuYuksekligi);
+  }
+
+  function genelDenetimSayisalAlanlariGecerliMi(f) {
+    return Number.isInteger(f.yuk) && f.yuk > 0 &&
+      Number.isFinite(f.hiz) && f.hiz > 0 &&
+      Number.isInteger(f.kapasite) && f.kapasite > 0 &&
+      Number.isInteger(f.durak) && f.durak > 0 &&
+      Number.isInteger(f.binaAsansorSayisi) && f.binaAsansorSayisi > 0;
+  }
+
+function showYeniForm() {
     if (!Profile.canCreate) { toast('Yeni denetim oluşturma yetkiniz yok'); showList(); return; }
     currentView = 'new-inspection';
     currentDenetimId = null;
@@ -2435,20 +2497,32 @@ const UI = (() => {
       </div>
       <div class="form-card"><h3>Asansör bilgileri</h3>
         <div class="grid2">
-          <div class="field full"><label for="fMusteri">Müşteri ünvanı *</label><input id="fMusteri" autocomplete="organization"></div>
+          <div class="field full"><label for="fMusteri">Asansör firması adı *</label><input id="fMusteri" autocomplete="organization"></div>
+          <div class="field full"><label for="fFirmaAdres">Asansör firmasının adresi *</label><input id="fFirmaAdres" autocomplete="street-address"></div>
           <div class="field"><label for="fSeri">Asansör seri no *</label><input id="fSeri" autocomplete="off"></div>
           <div class="field"><label for="fDosya">Dosya no</label><input id="fDosya" autocomplete="off"></div>
           <div class="field"><label for="fKimlikNo">Asansör kimlik no</label><input id="fKimlikNo" autocomplete="off"></div>
-          <div class="field full"><label for="fAdres">Adres *</label><input id="fAdres" autocomplete="street-address"></div>
+          <div class="field full"><label for="fAdres">Asansörün bulunduğu adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
       <div class="form-card"><h3>Denetim modülü</h3>
         ${seg('sModul', ['G','B','E','H1'])}
         <p style="font-size:11.5px;color:var(--muted);margin:8px 2px 0">G modülü tam saha checklistidir. B, E ve H1 için yalnız FR.65 referanslı ölçü ve kimlik verileri kaydedilir; uygunluk kararı verilmez.</p>
       </div>
-      <div id="captureFields" class="form-card hidden"><h3>FR.65 saha veri kaydı</h3>
-        <p style="font-size:11.5px;color:var(--muted);margin:0 2px 10px">Dosyadaki beyan ile sahada görülen/ölçülen değeri karşılaştırmadan, ayrı alanlara yazın. Ana tip ve tip varyant kodu zorunlu değildir. Bu akışta TS EN 81-1/2+A3 kullanılmaz.</p>
+      <div id="captureFields" class="form-card hidden"><h3>FR.65 saha veri toplama</h3>
+        <p style="font-size:11.5px;color:var(--muted);margin:0 2px 10px">Yalnız sahada görülen bilgileri ve ölçüleri kaydedin. Ana tip ve tip varyant kodu istenmez. Bu akışta TS EN 81-1/2+A3 kullanılmaz.</p>
         <div class="field full"><label>Tahrik tipi *</label>${seg('sCaptureTahrik', ['Elektrikli','Hidrolik'])}</div>
+        <div class="field full"><label>Makine dairesi tipi *</label>${seg('sCaptureMD', ['MR','MRL'])}</div>
+        <div class="grid2">
+          <div class="field"><label for="fCaptureYuk">Sahada görülen anma yükü (kg) *</label><input id="fCaptureYuk" type="number" min="1" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="fCaptureKapasite">Kişi kapasitesi *</label><input id="fCaptureKapasite" type="number" min="1" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="fCaptureHiz">Sahada görülen hız (m/s) *</label><input id="fCaptureHiz" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
+          <div class="field"><label for="fCaptureDurak">Durak sayısı *</label><input id="fCaptureDurak" type="number" min="1" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="fCaptureKat">Kat sayısı</label><input id="fCaptureKat" type="number" min="1" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="fCaptureBinaAsansorSayisi">Binadaki toplam asansör sayısı</label><input id="fCaptureBinaAsansorSayisi" type="number" min="1" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="fCaptureSeyir">Seyir mesafesi (m)</label><input id="fCaptureSeyir" type="number" min="0" step="0.01" inputmode="decimal"></div>
+          <div class="field"><label for="fCaptureKuyu">Kuyu yüksekliği (m)</label><input id="fCaptureKuyu" type="number" min="0" step="0.01" inputmode="decimal"></div>
+        </div>
       </div>
       <div id="moduleGFields">
       <div class="form-card"><h3>Denetim kapsamı</h3>
@@ -2507,7 +2581,7 @@ const UI = (() => {
       document.getElementById('fKaydet').textContent = isG ? 'Denetimi başlat' : 'Saha veri kaydını başlat';
       single.sDenetimTuru = moduleTypes[single.module].tur;
     };
-    ['sModul','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci','sCaptureTahrik'].forEach(id => {
+    ['sModul','sAna','sKabinGiris','sKapiAcilma','sTahrik','sMD','sAski','sItfaiyeci','sCaptureTahrik','sCaptureMD'].forEach(id => {
       document.getElementById(id).addEventListener('click', (e) => {
         const b = e.target.closest('.seg'); if (!b) return;
         document.querySelectorAll(`#${id} .seg`).forEach(x => x.classList.remove('on'));
@@ -2520,39 +2594,60 @@ const UI = (() => {
     document.getElementById('fKaydet').onclick = async () => {
       const muhendis = Profile.name;
       const musteri = document.getElementById('fMusteri').value.trim();
+      const firmaAdresi = document.getElementById('fFirmaAdres').value.trim();
       const seri = document.getElementById('fSeri').value.trim();
       const adres = document.getElementById('fAdres').value.trim();
-      const yuk = parseInt(document.getElementById('fYuk').value) || null;
-      const hiz = parseFloat(document.getElementById('fHiz').value) || null;
-      const kapasite = parseInt(document.getElementById('fKapasite').value) || null;
-      const durak = parseInt(document.getElementById('fDurak').value) || null;
+      const yuk = denetimSayisiOku(document.getElementById('fYuk'));
+      const hiz = denetimSayisiOku(document.getElementById('fHiz'));
+      const kapasite = denetimSayisiOku(document.getElementById('fKapasite'));
+      const durak = denetimSayisiOku(document.getElementById('fDurak'));
       const kimlikNo = document.getElementById('fKimlikNo').value.trim() || null;
-      const binaAsansorSayisi = parseInt(document.getElementById('fBinaAsansorSayisi').value) || null;
+      const binaAsansorSayisi = denetimSayisiOku(document.getElementById('fBinaAsansorSayisi'));
+      const captureYuk = denetimSayisiOku(document.getElementById('fCaptureYuk'));
+      const captureKapasite = denetimSayisiOku(document.getElementById('fCaptureKapasite'));
+      const captureHiz = denetimSayisiOku(document.getElementById('fCaptureHiz'));
+      const captureDurak = denetimSayisiOku(document.getElementById('fCaptureDurak'));
+      const captureKat = denetimSayisiOku(document.getElementById('fCaptureKat'));
+      const captureBinaAsansorSayisi = denetimSayisiOku(document.getElementById('fCaptureBinaAsansorSayisi'));
+      const captureSeyir = denetimSayisiOku(document.getElementById('fCaptureSeyir'));
+      const captureKuyu = denetimSayisiOku(document.getElementById('fCaptureKuyu'));
       if (!muhendis) { toast('Mühendis profili bulunamadı'); return; }
-      if (!musteri || !seri) { toast('Müşteri ünvanı ve seri no zorunlu'); return; }
-      if (!adres) { toast('Adres zorunlu'); return; }
+      if (!musteri || !seri) { toast('Asansör firması adı ve seri no zorunlu'); return; }
+      if (!firmaAdresi || !adres) { toast('Firma adresi ve asansörün bulunduğu adres zorunlu'); return; }
       if (single.module !== 'G') {
         const module = moduleTypes[single.module];
         if (!module || !['B','E','H1'].includes(single.module)) { toast('Bu modül için saha veri kaydı açılamaz'); return; }
         if (!single.sCaptureTahrik) { toast('Tahrik tipini seçin'); return; }
+        if (!single.sCaptureMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
+        if (!fr65SahaSayisalAlanlariGecerliMi({
+          yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
+          kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
+          seyirMesafesi: captureSeyir, kuyuYuksekligi: captureKuyu,
+        })) {
+          toast('Yük, kapasite ve durak tam sayı olmalı; hız ve ölçü alanlarını kontrol edin'); return;
+        }
         const seriNoUygun = await yeniDenetimSeriNoUygunMu(seri);
         if (!seriNoUygun) return;
         showFr65OnayEkrani({
-          akış: 'fr65_saha_v1', muhendis, musteri, seri, adres,
+          akış: 'fr65_saha_v1', muhendis, musteri, firmaAdresi, seri, adres,
           dosya: document.getElementById('fDosya').value.trim() || null,
           kimlikNo, modul: module.modul, denetimTuru: module.tur,
-          kontrolProfili: module.profil, tahrik: single.sCaptureTahrik,
+          kontrolProfili: module.profil, tahrik: single.sCaptureTahrik, md: single.sCaptureMD || null,
+          yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
+          kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
+          seyirMesafesi: captureSeyir, kuyuYuksekligi: captureKuyu,
         });
         return;
       }
       if (!single.sAna) { toast('Ana standart seçin'); return; }
-      if (!binaAsansorSayisi || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını girin'); return; }
+      if (!Number.isInteger(binaAsansorSayisi) || binaAsansorSayisi < 1) { toast('Binadaki toplam asansör sayısını tam sayı olarak girin'); return; }
       if (!single.sKabinGiris) { toast('Kabin giriş düzenini seçin'); return; }
       if (!single.sKapiAcilma) { toast('Kabin kapısı açılma biçimini seçin'); return; }
       if (!single.sTahrik) { toast('Tahrik tipi seçin'); return; }
       if (!single.sMD) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
-      if (!yuk || !hiz || !kapasite) { toast('Beyan yükü, beyan hızı ve kapasite zorunlu'); return; }
-      if (!durak || durak < 1) { toast('Durak sayısını girin'); return; }
+      if (!genelDenetimSayisalAlanlariGecerliMi({ yuk, hiz, kapasite, durak, binaAsansorSayisi })) {
+        toast('Yük, kapasite, durak ve bina asansör sayısı tam sayı olmalı; hız sıfırdan büyük olmalı'); return;
+      }
 
       // Devam eden kayıt varken yeni denetim açılmaz. Tamamlanan denetimlerden
       // sonra 365 gün geçince yeni, bağımsız denetim açılabilir. Takip denetimi
@@ -2570,7 +2665,7 @@ const UI = (() => {
       ).length;
 
       const formVals = {
-        muhendis, musteri, seri, adres,
+        muhendis, musteri, firmaAdresi, seri, adres,
         dosya: document.getElementById('fDosya').value.trim() || null,
         kimlikNo,
         denetimTuru: single.sDenetimTuru,
@@ -2604,8 +2699,10 @@ const UI = (() => {
       <h3>Denetimi başlatmadan önce kontrol edin</h3>
       <div class="onay-box">
         ${satir('Mühendis', f.muhendis)}
-        ${satir('Müşteri', f.musteri)}
-        ${satir('Seri no', f.seri)}
+        ${satir('Asansör firması', f.musteri)}
+        ${satir('Firma adresi', f.firmaAdresi)}
+        ${satir('Asansörün bulunduğu adres', f.adres)}
+        ${satir('Asansör seri no', f.seri)}
         ${satir('Asansör kimlik no', f.kimlikNo)}
         ${satir('Denetim türü', f.denetimTuru)}
         ${satir('Kontrol profili', 'Tam Modül G saha kontrolü')}
@@ -2647,6 +2744,7 @@ const UI = (() => {
         id: crypto.randomUUID(),
         dosya_no: f.dosya,
         musteri_unvani: f.musteri,
+        firma_adresi: f.firmaAdresi,
         denetim_adresi: f.adres,
         asansor_seri_no: f.seri,
         asansor_kimlik_no: f.kimlikNo,
@@ -2980,13 +3078,16 @@ const UI = (() => {
     const sections = AVES_TEKNIK_DOSYA_FORM.visibleFr65Sections(d.tahrik_tipi);
     const valuesAreSame = values => stableStringify(values || {}) === stableStringify(originalValues);
     const collectValues = () => {
-      const values = {};
+      // Eski kayıtlardaki görünmeyen alanları koru; yeni saha kayıtları yalnız
+      // bu ekranda tanımlı gözlem, ölçüm ve bileşen kimliklerini üretir.
+      const values = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
       document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
-        const value = {};
+        const value = { ...(values[row.dataset.fr65CaptureKey] || {}) };
         row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
           value[input.dataset.fr65CaptureProp] = input.value.trim();
         });
         if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
+        else delete values[row.dataset.fr65CaptureKey];
       });
       return values;
     };
@@ -2994,10 +3095,11 @@ const UI = (() => {
       const values = collectValues();
       const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture({ forms: { FR65: { values } } }, d.tahrik_tipi);
       const summary = document.getElementById('fr65CaptureCount');
-      if (summary) summary.textContent = `${count.recorded}/${count.total} FR.65 alanında veri var`;
+      if (summary) summary.textContent = `${count.recorded}/${count.total} saha alanında veri var`;
       document.querySelectorAll('[data-fr65-section-key]').forEach(section => {
         const keys = JSON.parse(section.dataset.fr65SectionKey);
-        const done = keys.filter(key => values[key] && Object.values(values[key]).some(Boolean)).length;
+        const done = keys.filter(key => values[key] && ['field_value', 'note', 'marka', 'tip', 'seri_no']
+          .some(prop => String(values[key][prop] || '').trim())).length;
         const badge = section.querySelector('[data-fr65-section-count]');
         if (badge) badge.textContent = `${done}/${keys.length} alan`;
       });
@@ -3046,11 +3148,22 @@ const UI = (() => {
         next.updated_at = payload.updated_at;
         latest.denetim_form_kayitlari = next;
         latest.teknik_dosya_kayitlari = { schema_version: 1, updated_at: payload.updated_at, fr65: next.forms.FR65 };
+        const sayisalAlan = key => {
+          const raw = String(values[key]?.field_value || '').trim();
+          if (!raw) return null;
+          const number = Number(raw);
+          return Number.isFinite(number) && number > 0 ? number : null;
+        };
+        latest.beyan_yuku_kg = sayisalAlan('yuk');
+        latest.kapasite_kisi = sayisalAlan('kapasite');
+        latest.beyan_hizi_ms = sayisalAlan('hiz');
+        latest.durak_sayisi = sayisalAlan('durak_sayisi');
+        latest.bina_asansor_sayisi = sayisalAlan('bina_asansor_sayisi');
         latest.updated_at = payload.updated_at;
         await localWrite('denetimler', latest, 'denetimler', {
           conditional_update: {
             expected_updated_at: baseUpdatedAt,
-            fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at'],
+              fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'beyan_yuku_kg', 'kapasite_kisi', 'beyan_hizi_ms', 'durak_sayisi', 'bina_asansor_sayisi', 'updated_at'],
           },
         });
         const committedBaseUpdatedAt = baseUpdatedAt;
@@ -3105,32 +3218,43 @@ const UI = (() => {
     const captureDraftBanner = captureDraftConflict ? `<div class="integrity-card error"><b>Çakışan FR.65 taslağı korunuyor</b><small>${captureDraftWriterConflict
       ? 'Bu taslak başka bir sekme veya önceki uygulama oturumu tarafından yazılmış. Bu ekranda düzenleme kilitli; diğer sekmede çalışmayı durdurup taslağı gözden geçirin.'
       : 'Kayıt cihaz taslağı oluşturulduktan sonra değişmiş veya taslağın dayandığı kayıt sürümü doğrulanamıyor.'} Güncel kayıt aşağıda gösteriliyor; cihaz taslağı hiçbir alanı ezmeden saklanıyor.${restoreDraftAllowed ? ' Açık onayla geri yüklemek güncel FR.65 alanlarının yerine taslak değerlerini yazar ve değişikliği denetim geçmişine kaydeder.' : ' Taslağı geri yüklemek için kayıt üzerinde düzenleme yetkisi gerekir.'}</small>${restoreDraftAllowed ? '<button type="button" class="btn btn-ghost" id="fr65RestoreDraft">Korunan cihaz taslağını geri yükle</button>' : ''}</div>` : '';
+    const quickNavHtml = `<nav class="fr65-quick-nav" aria-label="Genel bilgiler, seri numaraları ve ölçü sekmeleri">
+      ${sections.map(section => `<button type="button" data-fr65-jump="${esc(section.key)}">${esc(section.tab || section.title)}</button>`).join('')}
+    </nav>`;
     const sectionsHtml = sections.map((section, index) => {
       const keys = section.fields.map(([key]) => key);
-      return `<details class="tech-section" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
+      return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${section.fields.map(([key, label]) => {
+        <div class="tech-section-body">${section.fields.map(([key, label, fieldType]) => {
           const value = normalized.forms.FR65?.values?.[key] || {};
-          const disabled = canEdit ? '' : 'disabled';
+          const disabled = canEdit && fieldType !== 'readonly' ? '' : 'disabled';
+          if (section.kind === 'serial') return `<article class="tech-field fr65-serial-row" data-fr65-capture-key="${esc(key)}">
+            <b>${esc(label)}</b>
+            <div class="fr65-serial-fields">
+              <label>Marka / üretici<input data-fr65-capture-prop="marka" value="${esc(value.marka || '')}" autocomplete="off" ${disabled}></label>
+              <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
+              <label>Seri no<input data-fr65-capture-prop="seri_no" value="${esc(value.seri_no || '')}" autocomplete="off" ${disabled}></label>
+            </div>
+          </article>`;
+          const fieldControl = fieldType === 'readonly'
+            ? `<input data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`
+            : fieldType === 'number'
+            ? `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" placeholder="Sahada görülen / ölçülen değer" ${disabled}>`
+            : `<textarea data-fr65-capture-prop="field_value" placeholder="Sahada görülen / ölçülen değer${section.group === 'olcu' ? '; ölçüyse birimiyle' : ''}" ${disabled}>${esc(value.field_value || '')}</textarea>`;
           return `<article class="tech-field" data-fr65-capture-key="${esc(key)}">
             <b>${esc(label)}</b>
-            <div class="tech-pair">
-              <label>Teknik dosyadaki beyan
-                <textarea data-fr65-capture-prop="file_value" placeholder="Değer veya belge / çizim referansı" ${disabled}>${esc(value.file_value || '')}</textarea>
-              </label>
-              <label>Sahada görülen / ölçülen değer
-                <textarea data-fr65-capture-prop="field_value" placeholder="Gözlem ya da ölçü; ölçüyse birimiyle" ${disabled}>${esc(value.field_value || '')}</textarea>
-              </label>
-            </div>
-            <label>Açıklama / kanıt referansı
-              <textarea data-fr65-capture-prop="note" placeholder="İsteğe bağlı: fotoğraf adı, etiket veya kısa not" ${disabled}>${esc(value.note || '')}</textarea>
+            <label>Saha verisi
+              ${fieldControl}
+            </label>
+            <label>Saha notu (isteğe bağlı)
+              <textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea>
             </label>
           </article>`;
         }).join('')}</div>
       </details>`;
     }).join('');
     const safetyHtml = SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('');
-    app.innerHTML = `<div class="screen">
+    app.innerHTML = `<div class="screen fr65-capture">
       <div class="inspection-toolbar">
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}</div>
@@ -3140,18 +3264,29 @@ const UI = (() => {
       <div class="det-head">
         <div class="inspection-eyebrow">${esc(d.modul)} · ÜB.FR.65 saha veri kaydı</div>
         <div class="dtitle">${esc(d.musteri_unvani)}</div>
-        <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)} · ${esc(d.denetim_adresi || '')}</div>
-        <div class="dmeta"><b>Tahrik:</b> ${esc(d.tahrik_tipi)} · <b>Tarih:</b> ${esc(d.denetim_tarihi || '')}</div>
+        <div class="dmeta"><b>Asansör seri no:</b> ${esc(d.asansor_seri_no)}</div>
+        <div class="dmeta"><b>Firma adresi:</b> ${esc(d.firma_adresi || '—')}</div>
+        <div class="dmeta"><b>Asansörün bulunduğu adres:</b> ${esc(d.denetim_adresi || '—')}</div>
+        <div class="dmeta"><b>Tahrik:</b> ${esc(d.tahrik_tipi)} · <b>Yük:</b> ${esc(d.beyan_yuku_kg || '—')} kg · <b>Kapasite:</b> ${esc(d.kapasite_kisi || '—')} kişi · <b>Hız:</b> ${esc(d.beyan_hizi_ms || '—')} m/s · <b>Durak:</b> ${esc(d.durak_sayisi || '—')} · <b>Tarih:</b> ${esc(d.denetim_tarihi || '')}</div>
         <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
         <div class="local-sync-state ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
       </div>
-      <div class="tech-source"><b>FR.65 saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} FR.65 alanında veri var</span><small>Dosya ve saha değerleri ayrı kaydedilir. Bu özet yalnız veri girilmiş alan sayısını gösterir; uygunluk veya tamlık kararı değildir. Yeni B/E/H1 saha kaydı dışında eski modül kayıtları burada açılmaz.</small></div>
+      <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span><small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez.</small></div>
+      ${quickNavHtml}
       ${sectionsHtml}
       <div id="fr65CaptureSaveStatus" class="photo-help">${canEdit ? 'Alanları yazdıkça cihaza otomatik kaydedilir.' : 'Salt okunur gösterim.'}</div>
       <div class="fr65-capture-actions">${canEdit ? '<button class="btn btn-ghost" id="fr65SaveNow">Şimdi kaydet</button><button class="btn btn-primary" id="fr65Complete">Saha veri kaydını tamamla</button>' : '<button class="btn btn-ghost" id="fr65BackBottom">Denetimlere dön</button>'}</div>
     </div>`;
     updateSummary();
+    document.querySelectorAll('[data-fr65-jump]').forEach(button => {
+      button.onclick = () => {
+        const target = document.getElementById(`fr65Section-${button.dataset.fr65Jump}`);
+        if (!target) return;
+        target.open = true;
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    });
     document.getElementById('fr65Back').onclick = showList;
     const backBottom = document.getElementById('fr65BackBottom');
     if (backBottom) backBottom.onclick = showList;
@@ -3440,7 +3575,9 @@ const UI = (() => {
       <div class="det-head">
         <div class="inspection-eyebrow">${esc(standartOzeti(d))}</div>
         <div class="dtitle">${esc(d.musteri_unvani)}</div>
-        <div class="dmeta"><b>Seri no:</b> ${esc(d.asansor_seri_no)}${d.denetim_adresi ? ` · ${esc(d.denetim_adresi)}` : ''}</div>
+        <div class="dmeta"><b>Asansör seri no:</b> ${esc(d.asansor_seri_no)}</div>
+        <div class="dmeta"><b>Firma adresi:</b> ${esc(d.firma_adresi || '—')}</div>
+        <div class="dmeta"><b>Asansörün bulunduğu adres:</b> ${esc(d.denetim_adresi || '—')}</div>
         ${d.asansor_kimlik_no ? `<div class="dmeta" style="margin-top:2px"><b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
         ${d.ana_tip || d.tip_varyant_kodu ? `<div class="dmeta" style="margin-top:2px"><b>Tip:</b> ${esc([d.ana_tip, d.tip_varyant_kodu].filter(Boolean).join(' · '))}</div>` : ''}
         ${d.denetimi_yapan ? `<div class="dmeta" style="margin-top:2px"><b>Denetimi yapan:</b> ${esc(d.denetimi_yapan)}</div>` : ''}
