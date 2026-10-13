@@ -529,10 +529,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .fr65-serial-fields label{display:grid;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);}
 .fr65-serial-fields input{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:500;}
 .fr65-serial-fields input:disabled{background:#f2f3f6;color:var(--ink);}
-.fr65-measure-group{display:grid;gap:4px;padding:10px 0;border-bottom:1px solid #edf0f4;}
+.fr65-measure-group{display:grid;gap:3px;padding:5px 0;border-bottom:1px solid #edf0f4;}
 .fr65-measure-group>b{font-size:12px;color:var(--ink);}
 .fr65-measure-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
-.fr65-measure-pair .tech-field{min-width:0;padding:4px 0;border:0;}
+.fr65-measure-pair .tech-field{min-width:0;gap:4px;padding:4px 0;border:0;}
+.fr65-capture .tech-section-body>.tech-field{gap:4px;padding:5px 0;}
+.fr65-capture .fr65-field-control{gap:0;}
+.fr65-capture .fr65-compact-measure-input{min-height:38px;line-height:1.35;}
+.fr65-capture .fr65-multi-measure{min-height:120px;line-height:1.4;}
 .fr65-field-help,.fr65-legacy-value{display:block;color:var(--muted);font-size:10.5px;line-height:1.4;}
 .fr65-legacy-value{color:#7a5a15;}
 .fr65-clear-legacy{justify-self:start;border:0;background:transparent;color:var(--muted);font:inherit;font-size:11px;text-decoration:underline;cursor:pointer;}
@@ -541,6 +545,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .fr65-capture-note{border:1px solid #e6e8ef;border-radius:8px;background:#fafbfe;padding:7px 9px;}
 .fr65-capture-note>summary{color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;}
 .fr65-capture-note label{margin-top:8px;}
+.fr65-measure-note{padding:0;border:0;background:transparent;}
+.fr65-measure-note>summary{font-size:10px;line-height:1.25;}
 .fr65-section-footer{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:10px;padding-top:10px;border-top:1px solid #edf0f4;}
 .fr65-section-footer>span{color:var(--muted);font-size:11px;font-weight:700;}
 .fr65-section-footer .btn{min-height:42px;margin:0;white-space:normal;}
@@ -600,7 +606,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <button type="button" class="brand-home" id="brandHome" disabled aria-label="AVES Saha Denetim" title="AVES Saha Denetim">
     <span class="brand-lockup">
       <img src="aves-logo-white.png" alt="" aria-hidden="true">
-      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.80</b></span>
+      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.81</b></span>
     </span>
   </button>
   <div class="spacer"></div>

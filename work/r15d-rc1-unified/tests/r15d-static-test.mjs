@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.80 sürümü', index.includes('R15D-RC3.9.80</b>'));
-test('app R15D rc3.9.80 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.80'"));
-test('service worker rc3.9.80 cache', sw.includes("aves-saha-r15d-rc3980'"));
-test('uygulama manifesti rc3.9.80 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.80"'));
+test('index R15D rc3.9.81 sürümü', index.includes('R15D-RC3.9.81</b>'));
+test('app R15D rc3.9.81 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.81'"));
+test('service worker rc3.9.81 cache', sw.includes("aves-saha-r15d-rc3981'"));
+test('uygulama manifesti rc3.9.81 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.81"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -575,6 +575,26 @@ test('FR.65 Rev.00 saha veri şeması genel bilgi, seri no ve ölçüm sekmeleri
   ['yuk','hiz','durak_sayisi','hidrolik_valfler','kat_kapisi_kilitleri','kabin_ray_tip_olcu'].every(key =>
     technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)) &&
   !technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === 'ray_konsol_araligi'));
+test('FR.65 kuyu genişliği ve derinliği ayrı beş satırlı alanlarda; eski birleşik kayıt korunur', (() => {
+  const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
+  const widthIndex = well.fields.findIndex(([key]) => key === 'kuyu_genislik');
+  const values = {
+    kuyu_genislik: { field_value: '2200\n2210\n2195' },
+    kuyu_derinlik: { field_value: '1800\n1810' },
+  };
+  const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kuyu');
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return widthIndex >= 0 && well.fields[widthIndex][2] === 'multi_measure' &&
+    well.fields[widthIndex + 1]?.[0] === 'kuyu_derinlik' && well.fields[widthIndex + 1][2] === 'multi_measure' &&
+    count.recorded === 2 && flow.includes('rows="5"') &&
+    flow.includes('kuyu_genislik_derinlik?.field_value') && flow.includes('Önceki birleşik kuyu ölçüsü korunuyor');
+})());
+test('FR.65 ölçü bölümleri daha sıkı aralık kullanır; tek satırlı ölçüler ve kısa açıklama akışı sunar',
+  app.includes("class=\"${compactMeasure ? 'fr65-compact-measure-input' : ''}\" rows=\"${compactMeasure ? '1' : '2'}\"") &&
+  index.includes('.fr65-capture .tech-section-body>.tech-field{gap:4px;padding:5px 0;}') &&
+  index.includes('.fr65-measure-note{padding:0;border:0;background:transparent;}'));
 test('FR.65 saha düzeni: başlangıç ölçüsü kaldırıldı, ek tampon/GSM koşullu ve hidrolik seri alanları sonda', (() => {
   const allSections = technicalDocs.FR65.sections;
   const serials = allSections.find(section => section.key === 'seri_numaralari').fields;

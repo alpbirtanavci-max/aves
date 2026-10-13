@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.80';
+const APP_VERSION = 'R15D-rc3.9.81';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -3303,7 +3303,7 @@ function showYeniForm() {
       const options = fieldOptions[key] || [];
       let fieldControl = '';
       if (fieldType === 'readonly') {
-        fieldControl = `<input data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`;
+        fieldControl = `<input aria-label="${esc(label)}" data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`;
       } else if (fieldType === 'select') {
         const rawCurrent = String(value.field_value || '');
         const oldFreeTextChoice = ['kismen_kapali_kuyu', 'kuyu_alti_kullanim_yuk'].includes(key) &&
@@ -3312,22 +3312,26 @@ function showYeniForm() {
         const legacyOption = current && !options.includes(current)
           ? `<option value="${esc(current)}" selected>${esc(current)} · önceki kayıt</option>`
           : '';
-        fieldControl = `<select data-fr65-capture-prop="field_value" ${disabled}>
+        fieldControl = `<select aria-label="${esc(label)}" data-fr65-capture-prop="field_value" ${disabled}>
           <option value="" ${current ? '' : 'selected'}>Seçin</option>${legacyOption}${options.map(option => `<option value="${esc(option)}" ${current === option ? 'selected' : ''}>${esc(option)}</option>`).join('')}
         </select>`;
+      } else if (fieldType === 'multi_measure') {
+        const raw = String(value.field_value || '');
+        fieldControl = `<textarea class="fr65-multi-measure" rows="5" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="Ölçüleri mm olarak, her satıra bir değer girin" ${disabled}>${esc(raw)}</textarea>`;
       } else if (fieldType === 'number') {
         const raw = String(value.field_value || '');
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
         const preserveLegacy = !!raw && !numberValue;
-        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
+        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
       } else {
-        fieldControl = `<textarea data-fr65-capture-prop="field_value" placeholder="Sahada görülen / ölçülen değer${section.group === 'olcu' ? '; ölçüyse birimiyle' : ''}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
+        const compactMeasure = section.group === 'olcu';
+        fieldControl = `<textarea class="${compactMeasure ? 'fr65-compact-measure-input' : ''}" rows="${compactMeasure ? '1' : '2'}" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="${compactMeasure ? 'Ölçülen değer; birimiyle' : 'Sahada görülen / ölçülen değer'}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
       }
       const help = fieldHelp[key] ? `<small class="fr65-field-help">${esc(fieldHelp[key])}</small>` : '';
       return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
         <b>${esc(label)}</b>
-        <label>Saha verisi${fieldControl}</label>${help}
-        <details class="fr65-capture-note" ${value.note ? 'open' : ''}>
+        <label class="fr65-field-control">${section.group === 'olcu' ? '' : 'Saha verisi'}${fieldControl}</label>${help}
+        <details class="fr65-capture-note ${section.group === 'olcu' ? 'fr65-measure-note' : ''}" ${value.note ? 'open' : ''}>
           <summary>✎ Açıklama ekle / düzenle</summary>
           <label>Açıklama veya saha notu<textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea></label>
         </details>
@@ -3353,18 +3357,23 @@ function showYeniForm() {
           kabin_genislik: 'kabin_derinlik',
           kabin_kapi_genislik: 'kabin_kapi_yukseklik',
           kat_kapisi_genislik: 'kat_kapisi_yukseklik',
-        })[field[0]] : null;
+        })[field[0]] : section.key === 'kuyu' ? ({ kuyu_genislik: 'kuyu_derinlik' })[field[0]] : null;
         const nextField = section.fields[fieldIndex + 1];
         if (pairedKey && nextField?.[0] === pairedKey) {
-          const pairLabel = field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
+          const pairLabel = field[0] === 'kuyu_genislik' ? 'Kuyu ölçüleri'
+            : field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
             : field[0] === 'kabin_kapi_genislik' ? 'Kabin kapısı net açıklığı'
               : 'Kat kapısı net açıklığı';
-          const hint = field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
+          const hint = field[0] === 'kuyu_genislik' ? '<small class="fr65-field-help">Her satıra bir ölçüm girin; birimler mm.</small>'
+            : field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
             : '<small class="fr65-field-help">Net genişlik ve yüksekliği ayrı kutulara, mm olarak girin.</small>';
           const legacyKey = field[0] === 'kabin_kapi_genislik' ? 'kabin_kapi_acikligi'
             : field[0] === 'kat_kapisi_genislik' ? 'kat_kapisi_acikligi' : null;
           const legacyValue = legacyKey ? normalized.forms.FR65?.values?.[legacyKey]?.field_value : '';
-          const legacyNote = legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
+          const previousWellMeasure = field[0] === 'kuyu_genislik' ? normalized.forms.FR65?.values?.kuyu_genislik_derinlik?.field_value : '';
+          const legacyNote = previousWellMeasure
+            ? `<small class="fr65-legacy-value">Önceki birleşik kuyu ölçüsü korunuyor: ${esc(previousWellMeasure)}</small>`
+            : legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
           fieldHtml.push(`<div class="fr65-measure-group" role="group" aria-label="${esc(pairLabel)}">
             <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}${legacyNote}
           </div>`);
