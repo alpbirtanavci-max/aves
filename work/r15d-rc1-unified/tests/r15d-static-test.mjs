@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.83 sürümü', index.includes('R15D-RC3.9.83</b>'));
-test('app R15D rc3.9.83 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.83'"));
-test('service worker rc3.9.83 cache', sw.includes("aves-saha-r15d-rc3983'"));
-test('uygulama manifesti rc3.9.83 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.83"'));
+test('index R15D rc3.9.84 sürümü', index.includes('R15D-RC3.9.84</b>'));
+test('app R15D rc3.9.84 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.84'"));
+test('service worker rc3.9.84 cache', sw.includes("aves-saha-r15d-rc3984'"));
+test('uygulama manifesti rc3.9.84 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.84"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -575,21 +575,48 @@ test('FR.65 Rev.00 saha veri şeması genel bilgi, seri no ve ölçüm sekmeleri
   ['yuk','hiz','durak_sayisi','hidrolik_valfler','kat_kapisi_kilitleri','kabin_ray_tip_olcu'].every(key =>
     technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)) &&
   !technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === 'ray_konsol_araligi'));
-test('FR.65 kuyu genişliği ve derinliği ayrı beş satırlı alanlarda; eski birleşik kayıt korunur', (() => {
+test('FR.65 kuyu genişliği, derinliği ve kuyu dibi tekil cm sayılarıdır; eski mm/değerler yeniden yorumlanmadan korunur', (() => {
   const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
-  const widthIndex = well.fields.findIndex(([key]) => key === 'kuyu_genislik');
+  const widthIndex = well.fields.findIndex(([key]) => key === 'kuyu_genislik_cm');
   const values = {
-    kuyu_genislik: { field_value: '2200\n2210\n2195' },
-    kuyu_derinlik: { field_value: '1800\n1810' },
+    kuyu_genislik_cm: { field_value: '220' },
+    kuyu_derinlik_cm: { field_value: '180' },
+    kuyu_dibi_cm: { field_value: '150' },
+  };
+  const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kuyu');
+  const oldValues = {
+    kuyu_genislik: { field_value: '2200' },
+    kuyu_derinlik: { field_value: '1800' },
+    kuyu_dibi: { field_value: '1500' },
+  };
+  const oldCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: oldValues } } }, 'Elektrikli', 'kuyu');
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return widthIndex >= 0 && well.fields[widthIndex][2] === 'number' && well.fields[widthIndex][1].includes('(cm)') &&
+    well.fields[widthIndex + 1]?.[0] === 'kuyu_derinlik_cm' && well.fields[widthIndex + 1][2] === 'number' &&
+    well.fields.find(([key]) => key === 'kuyu_dibi_cm')?.[2] === 'number' &&
+    !well.fields.some(([key]) => ['kuyu_genislik', 'kuyu_derinlik', 'kuyu_dibi'].includes(key)) &&
+    count.recorded === 3 && oldCount.recorded === 0 && flow.includes('Genişlik ve derinliği birer sayı olarak cm cinsinden girin.') &&
+    flow.includes('legacyWellValues.kuyu_genislik_derinlik?.field_value') &&
+    flow.includes('legacyWellValues.kuyu_genislik?.field_value') &&
+    flow.includes('legacyWellValues.kuyu_dibi?.field_value') &&
+    flow.includes('Önceki kuyu ölçüleri korunuyor') && flow.includes('Eski kayıtlar otomatik cm’ye çevrilmez');
+})());
+test('FR.65 kabin ve karşı ağırlık ray aralıkları ayrı sayısal alanlardır; eski birleşik kayıt korunur', (() => {
+  const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
+  const values = {
+    kabin_raylar_arasi: { field_value: '150' },
+    karsi_agirlik_raylar_arasi: { field_value: '90' },
   };
   const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kuyu');
   const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
   const flowEnd = app.indexOf('async function showDenetim(', flowStart);
   const flow = app.slice(flowStart, flowEnd);
-  return widthIndex >= 0 && well.fields[widthIndex][2] === 'multi_measure' &&
-    well.fields[widthIndex + 1]?.[0] === 'kuyu_derinlik' && well.fields[widthIndex + 1][2] === 'multi_measure' &&
-    count.recorded === 2 && flow.includes('rows="5"') &&
-    flow.includes('kuyu_genislik_derinlik?.field_value') && flow.includes('Önceki birleşik kuyu ölçüsü korunuyor');
+  return well.fields.some(([key, label, type]) => key === 'kabin_raylar_arasi' && label.includes('Kabin ana rayları') && type === 'number') &&
+    well.fields.some(([key, label, type]) => key === 'karsi_agirlik_raylar_arasi' && label.includes('Karşı ağırlık rayları') && type === 'number') &&
+    !well.fields.some(([key]) => key === 'raylar_arasi_mesafe') && count.recorded === 2 &&
+    flow.includes('normalized.forms.FR65?.values?.raylar_arasi_mesafe') && flow.includes('Önceki birleşik ray aralığı kaydı korunuyor');
 })());
 test('FR.65 ölçü bölümleri daha sıkı aralık kullanır; tek satırlı ölçüler ve kısa açıklama akışı sunar',
   app.includes("class=\"${compactMeasure ? 'fr65-compact-measure-input' : ''}\" rows=\"${compactMeasure ? '1' : '2'}\"") &&
@@ -608,7 +635,10 @@ test('FR.65 saha düzeni: başlangıç ölçüsü kaldırıldı, ek tampon/GSM k
     hydraulic.fields.slice(-2).every(([, , type]) => type === 'serial') &&
     ['seyir_mesafesi','kuyu_yuksekligi'].every(key => allSections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key));
 })());
-test('FR.65 koşullu bölüm sayacı ikinci kapı, ek tampon ve GSM var/yok seçimini dikkate alır', (() => {
+test('FR.65 ek tampon kutuları isteğe bağlı açılır; boş tampon alanı var/yok seçimi gerektirmez', (() => {
+  const flowStart = app.indexOf("if (section.kind === 'serial' && fieldType === 'optional_serial') {");
+  const flowEnd = app.indexOf("if (section.kind === 'serial' && fieldType === 'optional_gsm')", flowStart);
+  const optionalUi = app.slice(flowStart, flowEnd);
   const values = {
     ikinci_kapi_var: { field_value: 'Yok' },
     ikinci_kapi_yon: { field_value: 'Karşılıklı' },
@@ -617,8 +647,22 @@ test('FR.65 koşullu bölüm sayacı ikinci kapı, ek tampon ve GSM var/yok seç
   };
   const door = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kabin_kapilar');
   const serial = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'seri_numaralari');
-  return door.recorded === 1 && door.total === 10 && serial.recorded === 2 &&
-    !technicalDocs.fr65CaptureFieldActive(['ikinci_kapi_yon'], values);
+  const emptySerial = technicalDocs.countFr65Capture({ forms: { FR65: { values: {} } } }, 'Elektrikli', 'seri_numaralari');
+  const extraBufferValues = { kabin_ek_tampon: { var_mi: 'Var', marka: 'X' } };
+  const extraBuffer = technicalDocs.countFr65Capture({ forms: { FR65: { values: extraBufferValues } } }, 'Elektrikli', 'seri_numaralari');
+  const legacyNoBufferValues = { kabin_ek_tampon: { var_mi: 'Yok' } };
+  const legacyNoBuffer = technicalDocs.countFr65Capture({ forms: { FR65: { values: legacyNoBufferValues } } }, 'Elektrikli', 'seri_numaralari');
+  const legacyBufferValues = { kabin_ek_tampon: { var_mi: 'Var' } };
+  const legacyBuffer = technicalDocs.countFr65Capture({ forms: { FR65: { values: legacyBufferValues } } }, 'Elektrikli', 'seri_numaralari');
+  return door.recorded === 1 && door.total === 10 && serial.recorded === 1 &&
+    !technicalDocs.fr65CaptureFieldActive(['ikinci_kapi_yon'], values) &&
+    optionalUi.includes('<details class="fr65-extra-serial-fields"') && optionalUi.includes("'Varsa bilgilerini ekle'") &&
+    optionalUi.includes("value.var_mi === 'Yok' ? 'Önceki kayıt: Yok'") &&
+    optionalUi.includes("value.var_mi === 'Var' ? 'Önceki ek tampon kaydı'") &&
+    !optionalUi.includes('<select') && !optionalUi.includes('Bu konumda ek tampon durumu') &&
+    serial.total === emptySerial.total && extraBuffer.total === emptySerial.total + 1 && extraBuffer.recorded === 0 &&
+    legacyNoBuffer.total === emptySerial.total && legacyBuffer.total === emptySerial.total + 1 && legacyBuffer.recorded === 0 &&
+    app.includes("if (hasSerialData) value.var_mi = 'Var'") && !app.includes("else if (value.var_mi === 'Var') delete value.var_mi");
 })());
 test('FR.65 ray profilleri istenen T serisi seçenekleriyle sınırlı; eski A/B ve konsol aralığı alanı yok', (() => {
   const expected = ['T50','T70','T89','T90','T125','T140','Diğer / açıklama'];
@@ -682,13 +726,13 @@ test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değ
 test('FR.65 saha veri sayacı evrak karşılaştırmasını saymaz; gözlem ve bileşen kimliğini sayar', (() => {
   const capture = technicalDocs.emptyFr65Capture('2026-10-12T00:00:00.000Z');
   const values = capture.forms.FR65.values;
-  values.kuyu_dibi = { file_value: '2400 mm', field_value: '2385 mm', note: 'Kuyu ölçüsü fotoğrafı' };
+  values.kuyu_dibi_cm = { file_value: '240 cm', field_value: '238.5', note: 'Kuyu ölçüsü fotoğrafı' };
   values.kat_kapisi_kilitleri = { marka: 'AVES', tip: 'K-1', seri_no: 'SN-01' };
   values.ray_konum_aski = { file_value: 'yalnız evrak değeri' };
   const count = technicalDocs.countFr65Capture(capture, 'Elektrikli');
   return capture.saha_veri_akisi === 'fr65_saha_v1' && capture.source_form === 'ÜB.FR.65' &&
     capture.source_revision === '00' && count.recorded === 2 && count.total > 1 &&
-    !Object.values(values.kuyu_dibi).some(value => ['Uygun','Uygun Değil','Eşleşti','Fark var'].includes(value));
+    !Object.values(values.kuyu_dibi_cm).some(value => ['Uygun','Uygun Değil','Eşleşti','Fark var'].includes(value));
 })());
 test('FR.65 veri sayacı tahrik tipine göre kapsamı daraltır, boş alanı saymaz', (() => {
   const capture = { forms: { FR65: { values: {

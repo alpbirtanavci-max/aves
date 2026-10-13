@@ -77,12 +77,13 @@
       },
       {
         key: 'kuyu', tab: 'Kuyu', group: 'olcu', title: 'Kuyu, boşluklar ve karşı ağırlık ölçüleri', fields: [
-          ['kuyu_genislik', 'Kuyu genişliği (mm)', 'multi_measure'],
-          ['kuyu_derinlik', 'Kuyu derinliği (mm)', 'multi_measure'],
-          ['kuyu_dibi', 'Kuyu dibi derinliği'],
+          ['kuyu_genislik_cm', 'Kuyu genişliği (cm)', 'number'],
+          ['kuyu_derinlik_cm', 'Kuyu derinliği (cm)', 'number'],
+          ['kuyu_dibi_cm', 'Kuyu dibi derinliği (cm)', 'number'],
           ['ust_bosluk', 'Üst kat / kuyu üst boşluğu'],
           ['toplam_kuyu_olcusu', 'Toplam kuyu ölçüsü ve seyir mesafesi'],
-          ['raylar_arasi_mesafe', 'Kabin ve karşı ağırlık rayları arası mesafe'],
+          ['kabin_raylar_arasi', 'Kabin ana rayları arası (mm)', 'number'],
+          ['karsi_agirlik_raylar_arasi', 'Karşı ağırlık rayları arası (mm)', 'number'],
           ['ray_kapi_mesafesi', 'Ray–kapı mesafeleri'],
           ['karsi_agirlik_adet_olcu', 'Karşı ağırlık adedi ve ölçüleri'],
           ['kismen_kapali_kuyu', 'Kuyu kısmen çevrili mi?', 'select'],
@@ -303,7 +304,12 @@
     const fields = visibleFr65Sections(tractionType)
       .filter(section => !sectionKey || section.key === sectionKey)
       .flatMap(section => section.fields)
-      .filter(field => fr65CaptureFieldActive(field, values));
+      .filter(field => fr65CaptureFieldActive(field, values))
+      .filter(field => {
+        if (field[2] !== 'optional_serial') return true;
+        const value = values[field[0]];
+        return value?.var_mi === 'Var' || ['marka', 'tip', 'seri_no'].some(prop => String(value?.[prop] || '').trim());
+      });
     const recorded = fields.filter(field => {
       const [key] = field;
       const value = values[key];
