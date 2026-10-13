@@ -520,6 +520,16 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 }
 .fr65-capture-actions{position:sticky;bottom:0;z-index:5;display:grid;grid-template-columns:1fr 1.35fr;gap:8px;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(243,244,248,0),var(--paper) 28%);}
 .fr65-capture-actions .btn{min-height:48px;margin:0;}
+.fr65-quick-nav{position:sticky;top:calc(env(safe-area-inset-top) + 68px);z-index:26;display:flex;gap:7px;overflow-x:auto;margin:8px -2px 10px;padding:8px 2px;background:rgba(243,244,248,.97);scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+.fr65-quick-nav button{flex:0 0 auto;min-height:42px;padding:8px 13px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--navy);font-size:12px;font-weight:750;white-space:nowrap;}
+.fr65-quick-nav button:active,.fr65-quick-nav button:focus-visible{background:var(--navy);border-color:var(--navy);color:#fff;outline:none;}
+.fr65-capture .tech-section{scroll-margin-top:calc(env(safe-area-inset-top) + 128px);}
+.fr65-capture .tech-section>summary{position:static;}
+.fr65-serial-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.fr65-serial-fields label{display:grid;gap:4px;font-size:10.5px;font-weight:700;color:var(--muted);}
+.fr65-serial-fields input{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;padding:10px;background:#fff;color:var(--ink);font:inherit;font-size:14px;font-weight:500;}
+.fr65-serial-fields input:disabled{background:#f2f3f6;color:var(--ink);}
+@media(max-width:560px){.fr65-serial-fields{grid-template-columns:1fr;}.fr65-quick-nav button{min-height:44px;padding-inline:12px;}}
 
 /* ===== AVES iOS ESİNTİLİ DENETİM DİLİ ===== */
 .login-card h1,.list-head h2,.det-head .dtitle,.mtitle,.modal h3,.bolum-head .btitle,.stepcount{font-family:var(--heading);font-weight:600;}
@@ -572,7 +582,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <button type="button" class="brand-home" id="brandHome" disabled aria-label="AVES Saha Denetim" title="AVES Saha Denetim">
     <span class="brand-lockup">
       <img src="aves-logo-white.png" alt="" aria-hidden="true">
-      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.77</b></span>
+      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.9.78</b></span>
     </span>
   </button>
   <div class="spacer"></div>

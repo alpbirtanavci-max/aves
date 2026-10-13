@@ -59,3 +59,7 @@ jobs:
         run: $PSQL -f work/r15d-rc1-unified/database/85_r15d_rc3972_modul_b_optional_a3_only_g.sql
       - name: Migration 85 DB davranış senaryoları
         run: $PSQL -f work/r15d-rc1-unified/tests/database/85_module_rules.sql
+      - name: Migration 86 uygula (firma adresi)
+        run: $PSQL -f work/r15d-rc1-unified/database/86_r15d_rc3978_firma_adresi.sql
+      - name: Migration 86 adres ayrımı senaryosu
+        run: $PSQL -f work/r15d-rc1-unified/tests/database/86_firma_adresi.sql

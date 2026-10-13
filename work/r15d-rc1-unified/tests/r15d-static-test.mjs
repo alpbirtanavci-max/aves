@@ -65,6 +65,8 @@ const rc3968TechnicalDocsMigration = fs.readFileSync(path.join(databaseDir, '83_
 const rc3969InspectionFormsMigration = fs.readFileSync(path.join(databaseDir, '84_r15d_rc3969_denetim_form_kayitlari.sql'), 'utf8');
 const rc3972ModuleRulesMigration = fs.readFileSync(path.join(databaseDir, '85_r15d_rc3972_modul_b_optional_a3_only_g.sql'), 'utf8');
 const rc3972ModuleRulesScenario = fs.readFileSync(path.join(testDir, 'database', '85_module_rules.sql'), 'utf8');
+const rc3978FirmAddressMigration = fs.readFileSync(path.join(databaseDir, '86_r15d_rc3978_firma_adresi.sql'), 'utf8');
+const rc3978FirmAddressScenario = fs.readFileSync(path.join(testDir, 'database', '86_firma_adresi.sql'), 'utf8');
 const rls79Scenario = fs.readFileSync(path.join(testDir, 'rls', '79_takip_atama.sql'), 'utf8');
 const archiveRlsScenario = fs.readFileSync(path.join(testDir, 'rls', '82_arsiv_durumu.sql'), 'utf8');
 const ci = fs.readFileSync(path.resolve(root, '..', '..', '.github', 'workflows', 'ci.yml'), 'utf8');
@@ -99,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.77 sürümü', index.includes('R15D-RC3.9.77</b>'));
-test('app R15D rc3.9.77 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.77'"));
-test('service worker rc3.9.77 cache', sw.includes("aves-saha-r15d-rc3977'"));
-test('uygulama manifesti rc3.9.77 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.77"'));
+test('index R15D rc3.9.78 sürümü', index.includes('R15D-RC3.9.78</b>'));
+test('app R15D rc3.9.78 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.78'"));
+test('service worker rc3.9.78 cache', sw.includes("aves-saha-r15d-rc3978'"));
+test('uygulama manifesti rc3.9.78 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.78"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -565,24 +567,29 @@ test('elektrikli/hidrolik denetimde yalnız ilgili FR.47 veya FR.48 tasarım for
   const hydraulic = denetimFormSets.formsFor('B', '81-20', 'Hidrolik').map(item => item.key);
   return electric.includes('FR47') && !electric.includes('FR48') && hydraulic.includes('FR48') && !hydraulic.includes('FR47');
 })());
-test('FR.65 kontrollü Rev.00 alan şeması teknik dosya, bileşen, ölçü ve kuyu verilerini içeriyor',
+test('FR.65 Rev.00 saha veri şeması genel bilgi, seri no ve ölçüm sekmelerini içeriyor',
   technicalDocs.FR65.code === 'ÜB.FR.65' && technicalDocs.FR65.revision === '00' &&
   technicalDocs.FR65.sections.length >= 7 &&
   technicalDocs.FR65.sections.flatMap(section => section.fields).length >= 55 &&
-  ['kuyu_genislik_derinlik','hidrolik_valfler','kat_kapisi_kilitleri','ray_konsol_araligi'].every(key =>
+  technicalDocs.FR65.title === 'FR.65 Saha Veri Toplama' &&
+  ['yuk','hiz','durak_sayisi','hidrolik_valfler','kat_kapisi_kilitleri','ray_konsol_araligi'].every(key =>
     technicalDocs.FR65.sections.flatMap(section => section.fields).some(([fieldKey]) => fieldKey === key)));
 test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değerler normalize kayıtta korunuyor',
   technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'elektrikli_tahrik') &&
   !technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'hidrolik') &&
+  !technicalDocs.visibleFr65Sections('Elektrikli').find(section => section.key === 'seri_numaralari').fields.some(([key]) => key === 'hidrolik_motor') &&
   technicalDocs.visibleFr65Sections('Hidrolik').some(section => section.key === 'hidrolik') &&
+  !technicalDocs.visibleFr65Sections('Hidrolik').find(section => section.key === 'seri_numaralari').fields.some(([key]) => key === 'elektrikli_makine') &&
   technicalDocs.visibleFr65Sections('').some(section => section.key === 'hidrolik'));
-test('FR.65 saha kaydı teknik dosya değeri, saha değeri ve kanıt notunu ayrı tutar', (() => {
+test('FR.65 saha veri sayacı evrak karşılaştırmasını saymaz; gözlem ve bileşen kimliğini sayar', (() => {
   const capture = technicalDocs.emptyFr65Capture('2026-10-12T00:00:00.000Z');
   const values = capture.forms.FR65.values;
   values.kuyu_dibi = { file_value: '2400 mm', field_value: '2385 mm', note: 'Kuyu ölçüsü fotoğrafı' };
+  values.kat_kapisi_kilitleri = { marka: 'AVES', tip: 'K-1', seri_no: 'SN-01' };
+  values.ray_konum_aski = { file_value: 'yalnız evrak değeri' };
   const count = technicalDocs.countFr65Capture(capture, 'Elektrikli');
   return capture.saha_veri_akisi === 'fr65_saha_v1' && capture.source_form === 'ÜB.FR.65' &&
-    capture.source_revision === '00' && count.recorded === 1 && count.total > 1 &&
+    capture.source_revision === '00' && count.recorded === 2 && count.total > 1 &&
     !Object.values(values.kuyu_dibi).some(value => ['Uygun','Uygun Değil','Eşleşti','Fark var'].includes(value));
 })());
 test('FR.65 veri sayacı tahrik tipine göre kapsamı daraltır, boş alanı saymaz', (() => {
@@ -596,7 +603,7 @@ test('FR.65 veri sayacı tahrik tipine göre kapsamı daraltır, boş alanı say
 })());
 test('FR.65 sayaç yalnız denetçinin seçtiği kayıt durumlarını sayıyor', (() => {
   const record = technicalDocs.emptyRecord();
-  record.fr65.values.beyan_yuku = { status: 'Eşleşti' };
+  record.fr65.values.yuk = { status: 'Eşleşti' };
   record.fr65.values.kapasite = { status: 'Fark var' };
   const count = technicalDocs.countFr65(record, 'Elektrikli');
   return count.recorded === 2 && count.total > count.recorded;
@@ -1030,6 +1037,12 @@ test('rc3.9.72 migration 85 makes B type fields optional and DB-enforces A3 only
   rc3972ModuleRulesMigration.includes("ana_standart <> '81-1/2+A3'") &&
   rc3972ModuleRulesMigration.includes('validate constraint denetimler_a3_only_module_g_check') &&
   !/^\s*(create policy|drop policy|create trigger|drop trigger|update public\.|delete from|truncate)/mi.test(rc3972ModuleRulesMigration));
+test('rc3.9.78 migration 86 adds nullable firm address without rewriting data or changing RLS',
+  rc3978FirmAddressMigration.includes('begin;') && rc3978FirmAddressMigration.includes('commit;') &&
+  rc3978FirmAddressMigration.includes('add column if not exists firma_adresi text') &&
+  rc3978FirmAddressScenario.includes('firma_adresi') && rc3978FirmAddressScenario.includes('denetim_adresi') &&
+  ci.includes('Migration 86 uygula (firma adresi)') && ci.includes('tests/database/86_firma_adresi.sql') &&
+  !/^\s*(create policy|drop policy|create trigger|drop trigger|update public\.|delete from|truncate)/mi.test(rc3978FirmAddressMigration));
 test('migration 83-85 and live-rule behavioral SQL are part of the CI Postgres 17 job',
   ci.includes('Migration 83 uygula') && ci.includes('Migration 84 uygula') &&
   ci.includes('Migration 85 uygula') && ci.includes('tests/database/85_module_rules.sql') &&
@@ -1308,9 +1321,38 @@ test('yeni FR.65 kaydı B/E/H1 profilini doğrular, G checklisti veya resmî ç�
   const flow = app.slice(start, end);
   return ['Modül B','Modül E','Modül H1'].every(module => flow.includes(`'${module}':`)) &&
     flow.includes('emptyFr65Capture(now)') && flow.includes("ana_standart: '81-20'") &&
+    flow.includes('firma_adresi: f.firmaAdresi') && flow.includes('denetim_adresi: f.adres') &&
+    flow.includes('beyan_yuku_kg: Number(f.yuk)') && flow.includes('beyan_hizi_ms: Number(f.hiz)') &&
+    flow.includes('kapasite_kisi: Number(f.kapasite)') && flow.includes('durak_sayisi: Number(f.durak)') &&
+    flow.includes('bina_asansor_sayisi: f.binaAsansorSayisi') &&
     flow.includes('A3 hiçbir B/E/H1 kaydına yazılmaz') &&
     flow.includes("await localWrite('denetimler', d, 'denetimler', { insert_only: true })") &&
     !flow.includes('saha_kontrol') && !flow.includes('FormOutput');
+})());
+test('yeni Modül G ve B/E/H1 formu firma adresi ile asansör adresini ayrı ve zorunlu alır', (() => {
+  const start = app.indexOf('function showYeniForm()');
+  const end = app.indexOf('function showOnayEkrani(f, tahmini)', start);
+  const flow = app.slice(start, end);
+  const followupStart = app.indexOf('async function takipDenetimiOlustur(kaynak)');
+  const followupEnd = app.indexOf('function duzeltmeNedeniSec', followupStart);
+  const followup = app.slice(followupStart, followupEnd);
+  return flow.includes('id="fFirmaAdres"') && flow.includes('id="fAdres"') &&
+    flow.includes('Firma adresi ve asansörün bulunduğu adres zorunlu') &&
+    app.includes('firma_adresi: f.firmaAdresi') && app.includes('denetim_adresi: f.adres') &&
+    followup.includes('firma_adresi: kaynak.firma_adresi || null') &&
+    app.includes('takipKaynak.firma_adresi = window.prompt') && app.includes('takipKaynak.denetim_adresi = window.prompt');
+})());
+test('B/E/H1 FR.65 saha ekranında dosya değeri yok; sade bileşen kimliği ve sabit ölçü sekmeleri var', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('data-fr65-jump=') && flow.includes('fr65-quick-nav') &&
+    flow.includes('target.scrollIntoView') && flow.includes('data-fr65-capture-prop="field_value"') &&
+    flow.includes('data-fr65-capture-prop="marka"') && flow.includes('data-fr65-capture-prop="tip"') &&
+    flow.includes('data-fr65-capture-prop="seri_no"') &&
+    !flow.includes('data-fr65-capture-prop="file_value"') && !flow.includes('Teknik dosya') &&
+    !flow.includes('dosyadaki beyan') && !flow.includes('Eşleşti') && !flow.includes('Fark var') &&
+    index.includes('.fr65-quick-nav{position:sticky') && index.includes('.fr65-capture .tech-section>summary{position:static');
 })());
 test('FR.65 alanları cihaz günlüğüne anında, IndexedDB/outbox’a debounce ve çıkışta flush ile yazılır', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
@@ -1320,11 +1362,11 @@ test('FR.65 alanları cihaz günlüğüne anında, IndexedDB/outbox’a debounce
     flow.includes('AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email, captureWriterId)') &&
     flow.includes('setTimeout(() =>') && flow.includes('650') &&
     flow.includes("await localWrite('denetimler', latest, 'denetimler', {") &&
-    flow.includes("data-fr65-capture-prop=\"file_value\"") &&
     flow.includes("data-fr65-capture-prop=\"field_value\"") &&
     flow.includes("data-fr65-capture-prop=\"note\"") &&
+    flow.includes("latest.bina_asansor_sayisi = sayisalAlan('bina_asansor_sayisi')") &&
     flow.includes('activeFr65Flush = flushCapture') &&
-    flow.includes('uygunluk veya tamlık kararı değildir');
+    flow.includes('uygunluk veya belgelendirme kararı üretilmez');
 })());
 test('FR.65 yerel taslağı aynı kayıt sürümünde kurtarılır; çakışma ezilmeden korunur ve yalnız açık onayla geri yüklenir', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');

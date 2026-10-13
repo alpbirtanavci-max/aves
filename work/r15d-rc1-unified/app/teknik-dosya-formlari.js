@@ -1,71 +1,68 @@
-// ÜB.FR.65 / ÜB.RP.14 kontrollü dokümanlarından türetilen saha kayıt şeması.
-// Bu şema saha notlarını yapılandırır; uygunluk veya belgelendirme kararı üretmez.
+// FR.65 referanslı saha veri toplama alanları ve eski RP.14 kayıt şeması.
+// Yeni B/E/H1 akışı yalnız sahada görülen/ölçülen veriyi kaydeder; dosya karşılaştırması,
+// uygunluk veya belgelendirme kararı üretmez.
 (function (root) {
   'use strict';
 
   const FR65 = {
     code: 'ÜB.FR.65',
     revision: '00',
-    title: 'Teknik Dosya–Saha Eşleşme Formu',
+    title: 'FR.65 Saha Veri Toplama',
     sections: [
       {
-        key: 'kimlik', title: 'Asansör, proje ve genel beyan bilgileri', fields: [
-          ['asansor_tipi', 'Asansör tipi / elektrikli–hidrolik'],
-          ['dosya_no', 'Dosya / rapor numarası'],
-          ['montaj_adresi', 'Montaj adresi'],
-          ['asansor_sinifi', 'Asansör sınıfı'],
-          ['montaj_yili', 'Montaj yılı'],
-          ['ana_tip', 'Ana tip'],
-          ['tip_varyant_kodu', 'Tip / varyant kodu'],
-          ['beyan_yuku', 'Beyan edilen yük (kg)'],
-          ['kapasite', 'Beyan edilen kişi kapasitesi'],
-          ['beyan_hizi', 'Beyan edilen hız (m/s)'],
-          ['durak_kat_sayisi', 'Durak / kat sayısı'],
-          ['seyir_mesafesi', 'Seyir mesafesi'],
-          ['kuyu_yuksekligi', 'Kuyu yüksekliği'],
+        key: 'genel', tab: 'Genel', group: 'genel', title: 'Asansör genel bilgileri', fields: [
+          ['tahrik_tipi', 'Tahrik tipi', 'readonly'],
+          ['yuk', 'Sahada görülen anma yükü (kg)', 'number'],
+          ['kapasite', 'Sahada görülen kişi kapasitesi', 'number'],
+          ['hiz', 'Sahada görülen hız (m/s)', 'number'],
+          ['durak_sayisi', 'Durak sayısı', 'number'],
+          ['kat_sayisi', 'Kat sayısı', 'number'],
+          ['bina_asansor_sayisi', 'Binadaki toplam asansör sayısı', 'number'],
+          ['seyir_mesafesi', 'Seyir mesafesi (m)', 'number'],
+          ['kuyu_yuksekligi', 'Kuyu yüksekliği (m)', 'number'],
+          ['makine_dairesi', 'Makine dairesi (MR / MRL)', 'readonly'],
+          ['kabin_giris_sayisi_yeri', 'Kabin giriş sayısı ve konumu'],
         ],
       },
       {
-        key: 'guvenlik_bilesenleri', title: 'Güvenlik bileşenleri ve ekipman kimliği', fields: [
-          ['kat_kapisi_kilitleri', 'Kat kapısı kilitleri (üretici, tip, seri, CE/ON bilgisi)'],
-          ['parasut_freni', 'Paraşüt fren / güvenlik tertibatı (üretici, tip, seri, CE/ON bilgisi)'],
-          ['kabin_tamponu', 'Kabin tamponu (üretici, tip, seri, CE/ON bilgisi)'],
-          ['karsi_agirlik_tamponu', 'Karşı ağırlık tamponu (üretici, tip, seri, CE/ON bilgisi)'],
-          ['regulator', 'Hız regülatörü (üretici, tip, seri, CE/ON bilgisi)'],
-          ['ucm', 'İstenmeyen kabin hareketi tertibatı / UCM (algılama, kontrol, makine freni)'],
+        key: 'seri_numaralari', tab: 'Seri no', group: 'seri', title: 'Bileşen seri numaraları', kind: 'serial', fields: [
+          ['kat_kapisi_kilitleri', 'Kat kapısı kilidi'],
+          ['parasut_freni', 'Paraşüt fren / güvenlik tertibatı'],
+          ['kabin_tamponu', 'Kabin tamponu'],
+          ['karsi_agirlik_tamponu', 'Karşı ağırlık tamponu'],
+          ['regulator', 'Hız regülatörü'],
+          ['ucm', 'UCM tertibatı'],
           ['yukari_hiz_koruma', 'Yukarı yönde aşırı hız koruma tertibatı'],
-          ['hareketli_tampon', 'Varsa hareketli tampon ve kumanda tertibatı'],
-          ['hidrolik_boru_kirilma', 'Varsa hidrolik boru kırılma / akış kısıtlama valfi'],
-          ['guvenlik_bileseni_diger', 'Diğer güvenlik bileşenleri ve ekipman etiketleri'],
+          ['hareketli_tampon', 'Hareketli tampon (varsa)'],
+          ['hidrolik_boru_kirilma', 'Hidrolik valf / boru kırılma tertibatı (varsa)'],
+          ['elektrikli_makine', 'Elektrikli makine / motor', 'electric'],
+          ['hidrolik_motor', 'Hidrolik güç ünitesi / motor', 'hydraulic'],
         ],
       },
       {
-        key: 'elektrikli_tahrik', title: 'Elektrikli tahrik ve askı', traction: 'Elektrikli', fields: [
-          ['elektrikli_tahrik_yontemi', 'Tahrik yöntemi (asenkron/redüktörlü, senkron vb.)'],
+        key: 'elektrikli_tahrik', tab: 'Elektrikli', group: 'olcu', title: 'Elektrikli tahrik ve askı ölçüleri', traction: 'Elektrikli', fields: [
+          ['elektrikli_tahrik_yontemi', 'Sahada görülen tahrik yöntemi'],
           ['makine_konumu', 'Makine / motor konumu'],
-          ['makine_guc', 'Makine / motor gücü'],
-          ['makine_uretici_tip_seri', 'Makine / motor üretici, tip ve seri numarası'],
+          ['makine_guc', 'Makine / motor gücü (kW)'],
           ['halat_tipi', 'Halat tipi, kol sayısı ve çapı'],
           ['aski_duzeni', 'Askı oranı / askı düzeni'],
           ['kasnak_caplari', 'Tahrik ve saptırma kasnağı çapları'],
-          ['verim_sarma_acisi', 'Dosyada beyan edilen verim / halat sarım açısı ve sahadaki doğrulama gözlemi'],
+          ['halat_sarma_acisi', 'Halat sarım açısı (gözlem / ölçüm)'],
         ],
       },
       {
-        key: 'kabin_kapilar', title: 'Kabin, girişler ve kapılar', fields: [
+        key: 'kabin_kapilar', tab: 'Kabin', group: 'olcu', title: 'Kabin ve kapı ölçüleri', fields: [
           ['kabin_genislik', 'Kabin iç genişliği'],
           ['kabin_derinlik', 'Kabin iç derinliği'],
           ['kabin_yukseklik', 'Kabin iç yüksekliği'],
-          ['kabin_giris_sayisi_yeri', 'Kabin giriş sayısı ve konumları'],
           ['kabin_kapi_acikligi', 'Kabin kapısı net açıklığı (genişlik × yükseklik)'],
           ['kat_kapisi_acikligi', 'Kat kapısı net açıklığı (genişlik × yükseklik)'],
-          ['kapi_yangin_dayanimi', 'Varsa kapı yangına dayanım sınıfı'],
           ['kilavuz_pabucu_araligi', 'Kabin kılavuz pabuçları düşey aralığı'],
           ['kapi_yon_tip_panel', 'Kapı açılma yönü, tipi ve panel sayısı'],
         ],
       },
       {
-        key: 'raylar', title: 'Kılavuz raylar ve bağlantılar', fields: [
+        key: 'raylar', tab: 'Raylar', group: 'olcu', title: 'Kılavuz ray ve bağlantı ölçüleri', fields: [
           ['kabin_ray_tip_olcu', 'Kabin rayı tipi ve ölçüsü'],
           ['karsi_agirlik_ray_tip_olcu', 'Karşı ağırlık rayı tipi ve ölçüsü'],
           ['ray_konum_aski', 'Rayların konumu ve askı düzeni'],
@@ -74,7 +71,7 @@
         ],
       },
       {
-        key: 'kuyu', title: 'Kuyu, boşluklar, tamponlar ve karşı ağırlık', fields: [
+        key: 'kuyu', tab: 'Kuyu', group: 'olcu', title: 'Kuyu, boşluklar ve karşı ağırlık ölçüleri', fields: [
           ['kuyu_genislik_derinlik', 'Kuyu genişliği ve derinliği'],
           ['kuyu_dibi', 'Kuyu dibi derinliği'],
           ['ust_bosluk', 'Üst kat / kuyu üst boşluğu'],
@@ -89,9 +86,9 @@
         ],
       },
       {
-        key: 'hidrolik', title: 'Hidrolik tahrik', traction: 'Hidrolik', fields: [
+        key: 'hidrolik', tab: 'Hidrolik', group: 'olcu', title: 'Hidrolik tahrik ölçüleri', traction: 'Hidrolik', fields: [
           ['hidrolik_unite_konumu', 'Güç ünitesi konumu'],
-          ['hidrolik_motor', 'Motor gücü, üretici, tip ve seri numarası'],
+          ['hidrolik_motor_guc', 'Motor gücü (kW)'],
           ['hidrolik_halat', 'Varsa halat tipi, adedi, çapı ve askı düzeni'],
           ['piston_makara_cap', 'Piston / üst makara çapları'],
           ['piston_cap_adet_konum', 'Piston çapı, adedi ve konumu'],
@@ -173,7 +170,12 @@
   };
 
   function visibleFr65Sections(tractionType) {
-    return FR65.sections.filter(section => !section.traction || !tractionType || section.traction === tractionType);
+    const tractionKey = tractionType === 'Elektrikli' ? 'electric' : tractionType === 'Hidrolik' ? 'hydraulic' : null;
+    return FR65.sections
+      .filter(section => !section.traction || !tractionType || section.traction === tractionType)
+      .map(section => section.kind === 'serial' && tractionKey
+        ? { ...section, fields: section.fields.filter(([, , traction]) => !traction || traction === tractionKey) }
+        : section);
   }
 
   function emptyRecord() {
@@ -234,7 +236,7 @@
     const recorded = fields.filter(([key]) => {
       const value = values[key];
       return !!(value && typeof value === 'object' &&
-        ['file_value', 'field_value', 'note'].some(field => String(value[field] || '').trim()));
+        ['field_value', 'note', 'marka', 'tip', 'seri_no'].some(field => String(value[field] || '').trim()));
     }).length;
     return { recorded, total: fields.length };
   }
