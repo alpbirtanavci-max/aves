@@ -38,3 +38,10 @@ Branch: `codex/fr65-ray-door-combined`
 - Kapı ölçüleri bir ortak genişlik/yükseklik çifti olur; eski ayrı değerler kaybolmaz.
 - Statik test, sözdizimi kontrolü ve `git diff --check` çalışır; bağımsız diff incelemesi merge öncesi zorunludur.
 - Production dağıtımı yalnız açık kullanıcı onayıyla yapılır; bu istekte henüz production'a alma talebi yok.
+
+## Uygulama durumu
+
+- FR.65 değişiklikleri `rc3.9.86` sürümüne işlendi; veritabanı değişikliği yok.
+- Ölçüm noktası satırları `points: [{ position, distance_cm }]` olarak aynı FR.65 JSON kaydına girer ve mevcut yerel taslak/outbox akışından geçer.
+- Yerel statik testler: 444/444; JS sözdizimi ve `git diff --check` temiz.
+- PR/bağımsız inceleme bekleniyor; production deploy için bu istekte açık onay verilmedi.
