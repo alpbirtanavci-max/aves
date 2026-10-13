@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.84';
+const APP_VERSION = 'R15D-rc3.9.85';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -3312,19 +3312,12 @@ function showYeniForm() {
           </details>
         </article>`;
       }
-      if (section.kind === 'serial' && fieldType === 'optional_gsm') {
-        return `<article class="tech-field fr65-optional-gsm" data-fr65-capture-key="${esc(key)}">
-          <b>${esc(label)}</b>
-          <label>GSM modülü durumu
-            <select data-fr65-capture-prop="var_mi" ${disabled}>
-              <option value="" ${value.var_mi ? '' : 'selected'}>Seçin</option>
-              <option value="Yok" ${value.var_mi === 'Yok' ? 'selected' : ''}>Yok</option>
-              <option value="Var" ${value.var_mi === 'Var' ? 'selected' : ''}>Var</option>
-            </select>
-          </label>
-          <div class="fr65-conditional" data-fr65-condition-key="${esc(key)}" data-fr65-condition-prop="var_mi" data-fr65-condition-value="Var" ${value.var_mi === 'Var' ? '' : 'hidden'}>
-            ${renderSerialInputs(value, disabled, 'IMEI', 'imei')}
-          </div>
+      if (section.kind === 'serial' && fieldType === 'gsm') {
+        const previousGsmStatus = value.var_mi === 'Yok' ? 'Önceki kayıtta GSM için “Yok” seçilmişti.'
+          : value.var_mi === 'Var' && !['marka', 'tip', 'imei'].every(prop => String(value[prop] || '').trim())
+            ? 'Önceki kayıtta GSM var seçilmişti; kimlik bilgilerini tamamlayın.' : '';
+        return `<article class="tech-field fr65-gsm-row" data-fr65-capture-key="${esc(key)}">
+          <b>${esc(label)}</b>${previousGsmStatus ? `<small class="fr65-legacy-value">${esc(previousGsmStatus)}</small>` : ''}${renderSerialInputs(value, disabled, 'IMEI', 'imei')}
         </article>`;
       }
       if (section.kind === 'serial' || fieldType === 'serial') {
@@ -3336,7 +3329,7 @@ function showYeniForm() {
       let fieldControl = '';
       if (fieldType === 'readonly') {
         fieldControl = `<input aria-label="${esc(label)}" data-fr65-capture-prop="field_value" value="${esc(value.field_value || '')}" disabled>`;
-      } else if (fieldType === 'select') {
+      } else if (fieldType === 'select' || fieldType === 'optional_select') {
         const rawCurrent = String(value.field_value || '');
         const oldFreeTextChoice = ['kismen_kapali_kuyu', 'kuyu_alti_kullanim_yuk'].includes(key) &&
           rawCurrent && !options.includes(rawCurrent);
@@ -3349,7 +3342,7 @@ function showYeniForm() {
         </select>`;
       } else if (fieldType === 'multi_measure') {
         const raw = String(value.field_value || '');
-        fieldControl = `<textarea class="fr65-multi-measure" rows="5" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="Ölçüleri mm olarak, her satıra bir değer girin" ${disabled}>${esc(raw)}</textarea>`;
+        fieldControl = `<textarea class="fr65-multi-measure" rows="1" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="Ölçüleri cm olarak girin" ${disabled}>${esc(raw)}</textarea>`;
       } else if (fieldType === 'number') {
         const raw = String(value.field_value || '');
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
@@ -3357,7 +3350,8 @@ function showYeniForm() {
         fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
       } else {
         const compactMeasure = section.group === 'olcu';
-        fieldControl = `<textarea class="${compactMeasure ? 'fr65-compact-measure-input' : ''}" rows="${compactMeasure ? '1' : '2'}" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="${compactMeasure ? 'Ölçülen değer; birimiyle' : 'Sahada görülen / ölçülen değer'}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
+        const compactPlaceholder = label.includes('(cm') ? 'Ölçüyü cm olarak girin' : 'Sahada görülen bilgi';
+        fieldControl = `<textarea class="${compactMeasure ? 'fr65-compact-measure-input' : ''}" rows="${compactMeasure ? '1' : '2'}" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="${compactMeasure ? compactPlaceholder : 'Sahada görülen bilgi'}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
       }
       const help = fieldHelp[key] ? `<small class="fr65-field-help">${esc(fieldHelp[key])}</small>` : '';
       return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
@@ -3387,39 +3381,79 @@ function showYeniForm() {
       const legacyRailSpacingNotice = section.key === 'kuyu' && legacyRailSpacingText
         ? `<aside class="fr65-legacy-notice"><b>Önceki birleşik ray aralığı kaydı korunuyor</b><span>${esc(legacyRailSpacingText)}</span><small>Yeni kayıtta kabin ana rayları ve karşı ağırlık rayları ayrı alanlara girilir.</small></aside>`
         : '';
-      const legacyWellValues = normalized.forms.FR65?.values || {};
-      const legacyWellText = [
-        legacyWellValues.kuyu_genislik?.field_value && `Önceki kuyu genişliği (mm): ${legacyWellValues.kuyu_genislik.field_value}`,
-        legacyWellValues.kuyu_derinlik?.field_value && `Önceki kuyu derinliği (mm): ${legacyWellValues.kuyu_derinlik.field_value}`,
-        legacyWellValues.kuyu_dibi?.field_value && `Önceki kuyu dibi derinliği: ${legacyWellValues.kuyu_dibi.field_value}`,
-        legacyWellValues.kuyu_genislik_derinlik?.field_value && `Önceki birleşik kuyu ölçüsü: ${legacyWellValues.kuyu_genislik_derinlik.field_value}`,
-      ].filter(Boolean).join(' · ');
-      const legacyWellNotice = section.key === 'kuyu' && legacyWellText
-        ? `<aside class="fr65-legacy-notice"><b>Önceki kuyu ölçüleri korunuyor</b><span>${esc(legacyWellText)}</span><small>Eski kayıtlar otomatik cm’ye çevrilmez. Yeni tek değerli cm kutularına sahada yeniden girin.</small></aside>`
+      const legacyMeasurementKeys = {
+        genel: [
+          ['seyir_mesafesi', 'Seyir mesafesi (önceki m)'],
+          ['kuyu_yuksekligi', 'Kuyu yüksekliği (önceki m)'],
+        ],
+        elektrikli_tahrik: [
+          ['halat_tipi', 'Önceki halat kaydı'],
+          ['kasnak_caplari', 'Önceki kasnak çapları'],
+        ],
+        kabin_kapilar: [
+          ['kabin_genislik', 'Kabin genişliği (önceki mm)'],
+          ['kabin_derinlik', 'Kabin derinliği (önceki mm)'],
+          ['kabin_yukseklik', 'Kabin yüksekliği (önceki mm)'],
+          ['kabin_kapi_genislik', 'Kabin kapısı genişliği (önceki mm)'],
+          ['kabin_kapi_yukseklik', 'Kabin kapısı yüksekliği (önceki mm)'],
+          ['kat_kapisi_genislik', 'Kat kapısı genişliği (önceki mm)'],
+          ['kat_kapisi_yukseklik', 'Kat kapısı yüksekliği (önceki mm)'],
+          ['kabin_kapi_acikligi', 'Önceki tek alanlı kabin kapısı açıklığı'],
+          ['kat_kapisi_acikligi', 'Önceki tek alanlı kat kapısı açıklığı'],
+          ['kilavuz_pabucu_araligi', 'Önceki kılavuz pabucu aralığı'],
+          ['kapi_yon_tip_panel', 'Önceki kapı yönü/tipi/panel bilgisi'],
+        ],
+        raylar: [['ray_toplam_boy', 'Önceki toplam ray boyu']],
+        kuyu: [
+          ['kuyu_genislik', 'Kuyu genişliği (önceki mm)'],
+          ['kuyu_derinlik', 'Kuyu derinliği (önceki mm)'],
+          ['kuyu_dibi', 'Önceki kuyu dibi derinliği'],
+          ['kuyu_genislik_derinlik', 'Önceki birleşik kuyu ölçüsü'],
+          ['ust_bosluk', 'Önceki üst boşluk kaydı'],
+          ['toplam_kuyu_olcusu', 'Önceki toplam kuyu/seyir kaydı'],
+          ['kabin_raylar_arasi', 'Kabin ray aralığı (önceki mm)'],
+          ['karsi_agirlik_raylar_arasi', 'Karşı ağırlık ray aralığı (önceki mm)'],
+          ['ray_kapi_mesafesi', 'Önceki ray–kapı mesafeleri'],
+          ['karsi_agirlik_adet_olcu', 'Önceki karşı ağırlık adet/ölçü kaydı'],
+          ['tampon_strok_konum', 'Önceki tampon tipi/strok/konum kaydı'],
+          ['ust_alt_guvenli_bosluk', 'Önceki üst/alt güvenli boşluk kaydı'],
+        ],
+        hidrolik: [
+          ['hidrolik_halat', 'Önceki hidrolik halat kaydı'],
+          ['piston_makara_cap', 'Önceki piston/makara çapları'],
+          ['piston_cap_adet_konum', 'Önceki piston çapı/adedi/konumu'],
+          ['hidrolik_kapi', 'Önceki hidrolik kapı/açıklık kaydı'],
+        ],
+      }[section.key] || [];
+      const legacyMeasurementText = legacyMeasurementKeys.map(([key, label]) => {
+        const oldValue = normalized.forms.FR65?.values?.[key];
+        const parts = [oldValue?.field_value, oldValue?.note].filter(Boolean);
+        return parts.length ? `${label}: ${parts.join(' · ')}` : '';
+      }).filter(Boolean).join(' · ');
+      const legacyMeasurementNotice = legacyMeasurementText
+        ? `<aside class="fr65-legacy-notice"><b>Önceki ölçü ve saha kayıtları korunuyor</b><span>${esc(legacyMeasurementText)}</span><small>Eski değerler yeni cm alanlarına dönüştürülmedi. Yeni alanları cm cinsinden yeniden girin.</small></aside>`
         : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
         const field = section.fields[fieldIndex];
         const pairedKey = section.key === 'kabin_kapilar' ? ({
-          kabin_genislik: 'kabin_derinlik',
-          kabin_kapi_genislik: 'kabin_kapi_yukseklik',
-          kat_kapisi_genislik: 'kat_kapisi_yukseklik',
-        })[field[0]] : section.key === 'kuyu' ? ({ kuyu_genislik_cm: 'kuyu_derinlik_cm' })[field[0]] : null;
+          kabin_genislik_cm: 'kabin_derinlik_cm',
+          kabin_kapi_genislik_cm: 'kabin_kapi_yukseklik_cm',
+          kat_kapisi_genislik_cm: 'kat_kapisi_yukseklik_cm',
+        })[field[0]] : section.key === 'kuyu' ? ({
+          kuyu_genislik_cm: 'kuyu_derinlik_cm',
+          karsi_agirlik_genislik_cm: 'karsi_agirlik_derinlik_cm',
+        })[field[0]] : null;
         const nextField = section.fields[fieldIndex + 1];
         if (pairedKey && nextField?.[0] === pairedKey) {
           const pairLabel = field[0] === 'kuyu_genislik_cm' ? 'Kuyu ölçüleri'
-            : field[0] === 'kabin_genislik' ? 'Kabin iç net ölçüsü'
-            : field[0] === 'kabin_kapi_genislik' ? 'Kabin kapısı net açıklığı'
-              : 'Kat kapısı net açıklığı';
-          const hint = field[0] === 'kuyu_genislik_cm' ? '<small class="fr65-field-help">Genişlik ve derinliği birer sayı olarak cm cinsinden girin.</small>'
-            : field[0] === 'kabin_genislik' ? '<small class="fr65-field-help">Genişlik ve derinliği ayrı kutulara, mm olarak girin.</small>'
-            : '<small class="fr65-field-help">Net genişlik ve yüksekliği ayrı kutulara, mm olarak girin.</small>';
-          const legacyKey = field[0] === 'kabin_kapi_genislik' ? 'kabin_kapi_acikligi'
-            : field[0] === 'kat_kapisi_genislik' ? 'kat_kapisi_acikligi' : null;
-          const legacyValue = legacyKey ? normalized.forms.FR65?.values?.[legacyKey]?.field_value : '';
-          const legacyNote = legacyValue ? `<small class="fr65-legacy-value">Önceki tek alanlı kayıt (${esc(legacyKey)}): ${esc(legacyValue)}</small>` : '';
+            : field[0] === 'kabin_genislik_cm' ? 'Kabin iç ölçüleri'
+            : field[0] === 'karsi_agirlik_genislik_cm' ? 'Karşı ağırlık ölçüleri'
+              : field[0] === 'kabin_kapi_genislik_cm' ? 'Kabin kapısı ölçüleri'
+                : 'Kat kapısı ölçüleri';
+          const hint = '<small class="fr65-field-help">Her değeri ayrı kutuya, cm olarak girin.</small>';
           fieldHtml.push(`<div class="fr65-measure-group" role="group" aria-label="${esc(pairLabel)}">
-            <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}${legacyNote}
+            <b>${esc(pairLabel)}</b><div class="fr65-measure-pair">${renderCaptureField(section, field)}${renderCaptureField(section, nextField)}</div>${hint}
           </div>`);
           fieldIndex++;
         } else fieldHtml.push(renderCaptureField(section, field));
@@ -3427,7 +3461,7 @@ function showYeniForm() {
       const nextSection = sections[index + 1];
       return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${section.key === activeSectionKey ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${legacyMovingBufferNotice}${legacyRailSpacingNotice}${legacyWellNotice}${fieldHtml.join('')}
+        <div class="tech-section-body">${legacyMovingBufferNotice}${legacyRailSpacingNotice}${legacyMeasurementNotice}${fieldHtml.join('')}
           <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
         </div>
       </details>`;
