@@ -229,6 +229,7 @@
   function fr65CaptureFieldRecorded(field, value) {
     if (!value || typeof value !== 'object') return false;
     const fieldType = field[2];
+    if (fieldType === 'select') return !!String(value.field_value || '').trim();
     if (fieldType === 'optional_serial') {
       if (value.var_mi === 'Yok') return true;
       return value.var_mi === 'Var' && ['marka', 'tip', 'seri_no'].every(prop => String(value[prop] || '').trim());

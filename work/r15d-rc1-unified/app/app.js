@@ -3078,6 +3078,7 @@ function showYeniForm() {
       document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
         const value = { ...(values[row.dataset.fr65CaptureKey] || {}) };
         row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
+          if (input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true' && !input.value.trim()) return;
           value[input.dataset.fr65CaptureProp] = input.value.trim();
         });
         if (Object.values(value).some(Boolean)) values[row.dataset.fr65CaptureKey] = value;
@@ -3317,7 +3318,8 @@ function showYeniForm() {
       } else if (fieldType === 'number') {
         const raw = String(value.field_value || '');
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
-        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${raw && !numberValue ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small>` : ''}`;
+        const preserveLegacy = !!raw && !numberValue;
+        fieldControl = `<input type="number" min="0" step="any" inputmode="decimal" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
       } else {
         fieldControl = `<textarea data-fr65-capture-prop="field_value" placeholder="Sahada görülen / ölçülen değer${section.group === 'olcu' ? '; ölçüyse birimiyle' : ''}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
       }
@@ -3333,6 +3335,17 @@ function showYeniForm() {
     };
     const sectionsHtml = sections.map((section, index) => {
       const keys = section.fields.map(([key]) => key);
+      const legacyMovingBuffer = normalized.forms.FR65?.values?.hareketli_tampon || {};
+      const legacyMovingText = [
+        legacyMovingBuffer.field_value,
+        legacyMovingBuffer.marka && `Marka: ${legacyMovingBuffer.marka}`,
+        legacyMovingBuffer.tip && `Tip: ${legacyMovingBuffer.tip}`,
+        legacyMovingBuffer.seri_no && `Seri no: ${legacyMovingBuffer.seri_no}`,
+        legacyMovingBuffer.note,
+      ].filter(Boolean).join(' · ');
+      const legacyMovingBufferNotice = section.key === 'seri_numaralari' && legacyMovingText
+        ? `<aside class="fr65-legacy-notice"><b>Önceki hareketli tampon kaydı korunuyor</b><span>${esc(legacyMovingText)}</span><small>Bu eski kaydın kabine mi karşı ağırlığa mı ait olduğu otomatik belirlenemiyor. Gerekirse bilgiyi yukarıdaki doğru ek tampon alanına aktarın.</small></aside>`
+        : '';
       const fieldHtml = [];
       for (let fieldIndex = 0; fieldIndex < section.fields.length; fieldIndex++) {
         const field = section.fields[fieldIndex];
@@ -3361,7 +3374,7 @@ function showYeniForm() {
       const nextSection = sections[index + 1];
       return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
-        <div class="tech-section-body">${fieldHtml.join('')}
+        <div class="tech-section-body">${legacyMovingBufferNotice}${fieldHtml.join('')}
           <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
         </div>
       </details>`;
@@ -3480,6 +3493,7 @@ function showYeniForm() {
     if (canEdit) {
       app.oninput = event => {
         if (!event.target.matches('[data-fr65-capture-prop]')) return;
+        if (event.target.dataset.fr65PreserveLegacy === 'true') event.target.dataset.fr65LegacyTouched = 'true';
         editVersion++;
         const version = editVersion;
         updateCaptureConditions();
@@ -3508,6 +3522,18 @@ function showYeniForm() {
       app.onchange = event => {
         if (event.target.matches('select[data-fr65-capture-prop]')) updateCaptureConditions();
       };
+      document.querySelectorAll('[data-fr65-clear-legacy]').forEach(button => {
+        button.onclick = () => {
+          const key = button.dataset.fr65ClearLegacy;
+          const row = Array.from(document.querySelectorAll('[data-fr65-capture-key]'))
+            .find(item => item.dataset.fr65CaptureKey === key);
+          const input = row?.querySelector('input[data-fr65-capture-prop="field_value"]');
+          if (!input) return;
+          input.dataset.fr65LegacyTouched = 'true';
+          input.value = '';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        };
+      });
       document.getElementById('fr65SaveNow').onclick = async event => {
         event.currentTarget.disabled = true;
         try { await flushCapture(); }

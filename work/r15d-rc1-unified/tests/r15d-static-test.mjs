@@ -623,6 +623,34 @@ test('FR.65 kuyu seçeneklerinde açıklama yalnız Var seçilince açılır; ik
     technicalDocs.fr65CaptureFieldActive(find('kuyu_alti_kullanim_yuk_detay'), values) &&
     app.includes('inheritedLegacyDetail');
 })());
+test('FR.65 Var/Yok alanı yalnız seçim yapıldığında tamamlanır; not tek başına yeterli sayılmaz', (() => {
+  const fields = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields;
+  const selectField = fields.find(([key]) => key === 'kismen_kapali_kuyu');
+  const emptyWithNote = { kismen_kapali_kuyu: { field_value: '', note: 'Daha sonra bakılacak' } };
+  const selectedNo = { kismen_kapali_kuyu: { field_value: 'Yok', note: '' } };
+  const emptyCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: emptyWithNote } } }, 'Elektrikli', 'kuyu');
+  const selectedCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: selectedNo } } }, 'Elektrikli', 'kuyu');
+  return selectField[2] === 'select' && emptyCount.recorded === 0 && selectedCount.recorded === 1;
+})());
+test('FR.65 sayı alanlarındaki okunamayan eski değerler yeni değer girilene veya açıkça silinene kadar korunur', (() => {
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return flow.includes('data-fr65-preserve-legacy=') &&
+    flow.includes("input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true'") &&
+    flow.includes("event.target.dataset.fr65LegacyTouched = 'true'") &&
+    flow.includes('data-fr65-clear-legacy=') &&
+    flow.includes('input.dispatchEvent(new Event(\'input\', { bubbles: true }))');
+})());
+test('FR.65 eski hareketli tampon kaydı silinmeden görünür ve doğru ek tampon alanına aktarılabilir', (() => {
+  const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
+  const flowEnd = app.indexOf('async function showDenetim(', flowStart);
+  const flow = app.slice(flowStart, flowEnd);
+  return !technicalDocs.FR65.sections.flatMap(section => section.fields).some(([key]) => key === 'hareketli_tampon') &&
+    flow.includes('normalized.forms.FR65?.values?.hareketli_tampon') &&
+    flow.includes('Önceki hareketli tampon kaydı korunuyor') &&
+    flow.includes('bilgiyi yukarıdaki doğru ek tampon alanına aktarın');
+})());
 test('FR.65 traksiyon tipine göre alanları ayırıyor ve gizlenen önceki değerler normalize kayıtta korunuyor',
   technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'elektrikli_tahrik') &&
   !technicalDocs.visibleFr65Sections('Elektrikli').some(section => section.key === 'hidrolik') &&
