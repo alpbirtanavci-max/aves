@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.76';
+const APP_VERSION = 'R15D-rc3.9.77';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -2290,7 +2290,7 @@ const UI = (() => {
         const birlesikKayitlar = new Map(ayniSeriKayitlari.map(item => [item.id, item]));
         sunucudakiKayitlar.filter(item => normSeriNo(item.asansor_seri_no) === seriAnahtari)
           .forEach(item => birlesikKayitlar.set(item.id, { ...birlesikKayitlar.get(item.id), ...item }));
-        ayniSeriKayitlari = [...birlesikKayitlari.values()];
+        ayniSeriKayitlari = [...birlesikKayitlar.values()];
       } catch (error) {
         const detail = error instanceof Error
           ? `${error.name}${error.message ? `: ${error.message}` : ''}`
