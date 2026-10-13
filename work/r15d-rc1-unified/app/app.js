@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.81';
+const APP_VERSION = 'R15D-rc3.9.83';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -1481,6 +1481,18 @@ const UI = (() => {
   const pendingEditorWrites = new Set();
   const editorDraftTimers = new Map();
   let activeFr65Flush = null;
+  let activeFr65PositionSaver = null;
+  let activeFr65ScrollHandler = null;
+  let activeFr65ScrollSaveTimer = null;
+
+  function stopFr65ScrollTracking() {
+    if (activeFr65PositionSaver) activeFr65PositionSaver();
+    if (activeFr65ScrollHandler) window.removeEventListener('scroll', activeFr65ScrollHandler);
+    if (activeFr65ScrollSaveTimer) clearTimeout(activeFr65ScrollSaveTimer);
+    activeFr65ScrollHandler = null;
+    activeFr65ScrollSaveTimer = null;
+    activeFr65PositionSaver = null;
+  }
 
   const esc = (s) => (s ?? '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const safeFilePart = (s) => (s ?? '').toString().trim().replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 80) || 'denetim';
@@ -1792,6 +1804,7 @@ const UI = (() => {
 
   /* ---- Login ---- */
   function showLogin(err) {
+    stopFr65ScrollTracking();
     setBrandHomeEnabled(false);
     currentView = 'login';
     currentDenetimId = null;
@@ -1887,6 +1900,7 @@ const UI = (() => {
       if (autoAdvanceTimer) { clearTimeout(autoAdvanceTimer); autoAdvanceTimer = null; }
       transitioningId = null;
       activeFr65Flush = null;
+      stopFr65ScrollTracking();
     }
     currentView = 'list';
     currentDenetimId = null;
@@ -3037,6 +3051,7 @@ function showYeniForm() {
       await showList();
       return;
     }
+    stopFr65ScrollTracking();
     const editPermission = canEditDenetim(d) && !inspectionReadOnly;
     const normalized = denetimFormKaydi(d);
     const originalValues = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
@@ -3070,6 +3085,24 @@ function showYeniForm() {
     let saveChain = Promise.resolve();
     let draftWarningShown = false;
     const sections = AVES_TEKNIK_DOSYA_FORM.visibleFr65Sections(d.tahrik_tipi);
+    const captureSectionStorageKey = `aves_fr65_active_section_v1_${encodeURIComponent(String(d.id))}`;
+    const captureScrollStorageKey = `aves_fr65_scroll_v1_${encodeURIComponent(String(d.id))}`;
+    let activeSectionKey = sections[0]?.key || '';
+    let savedScrollY = 0;
+    const sectionExists = key => sections.some(section => section.key === key);
+    const rememberCaptureSection = key => {
+      if (!sectionExists(key)) return;
+      activeSectionKey = key;
+      try { localStorage.setItem(captureSectionStorageKey, key); }
+      catch (error) { console.warn('FR.65 açık bölümü cihazda saklanamadı', error); }
+    };
+    try {
+      const savedSectionKey = localStorage.getItem(captureSectionStorageKey);
+      if (sectionExists(savedSectionKey)) activeSectionKey = savedSectionKey;
+      else if (activeSectionKey) localStorage.setItem(captureSectionStorageKey, activeSectionKey);
+      const rawScrollY = Number(localStorage.getItem(captureScrollStorageKey));
+      if (Number.isFinite(rawScrollY) && rawScrollY > 0) savedScrollY = rawScrollY;
+    } catch (error) { console.warn('FR.65 son açık bölümü okunamadı', error); }
     const valuesAreSame = values => stableStringify(values || {}) === stableStringify(originalValues);
     const collectValues = () => {
       // Eski kayıtlardaki görünmeyen alanları koru; yeni saha kayıtları yalnız
@@ -3381,7 +3414,7 @@ function showYeniForm() {
         } else fieldHtml.push(renderCaptureField(section, field));
       }
       const nextSection = sections[index + 1];
-      return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
+      return `<details class="tech-section" id="fr65Section-${esc(section.key)}" data-fr65-section-id="${esc(section.key)}" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${section.key === activeSectionKey ? 'open' : ''}>
         <summary>${esc(section.title)} <span data-fr65-section-count>0/${keys.length} alan</span></summary>
         <div class="tech-section-body">${legacyMovingBufferNotice}${fieldHtml.join('')}
           <div class="fr65-section-footer"><span data-fr65-section-progress></span><button type="button" class="btn btn-ghost" data-fr65-next="${esc(section.key)}" data-fr65-next-key="${esc(nextSection?.key || '')}">Bölümü kontrol et</button></div>
@@ -3416,13 +3449,55 @@ function showYeniForm() {
     updateSummary();
     updateCaptureConditions();
     updateSummary();
+    activeFr65PositionSaver = () => {
+      if (currentView !== 'inspection' || currentDenetimId !== d.id) return;
+      const openSection = app.querySelector('[data-fr65-section-id][open]');
+      if (openSection) rememberCaptureSection(openSection.dataset.fr65SectionId);
+      try { localStorage.setItem(captureScrollStorageKey, String(Math.max(0, Math.round(window.scrollY || window.pageYOffset || 0)))); }
+      catch (error) { console.warn('FR.65 kaydırma konumu saklanamadı', error); }
+    };
+    activeFr65ScrollHandler = () => {
+      if (activeFr65ScrollSaveTimer) return;
+      activeFr65ScrollSaveTimer = setTimeout(() => {
+        activeFr65ScrollSaveTimer = null;
+        if (activeFr65PositionSaver) activeFr65PositionSaver();
+      }, 180);
+    };
+    window.addEventListener('scroll', activeFr65ScrollHandler, { passive: true });
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (currentView !== 'inspection' || currentDenetimId !== d.id || savedScrollY <= 0) return;
+      const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      window.scrollTo(0, Math.min(savedScrollY, maxScrollY));
+    }));
     document.querySelectorAll('[data-fr65-jump]').forEach(button => {
       button.onclick = () => {
         const target = document.getElementById(`fr65Section-${button.dataset.fr65Jump}`);
         if (!target) return;
+        rememberCaptureSection(button.dataset.fr65Jump);
         target.open = true;
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
       };
+    });
+    document.querySelectorAll('[data-fr65-section-id]').forEach(sectionElement => {
+      const sectionKey = sectionElement.dataset.fr65SectionId;
+      sectionElement.querySelector(':scope > summary')?.addEventListener('click', () => {
+        if (!sectionElement.open) rememberCaptureSection(sectionKey);
+      });
+      sectionElement.addEventListener('toggle', () => {
+        if (sectionElement.open) {
+          rememberCaptureSection(sectionKey);
+          return;
+        }
+        if (activeSectionKey !== sectionKey) return;
+        const openSections = Array.from(document.querySelectorAll('[data-fr65-section-id][open]'));
+        const otherOpenSection = openSections[openSections.length - 1];
+        if (otherOpenSection) rememberCaptureSection(otherOpenSection.dataset.fr65SectionId);
+        else {
+          activeSectionKey = '';
+          try { localStorage.removeItem(captureSectionStorageKey); }
+          catch (error) { console.warn('FR.65 bölüm konumu temizlenemedi', error); }
+        }
+      });
     });
     document.querySelectorAll('[data-fr65-next]').forEach(button => {
       button.onclick = async () => {
@@ -3445,6 +3520,7 @@ function showYeniForm() {
         const target = document.getElementById(`fr65Section-${nextKey}`);
         if (current) current.open = false;
         if (target) {
+          rememberCaptureSection(nextKey);
           target.open = true;
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -5966,6 +6042,7 @@ function showYeniForm() {
   return {
     showLogin, afterLogin, showList, bekleyenFotograflariYukle,
     flushPendingEdits: flushEditorWrites,
+    preserveFr65Position: () => { if (activeFr65PositionSaver) activeFr65PositionSaver(); },
     recoverDrafts: taslaklariTaraVeKurtar,
     get currentDenetimId() { return currentDenetimId; },
     refreshSyncState,
@@ -6075,7 +6152,10 @@ async function ensurePersistentStorage() {
 // JS'e son bir şans tanıdığı olaylardır; ikisi de aynı yazımı tetikleyip
 // aynı sonuca ulaşsa da hangisinin önce/güvenilir ateşlendiği platforma göre
 // değiştiğinden ikisi birden bağlanır.
-const flushOnHide = () => { try { UI.flushPendingEdits().catch(() => {}); } catch {} };
+const flushOnHide = () => {
+  try { UI.preserveFr65Position(); } catch {}
+  try { UI.flushPendingEdits().catch(() => {}); } catch {}
+};
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushOnHide(); });
 window.addEventListener('pagehide', flushOnHide);
 
