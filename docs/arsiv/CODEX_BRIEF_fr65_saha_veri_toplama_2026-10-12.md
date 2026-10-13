@@ -22,13 +22,17 @@ Sayaç yalnız veri bulunan alanları sayar; tamamlık/uygunluk hükmü değildi
   başlangıç akışı; B/E/H1 için Ana Tip/varyant ve A3 seçimi yoktur.
 - `work/r15d-rc1-unified/app/app.js:2325` — G checklist satırı ve resmi çıktı
   snapshotı oluşturmadan yeni FR.65 kaydı oluşturur.
-- `work/r15d-rc1-unified/app/app.js:2858` — FR.65 veri ekranı, saha güvenliği
+- `work/r15d-rc1-unified/app/app.js:2936` — FR.65 veri ekranı, saha güvenliği
   hatırlatması, çevrimdışı kayıt, tamamlanmış kaydın salt-okunur gösterimi ve
   denetim geçmişiyle yeniden açma.
-- `work/r15d-rc1-unified/app/form-draft-journal.js:69` — ayrı FR.65 yerel taslak
-  anahtarı; önceki form günlüğünü ezmez. Aynı kayıt sürümündeki taslak kurtarılır;
-  sürüm çakışmasında taslak korunur ve yalnız kullanıcı onayıyla geri yüklenir.
-- `work/r15d-rc1-unified/tests/r15d-static-test.mjs:1237` — modül kapıları,
+- `work/r15d-rc1-unified/app/form-draft-journal.js:72` — sekme ve hesap başına
+  ayrı FR.65 yerel taslak anahtarı; sekmeler birbirinin taslağını yazamaz, taşıyamaz
+  veya silemez. Uygulama `sessionStorage` kimliğini Web Lock ile tek belgeye ayırır;
+  kilit API'si yoksa her belgeye yeni kimlik verip eski taslağı açık geri yükleme
+  onayına bırakır. Eski ortak anahtardaki taslaklar içeri alınır.
+- `work/r15d-rc1-unified/app/app.js:368` — çevrimdışı koşullu PATCH; ağ yanıtı
+  belirsizse tekrar yazmadan sunucudaki hedef alanları doğrular.
+- `work/r15d-rc1-unified/tests/r15d-static-test.mjs:1296` — modül kapıları,
   veri alanları, taslak ayrımı/çakışma koruması ve G akışının korunmasına ilişkin
   statik davranış testleri.
 
@@ -42,6 +46,9 @@ Sayaç yalnız veri bulunan alanları sayar; tamamlık/uygunluk hükmü değildi
   `updated_at` ile eşleşirse PATCH edilir; eşleşme yoksa 409 olarak outbox'ta
   korunur ve Senkron Merkezi'nde incelenir. Bu koruma GET-ön kontrolüne değil,
   sunucu tarafındaki tek PATCH koşuluna dayanır.
+- PATCH başarılı olduktan sonra yanıt kaybolursa uygulama, tekrar yazmak yerine
+  sunucudaki ilgili alanları okur. İstenen değerler zaten mevcutsa işlemi idempotent
+  başarı sayar; doğrulanamıyorsa cihazdaki outbox kaydını korur.
 - Hızlı ardışık girişte başarıyla cihaza yazılmış eski anlık görüntü, düzenleme
   temel sürümünü ilerletir; daha yeni taslak silinmeden yeni tabana bağlanır.
 - Yeni kayıtlardaki `ana_standart: '81-20'` değeri, mevcut zorunlu veritabanı
@@ -57,7 +64,8 @@ Sayaç yalnız veri bulunan alanları sayar; tamamlık/uygunluk hükmü değildi
 - `node --check work/r15d-rc1-unified/app/app.js`
 - `node --check work/r15d-rc1-unified/app/form-draft-journal.js`
 - `node --check work/r15d-rc1-unified/tests/r15d-static-test.mjs`
-- `npm test` — 418/418 kontrol geçti.
+- `npm test` — 418/418 kontrol geçti; sekmeler arası ayrı taslak, yazarı/sürümü
+  eşleşmeyen silme-rebase reddi ve PATCH yanıt kaybı teyidi kapsanıyor.
 - `git diff --check` başarılı.
 
 Bu kod kullanıcı incelemesi için branch/PR olarak sunulur. PR incelemesi ve gerçek

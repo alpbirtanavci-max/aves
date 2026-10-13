@@ -207,6 +207,8 @@ test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve 
     getItem: key => values.has(key) ? values.get(key) : null,
     setItem: (key, value) => values.set(key, String(value)),
     removeItem: key => values.delete(key),
+    key: index => [...values.keys()][index] || null,
+    get length() { return values.size; },
   };
   storage.setItem('aves_taslak_form-test', JSON.stringify({ 'saha:MAD-1:aciklama': { value: 'önceki madde taslağı', ts: 1, ownerEmail: 'a@aves.test' } }));
   const payload = { forms: { FR65: { values: { beyan_yuku: '630 kg' } } } };
@@ -218,18 +220,32 @@ test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve 
   const staleRewrite = formDraftJournal.writeForm(storage, 'form-test', { forms: { FR65: { values: { beyan_yuku: 'ESKİ TASLAĞI EZ' } } } }, 'denetci@aves.test', 125, 'v2');
   const preservedAfterStaleRewrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
   const capturePayload = { saha_veri_akisi: 'fr65_saha_v1', forms: { FR65: { values: { beyan_yuku: { field_value: '630 kg' } } } } };
-  const captureWrote = formDraftJournal.writeFr65Capture(storage, 'form-test', capturePayload, 'denetci@aves.test', 126, 'v1');
-  const captureEntry = formDraftJournal.readFr65Capture(storage, 'form-test', 'DENETCI@AVES.TEST');
+  const captureWrote = formDraftJournal.writeFr65Capture(storage, 'form-test', capturePayload, 'denetci@aves.test', 126, 'v1', 'writer-a');
+  const captureEntry = formDraftJournal.readFr65Capture(storage, 'form-test', 'DENETCI@AVES.TEST', 'writer-a');
+  const secondTabWrite = formDraftJournal.writeFr65Capture(storage, 'form-test', capturePayload, 'denetci@aves.test', 127, 'v1', 'writer-b');
+  const preservedAfterSecondTabWrite = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test', 'writer-a');
+  const secondTabDraft = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test', 'writer-b');
   const legacyEntrySurvivesCaptureWrite = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
   const captureConflict = formDraftJournal.inspectFr65Capture({}, captureEntry, 'v2');
   const captureRecover = formDraftJournal.inspectFr65Capture({}, captureEntry, 'v1');
   const captureSame = formDraftJournal.inspectFr65Capture(capturePayload.forms.FR65.values, captureEntry, 'v2');
-  const captureRebased = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v1.5');
-  const rebasedCapture = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test');
-  const staleRebase = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v3');
+  const unknownWriterRebase = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v1.4', 'writer-c');
+  const captureRebased = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v1.5', 'writer-a');
+  const rebasedCapture = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test', 'writer-a');
+  const foreignDraftAfterRebase = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test', 'writer-b');
+  const staleRebase = formDraftJournal.rebaseFr65Capture(storage, 'form-test', 'denetci@aves.test', 'v1', 'v3', 'writer-a');
   const unrelatedDraft = formDraftJournal.inspectFr65Capture({}, { payload: { forms: { FR65: { values: { beyan_yuku: 'eski form' } } } } }, 'v1');
   const wrongCaptureClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'ucuncu@aves.test');
-  const captureOwnerClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test');
+  const wrongWriterClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test', rebasedCapture.ts, 'writer-b');
+  const wrongTimestampClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test', rebasedCapture.ts - 1, 'writer-a');
+  const captureOwnerClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test', rebasedCapture.ts, 'writer-a');
+  const foreignDraftAfterClear = formDraftJournal.readFr65Capture(storage, 'form-test', 'denetci@aves.test', 'writer-b');
+  const foreignDraftClear = formDraftJournal.clearFr65CaptureIfOwner(storage, 'form-test', 'denetci@aves.test', foreignDraftAfterClear.ts, 'writer-b');
+  const legacyCaptureSeed = formDraftJournal.writeFr65Capture(storage, 'legacy-test', capturePayload, 'denetci@aves.test', 201, 'legacy-v1');
+  const legacyCaptureRead = formDraftJournal.readFr65Capture(storage, 'legacy-test', 'denetci@aves.test', 'writer-new');
+  const legacyCaptureMigrated = formDraftJournal.writeFr65Capture(storage, 'legacy-test', capturePayload, 'denetci@aves.test', 202, 'legacy-v1', 'writer-new');
+  const migratedCaptureRead = formDraftJournal.readFr65Capture(storage, 'legacy-test', 'denetci@aves.test', 'writer-new');
+  const legacyCaptureEnvelope = JSON.parse(storage.getItem('aves_taslak_legacy-test') || '{}');
   const legacySurvivesCaptureClear = formDraftJournal.readForm(storage, 'form-test', 'denetci@aves.test');
   const beforeClear = JSON.parse(storage.getItem('aves_taslak_form-test'));
   const wrongOwnerClear = formDraftJournal.clearFormIfOwner(storage, 'form-test', 'ucuncu@aves.test');
@@ -244,11 +260,18 @@ test('form taslak günlüğü senkron yazar, hesap kimliğini normalize eder ve 
     foreignEntry.payload.forms.FR65.values.beyan_yuku === 'YABANCI DEĞER' && !staleRewrite &&
     preservedAfterStaleRewrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
     captureWrote && captureEntry.payload.forms.FR65.values.beyan_yuku.field_value === '630 kg' &&
+    secondTabWrite && preservedAfterSecondTabWrite.writerId === 'writer-a' && preservedAfterSecondTabWrite.ts === 126 &&
+    secondTabDraft.writerId === 'writer-b' && secondTabDraft.ts === 127 &&
     legacyEntrySurvivesCaptureWrite.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
     captureConflict.kind === 'conflict' && captureRecover.kind === 'recover' && captureSame.kind === 'same' &&
-    captureRebased && rebasedCapture.baseUpdatedAt === 'v1.5' && rebasedCapture.ts === captureEntry.ts &&
+    !unknownWriterRebase && captureRebased && rebasedCapture.baseUpdatedAt === 'v1.5' && rebasedCapture.ts === captureEntry.ts &&
+    foreignDraftAfterRebase.baseUpdatedAt === 'v1' &&
     rebasedCapture.payload.forms.FR65.values.beyan_yuku.field_value === '630 kg' && !staleRebase &&
-    unrelatedDraft.kind === 'none' && !wrongCaptureClear && captureOwnerClear &&
+    unrelatedDraft.kind === 'none' && !wrongCaptureClear && !wrongWriterClear && !wrongTimestampClear && captureOwnerClear &&
+    foreignDraftAfterClear.ts === 127 && foreignDraftClear &&
+    legacyCaptureSeed && legacyCaptureRead.ts === 201 && legacyCaptureRead.payload.saha_veri_akisi === 'fr65_saha_v1' &&
+    legacyCaptureMigrated && migratedCaptureRead.writerId === 'writer-new' && migratedCaptureRead.ts === 202 &&
+    !Object.keys(legacyCaptureEnvelope).some(key => key.startsWith('form:fr65-saha')) &&
     legacySurvivesCaptureClear.payload.forms.FR65.values.beyan_yuku === '630 kg' &&
     !!beforeClear['saha:MAD-1:aciklama'] && !wrongOwnerClear && preservedAfterWrongOwner && ownerClear && cleared &&
     !Object.keys(afterClear).some(key => key === 'form:record' || key.startsWith('form:record:')) &&
@@ -1275,7 +1298,7 @@ test('FR.65 alanları cihaz günlüğüne anında, IndexedDB/outbox’a debounce
   const end = app.indexOf('async function showDenetim(', start);
   const flow = app.slice(start, end);
   return flow.includes('AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage') &&
-    flow.includes('AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage') &&
+    flow.includes('AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email, captureWriterId)') &&
     flow.includes('setTimeout(() =>') && flow.includes('650') &&
     flow.includes("await localWrite('denetimler', latest, 'denetimler', {") &&
     flow.includes("data-fr65-capture-prop=\"file_value\"") &&
@@ -1290,17 +1313,28 @@ test('FR.65 yerel taslağı aynı kayıt sürümünde kurtarılır; çakışma e
   const flow = app.slice(start, end);
   return flow.includes('inspectFr65Capture(originalValues, ownCaptureDraft, d.updated_at)') &&
     flow.includes("const captureDraftConflict = captureDraft.kind === 'conflict'") &&
-    flow.includes('Bu cihazda çakışan FR.65 taslağı korunuyor') &&
-    flow.includes('Bu cihaz taslağını geri yükle') &&
+    flow.includes('fr65TaslakYazari(d.id)') &&
+    app.includes("navigator.locks.request(lockName, { ifAvailable: true }") &&
+    app.includes('if (!writerLockClaimed) {') &&
+    app.includes('Without an exclusive') &&
+    flow.includes('ownCaptureDraft.writerId !== captureWriterId') &&
+    flow.includes('freshDraft.writerId !== ownCaptureDraft?.writerId') &&
+    flow.includes('Çakışan FR.65 taslağı korunuyor') &&
+    flow.includes('Bu taslak başka bir sekme veya önceki uygulama oturumu tarafından yazılmış') &&
+    flow.includes('Korunan cihaz taslağını geri yükle') &&
     flow.includes('if (!confirm(\'Bu cihazdaki FR.65 taslağı') &&
     flow.includes('String(latest.updated_at || \'\') !== String(d.updated_at || \'\')') &&
-    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email)');
+    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email, freshDraft.ts, freshDraft.writerId || null)');
 })());
 test('FR.65 çevrimdışı güncellemeleri sunucuda updated_at karşılaştırmalı PATCH kullanır; çakışmada outbox korunur',
   app.includes("method: 'PATCH'") &&
   app.includes("id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(expectedUpdatedAt)}") &&
   app.includes("headers: { 'Prefer': 'return=representation' }") &&
   app.includes('rows.length !== 1') &&
+  app.includes('const confirmApplied = async () =>') &&
+  app.includes('await confirmApplied()') &&
+  app.includes('sonucu doğrulanamadı ve cihazdaki veri korundu') &&
+  app.includes('stableStringify(current[0][field] ?? null) === stableStringify(patch[field] ?? null)') &&
   app.includes("else if (item.conditional_update)") &&
   app.includes("condition.expected_updated_at") &&
   app.includes("item.sync_status = 'conflict'") &&
@@ -1337,8 +1371,8 @@ test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı iler
   return baseline >= 0 && versionCheck > baseline &&
     flow.includes('baseFr65 = stableStringify(next.forms.FR65);') &&
     flow.includes('Object.assign(originalValues, values);') &&
-    /rebaseFr65Capture\(\s*localStorage, d\.id, API\.email, committedBaseUpdatedAt, baseUpdatedAt\)/.test(flow) &&
-    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email)');
+    /rebaseFr65Capture\(\s*localStorage, d\.id, API\.email, committedBaseUpdatedAt, baseUpdatedAt, captureWriterId\)/.test(flow) &&
+    flow.includes('clearFr65CaptureIfOwner(localStorage, d.id, API.email, draftTs, captureWriterId)');
 })());
 test('eski B/E/H1 kayıtları kilitli; yalnız yeni işaretli FR.65 kaydı açılır, takip G ile sınırlı',
   app.includes("function fr65SahaKaydiMi(denetim)") &&

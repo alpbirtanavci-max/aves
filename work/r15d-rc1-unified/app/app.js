@@ -365,18 +365,41 @@ const API = (() => {
     }
   }
 
-  async function conditionalUpdate(table, id, expectedUpdatedAt, patch) {
+  async function conditionalUpdate(table, id, expectedUpdatedAt, patch, confirmationFields = Object.keys(patch || {})) {
     if (!table || !id || !expectedUpdatedAt || !patch || typeof patch !== 'object') {
       const err = new Error('Koşullu güncelleme için kayıt sürümü doğrulanamadı');
       err.status = 409;
       throw err;
     }
     const query = `id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(expectedUpdatedAt)}`;
-    const resp = await authFetch(`/rest/v1/${table}?${query}`, {
-      method: 'PATCH',
-      headers: { 'Prefer': 'return=representation' },
-      body: JSON.stringify(patch),
-    });
+    const confirmApplied = async () => {
+      const fields = [...new Set((confirmationFields || []).filter(field =>
+        field !== 'updated_at' && !field.startsWith('son_degistiren_') &&
+        Object.prototype.hasOwnProperty.call(patch, field)))];
+      if (!fields.length) return null;
+      try {
+        const check = await authFetch(`/rest/v1/${table}?select=${encodeURIComponent(fields.join(','))}&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (!check.ok) return null;
+        const current = await check.json();
+        if (!Array.isArray(current) || current.length !== 1 ||
+            !fields.every(field => stableStringify(current[0][field] ?? null) === stableStringify(patch[field] ?? null))) return null;
+        return current[0];
+      } catch { return null; }
+    };
+    let resp;
+    try {
+      resp = await authFetch(`/rest/v1/${table}?${query}`, {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=representation' },
+        body: JSON.stringify(patch),
+      });
+    } catch {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
+      const err = new Error('Sunucu yanıtı alınamadı; FR.65 güncellemesinin sonucu doğrulanamadı ve cihazdaki veri korundu. Senkron merkezinden inceleyin.');
+      err.status = 409;
+      throw err;
+    }
     if (!resp.ok) {
       const text = await resp.text();
       const err = new Error(`${table} koşullu güncellenemedi (${resp.status}): ${text.slice(0,200)}`);
@@ -386,11 +409,15 @@ const API = (() => {
     let rows;
     try { rows = await resp.json(); }
     catch {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
       const err = new Error('Koşullu güncellemenin sonucu doğrulanamadı; yerel kayıt korunuyor.');
       err.status = 409;
       throw err;
     }
     if (!Array.isArray(rows) || rows.length !== 1) {
+      const confirmed = await confirmApplied();
+      if (confirmed) return confirmed;
       const err = new Error('Kayıt başka bir oturumda değişti; cihazdaki FR.65 verisi korunuyor. Senkron merkezinden inceleyin.');
       err.status = 409;
       throw err;
@@ -575,7 +602,7 @@ const Sync = (() => {
             for (const field of ['son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at']) {
               patch[field] = rows[0][field] ?? null;
             }
-            await API.conditionalUpdate(item.table, rows[0].id, condition.expected_updated_at, patch);
+            await API.conditionalUpdate(item.table, rows[0].id, condition.expected_updated_at, patch, condition.fields);
           } else {
             await API.upsert(item.table, item.rows);
           }
@@ -1049,6 +1076,57 @@ const UI = (() => {
   let currentDenetimId = null;
   let fotografSayilari = new Map();
   let fotografBekleyenSayisi = 0;
+  const fr65WriterIds = new Map();
+
+  function fr65KimlikKilitAl(lockName) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      navigator.locks.request(lockName, { ifAvailable: true }, lock => {
+        if (!lock) { settled = true; resolve(false); return; }
+        settled = true;
+        resolve(true);
+        // Keep this tab's writer identity reserved until the document closes.
+        return new Promise(() => {});
+      }).catch(error => { if (!settled) reject(error); });
+    });
+  }
+
+  async function fr65TaslakYazari(denetimId) {
+    const owner = String(API.email || '').trim().toLowerCase();
+    const mapKey = `${owner}:${denetimId}`;
+    if (fr65WriterIds.has(mapKey)) return fr65WriterIds.get(mapKey);
+    const storageKey = `aves_fr65_writer_${encodeURIComponent(owner)}_${encodeURIComponent(denetimId)}`;
+    let writerId = '';
+    let storedWriterId = '';
+    try {
+      storedWriterId = sessionStorage.getItem(storageKey) || '';
+    } catch {
+      storedWriterId = '';
+    }
+    const newWriterId = () => globalThis.crypto?.randomUUID?.() || `tab-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    writerId = storedWriterId || newWriterId();
+    let writerLockClaimed = false;
+    try {
+      if (navigator.locks && typeof navigator.locks.request === 'function') {
+        for (let attempt = 0; attempt < 5; attempt++) {
+          writerLockClaimed = await fr65KimlikKilitAl(`aves-fr65-writer:${mapKey}:${writerId}`);
+          if (writerLockClaimed) break;
+          writerId = newWriterId();
+        }
+      }
+    } catch { writerLockClaimed = false; }
+    if (!writerLockClaimed) {
+      // sessionStorage can be copied by window.open. Without an exclusive
+      // browser lock, use a per-document identity; prior drafts remain available
+      // through the explicit protected-draft restore flow.
+      writerId = newWriterId();
+    }
+    if (writerLockClaimed) {
+      try { sessionStorage.setItem(storageKey, writerId); } catch { /* The in-memory identity still protects this document. */ }
+    }
+    fr65WriterIds.set(mapKey, writerId);
+    return writerId;
+  }
 
   async function fotografOnbellekYenile(denetimId) {
     if (navigator.onLine && API.loggedIn) {
@@ -2868,8 +2946,17 @@ const UI = (() => {
     const originalValues = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
     let baseFr65 = stableStringify(normalized.forms.FR65 || { values: {} });
     let baseUpdatedAt = d.updated_at || '';
-    const ownCaptureDraft = AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email);
-    const captureDraft = AVES_FORM_DRAFT_JOURNAL.inspectFr65Capture(originalValues, ownCaptureDraft, d.updated_at);
+    const captureWriterId = await fr65TaslakYazari(d.id);
+    const ownCaptureDraft = AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, d.id, API.email, captureWriterId);
+    const captureDraftWriterConflict = !!(ownCaptureDraft?.writerId && ownCaptureDraft.writerId !== captureWriterId);
+    const inspectedCaptureDraft = AVES_FORM_DRAFT_JOURNAL.inspectFr65Capture(originalValues, ownCaptureDraft, d.updated_at);
+    const captureDraft = captureDraftWriterConflict
+      ? { kind: 'conflict', values: ownCaptureDraft.payload?.forms?.FR65?.values || null }
+      : inspectedCaptureDraft;
+    if (ownCaptureDraft && !captureDraftWriterConflict && inspectedCaptureDraft.kind === 'same') {
+      AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(
+        localStorage, d.id, API.email, ownCaptureDraft.ts, ownCaptureDraft.writerId || null);
+    }
     const draftIsFr65 = captureDraft.kind !== 'none';
     const draftValues = captureDraft.values;
     const draftDiffers = captureDraft.kind === 'recover' || captureDraft.kind === 'conflict';
@@ -2880,7 +2967,8 @@ const UI = (() => {
     if (draftIsFr65 && draftDiffers && !captureDraftConflict) {
       normalized.forms.FR65 = { ...(normalized.forms.FR65 || {}), values: draftValues };
     }
-    let ownsCaptureDraft = !!ownCaptureDraft;
+    let ownsCaptureDraft = !!ownCaptureDraft && !captureDraftWriterConflict && inspectedCaptureDraft.kind !== 'same';
+    let lastCaptureDraftTs = ownsCaptureDraft ? ownCaptureDraft.ts : null;
     let editVersion = 0;
     let saveTimer = null;
     let saveChain = Promise.resolve();
@@ -2918,7 +3006,7 @@ const UI = (() => {
       if (version !== editVersion || !canEdit) return;
       const values = collectValues();
       if (valuesAreSame(values)) {
-        if (ownsCaptureDraft) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email);
+        if (ownsCaptureDraft) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, lastCaptureDraftTs, captureWriterId);
         status('✓ Değerler cihazda kayıtlı');
         return;
       }
@@ -2928,8 +3016,9 @@ const UI = (() => {
       payload.source_revision = AVES_TEKNIK_DOSYA_FORM.FR65.revision;
       payload.forms.FR65 = { ...(payload.forms.FR65 || {}), values };
       payload.updated_at = new Date().toISOString();
-      const draftSaved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, payload, API.email, Date.now(), baseUpdatedAt);
-      if (draftSaved) ownsCaptureDraft = true;
+      const draftTs = Date.now();
+      const draftSaved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, payload, API.email, draftTs, baseUpdatedAt, captureWriterId);
+      if (draftSaved) { ownsCaptureDraft = true; lastCaptureDraftTs = draftTs; }
       if (!draftSaved && !draftWarningShown) {
         draftWarningShown = true;
         toast('Taslak cihaz günlüğüne yazılamadı; ekranı kapatmadan tekrar deneyin');
@@ -2966,13 +3055,15 @@ const UI = (() => {
         Object.keys(originalValues).forEach(key => delete originalValues[key]);
         Object.assign(originalValues, values);
         if (version === editVersion) {
-          if (ownsCaptureDraft) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email);
+          if (draftSaved) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, draftTs, captureWriterId);
+          ownsCaptureDraft = false;
+          lastCaptureDraftTs = null;
           draftWarningShown = false;
           status('✓ Cihaza kaydedildi · sunucu eşitlemesi bekleyebilir');
           refreshSyncState();
         } else {
           if (ownsCaptureDraft && !AVES_FORM_DRAFT_JOURNAL.rebaseFr65Capture(
-            localStorage, d.id, API.email, committedBaseUpdatedAt, baseUpdatedAt)) {
+            localStorage, d.id, API.email, committedBaseUpdatedAt, baseUpdatedAt, captureWriterId)) {
             draftWarningShown = true;
             toast('Daha yeni FR.65 taslağının sürüm bağı yenilenemedi; taslak korunuyor');
           }
@@ -3007,7 +3098,9 @@ const UI = (() => {
     const readonlyBanner = canEdit || captureDraftConflict ? '' : `<div class="readonly-banner">${d.denetim_durumu === 'Çalışma Tamamlandı'
       ? 'Saha veri kaydı kapatıldı · Yetkiniz varsa iz bırakan düzeltme ile yeniden açabilirsiniz.'
       : 'Salt okunur · Bu kayıtta değişiklik yetkiniz yok.'}</div>`;
-    const captureDraftBanner = captureDraftConflict ? `<div class="integrity-card error"><b>Bu cihazda çakışan FR.65 taslağı korunuyor</b><small>Kayıt cihaz taslağı oluşturulduktan sonra değişmiş veya taslağın dayandığı kayıt sürümü doğrulanamıyor. Güncel kayıt aşağıda gösteriliyor; cihaz taslağı hiçbir alanı ezmeden saklanıyor.${restoreDraftAllowed ? ' Geri yükleme, güncel FR.65 alanlarının yerine cihaz taslağını yazar ve değişikliği denetim geçmişine kaydeder.' : ' Taslağı geri yüklemek için kayıt üzerinde düzenleme yetkisi gerekir.'}</small>${restoreDraftAllowed ? '<button type="button" class="btn btn-ghost" id="fr65RestoreDraft">Bu cihaz taslağını geri yükle</button>' : ''}</div>` : '';
+    const captureDraftBanner = captureDraftConflict ? `<div class="integrity-card error"><b>Çakışan FR.65 taslağı korunuyor</b><small>${captureDraftWriterConflict
+      ? 'Bu taslak başka bir sekme veya önceki uygulama oturumu tarafından yazılmış. Bu ekranda düzenleme kilitli; diğer sekmede çalışmayı durdurup taslağı gözden geçirin.'
+      : 'Kayıt cihaz taslağı oluşturulduktan sonra değişmiş veya taslağın dayandığı kayıt sürümü doğrulanamıyor.'} Güncel kayıt aşağıda gösteriliyor; cihaz taslağı hiçbir alanı ezmeden saklanıyor.${restoreDraftAllowed ? ' Açık onayla geri yüklemek güncel FR.65 alanlarının yerine taslak değerlerini yazar ve değişikliği denetim geçmişine kaydeder.' : ' Taslağı geri yüklemek için kayıt üzerinde düzenleme yetkisi gerekir.'}</small>${restoreDraftAllowed ? '<button type="button" class="btn btn-ghost" id="fr65RestoreDraft">Korunan cihaz taslağını geri yükle</button>' : ''}</div>` : '';
     const sectionsHtml = sections.map((section, index) => {
       const keys = section.fields.map(([key]) => key);
       return `<details class="tech-section" data-fr65-section-key="${esc(JSON.stringify(keys))}" ${index === 0 ? 'open' : ''}>
@@ -3070,6 +3163,7 @@ const UI = (() => {
         if (!latest || !fr65SahaKaydiMi(latest) || !canEditDenetim(latest) ||
             String(latest.updated_at || '') !== String(d.updated_at || '') ||
             !freshDraft || freshDraft.ts !== ownCaptureDraft?.ts ||
+            freshDraft.writerId !== ownCaptureDraft?.writerId ||
             freshDraft.payload?.saha_veri_akisi !== 'fr65_saha_v1') {
           toast('Kayıt veya cihaz taslağı bu sırada değişmiş. Hiçbir veri ezilmedi; ekranı yenileyip yeniden kontrol edin.');
           await renderFr65SahaKaydi(await DB.get('denetimler', d.id));
@@ -3093,7 +3187,7 @@ const UI = (() => {
             fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at'],
           },
         });
-        AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email);
+        AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(localStorage, d.id, API.email, freshDraft.ts, freshDraft.writerId || null);
         toast('Cihazdaki FR.65 taslağı geri yüklendi ve denetim geçmişine kaydedildi');
         await showDenetim(d.id);
       } catch (error) {
@@ -3116,8 +3210,9 @@ const UI = (() => {
         const draftValues = collectValues();
         next.forms.FR65 = { ...(next.forms.FR65 || {}), values: draftValues };
         next.updated_at = new Date().toISOString();
-        const saved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, next, API.email, Date.now(), baseUpdatedAt);
-        if (saved) ownsCaptureDraft = true;
+        const draftTs = Date.now();
+        const saved = AVES_FORM_DRAFT_JOURNAL.writeFr65Capture(localStorage, d.id, next, API.email, draftTs, baseUpdatedAt, captureWriterId);
+        if (saved) { ownsCaptureDraft = true; lastCaptureDraftTs = draftTs; }
         if (!saved && !draftWarningShown) {
           draftWarningShown = true;
           toast('Taslak cihaz günlüğüne yazılamadı; alanı kaydetmek için bağlantı durumunu kontrol edin');
