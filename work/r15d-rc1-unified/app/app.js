@@ -3493,7 +3493,9 @@ function showYeniForm() {
     if (canEdit) {
       app.oninput = event => {
         if (!event.target.matches('[data-fr65-capture-prop]')) return;
-        if (event.target.dataset.fr65PreserveLegacy === 'true') event.target.dataset.fr65LegacyTouched = 'true';
+        if (event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()) {
+          event.target.dataset.fr65LegacyTouched = 'true';
+        }
         editVersion++;
         const version = editVersion;
         updateCaptureConditions();

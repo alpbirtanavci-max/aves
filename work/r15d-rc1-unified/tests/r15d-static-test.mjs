@@ -638,6 +638,7 @@ test('FR.65 sayı alanlarındaki okunamayan eski değerler yeni değer girilene 
   const flow = app.slice(flowStart, flowEnd);
   return flow.includes('data-fr65-preserve-legacy=') &&
     flow.includes("input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true'") &&
+    flow.includes("event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()") &&
     flow.includes("event.target.dataset.fr65LegacyTouched = 'true'") &&
     flow.includes('data-fr65-clear-legacy=') &&
     flow.includes('input.dispatchEvent(new Event(\'input\', { bubbles: true }))');
