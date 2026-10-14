@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.88';
+const APP_VERSION = 'R15D-rc3.9.89';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -1647,7 +1647,7 @@ const UI = (() => {
 
   async function fr65SahaKaydiniSil(denetim, button = null) {
     if (!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim) || !denetimSahibiMi(denetim)) {
-      toast('Yalnızca kendi oluşturduğunuz FR.65 test kayıtlarını silebilirsiniz');
+      toast('Yalnızca kendi oluşturduğunuz FR.65 kayıtlarını silebilirsiniz');
       return;
     }
     const id = String(denetim.id || '');
@@ -2122,20 +2122,6 @@ const UI = (() => {
         ? showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d))
         : (tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d)));
       cardRow.appendChild(card);
-      if (fr65Capture && canDeleteDenetim(d) && denetimSahibiMi(d)) {
-        const actions = document.createElement('div');
-        actions.className = 'inspection-card-actions';
-        const deleteButton = document.createElement('button');
-        deleteButton.type = 'button';
-        deleteButton.className = 'inspection-card-delete';
-        deleteButton.textContent = '🗑 Denetimi sil';
-        deleteButton.onclick = event => {
-          event.stopPropagation();
-          fr65SahaKaydiniSil(d, deleteButton);
-        };
-        actions.appendChild(deleteButton);
-        cardRow.appendChild(actions);
-      }
       dl.appendChild(cardRow);
     }
 
@@ -3616,7 +3602,10 @@ function showYeniForm() {
     app.innerHTML = `<div class="screen fr65-capture">
       <div class="inspection-toolbar">
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
-        <div class="inspection-actions">${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}</div>
+        <div class="inspection-actions">
+          ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
+          ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
+        </div>
       </div>
       ${readonlyBanner}
       ${captureDraftBanner}
@@ -3720,6 +3709,8 @@ function showYeniForm() {
     if (backBottom) backBottom.onclick = showList;
     const reopen = document.getElementById('fr65Reopen');
     if (reopen) reopen.onclick = () => duzeltmeNedeniSec(d);
+    const deleteAction = document.getElementById('fr65Delete');
+    if (deleteAction) deleteAction.onclick = () => fr65SahaKaydiniSil(d, deleteAction);
     const restoreDraft = document.getElementById('fr65RestoreDraft');
     if (restoreDraft) restoreDraft.onclick = async event => {
       event.currentTarget.disabled = true;
