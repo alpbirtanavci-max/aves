@@ -668,7 +668,7 @@ test('FR.65 ray-kapı mesafesi tek cm alanıdır; eski kat satırları korunur, 
     !flow.includes('positioned_measurements');
 })());
 test('FR.65 denetim kartında silme eylemi yalnız silme yetkili kullanıcıya gösterilir ve arama/tarih filtresi kartla birlikte çalışır',
-  app.includes("if (fr65Capture && canDeleteDenetim(d))") &&
+  app.includes("if (fr65Capture && canDeleteDenetim(d) && denetimSahibiMi(d))") &&
   app.includes("deleteButton.className = 'inspection-card-delete'") &&
   app.includes("deleteButton.textContent = '🗑 Denetimi sil'") &&
   app.includes('fr65SahaKaydiniSil(d, deleteButton)') &&
@@ -678,11 +678,12 @@ test('FR.65 silme sunucuda doğrulanır; yetki, çevrimiçi durum, senkron, taki
   const start = app.indexOf('async function fr65SahaKaydiniSil(');
   const end = app.indexOf('async function cevrimdisiHazirlikDurumu', start);
   const remove = app.slice(start, end);
-  return remove.includes('!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim)') &&
+  return remove.includes('!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim) || !denetimSahibiMi(denetim)') &&
     remove.includes('!navigator.onLine || !API.loggedIn') &&
     remove.includes('await Sync.full()') &&
     remove.includes('pendingAfterSync.items.length') &&
     remove.includes('linkedFollowups.length') &&
+    remove.includes('!denetimSahibiMi(latest)') &&
     remove.includes('localPhotos.length || remotePhotos.length') &&
     remove.includes('updated_at=eq.${encodeURIComponent(serverRows[0].updated_at)}') &&
     remove.includes('const remaining = await API.select') &&

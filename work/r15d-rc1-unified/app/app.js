@@ -1646,8 +1646,8 @@ const UI = (() => {
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
   async function fr65SahaKaydiniSil(denetim, button = null) {
-    if (!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim)) {
-      toast('Bu FR.65 kaydını silme yetkiniz yok');
+    if (!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim) || !denetimSahibiMi(denetim)) {
+      toast('Yalnızca kendi oluşturduğunuz FR.65 test kayıtlarını silebilirsiniz');
       return;
     }
     const id = String(denetim.id || '');
@@ -1670,7 +1670,7 @@ const UI = (() => {
       }
 
       const latest = await DB.get('denetimler', id);
-      if (!latest || !fr65SahaKaydiMi(latest) || !canDeleteDenetim(latest)) {
+      if (!latest || !fr65SahaKaydiMi(latest) || !canDeleteDenetim(latest) || !denetimSahibiMi(latest)) {
         throw new Error('FR.65 kaydı değişmiş veya artık silme yetkiniz yok; kayıt korunuyor.');
       }
       const linkedFollowups = (await DB.all('denetimler')).filter(item =>
@@ -2122,7 +2122,7 @@ const UI = (() => {
         ? showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d))
         : (tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d)));
       cardRow.appendChild(card);
-      if (fr65Capture && canDeleteDenetim(d)) {
+      if (fr65Capture && canDeleteDenetim(d) && denetimSahibiMi(d)) {
         const actions = document.createElement('div');
         actions.className = 'inspection-card-actions';
         const deleteButton = document.createElement('button');
