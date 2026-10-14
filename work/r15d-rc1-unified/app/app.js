@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.86';
+const APP_VERSION = 'R15D-rc3.9.88';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
@@ -227,6 +227,33 @@ const DB = (() => {
     all: (store) => p(tx(store,'readonly').getAll()),
     allByIndex: (store, idx, val) => p(tx(store,'readonly').index(idx).getAll(val)),
     del: (store, key) => p(tx(store,'readwrite').delete(key)),
+    deleteInspectionLocal: (id) => new Promise((resolve, reject) => {
+      const t = db.transaction(['denetimler', 'saha', 'fotograflar', 'kv'], 'readwrite');
+      t.objectStore('denetimler').delete(id);
+      const removeIndexedRows = storeName => {
+        const store = t.objectStore(storeName);
+        const request = store.index('byDenetim').openKeyCursor(IDBKeyRange.only(id));
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (!cursor) return;
+          store.delete(cursor.primaryKey);
+          cursor.continue();
+        };
+        request.onerror = () => t.abort();
+      };
+      removeIndexedRows('saha');
+      removeIndexedRows('fotograflar');
+      const kv = t.objectStore('kv');
+      kv.delete(`offline_ready_${id}`);
+      kv.delete(`last_position_${id}`);
+      const lastInspection = kv.get('last_inspection');
+      lastInspection.onsuccess = () => {
+        if (lastInspection.result?.id === id) kv.delete('last_inspection');
+      };
+      t.oncomplete = resolve;
+      t.onerror = () => reject(t.error || new Error('Cihazdaki denetim verileri temizlenemedi'));
+      t.onabort = () => reject(t.error || new Error('Cihazdaki denetim verileri temizlenemedi'));
+    }),
     clear: (store) => p(tx(store,'readwrite').clear()),
     outboxAdd: (item) => p(tx('outbox','readwrite').add(item)),
     outboxPut: (item) => p(tx('outbox','readwrite').put(item)),
@@ -1618,6 +1645,83 @@ const UI = (() => {
   };
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
+  async function fr65SahaKaydiniSil(denetim, button = null) {
+    if (!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim)) {
+      toast('Bu FR.65 kaydını silme yetkiniz yok');
+      return;
+    }
+    const id = String(denetim.id || '');
+    const kimlik = `${denetim.musteri_unvani || 'Firma yok'} · ${denetim.asansor_seri_no || 'Seri no yok'}`;
+    if (!confirm(`“${kimlik}” FR.65 saha kaydı ve bağlı verileri silinsin mi?`)) return;
+    if (!confirm('Bu işlem geri alınamaz. Sunucudan ve bu cihazdan silinecek. Emin misiniz?')) return;
+    if (!navigator.onLine || !API.loggedIn) {
+      toast('Denetimi silmek için internet bağlantısı gerekli; kayıt korunuyor');
+      return;
+    }
+
+    if (button) { button.disabled = true; button.textContent = 'Senkronize ediliyor…'; }
+    try {
+      if (currentView === 'inspection' && currentDenetimId === id && activeFr65Flush) await activeFr65Flush();
+      const pendingBeforeSync = await Sync.denetimSyncOzeti(id);
+      if (pendingBeforeSync.items.length) await Sync.full();
+      const pendingAfterSync = await Sync.denetimSyncOzeti(id);
+      if (pendingAfterSync.items.length) {
+        throw new Error('Bu denetime ait bekleyen veya inceleme gereken işlemler var. Önce Senkron Merkezi’nde çözün; kayıt silinmedi.');
+      }
+
+      const latest = await DB.get('denetimler', id);
+      if (!latest || !fr65SahaKaydiMi(latest) || !canDeleteDenetim(latest)) {
+        throw new Error('FR.65 kaydı değişmiş veya artık silme yetkiniz yok; kayıt korunuyor.');
+      }
+      const linkedFollowups = (await DB.all('denetimler')).filter(item =>
+        item.id !== id && (item.takip_onceki_denetim_id === id || item.takip_ana_denetim_id === id)
+      );
+      if (linkedFollowups.length) {
+        throw new Error(`Bu denetime bağlı ${linkedFollowups.length} takip kaydı var; ana kayıt silinemez.`);
+      }
+      const localPhotos = await DB.allByIndex('fotograflar', 'byDenetim', id);
+      const remotePhotos = await API.select('denetim_fotograflari', `select=id&denetim_id=eq.${encodeURIComponent(id)}&limit=1`);
+      if (localPhotos.length || remotePhotos.length) {
+        throw new Error('Bu denetime bağlı fotoğraflar var. Önce fotoğrafları arşivleyip ayrı kaldırın; kayıt korunuyor.');
+      }
+
+      const serverRows = await API.select('denetimler', `select=id,updated_at&id=eq.${encodeURIComponent(id)}&limit=1`);
+      if (serverRows.length !== 1 || !serverRows[0].updated_at) {
+        throw new Error('Kayıt sunucuda doğrulanamadı; cihazdaki kayıt korunuyor.');
+      }
+      if (String(serverRows[0].updated_at) !== String(latest.updated_at || '')) {
+        throw new Error('Kayıt başka bir oturumda değiştirilmiş. Listeyi yenileyip tekrar kontrol edin; silme yapılmadı.');
+      }
+
+      let deleteError = null;
+      try {
+        await API.del('denetimler', `id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(serverRows[0].updated_at)}`);
+      } catch (error) { deleteError = error; }
+      const remaining = await API.select('denetimler', `select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+      if (remaining.length) throw deleteError || new Error('Sunucu silme işlemini doğrulamadı; kayıt cihazda korundu.');
+
+      await DB.deleteInspectionLocal(id);
+      try {
+        const draft = AVES_FORM_DRAFT_JOURNAL.readFr65Capture(localStorage, id, API.email);
+        if (draft) AVES_FORM_DRAFT_JOURNAL.clearFr65CaptureIfOwner(
+          localStorage, id, API.email, draft.ts, draft.writerId || null);
+        localStorage.removeItem(`aves_fr65_active_section_v1_${encodeURIComponent(id)}`);
+        localStorage.removeItem(`aves_fr65_scroll_v1_${encodeURIComponent(id)}`);
+      } catch (error) { console.warn('Silinen FR.65 kaydının cihaz taslağı temizlenemedi', error); }
+      if (currentDenetimId === id) {
+        activeFr65Flush = null;
+        stopFr65ScrollTracking();
+      }
+      await Sync.updatePill();
+      toast('FR.65 denetim kaydı silindi');
+      await showList();
+    } catch (error) {
+      console.error('FR.65 denetim kaydı silinemedi', error);
+      toast(error.message || 'Denetim silinemedi; kayıt korunuyor');
+      if (button) { button.disabled = false; button.textContent = '🗑 Denetimi sil'; }
+    }
+  }
+
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
     if (!sahaUygulamaModuluGMi(d)) {
       return { ready: false, detail: 'Bu kayıt Modül G değil; bu uygulamada açılamaz.' };
@@ -1968,11 +2072,15 @@ const UI = (() => {
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
       if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
+      const cardRow = document.createElement('div');
+      cardRow.className = 'inspection-card-row';
       const card = document.createElement('button');
       card.className = `dcard${supported ? '' : ' unsupported'}`;
       card.disabled = !supported;
       card.dataset.search = `${d.musteri_unvani || ''} ${d.firma_adresi || ''} ${d.asansor_seri_no || ''} ${d.asansor_kimlik_no || ''} ${d.dosya_no || ''} ${d.denetim_adresi || ''} ${d.denetimi_yapan || ''}`.toLocaleLowerCase('tr-TR');
       card.dataset.date = d.denetim_tarihi || '';
+      cardRow.dataset.search = card.dataset.search;
+      cardRow.dataset.date = card.dataset.date;
       card.innerHTML = `
         <div class="drow1"><span class="dtitle">${esc(d.musteri_unvani)} · ${esc(d.asansor_seri_no)}</span>
         <span class="ddate">${esc(d.denetim_tarihi || '')}</span></div>
@@ -2013,7 +2121,22 @@ const UI = (() => {
       if (supported) card.onclick = () => fr65Capture
         ? showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d))
         : (tamamlandi ? showTamamlananDenetimSecimi(d, rowsBy[d.id] || []) : showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d)));
-      dl.appendChild(card);
+      cardRow.appendChild(card);
+      if (fr65Capture && canDeleteDenetim(d)) {
+        const actions = document.createElement('div');
+        actions.className = 'inspection-card-actions';
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'inspection-card-delete';
+        deleteButton.textContent = '🗑 Denetimi sil';
+        deleteButton.onclick = event => {
+          event.stopPropagation();
+          fr65SahaKaydiniSil(d, deleteButton);
+        };
+        actions.appendChild(deleteButton);
+        cardRow.appendChild(actions);
+      }
+      dl.appendChild(cardRow);
     }
 
     // Toplu "Sahaya Hazırlık" rozeti — sahaya çıkılabilecek denetimlerin
@@ -2046,10 +2169,12 @@ const UI = (() => {
     const applyListFilters = () => {
       const query = listSearch.trim().toLocaleLowerCase('tr-TR');
       let visible = 0;
-      dl.querySelectorAll('.dcard').forEach(card => {
+      dl.querySelectorAll('.inspection-card-row').forEach(row => {
+        const card = row.querySelector('.dcard');
+        if (!card) return;
         const show = (!query || card.dataset.search.includes(query)) &&
           (listDateFilter === 'all' || card.dataset.date === listDateFilter);
-        card.classList.toggle('hidden', !show);
+        row.classList.toggle('hidden', !show);
         if (show) visible++;
       });
       const noResult = document.getElementById('listNoResult');
@@ -3110,14 +3235,6 @@ function showYeniForm() {
       const values = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}));
       document.querySelectorAll('[data-fr65-capture-key]').forEach(row => {
         const value = { ...(values[row.dataset.fr65CaptureKey] || {}) };
-        if (row.dataset.fr65CaptureType === 'positioned_measurements') {
-          const points = Array.from(row.querySelectorAll('[data-fr65-measurement-row]')).map(pointRow => ({
-            position: pointRow.querySelector('[data-fr65-measurement-prop="position"]')?.value.trim() || '',
-            distance_cm: pointRow.querySelector('[data-fr65-measurement-prop="distance_cm"]')?.value.trim() || '',
-          })).filter(point => point.position || point.distance_cm);
-          if (points.length) value.points = points;
-          else delete value.points;
-        }
         row.querySelectorAll('[data-fr65-capture-prop]').forEach(input => {
           if (input.dataset.fr65PreserveLegacy === 'true' && input.dataset.fr65LegacyTouched !== 'true' && !input.value.trim()) return;
           value[input.dataset.fr65CaptureProp] = input.value.trim();
@@ -3292,11 +3409,6 @@ function showYeniForm() {
         <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
         <label>${thirdLabel}<input data-fr65-capture-prop="${thirdProp}" value="${esc(value[thirdProp] || '')}" autocomplete="off" ${disabled}></label>
       </div>`;
-    const renderRayDoorMeasureRow = point => `<div class="fr65-positioned-measure-row" data-fr65-measurement-row>
-      <label>Konum / kat<input data-fr65-measurement-prop="position" value="${esc(point.position || '')}" placeholder="Ör. 1. kat" autocomplete="off" ${canEdit ? '' : 'disabled'}></label>
-      <label>Mesafe (cm)<input type="number" min="0" step="any" inputmode="decimal" data-fr65-measurement-prop="distance_cm" value="${esc(point.distance_cm ?? '')}" placeholder="cm" ${canEdit ? '' : 'disabled'}></label>
-      <button type="button" class="fr65-remove-measurement" data-fr65-remove-measurement aria-label="Ölçüm satırını kaldır" ${canEdit ? '' : 'disabled'}>×</button>
-    </div>`;
     const renderCaptureField = (section, field) => {
       const [key, label, fieldType] = field;
       const value = normalized.forms.FR65?.values?.[key] || {};
@@ -3356,11 +3468,6 @@ function showYeniForm() {
       } else if (fieldType === 'multi_measure') {
         const raw = String(value.field_value || '');
         fieldControl = `<textarea class="fr65-multi-measure" rows="1" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="Ölçüleri cm olarak girin" ${disabled}>${esc(raw)}</textarea>`;
-      } else if (fieldType === 'positioned_measurements') {
-        const points = Array.isArray(value.points) && value.points.length ? value.points : [{}];
-        fieldControl = `<div class="fr65-positioned-measurements"><div data-fr65-measurement-list>${points.map(renderRayDoorMeasureRow).join('')}</div>
-          <button type="button" class="btn btn-ghost fr65-add-measurement" data-fr65-add-measurement ${disabled}>+ Ölçüm noktası ekle</button>
-          <small class="fr65-field-help">Her ray–kapı ölçümünü bulunduğu kat/konum ve cm değeriyle ayrı satıra ekleyin.</small></div>`;
       } else if (fieldType === 'number') {
         const raw = String(value.field_value || '');
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
@@ -3373,10 +3480,8 @@ function showYeniForm() {
         fieldControl = `<textarea class="${compactMeasure ? 'fr65-compact-measure-input' : ''}" rows="${compactMeasure ? '1' : '2'}" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" placeholder="${compactMeasure ? compactPlaceholder : 'Sahada görülen bilgi'}" ${disabled}>${esc(value.field_value || inheritedLegacyDetail)}</textarea>`;
       }
       const help = fieldHelp[key] ? `<small class="fr65-field-help">${esc(fieldHelp[key])}</small>` : '';
-      const fieldControlHtml = fieldType === 'positioned_measurements'
-        ? `<div class="fr65-field-control">${fieldControl}</div>`
-        : `<label class="fr65-field-control">${section.group === 'olcu' ? '' : 'Saha verisi'}${fieldControl}</label>`;
-      return `${wrapperOpen}<article class="tech-field ${fieldType === 'positioned_measurements' ? 'fr65-positioned-measurements-field' : ''}" data-fr65-capture-key="${esc(key)}" ${fieldType === 'positioned_measurements' ? 'data-fr65-capture-type="positioned_measurements"' : ''}>
+      const fieldControlHtml = `<label class="fr65-field-control">${section.group === 'olcu' ? '' : 'Saha verisi'}${fieldControl}</label>`;
+      return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
         <b>${esc(label)}</b>
         ${fieldControlHtml}${help}
         <details class="fr65-capture-note ${section.group === 'olcu' ? 'fr65-measure-note' : ''}" ${value.note ? 'open' : ''}>
@@ -3446,6 +3551,7 @@ function showYeniForm() {
           ['toplam_kuyu_olcusu', 'Önceki toplam kuyu/seyir kaydı'],
           ['kabin_raylar_arasi', 'Kabin ray aralığı (önceki mm)'],
           ['karsi_agirlik_raylar_arasi', 'Karşı ağırlık ray aralığı (önceki mm)'],
+          ['ray_kapi_mesafe_noktalari_cm', 'Önceki ray–kapı ölçüm satırları'],
           ['ray_kapi_mesafesi', 'Önceki ray–kapı mesafeleri'],
           ['ray_kapi_mesafeleri_cm', 'Önceki serbest metin ray–kapı mesafeleri'],
           ['karsi_agirlik_adet_olcu', 'Önceki karşı ağırlık adet/ölçü kaydı'],
@@ -3463,7 +3569,12 @@ function showYeniForm() {
       }[section.key] || [];
       const legacyMeasurementText = legacyMeasurementKeys.map(([key, label]) => {
         const oldValue = normalized.forms.FR65?.values?.[key];
-        const parts = [oldValue?.field_value, oldValue?.note].filter(Boolean);
+        const oldPoints = Array.isArray(oldValue?.points) ? oldValue.points.map(point => {
+          const position = String(point?.position || '').trim();
+          const distance = String(point?.distance_cm ?? '').trim();
+          return [position, distance ? `${distance} cm` : ''].filter(Boolean).join(' · ');
+        }).filter(Boolean) : [];
+        const parts = [...oldPoints, oldValue?.field_value, oldValue?.note].filter(Boolean);
         return parts.length ? `${label}: ${parts.join(' · ')}` : '';
       }).filter(Boolean).join(' · ');
       const legacyMeasurementNotice = legacyMeasurementText
@@ -3654,28 +3765,8 @@ function showYeniForm() {
       }
     };
     if (canEdit) {
-      app.onclick = event => {
-        const addMeasurement = event.target.closest?.('[data-fr65-add-measurement]');
-        if (addMeasurement) {
-          event.preventDefault();
-          const list = addMeasurement.closest('[data-fr65-capture-key]')?.querySelector('[data-fr65-measurement-list]');
-          if (!list) return;
-          list.insertAdjacentHTML('beforeend', renderRayDoorMeasureRow({}));
-          list.lastElementChild?.querySelector('[data-fr65-measurement-prop="position"]')?.focus();
-          return;
-        }
-        const removeMeasurement = event.target.closest?.('[data-fr65-remove-measurement]');
-        if (!removeMeasurement) return;
-        event.preventDefault();
-        const list = removeMeasurement.closest('[data-fr65-measurement-list]');
-        const row = removeMeasurement.closest('[data-fr65-measurement-row]');
-        if (!list || !row) return;
-        if (list.children.length > 1) row.remove();
-        else row.querySelectorAll('[data-fr65-measurement-prop]').forEach(input => { input.value = ''; });
-        list.querySelector('[data-fr65-measurement-prop]')?.dispatchEvent(new Event('input', { bubbles: true }));
-      };
       app.oninput = event => {
-        if (!event.target.matches('[data-fr65-capture-prop], [data-fr65-measurement-prop]')) return;
+        if (!event.target.matches('[data-fr65-capture-prop]')) return;
         if (event.target.dataset.fr65PreserveLegacy === 'true' && event.target.value.trim()) {
           event.target.dataset.fr65LegacyTouched = 'true';
         }

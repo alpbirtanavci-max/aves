@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.86 sürümü', index.includes('R15D-RC3.9.86</b>'));
-test('app R15D rc3.9.86 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.86'"));
-test('service worker rc3.9.86 cache', sw.includes("aves-saha-r15d-rc3986'"));
-test('uygulama manifesti rc3.9.86 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.86"'));
+test('index R15D rc3.9.88 sürümü', index.includes('R15D-RC3.9.88</b>'));
+test('app R15D rc3.9.88 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.88'"));
+test('service worker rc3.9.88 cache', sw.includes("aves-saha-r15d-rc3988'"));
+test('uygulama manifesti rc3.9.88 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.88"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -637,33 +637,65 @@ test('FR.65 bütün doğrusal ölçüler cm; yalnız halat çapları mm seçenek
     fieldKey === key && label.includes('(cm)') && type === 'number')) &&
     linear.every(([, label]) => label.includes('(cm') || label.includes('(mm')) &&
     mmFields.map(([key]) => key).sort().join(',') === 'halat_capi_mm,hidrolik_halat_capi_mm' &&
-    fields.some(([key, label, type]) => key === 'ray_kapi_mesafe_noktalari_cm' && label.includes('(cm;') && type === 'positioned_measurements') &&
+    fields.some(([key, label, type]) => key === 'ray_kapi_mesafesi_cm' && label === 'Ray–kapı mesafesi (cm)' && type === 'number') &&
+    !fields.some(([key]) => key === 'ray_kapi_mesafe_noktalari_cm') &&
     !fields.some(([key]) => ['ust_guvenli_bosluk_cm','alt_guvenli_bosluk_cm'].includes(key));
 })());
-test('FR.65 ray-kapı mesafesi konum + cm satırlarıyla kaydedilir; ana ray-karşı ağırlık ray mesafesi hemen sonrasındadır', (() => {
+test('FR.65 ray-kapı mesafesi tek cm alanıdır; eski kat satırları korunur, ana ray-karşı ağırlık ölçüsü hemen sonrasındadır', (() => {
   const well = technicalDocs.FR65.sections.find(section => section.key === 'kuyu');
   const fields = well.fields;
-  const key = 'ray_kapi_mesafe_noktalari_cm';
+  const key = 'ray_kapi_mesafesi_cm';
   const index = fields.findIndex(([fieldKey]) => fieldKey === key);
-  const values = { [key]: { points: [{ position: '1. kat', distance_cm: '16.5' }] } };
-  const incomplete = { [key]: { points: [{ position: '1. kat', distance_cm: '' }] } };
+  const values = { [key]: { field_value: '16.5' } };
+  const incomplete = { [key]: { field_value: '' } };
   const count = technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli', 'kuyu');
   const incompleteCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: incomplete } } }, 'Elektrikli', 'kuyu');
-  const previous = { ray_kapi_mesafeleri_cm: { field_value: '1. kat: 16 cm' } };
+  const previous = { ray_kapi_mesafe_noktalari_cm: { points: [{ position: '1. kat', distance_cm: '16' }, { position: '2. kat', distance_cm: '17' }] } };
   const oldCount = technicalDocs.countFr65Capture({ forms: { FR65: { values: previous } } }, 'Elektrikli', 'kuyu');
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
   const flow = app.slice(start, end);
-  return index >= 0 && fields[index][2] === 'positioned_measurements' &&
+  return index >= 0 && fields[index][2] === 'number' && fields[index][1] === 'Ray–kapı mesafesi (cm)' &&
     fields[index + 1]?.[0] === 'ana_ray_karsi_agirlik_ray_mesafesi_cm' &&
     fields[index + 1]?.[2] === 'number' && fields[index + 1]?.[1].includes('(cm)') &&
     count.recorded === 1 && incompleteCount.recorded === 0 && oldCount.recorded === 0 &&
-    flow.includes('data-fr65-measurement-prop="position"') &&
-    flow.includes('data-fr65-measurement-prop="distance_cm"') &&
-    flow.includes('data-fr65-add-measurement') && flow.includes('data-fr65-remove-measurement') &&
-    flow.includes('data-fr65-measurement-row') && flow.includes("event.target.matches('[data-fr65-capture-prop], [data-fr65-measurement-prop]')") &&
-    flow.includes("fieldType === 'positioned_measurements'") && flow.includes('<div class="fr65-field-control">${fieldControl}</div>') &&
-    flow.includes("['ray_kapi_mesafeleri_cm', 'Önceki serbest metin ray–kapı mesafeleri']");
+    previous.ray_kapi_mesafe_noktalari_cm.points.length === 2 &&
+    flow.includes("['ray_kapi_mesafe_noktalari_cm', 'Önceki ray–kapı ölçüm satırları']") &&
+    flow.includes('Array.isArray(oldValue?.points)') && flow.includes('distance ? `${distance} cm` :') &&
+    flow.includes("event.target.matches('[data-fr65-capture-prop]')") &&
+    flow.includes("const values = JSON.parse(JSON.stringify(normalized.forms.FR65?.values || {}))") &&
+    !flow.includes('data-fr65-measurement-prop') && !flow.includes('data-fr65-add-measurement') &&
+    !flow.includes('positioned_measurements');
+})());
+test('FR.65 denetim kartında silme eylemi yalnız silme yetkili kullanıcıya gösterilir ve arama/tarih filtresi kartla birlikte çalışır',
+  app.includes("if (fr65Capture && canDeleteDenetim(d))") &&
+  app.includes("deleteButton.className = 'inspection-card-delete'") &&
+  app.includes("deleteButton.textContent = '🗑 Denetimi sil'") &&
+  app.includes('fr65SahaKaydiniSil(d, deleteButton)') &&
+  app.includes("dl.querySelectorAll('.inspection-card-row')") &&
+  app.includes("row.classList.toggle('hidden', !show)"));
+test('FR.65 silme sunucuda doğrulanır; yetki, çevrimiçi durum, senkron, takip zinciri ve fotoğraflar korunma kapısıdır', (() => {
+  const start = app.indexOf('async function fr65SahaKaydiniSil(');
+  const end = app.indexOf('async function cevrimdisiHazirlikDurumu', start);
+  const remove = app.slice(start, end);
+  return remove.includes('!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim)') &&
+    remove.includes('!navigator.onLine || !API.loggedIn') &&
+    remove.includes('await Sync.full()') &&
+    remove.includes('pendingAfterSync.items.length') &&
+    remove.includes('linkedFollowups.length') &&
+    remove.includes('localPhotos.length || remotePhotos.length') &&
+    remove.includes('updated_at=eq.${encodeURIComponent(serverRows[0].updated_at)}') &&
+    remove.includes('const remaining = await API.select') &&
+    remove.includes('Bu işlem geri alınamaz');
+})());
+test('FR.65 yerel silme atomiktir; saha ve fotoğraf satırları da temizlenir, değiştirilemez geçmiş korunur', (() => {
+  const start = app.indexOf('deleteInspectionLocal: (id) =>');
+  const end = app.indexOf('clear: (store)', start);
+  const remove = app.slice(start, end);
+  return remove.includes("db.transaction(['denetimler', 'saha', 'fotograflar', 'kv'], 'readwrite')") &&
+    remove.includes("removeIndexedRows('saha')") &&
+    remove.includes("removeIndexedRows('fotograflar')") &&
+    !remove.includes("t.objectStore('gecmis')");
 })());
 test('FR.65 kabin giriş sayısı sayısal ve konum sorusu olmadan; önceki birleşik kayıt korunur', (() => {
   const general = technicalDocs.FR65.sections.find(section => section.key === 'genel');

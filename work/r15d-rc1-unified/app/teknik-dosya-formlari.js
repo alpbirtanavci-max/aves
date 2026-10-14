@@ -85,7 +85,7 @@
           ['son_kat_yuksekligi_cm', 'Son kat yüksekliği (cm)', 'number'],
           ['kabin_raylar_arasi_cm', 'Kabin ana rayları arası (cm)', 'number'],
           ['karsi_agirlik_raylar_arasi_cm', 'Karşı ağırlık rayları arası (cm)', 'number'],
-          ['ray_kapi_mesafe_noktalari_cm', 'Ray–kapı mesafeleri (cm; konum bilgisiyle)', 'positioned_measurements'],
+          ['ray_kapi_mesafesi_cm', 'Ray–kapı mesafesi (cm)', 'number'],
           ['ana_ray_karsi_agirlik_ray_mesafesi_cm', 'Ana ray ile karşı ağırlık rayı arası mesafe (cm)', 'number'],
           ['karsi_agirlik_parca_sayisi', 'Karşı ağırlık parça sayısı', 'number'],
           ['karsi_agirlik_genislik_cm', 'Karşı ağırlık genişliği (cm)', 'number'],
@@ -254,11 +254,6 @@
     if (fieldType === 'optional_serial') {
       if (value.var_mi === 'Yok') return true;
       return value.var_mi === 'Var' && ['marka', 'tip', 'seri_no'].every(prop => String(value[prop] || '').trim());
-    }
-    if (fieldType === 'positioned_measurements') {
-      return Array.isArray(value.points) && value.points.some(point =>
-        String(point?.position || '').trim() && String(point?.distance_cm ?? '').trim() &&
-        Number.isFinite(Number(point.distance_cm)));
     }
     if (fieldType === 'gsm') return ['marka', 'tip', 'imei'].every(prop => String(value[prop] || '').trim());
     if (fieldType === 'serial' || field[0] === 'elektrikli_makine' ||
