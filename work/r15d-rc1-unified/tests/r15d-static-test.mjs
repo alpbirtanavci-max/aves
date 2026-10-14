@@ -101,10 +101,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.88 sürümü', index.includes('R15D-RC3.9.88</b>'));
-test('app R15D rc3.9.88 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.88'"));
-test('service worker rc3.9.88 cache', sw.includes("aves-saha-r15d-rc3988'"));
-test('uygulama manifesti rc3.9.88 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.88"'));
+test('index R15D rc3.9.89 sürümü', index.includes('R15D-RC3.9.89</b>'));
+test('app R15D rc3.9.89 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.89'"));
+test('service worker rc3.9.89 cache', sw.includes("aves-saha-r15d-rc3989'"));
+test('uygulama manifesti rc3.9.89 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.89"'));
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -667,13 +667,23 @@ test('FR.65 ray-kapı mesafesi tek cm alanıdır; eski kat satırları korunur, 
     !flow.includes('data-fr65-measurement-prop') && !flow.includes('data-fr65-add-measurement') &&
     !flow.includes('positioned_measurements');
 })());
-test('FR.65 denetim kartında silme eylemi yalnız silme yetkili kullanıcıya gösterilir ve arama/tarih filtresi kartla birlikte çalışır',
-  app.includes("if (fr65Capture && canDeleteDenetim(d) && denetimSahibiMi(d))") &&
-  app.includes("deleteButton.className = 'inspection-card-delete'") &&
-  app.includes("deleteButton.textContent = '🗑 Denetimi sil'") &&
-  app.includes('fr65SahaKaydiniSil(d, deleteButton)') &&
-  app.includes("dl.querySelectorAll('.inspection-card-row')") &&
-  app.includes("row.classList.toggle('hidden', !show)"));
+test('FR.65 silme düğmesi liste kartında değil, denetim içi araç çubuğunda yalnız yetkili sahibine gösterilir', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  const toolbar = flow.indexOf('<div class="inspection-toolbar">');
+  const deleteButton = flow.indexOf('id="fr65Delete"');
+  const toolbarFollowingContent = flow.indexOf('${readonlyBanner}', toolbar);
+  const listStart = app.indexOf('async function showList(');
+  const listEnd = app.indexOf('function showYeniForm(', listStart);
+  const list = app.slice(listStart, listEnd);
+  return toolbar >= 0 && deleteButton > toolbar && deleteButton < toolbarFollowingContent &&
+    flow.includes('${canDeleteDenetim(d) && denetimSahibiMi(d) ?') &&
+    flow.includes("const deleteAction = document.getElementById('fr65Delete')") &&
+    flow.includes('fr65SahaKaydiniSil(d, deleteAction)') &&
+    !list.includes('inspection-card-delete') && !list.includes('fr65SahaKaydiniSil(d, deleteButton)') &&
+    list.includes("dl.querySelectorAll('.inspection-card-row')") && list.includes("row.classList.toggle('hidden', !show)");
+})());
 test('FR.65 silme sunucuda doğrulanır; yetki, çevrimiçi durum, senkron, takip zinciri ve fotoğraflar korunma kapısıdır', (() => {
   const start = app.indexOf('async function fr65SahaKaydiniSil(');
   const end = app.indexOf('async function cevrimdisiHazirlikDurumu', start);
