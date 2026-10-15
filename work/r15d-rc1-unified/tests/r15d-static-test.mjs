@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.93 sürümü', index.includes('R15D-RC3.9.93</b>'));
-test('app R15D rc3.9.93 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.93'"));
-test('service worker rc3.9.93 cache', sw.includes("aves-saha-r15d-rc3993'"));
-test('uygulama manifesti rc3.9.93 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.93"'));
+test('index R15D rc3.9.94 sürümü', index.includes('R15D-RC3.9.94</b>'));
+test('app R15D rc3.9.94 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.94'"));
+test('service worker rc3.9.94 cache', sw.includes("aves-saha-r15d-rc3994'"));
+test('uygulama manifesti rc3.9.94 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.94"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -873,17 +873,12 @@ test('FR.65 GSM modülü her kayıtta yer alır; Var/Yok seçimi yok, marka/tip/
     gsmUi.includes('Önceki kayıtta GSM için') && !gsmUi.includes('<select') &&
     !gsmUi.includes('data-fr65-capture-prop="var_mi"') && !app.includes('optional_gsm');
 })());
-test('FR.65 kaydı GSM marka/tip/IMEI tamamlanmadan kapanmaz ve eksik alana yönlendirir', (() => {
+test('FR.65 kaydı kapatılırken zorunlu alan aranmaz (GSM dahil); zorunluluk yalnız açılışta', (() => {
   const flowStart = app.indexOf('async function renderFr65SahaKaydi(');
   const flowEnd = app.indexOf('async function showDenetim(', flowStart);
   const flow = app.slice(flowStart, flowEnd);
-  const guard = flow.indexOf("const gsmMissing = ['marka', 'tip', 'imei']");
-  const confirm = flow.indexOf('if (!confirm(', guard);
-  return guard >= 0 && confirm > guard &&
-    flow.includes('if (gsmMissing.length)') &&
-    flow.includes('Kaydı kapatmak için GSM modülünün marka, tip ve IMEI bilgilerini tamamlayın') &&
-    flow.includes("rememberCaptureSection('seri_numaralari')") &&
-    flow.includes('gsmRow?.scrollIntoView({ behavior: \'smooth\', block: \'center\' })');
+  return !flow.includes('gsmMissing') && !flow.includes('Kaydı kapatmak için GSM modülünün') &&
+    flow.includes('Kapatma için zorunlu alan yoktur');
 })());
 test('FR.65 ray profilleri istenen T serisi seçenekleriyle sınırlı; eski A/B ve konsol aralığı alanı yok', (() => {
   const expected = ['T50','T70','T89','T90','T125','T140','Diğer / açıklama'];
