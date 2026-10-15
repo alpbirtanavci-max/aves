@@ -75,6 +75,8 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await createRecord(s, modul, seri);
     await until(() => s.fake.tables.denetimler.length === 1, 'sunucuda denetim kaydı yok');
     assert.equal(serverRecord(s).modul, `Modül ${modul}`);
+    // İlk senkron turu ekranı yeniden çizebilir; kuyruk boşalana kadar bekle.
+    await until(async () => (await p.evaluate(async () => (await DB.all('outbox')).length)) === 0, 'ilk senkron kuyruğu boşalmadı');
   });
   await report.step(`${tag} alan doldur + "Şimdi kaydet" → sunucuda görünür`, async () => {
     const input = await firstEditableInput(p);
