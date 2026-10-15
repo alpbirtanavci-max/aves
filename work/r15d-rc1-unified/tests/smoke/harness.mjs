@@ -44,6 +44,7 @@ export async function newSession(browser, appUrl, profile) {
   const fake = createFakeSupabase({ profile });
   const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true, viewport: { width: 420, height: 900 } });
   await context.route(SUPABASE_ORIGIN + '/**', fake.handle);
+  context.setDefaultTimeout(8000);
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message + ' @ ' + String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' | ')));
