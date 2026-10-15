@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.92 sürümü', index.includes('R15D-RC3.9.92</b>'));
-test('app R15D rc3.9.92 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.92'"));
-test('service worker rc3.9.92 cache', sw.includes("aves-saha-r15d-rc3992'"));
-test('uygulama manifesti rc3.9.92 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.92"'));
+test('index R15D rc3.9.93 sürümü', index.includes('R15D-RC3.9.93</b>'));
+test('app R15D rc3.9.93 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.93'"));
+test('service worker rc3.9.93 cache', sw.includes("aves-saha-r15d-rc3993'"));
+test('uygulama manifesti rc3.9.93 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.93"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1860,18 +1860,23 @@ test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler be
     app.includes('async function insertIgnoreDuplicates(table, rows)') &&
     app.includes('if (options.conditional_update) outboxItem.conditional_update = options.conditional_update');
 })());
-test('FR.65 saha kaydı: bütünlük mührü, yedek, denetim özeti, arşiv ve çevrimdışı hazırlık',
+test('FR.65 saha kaydı: bütünlük mührü, seçmeli yedek, veri özeti, arşiv ve sessiz çevrimdışı hazırlık',
   app.includes('async function fr65ButunlukOzetiHesapla(d, hedefDurum)') &&
   app.includes('latest.butunluk_hash = integrity.hash') &&
-  app.includes('async function fr65YedekIndir(denetimId)') &&
-  app.includes('async function tumVeriYedegiIndir(button = null)') &&
-  app.includes("format: 'aves-fr65-yedek'") &&
+  app.includes('async function yedekSecimiGoster()') &&
+  app.includes('async function yedekIndir(idler, button = null)') &&
   app.includes("format: 'aves-cihaz-yedek'") &&
-  app.includes('async function fr65OzetiniGoster(denetimId)') &&
+  app.includes('id="btnYedekSec"') && !app.includes('id="btnTumYedek"') &&
+  !app.includes('id="fr65Backup"') && !app.includes('id="fr65Offline"') &&
+  app.includes('fr65Tamamlandi ?') &&
+  app.includes('async function fr65OzetiniGoster(denetimId, { onClose = null } = {})') &&
+  app.includes('await fr65OzetiniGoster(latest.id, { onClose: () => showList() })') &&
   app.includes("fields: ['arsive_aktarildi_at', 'arsive_aktaran_email', 'updated_at']") &&
   app.includes("'arsive_aktarildi_at', 'arsive_aktaran_email',") &&
-  app.includes('id="fr65Summary"') && app.includes('id="fr65Backup"') && app.includes('id="fr65Offline"') &&
-  app.includes('if (fr65SahaKaydiMi(d)) {') && app.includes('fr65Marker.fr65 !== true') &&
+  app.includes('fr65Marker.fr65 !== true') &&
+  app.includes('sahayaHazirla(latest, [])') &&
+  app.includes('class="local-sync-state fr65-sync-strip') &&
+  index.includes('.overlay{backdrop-filter:none') &&
   app.includes('Yedeksiz arşive aktarıldı olarak işaretlemek önerilmez'));
 test('senkron döngüsü her kalemi göndermeden önce DB den yeniden okur (eski kopya yeniden eşlenen sürümü ezmez)',
   app.includes("outboxGet: (seq) => p(tx('outbox','readonly').get(seq))") &&
