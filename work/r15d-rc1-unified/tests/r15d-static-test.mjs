@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.91 sürümü', index.includes('R15D-RC3.9.91</b>'));
-test('app R15D rc3.9.91 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.91'"));
-test('service worker rc3.9.91 cache', sw.includes("aves-saha-r15d-rc3991'"));
-test('uygulama manifesti rc3.9.91 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.91"'));
+test('index R15D rc3.9.92 sürümü', index.includes('R15D-RC3.9.92</b>'));
+test('app R15D rc3.9.92 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.92'"));
+test('service worker rc3.9.92 cache', sw.includes("aves-saha-r15d-rc3992'"));
+test('uygulama manifesti rc3.9.92 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.92"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -168,7 +168,7 @@ test('tamamlanmış denetim özeti resmî çıktı durumunu gösterir',
   app.includes('resmî PDF/Word henüz üretilmedi'));
 test('liste ekranında toplu Sahaya Hazırlık rozeti: N/M hazır + tümünü doğrula',
   app.includes('const hazirlikAktif = [];') &&
-  app.includes('if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });') &&
+  app.includes('if ((modulG || fr65Capture) && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });') &&
   app.includes("badge.className = `prep-badge") &&
   app.includes('Sahaya Hazırlık · ${hazirSayi}/${hazirlikAktif.length}') &&
   app.includes("id=\"prepVerifyAll\"") &&
@@ -1852,7 +1852,7 @@ test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler be
   return flow.includes('expected_updated_at: baseUpdatedAt') &&
     flow.includes("expected_updated_at: expectedUpdatedAt") &&
     flow.includes("fields: ['denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at']") &&
-    flow.includes("fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'updated_at']") &&
+    flow.includes("fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at', 'updated_at']") &&
     correctionFlow.includes('const fr65Capture = fr65SahaKaydiMi(d)') &&
     correctionFlow.includes('expected_updated_at: expectedUpdatedAt') &&
     createFlow.includes('insert_only: true') &&
@@ -1860,6 +1860,22 @@ test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler be
     app.includes('async function insertIgnoreDuplicates(table, rows)') &&
     app.includes('if (options.conditional_update) outboxItem.conditional_update = options.conditional_update');
 })());
+test('FR.65 saha kaydı: bütünlük mührü, yedek, denetim özeti, arşiv ve çevrimdışı hazırlık',
+  app.includes('async function fr65ButunlukOzetiHesapla(d, hedefDurum)') &&
+  app.includes('latest.butunluk_hash = integrity.hash') &&
+  app.includes('async function fr65YedekIndir(denetimId)') &&
+  app.includes('async function tumVeriYedegiIndir(button = null)') &&
+  app.includes("format: 'aves-fr65-yedek'") &&
+  app.includes("format: 'aves-cihaz-yedek'") &&
+  app.includes('async function fr65OzetiniGoster(denetimId)') &&
+  app.includes("fields: ['arsive_aktarildi_at', 'arsive_aktaran_email', 'updated_at']") &&
+  app.includes("'arsive_aktarildi_at', 'arsive_aktaran_email',") &&
+  app.includes('id="fr65Summary"') && app.includes('id="fr65Backup"') && app.includes('id="fr65Offline"') &&
+  app.includes('if (fr65SahaKaydiMi(d)) {') && app.includes('fr65Marker.fr65 !== true') &&
+  app.includes('Yedeksiz arşive aktarıldı olarak işaretlemek önerilmez'));
+test('senkron döngüsü her kalemi göndermeden önce DB den yeniden okur (eski kopya yeniden eşlenen sürümü ezmez)',
+  app.includes("outboxGet: (seq) => p(tx('outbox','readonly').get(seq))") &&
+  app.includes('const item = await DB.outboxGet(queued.seq);'));
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);

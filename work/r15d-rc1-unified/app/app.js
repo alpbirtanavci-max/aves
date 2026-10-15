@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.91';
+const APP_VERSION = 'R15D-rc3.9.92';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -256,6 +256,7 @@ const DB = (() => {
     }),
     clear: (store) => p(tx(store,'readwrite').clear()),
     outboxAdd: (item) => p(tx('outbox','readwrite').add(item)),
+    outboxGet: (seq) => p(tx('outbox','readonly').get(seq)),
     outboxPut: (item) => p(tx('outbox','readwrite').put(item)),
     outboxAll: () => p(tx('outbox','readonly').getAll()),
     outboxDel: (seq) => p(tx('outbox','readwrite').delete(seq)),
@@ -659,7 +660,11 @@ const Sync = (() => {
       const items = (await DB.outboxAll()).filter(item =>
         !item.sync_status || ['pending', 'retry', 'sending'].includes(item.sync_status)
       );
-      for (const item of items) {
+      for (const queued of items) {
+        // Önceki kalemin senkronu bu kalemi (ör. expected_updated_at) yeniden eşlemiş olabilir;
+        // başta okunan eski kopya DB'deki güncel kalemi ezmesin diye her turda yeniden okunur.
+        const item = await DB.outboxGet(queued.seq);
+        if (!item || (item.sync_status && !['pending', 'retry', 'sending'].includes(item.sync_status))) continue;
         try {
           item.sync_status = 'sending';
           item.attempt_count = (item.attempt_count || 0) + 1;
@@ -688,7 +693,7 @@ const Sync = (() => {
               'denetim_form_kayitlari', 'teknik_dosya_kayitlari', 'updated_at',
               'beyan_yuku_kg', 'kapasite_kisi', 'beyan_hizi_ms', 'durak_sayisi', 'bina_asansor_sayisi',
               'denetim_durumu', 'calisma_tamamlandi_at', 'duzeltme_oturumu_id',
-              'duzeltme_nedeni', 'duzeltme_baslatildi_at', 'duzeltme_baslatan_email',
+              'duzeltme_nedeni', 'duzeltme_baslatildi_at', 'duzeltme_baslatan_email', 'arsive_aktarildi_at', 'arsive_aktaran_email',
               'duzeltme_baslatan_ad', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at',
               'son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at',
             ]);
@@ -1731,6 +1736,188 @@ const UI = (() => {
   };
   const canDeleteDenetim = (d) => !!d && Profile.canDelete;
 
+  /* ---- FR.65 saha kaydı: bütünlük mührü, yedek, denetim özeti, kurumsal arşiv ---- */
+  async function fr65ButunlukOzetiHesapla(d, hedefDurum) {
+    const record = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+    const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(record, d.tahrik_tipi);
+    const summary = {
+      surum: 1,
+      tur: 'fr65_saha_v1',
+      denetim_id: d.id,
+      durum: hedefDurum || d.denetim_durumu || 'Devam Ediyor',
+      modul: d.modul || null,
+      firma: d.musteri_unvani || null,
+      seri_no: d.asansor_seri_no || null,
+      denetim_tarihi: d.denetim_tarihi || null,
+      denetimi_yapan: d.denetimi_yapan || d.olusturan_ad || null,
+      alan_sayisi: count.recorded,
+      alan_toplam: count.total,
+      degerler: record.forms?.FR65?.values || {},
+    };
+    return { summary, hash: await sha256Hex(stableStringify(summary)) };
+  }
+
+  async function yedekDosyasiIndir(dosyaAdi, nesne) {
+    const text = JSON.stringify(nesne, null, 2);
+    const file = new File([text], dosyaAdi, { type: 'application/json' });
+    // iOS ana ekran uygulamasında <a download> güvenilir değil; paylaşım sayfası dosyayı Dosyalar'a kaydettirir.
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent || '') && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: dosyaAdi }); return; }
+      catch (error) { if (error && error.name === 'AbortError') throw error; }
+    }
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url; link.download = dosyaAdi;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  async function fr65YedekPaketiOlustur(d) {
+    const gecmis = await DB.allByIndex('gecmis', 'byDenetim', d.id);
+    const bekleyen = (await DB.outboxAll()).filter(item => item.inspection_id === d.id);
+    const butunluk = await fr65ButunlukOzetiHesapla(d);
+    const govde = {
+      format: 'aves-fr65-yedek', surum: 1,
+      olusturuldu: new Date().toISOString(), uygulama: APP_VERSION,
+      olusturan: Profile.email || API.email || null,
+      kayit: d, gecmis, bekleyen_senkron: bekleyen, veri_hash: butunluk.hash,
+    };
+    return { ...govde, paket_hash: await sha256Hex(stableStringify(govde)) };
+  }
+
+  async function fr65YedekIndir(denetimId) {
+    const d = await DB.get('denetimler', denetimId);
+    if (!d || !fr65SahaKaydiMi(d)) { toast('Yedeklenecek FR.65 kaydı bulunamadı'); return false; }
+    try {
+      const paket = await fr65YedekPaketiOlustur(d);
+      const tarih = paket.olusturuldu.slice(0, 10);
+      const seri = String(d.asansor_seri_no || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_');
+      await yedekDosyasiIndir(`AVES_FR65_${seri}_${tarih}_yedek.json`, paket);
+      await DB.kvSet(`fr65_yedek_${d.id}`, { at: paket.olusturuldu, hash: paket.veri_hash, paket_hash: paket.paket_hash });
+      toast('Yedek dosyası hazırlandı');
+      return true;
+    } catch (error) {
+      if (error && error.name === 'AbortError') return false;
+      console.error('FR.65 yedeği oluşturulamadı', error);
+      toast('Yedek oluşturulamadı; kayıt cihazda korunuyor');
+      return false;
+    }
+  }
+
+  async function tumVeriYedegiIndir(button = null) {
+    if (button) button.disabled = true;
+    try {
+      const denetimler = (await DB.all('denetimler')).filter(denetimGorunebilirMi);
+      const idler = new Set(denetimler.map(item => item.id));
+      const saha = (await DB.all('saha')).filter(row => idler.has(row.denetim_id));
+      const gecmis = (await DB.all('gecmis')).filter(row => idler.has(row.denetim_id));
+      const bekleyen = (await DB.outboxAll()).filter(item => idler.has(item.inspection_id));
+      const fotografSayisi = (await DB.all('fotograflar')).filter(foto => idler.has(foto.denetim_id) && !foto.deleted_at).length;
+      const govde = {
+        format: 'aves-cihaz-yedek', surum: 1,
+        olusturuldu: new Date().toISOString(), uygulama: APP_VERSION,
+        olusturan: Profile.email || API.email || null,
+        not: 'Fotoğraf dosyaları bu yedeğe dahil değildir; fotoğraflar Fotoğraf Arşivi (ZIP) ile ayrıca indirilir.',
+        fotograf_sayisi: fotografSayisi,
+        denetimler, saha_kontrol: saha, gecmis, bekleyen_senkron: bekleyen,
+      };
+      const paket = { ...govde, paket_hash: await sha256Hex(stableStringify(govde)) };
+      await yedekDosyasiIndir(`AVES_cihaz_yedegi_${paket.olusturuldu.slice(0, 10)}.json`, paket);
+      await DB.kvSet('cihaz_yedegi_son', { at: paket.olusturuldu, adet: denetimler.length, paket_hash: paket.paket_hash });
+      toast(`${denetimler.length} denetimlik yedek hazırlandı`);
+    } catch (error) {
+      if (!(error && error.name === 'AbortError')) {
+        console.error('Cihaz yedeği oluşturulamadı', error);
+        toast('Yedek oluşturulamadı; veriler cihazda korunuyor');
+      }
+    } finally { if (button) button.disabled = false; }
+  }
+
+  async function fr65OzetiniGoster(denetimId) {
+    const d = await DB.get('denetimler', denetimId);
+    if (!d || !fr65SahaKaydiMi(d)) { toast('FR.65 kaydı bulunamadı'); return; }
+    const record = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+    const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(record, d.tahrik_tipi);
+    const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
+    const tarihGoster = value => value ? new Date(value).toLocaleString('tr-TR') : '';
+    const guncel = await fr65ButunlukOzetiHesapla(d);
+    const sync = await Sync.denetimSyncOzeti(d.id);
+    const hazirlik = await cevrimdisiHazirlikDurumu(d, []);
+    const yedek = await DB.kvGet(`fr65_yedek_${d.id}`);
+    const gecmisAdedi = (await DB.allByIndex('gecmis', 'byDenetim', d.id)).length;
+    const butunlukKart = d.butunluk_hash
+      ? (d.butunluk_hash === guncel.hash
+        ? `<div class="integrity-card ok"><b>✓ Bütünlük mührü geçerli</b><small>Kayıt kapatıldığından beri değişmedi · ${tarihGoster(d.butunluk_hesaplandi_at)}<br>Parmak izi: ${esc(String(d.butunluk_hash).slice(0, 16))}</small></div>`
+        : `<div class="integrity-card pending"><b>⚠ Bütünlük mührü mevcut veriyle eşleşmiyor</b><small>Kayıt kapatıldıktan sonra değiştirilmiş veya yeniden açılmış olabilir. Değişiklik geçmişini inceleyin.<br>Mühür: ${esc(String(d.butunluk_hash).slice(0, 16))} · Şimdiki: ${esc(guncel.hash.slice(0, 16))}</small></div>`)
+      : `<div class="integrity-card pending"><b>Bütünlük mührü yok</b><small>${tamamlandi ? 'Bu kayıt mühür özelliğinden önce kapatılmış.' : 'Kayıt kapatıldığında saha verisinin parmak izi mühürlenir.'}</small></div>`;
+    const senkronMetni = sync.korunan ? `${sync.korunan} işlem cihazda korumada; sunucuya aktarılmadı`
+      : sync.bekleyen ? `${sync.bekleyen} işlem sunucu aktarımını bekliyor`
+      : 'Cihaz ve sunucu eşit; bekleyen aktarım yok';
+    const arsivli = !!d.arsive_aktarildi_at;
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>FR.65 Denetim Özeti</h3>
+      <div class="onay-box">
+        <div class="onay-satir"><span>Firma</span><b>${esc(d.musteri_unvani)}</b></div>
+        <div class="onay-satir"><span>Asansör seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
+        <div class="onay-satir"><span>Modül</span><b>${esc(d.modul || '')}</b></div>
+        <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi || '')}</b></div>
+        <div class="onay-satir"><span>Denetimi yapan</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
+        <div class="onay-satir"><span>Durum</span><b>${esc(d.denetim_durumu || 'Devam Ediyor')}</b></div>
+      </div>
+      <div class="integrity-card ${tamamlandi ? 'ok' : 'pending'}"><b>Saha verisi</b><small>${count.recorded}/${count.total} FR.65 alanında veri · ${gecmisAdedi} değişiklik kaydı<br>Bu özet uygunluk veya belgelendirme kararı içermez.</small></div>
+      ${butunlukKart}
+      <div class="integrity-card ${sync.korunan || sync.bekleyen ? 'pending' : 'ok'}"><b>Sunucu senkronu</b><small>${esc(senkronMetni)}</small></div>
+      <div class="integrity-card ${hazirlik.ready ? 'ok' : 'pending'}"><b>${hazirlik.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı hazırlık doğrulanmadı'}</b><small>${esc(hazirlik.detail)}</small></div>
+      <div class="integrity-card ${yedek ? 'ok' : 'pending'}"><b>Veri yedeği</b><small>${yedek ? `Son yedek: ${tarihGoster(yedek.at)}` : 'Bu kayıt için bu cihazdan yedek alınmadı'}</small></div>
+      <div class="integrity-card ${arsivli ? 'ok' : 'pending'}"><b>${arsivli ? '✓ Kurumsal arşive aktarıldı' : 'Kurumsal arşive aktarılmadı'}</b><small>${arsivli
+        ? `${tarihGoster(d.arsive_aktarildi_at)}${d.arsive_aktaran_email ? ` · ${esc(d.arsive_aktaran_email)}` : ''}`
+        : 'Resmî dosya arşive konduğunda yönetim burada işaretler'}</small></div>
+      <button class="btn btn-ghost" id="fr65OzetYedek" style="margin-top:8px">💾 Yedeği indir (JSON)</button>
+      ${Profile.canSeeAllInspections && (tamamlandi || arsivli) ? `<button class="btn btn-ghost" id="fr65ArsivToggle" style="margin-top:8px">${arsivli ? 'Arşiv işaretini kaldır' : 'Arşive aktarıldı olarak işaretle'}</button>` : ''}
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+    ov.querySelector('#fr65OzetYedek').onclick = async () => {
+      await fr65YedekIndir(d.id);
+      close(); await fr65OzetiniGoster(d.id);
+    };
+    const arsivToggle = ov.querySelector('#fr65ArsivToggle');
+    if (arsivToggle) arsivToggle.onclick = async () => {
+      arsivToggle.disabled = true;
+      try {
+        const latest = await DB.get('denetimler', d.id) || d;
+        const isaretli = !!latest.arsive_aktarildi_at;
+        if (!isaretli) {
+          if (latest.denetim_durumu !== 'Çalışma Tamamlandı') { toast('Arşiv işareti yalnız kapatılmış kayıtta konabilir'); return; }
+          const sonYedek = await DB.kvGet(`fr65_yedek_${latest.id}`);
+          if (!sonYedek && !confirm('Bu kayıt için bu cihazdan yedek indirilmedi. Yedeksiz arşive aktarıldı olarak işaretlemek önerilmez. Yine de işaretlensin mi?')) return;
+        }
+        const expectedUpdatedAt = latest.updated_at;
+        const now = new Date().toISOString();
+        latest.arsive_aktarildi_at = isaretli ? null : now;
+        latest.arsive_aktaran_email = isaretli ? null : (Profile.email || API.email || null);
+        latest.updated_at = now;
+        await localWrite('denetimler', latest, 'denetimler', {
+          conditional_update: {
+            expected_updated_at: expectedUpdatedAt,
+            fields: ['arsive_aktarildi_at', 'arsive_aktaran_email', 'updated_at'],
+          },
+        });
+        toast(isaretli ? 'Arşiv işareti kaldırıldı' : 'Arşive aktarıldı olarak işaretlendi');
+        close(); await fr65OzetiniGoster(d.id);
+      } catch (error) {
+        console.warn('FR.65 arşiv işareti yazılamadı', error);
+        toast('İşaret kaydedilemedi');
+        arsivToggle.disabled = false;
+      }
+    };
+  }
+
   async function fr65SahaKaydiniSil(denetim, button = null) {
     if (!canDeleteDenetim(denetim) || !fr65SahaKaydiMi(denetim) || !denetimSahibiMi(denetim)) {
       toast('Yalnızca kendi oluşturduğunuz FR.65 kayıtlarını silebilirsiniz');
@@ -1809,6 +1996,13 @@ const UI = (() => {
   }
 
   async function cevrimdisiHazirlikDurumu(d, rows = []) {
+    if (fr65SahaKaydiMi(d)) {
+      const fr65Marker = await DB.kvGet(`offline_ready_${d.id}`);
+      if (!fr65Marker || fr65Marker.fr65 !== true) return { ready: false, detail: 'Bu cihazda hazırlık kontrolü yapılmadı.' };
+      if (fr65Marker.device_id !== await getDeviceId()) return { ready: false, detail: 'Hazırlık başka bir cihazda yapılmış.' };
+      if (fr65Marker.app_build_id !== APP_VERSION) return { ready: false, detail: 'Uygulama güncellendi; bu cihazda tekrar kontrol edilmeli.' };
+      return { ready: true, detail: 'FR.65 formu ve gerekli uygulama dosyaları bu cihazda doğrulandı. Girişler her durumda önce cihaza yazılır.', checkedAt: fr65Marker.checked_at };
+    }
     if (!sahaUygulamaModuluGMi(d)) {
       return { ready: false, detail: 'Bu kayıt Modül G değil; bu uygulamada açılamaz.' };
     }
@@ -2114,7 +2308,7 @@ const UI = (() => {
     }
     app.innerHTML = `
     <div class="screen">
-      <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
+      <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}<button class="btn btn-ghost" id="btnTumYedek" title="Bu cihazdaki tüm denetim verisini JSON olarak indir">💾 Yedekle</button></div>
       <div class="scope-note"><b>Modül G:</b> tam saha checklisti. <b>B / E / H1:</b> FR.65 referanslı ölçü ve kimlik veri kaydı. Eski B/E/H1 kayıtları açılmaz; resmî form üretimi Form Doldurucu’da kalır.</div>
       <div class="inspection-list-tools">
         <input class="searchbox" id="listSearch" type="search" placeholder="Müşteri, adres, seri veya dosya no ara…" value="${esc(listSearch)}">
@@ -2155,13 +2349,13 @@ const UI = (() => {
       const formOnly = formOdakliDenetimMi(d, denetimRows);
       const formStats = formOnly ? denetimFormIstatistikleri(d) : null;
       const fr65Stats = fr65Capture ? fr65SahaIstatistigi(d) : null;
-      const offlineState = modulG
+      const offlineState = (modulG || fr65Capture)
         ? await cevrimdisiHazirlikDurumu(d, denetimRows)
         : { ready: false, detail: 'Saha verisi cihazda yerel olarak saklanır; çevrimdışı yazılabilir.' };
       const canEdit = supported && canEditDenetim(d);
       const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
       const gozden = d.denetim_durumu === 'Gözden Geçirme';
-      if (modulG && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
+      if ((modulG || fr65Capture) && !tamamlandi && canEdit) hazirlikAktif.push({ d, ready: offlineState.ready });
       const cardRow = document.createElement('div');
       cardRow.className = 'inspection-card-row';
       const card = document.createElement('button');
@@ -2184,6 +2378,7 @@ const UI = (() => {
           : fr65Capture
           ? `<span class="pill total">${fr65Stats.recorded}/${fr65Stats.total} FR.65 alanında veri</span>
              <span class="pill ${tamamlandi ? 'ok' : 'total'}">${tamamlandi ? 'Saha kaydı kapatıldı' : (gozden ? 'Düzenleme açık' : 'Veri toplama sürüyor')}</span>
+             ${tamamlandi && d.arsive_aktarildi_at ? '<span class="pill ok">📁 arşivde</span>' : ''}
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
           : formOnly
@@ -2203,10 +2398,8 @@ const UI = (() => {
              ${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}
              <span class="pill cached">📱 cihazda</span>`
           : `<span class="pill na">maddeler cihazda değil — açınca iner</span>${canEdit ? '' : '<span class="pill readonly">Salt okunur</span>'}`}</div>
-        ${modulG
+        ${(modulG || fr65Capture)
           ? `<div class="offline-card-state ${offlineState.ready ? 'ok' : 'no'}"><b>${offlineState.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı çalışmaya hazır değil'}</b><small>${esc(offlineState.detail)}</small></div>`
-          : fr65Capture
-          ? '<div class="offline-card-state ok"><b>✓ Çevrimdışı veri girişi</b><small>Değerler önce bu cihaza kaydedilir; bağlantı gelince senkronize edilir.</small></div>'
           : '<div class="unsupported-card-note">Eski kayıt korundu; bu uygulamada açılmaz. B/E/H1 formları Form Doldurucu programında yürütülür.</div>'}`;
       if (supported) card.onclick = () => fr65Capture
         ? showDenetim(d.id, Profile.isTechnicalManager && !denetimSahibiMi(d))
@@ -2267,6 +2460,8 @@ const UI = (() => {
     applyListFilters();
     const btnYeni = document.getElementById('btnYeni');
     if (btnYeni) btnYeni.onclick = showYeniForm;
+    const btnTumYedek = document.getElementById('btnTumYedek');
+    if (btnTumYedek) btnTumYedek.onclick = () => tumVeriYedegiIndir(btnTumYedek);
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
@@ -3119,8 +3314,20 @@ function showYeniForm() {
     const itemIds = rows.map(r => r.madde_id).sort();
     const uniqueIds = new Set(itemIds);
     const itemSetHash = await sha256Hex(itemIds.join('|'));
+    const fr65Kaydi = fr65SahaKaydiMi(d);
 
-    if (formsOnly) {
+    if (fr65Kaydi) {
+      const fr65Outbox = (await DB.outboxAll()).filter(item => item.inspection_id === d.id);
+      let fr65Okunur = false;
+      try {
+        const normalized = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+        fr65Okunur = !!normalized.forms?.FR65 && normalized.saha_veri_akisi === 'fr65_saha_v1';
+      } catch { fr65Okunur = false; }
+      add('FR.65 form tanımı cihazda', typeof AVES_TEKNIK_DOSYA_FORM?.emptyFr65Capture === 'function' && typeof AVES_TEKNIK_DOSYA_FORM?.countFr65Capture === 'function', 'Alan ve bölüm tanımları uygulama dosyasında yüklü');
+      add('Kayıt cihazda ve okunabilir', fr65Okunur, fr65Okunur ? 'Saha verisi cihaz veritabanından okundu' : 'Kayıt okunamadı');
+      add('Cihazdaki değişiklikler sunucuya aktarıldı', fr65Outbox.length === 0,
+        fr65Outbox.length ? `${fr65Outbox.length} işlem sunucu aktarımını bekliyor — çevrimdışı çalışmayı engellemez` : 'Bekleyen aktarım yok', true);
+    } else if (formsOnly) {
       add(`Modül ${denetimFormModulu(d)} form seti cihazda`, formKeys.length > 0, `${formKeys.length} uygulanabilir form`);
       add('Form şemaları eksiksiz', formKeys.every(key => !!AVES_DENETIM_FORM_SETI.FORMS[key]), 'Uygulanabilir tüm form tanımları yüklü');
     } else {
@@ -3200,7 +3407,15 @@ function showYeniForm() {
       isNativeApp() ? 'Native uygulama — varlıklar pakette, ayrıca önbelleğe alınmasına gerek yok' : `${cachedCount}/${assets.length} dosya`);
 
     const ready = checks.every(check => check.ok || check.advisory);
-    if (ready) {
+    if (ready && fr65Kaydi) {
+      // FR.65 kaydı koşullu senkronla yazılır; hazırlık işareti yalnız bu cihazda tutulur.
+      await DB.kvSet(`offline_ready_${d.id}`, {
+        fr65: true,
+        device_id: await getDeviceId(),
+        app_build_id: APP_VERSION,
+        checked_at: new Date().toISOString(),
+      });
+    } else if (ready) {
       const now = new Date().toISOString();
       d.offline_hazir_at = now;
       d.offline_hazirlayan_email = Profile.email;
@@ -3217,7 +3432,7 @@ function showYeniForm() {
         item_set_hash: itemSetHash,
         forms_only: formsOnly,
         form_set_key_hash: formsOnly ? formSetKeyHash : null,
-        kutuphane_content_hash: manifest.content_hash,
+        kutuphane_content_hash: manifest ? manifest.content_hash : null,
         checked_at: now,
       });
       await localWrite('denetimler', d, 'denetimler');
@@ -3707,6 +3922,9 @@ function showYeniForm() {
       <div class="inspection-toolbar">
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">
+          <button class="delbtn" id="fr65Summary" title="Denetim özeti, bütünlük, senkron ve arşiv durumu">📋 Denetim Özeti</button>
+          ${canEdit ? '<button class="delbtn" id="fr65Offline" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
+          <button class="delbtn" id="fr65Backup" title="Bu kaydın yedeğini JSON olarak indir">💾 Yedek</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
@@ -3816,6 +4034,28 @@ function showYeniForm() {
     if (reopen) reopen.onclick = () => duzeltmeNedeniSec(d);
     const deleteAction = document.getElementById('fr65Delete');
     if (deleteAction) deleteAction.onclick = () => fr65SahaKaydiniSil(d, deleteAction);
+    const summaryAction = document.getElementById('fr65Summary');
+    if (summaryAction) summaryAction.onclick = () => fr65OzetiniGoster(d.id);
+    const backupAction = document.getElementById('fr65Backup');
+    if (backupAction) backupAction.onclick = async () => {
+      backupAction.disabled = true;
+      try { await fr65YedekIndir(d.id); } finally { backupAction.disabled = false; }
+    };
+    const offlineAction = document.getElementById('fr65Offline');
+    if (offlineAction) offlineAction.onclick = async () => {
+      offlineAction.disabled = true;
+      offlineAction.textContent = 'Doğrulanıyor…';
+      try {
+        const latest = await DB.get('denetimler', d.id) || d;
+        sahayaHazirlikSonucuGoster(await sahayaHazirla(latest, []));
+      } catch (error) {
+        console.error('FR.65 çevrimdışı kontrol hatası', error);
+        toast('Çevrimdışı kontrol tamamlanamadı');
+      } finally {
+        offlineAction.disabled = false;
+        offlineAction.textContent = '📱 Çevrimdışı Kontrol';
+      }
+    };
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {
       // Open synchronously from the button gesture so mobile popup blockers allow the report.
@@ -3988,11 +4228,15 @@ function showYeniForm() {
           const expectedUpdatedAt = latest.updated_at;
           latest.denetim_durumu = 'Çalışma Tamamlandı';
           latest.calisma_tamamlandi_at = now;
+          const integrity = await fr65ButunlukOzetiHesapla(latest, 'Çalışma Tamamlandı');
+          latest.butunluk_ozeti = integrity.summary;
+          latest.butunluk_hash = integrity.hash;
+          latest.butunluk_hesaplandi_at = now;
           latest.updated_at = now;
           await localWrite('denetimler', latest, 'denetimler', {
             conditional_update: {
               expected_updated_at: expectedUpdatedAt,
-              fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'updated_at'],
+              fields: ['denetim_durumu', 'calisma_tamamlandi_at', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at', 'updated_at'],
             },
           });
           activeFr65Flush = null;

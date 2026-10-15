@@ -52,11 +52,16 @@ const serverRecord = s => s.fake.tables.denetimler[0];
 const fr65Values = s => serverRecord(s)?.denetim_form_kayitlari?.forms?.FR65?.values || {};
 const openAll = p => p.evaluate(() => document.querySelectorAll('details[data-fr65-section-id]').forEach(d => { d.open = true; }));
 
+// Gerçek kullanıcı gibi tek bölüm açar; uygulama açık bölümü yeniden çizimlerde hatırlar.
+async function openSectionOf(loc) {
+  await loc.evaluate(el => { el.closest('details').open = true; });
+  await loc.page().waitForTimeout(150);
+}
+
 async function firstEditableInput(p) {
-  await openAll(p);
-  // Locator her kullanımda yeniden çözülür; kayıt sonrası yeniden çizim testi bozmaz.
   const loc = p.locator('[data-fr65-capture-key] input[data-fr65-capture-prop="field_value"]:not([disabled]), [data-fr65-capture-key] textarea[data-fr65-capture-prop="field_value"]:not([disabled])').first();
-  await loc.waitFor({ timeout: 10000 });
+  await loc.waitFor({ state: 'attached', timeout: 10000 });
+  await openSectionOf(loc);
   return loc;
 }
 
@@ -101,13 +106,14 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.waitForSelector('#btnYeni', { timeout: 15000 });
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back', { timeout: 15000 });
-    await openAll(p);
+    await openSectionOf(p.locator(`[data-fr65-capture-key="${fieldKey}"] [data-fr65-capture-prop="field_value"]`));
     const val = await p.inputValue(`[data-fr65-capture-key="${fieldKey}"] [data-fr65-capture-prop="field_value"]`);
     assert.equal(val, typed);
   });
   await report.step(`${tag} çevrimdışı düzenle → cihazda kalır, online olunca sunucuya gider`, async () => {
     await s.context.setOffline(true); s.fake.state.offline = true;
     const input = p.locator(`[data-fr65-capture-key="${fieldKey}"] [data-fr65-capture-prop="field_value"]`);
+    await openSectionOf(input);
     const off = await valueFor(input, 555);
     await input.fill(off);
     await p.click('#fr65SaveNow').catch(() => {});
@@ -129,6 +135,72 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.ok(text.includes(typed), 'rapor girilen değeri içermiyor');
     await popup.close();
   });
+  await report.step(`${tag} "Çevrimdışı Kontrol" → bu cihazda hazır işaretlenir`, async () => {
+    await p.click('#fr65Offline');
+    await p.waitForSelector('.preflight-list');
+    const heading = await p.locator('.overlay h3').first().innerText();
+    assert.ok(heading.includes('✓ Çevrimdışı çalışmaya hazır'), `hazır değil: ${heading}`);
+    const marker = await p.evaluate(async id => await DB.kvGet(`offline_ready_${id}`), serverRecord(s).id);
+    assert.equal(marker?.fr65, true, 'hazırlık işareti yazılmadı');
+    await p.click('.overlay .close');
+  });
+  await report.step(`${tag} "Yedek" → geçerli JSON yedek dosyası iner`, async () => {
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#fr65Backup')]);
+    const text = await (await import('node:fs/promises')).readFile(await download.path(), 'utf8');
+    const backup = JSON.parse(text);
+    assert.equal(backup.format, 'aves-fr65-yedek');
+    assert.equal(backup.kayit.id, serverRecord(s).id);
+    assert.ok(Object.values(backup.kayit.denetim_form_kayitlari.forms.FR65.values).some(v => v?.field_value === typed), 'yedek girilen değeri içermiyor');
+    assert.match(backup.paket_hash, /^[0-9a-f]{64}$/);
+    assert.ok(download.suggestedFilename().includes(seri));
+  });
+  await report.step(`${tag} liste "Yedekle" → tüm cihaz yedeği iner`, async () => {
+    await p.click('#fr65Back');
+    await p.waitForSelector('#btnTumYedek');
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#btnTumYedek')]);
+    const backup = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'));
+    assert.equal(backup.format, 'aves-cihaz-yedek');
+    assert.ok(backup.denetimler.some(x => x.id === serverRecord(s).id), 'yedekte denetim yok');
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Back');
+  });
+  await report.step(`${tag} kaydı tamamla → bütünlük mührü sunucuya yazılır`, async () => {
+    await openAll(p);
+    for (const [prop, value] of [['marka', 'DumanGSM'], ['tip', 'T1'], ['imei', '123456789012345']]) {
+      await p.locator(`[data-fr65-capture-key="gsm_modulu"] [data-fr65-capture-prop="${prop}"]`).fill(value);
+    }
+    await p.click('#fr65SaveNow');
+    await p.click('#fr65Complete');
+    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await until(() => serverRecord(s).denetim_durumu === 'Çalışma Tamamlandı' && /^[0-9a-f]{64}$/.test(serverRecord(s).butunluk_hash || ''), 'tamamlanma / mühür sunucuda yok');
+    assert.equal(serverRecord(s).butunluk_ozeti.tur, 'fr65_saha_v1');
+  });
+  await report.step(`${tag} denetim özeti → mühür geçerli, yedek ve senkron görünür`, async () => {
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Summary');
+    await p.click('#fr65Summary');
+    const text = await p.locator('.overlay .modal').innerText();
+    assert.ok(text.includes('Bütünlük mührü geçerli'), 'mühür geçerli görünmüyor');
+    assert.ok(text.includes('Cihaz ve sunucu eşit'), 'senkron durumu görünmüyor');
+    assert.ok(text.includes('Son yedek'), 'yedek durumu görünmüyor');
+  });
+  if (persona.rol === 'yonetici') {
+    await report.step(`${tag} kurumsal arşive aktar → sunucuda işaretlenir, listede "arşivde"`, async () => {
+      await p.click('#fr65ArsivToggle');
+      await until(() => !!serverRecord(s).arsive_aktarildi_at && !!serverRecord(s).arsive_aktaran_email, 'arşiv işareti sunucuda yok');
+      await p.waitForSelector('.overlay .modal:has-text("Kurumsal arşive aktarıldı")');
+      await p.click('.overlay .close');
+      await p.click('#fr65Back');
+      await p.waitForSelector('.pill:has-text("arşivde")');
+      await p.getByText(seri).first().click();
+      await p.waitForSelector('#fr65Back');
+    });
+  } else {
+    await report.step(`${tag} mühendis için arşiv düğmesi görünmez`, async () => {
+      assert.equal(await p.locator('#fr65ArsivToggle').count(), 0);
+    });
+    await p.click('.overlay .close');
+  }
   const canDelete = persona.rol === 'yonetici';
   await report.step(`${tag} silme düğmesi: ${canDelete ? 'görünür' : 'görünmez'}`, async () => {
     const count = await p.locator('#fr65Delete').count();
