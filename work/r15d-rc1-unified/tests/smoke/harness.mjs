@@ -45,6 +45,8 @@ export async function newSession(browser, appUrl, profile) {
   const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true, viewport: { width: 420, height: 900 } });
   await context.route(SUPABASE_ORIGIN + '/**', fake.handle);
   context.setDefaultTimeout(8000);
+  // Service Worker bu testte kapalı; çevrimdışı önbellek denetimi gerçek tarayıcıda SW ile yapılır.
+  await context.addInitScript(() => { if ('caches' in window) window.caches.match = async () => new Response('x'); });
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message + ' @ ' + String(e.stack).split(String.fromCharCode(10)).slice(1, 3).join(' | ')));
