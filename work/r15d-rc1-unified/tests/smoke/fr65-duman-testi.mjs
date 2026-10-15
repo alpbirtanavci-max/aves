@@ -173,17 +173,14 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.waitForSelector('#fr65Back');
   });
   await report.step(`${tag} kaydı tamamla → mühür yazılır, veri özeti kendiliğinden açılır`, async () => {
-    await openAll(p);
-    for (const [prop, value] of [['marka', 'DumanGSM'], ['tip', 'T1'], ['imei', '123456789012345']]) {
-      await p.locator(`[data-fr65-capture-key="gsm_modulu"] [data-fr65-capture-prop="${prop}"]`).fill(value);
-    }
+    // GSM dahil hiçbir zorunlu alan doldurulmadan kapatılabilmeli.
     await p.click('#fr65SaveNow');
     await p.click('#fr65Complete');
     await p.waitForSelector('.fr65-ozet', { timeout: 15000 });
     const text = await p.locator('.fr65-ozet').innerText();
     assert.ok(text.includes('Denetim Özeti') && text.includes(seri), 'özet başlık/seri yok');
     assert.ok(text.includes(typed), 'özet girilen saha verisini içermiyor');
-    assert.ok(text.includes('DumanGSM'), 'özet GSM verisini içermiyor');
+    assert.ok(!text.includes('GSM modülü'), 'boş GSM satırı özette görünmemeli');
     await until(async () => (await p.locator('#fr65OzetDurum').innerText()).includes('Cihaz ve sunucu eşit'), 'özette senkron durumu görünmüyor');
     await until(() => serverRecord(s).denetim_durumu === 'Çalışma Tamamlandı' && /^[0-9a-f]{64}$/.test(serverRecord(s).butunluk_hash || ''), 'tamamlanma / mühür sunucuda yok');
     assert.equal(serverRecord(s).butunluk_ozeti.tur, 'fr65_saha_v1');
