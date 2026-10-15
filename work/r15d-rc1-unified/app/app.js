@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.90';
+const APP_VERSION = 'R15D-rc3.9.91';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -3954,10 +3954,12 @@ function showYeniForm() {
         };
       });
       document.getElementById('fr65SaveNow').onclick = async event => {
-        event.currentTarget.disabled = true;
+        // currentTarget await sonrasında null olur; düğmeyi önce yakala.
+        const button = event.currentTarget;
+        button.disabled = true;
         try { await flushCapture(); }
         catch { /* Draft journal keeps the unsaved values on this device. */ }
-        finally { event.currentTarget.disabled = false; }
+        finally { button.disabled = false; }
       };
       document.getElementById('fr65Complete').onclick = async event => {
         event.currentTarget.disabled = true;

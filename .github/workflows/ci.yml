@@ -18,6 +18,21 @@ jobs:
       - name: r15d-static-test (AGENTS.md bolum 5 - her zaman yesil)
         run: node work/r15d-rc1-unified/tests/r15d-static-test.mjs
 
+  duman-testi:
+    name: Duman testi (gercek tarayici, sahte Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: playwright-core kur (kayit/paket dosyasina yazilmaz)
+        run: npm i --no-save playwright-core@1.49.1
+      - name: B/E/H1 FR.65 saha akisi duman testi
+        env:
+          PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
+        run: node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs
+
   rls-test:
     name: RLS dort-persona senaryo testi
     runs-on: ubuntu-latest
