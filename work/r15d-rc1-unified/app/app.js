@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.89';
+const APP_VERSION = 'R15D-rc3.9.90';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -405,7 +405,8 @@ const API = (() => {
         Object.prototype.hasOwnProperty.call(patch, field)))];
       if (!fields.length) return null;
       try {
-        const check = await authFetch(`/rest/v1/${table}?select=${encodeURIComponent(fields.join(','))}&id=eq.${encodeURIComponent(id)}&limit=1`);
+        const selectedFields = [...new Set([...fields, 'updated_at'])];
+        const check = await authFetch(`/rest/v1/${table}?select=${encodeURIComponent(selectedFields.join(','))}&id=eq.${encodeURIComponent(id)}&limit=1`);
         if (!check.ok) return null;
         const current = await check.json();
         if (!Array.isArray(current) || current.length !== 1 ||
@@ -532,6 +533,80 @@ const Sync = (() => {
   let pushTimer = null;
 
   const KORUNAN_DURUMLAR = ['conflict', 'forbidden'];
+
+  async function retrySafeFr65Conflicts() {
+    if (typeof AVES_FR65_SAHA_TOOLS === 'undefined') return 0;
+    const items = (await DB.outboxAll())
+      .filter(item => item.sync_status === 'conflict' && item.last_error_code === 409 &&
+        item.table === 'denetimler' && item.conditional_update &&
+        item.conditional_update.fields?.includes('denetim_form_kayitlari') &&
+        item.rows?.[0]?.denetim_form_kayitlari?.saha_veri_akisi === 'fr65_saha_v1')
+      .sort((a, b) => a.seq - b.seq);
+    let recovered = 0;
+    for (const item of items) {
+      try {
+        const history = await DB.allByIndex('gecmis', 'byDenetim', item.inspection_id);
+        const linkedIds = new Set(item.history_event_ids || []);
+        let matchingHistory = history.filter(event => linkedIds.has(event.id));
+        if (!matchingHistory.length) matchingHistory = history.filter(event =>
+          event.created_at === item.created_at && event.islem_turu === 'denetim_guncelleme');
+        if (matchingHistory.length !== 1) continue;
+        const previousCapture = matchingHistory[0].onceki_deger?.denetim_form_kayitlari;
+        const remoteRows = await API.select('denetimler',
+          `select=id,updated_at,denetim_form_kayitlari,teknik_dosya_kayitlari&id=eq.${encodeURIComponent(item.inspection_id)}&limit=1`);
+        if (remoteRows.length !== 1 || !remoteRows[0].updated_at ||
+            !AVES_FR65_SAHA_TOOLS.sameCapture(previousCapture, remoteRows[0].denetim_form_kayitlari)) continue;
+
+        // The remote FR.65 snapshot still equals this operation's recorded base.
+        // Only the row version drifted, so merge this capture into the latest remote
+        // form objects and retain any unrelated form data before retrying.
+        const row = item.rows[0];
+        row.denetim_form_kayitlari = AVES_FR65_SAHA_TOOLS.mergeCapture(
+          remoteRows[0].denetim_form_kayitlari, row.denetim_form_kayitlari);
+        row.teknik_dosya_kayitlari = AVES_FR65_SAHA_TOOLS.mergeTechnicalRecord(
+          remoteRows[0].teknik_dosya_kayitlari, row.teknik_dosya_kayitlari, row.denetim_form_kayitlari);
+        item.conditional_update.expected_updated_at = remoteRows[0].updated_at;
+        item.sync_status = 'retry';
+        item.last_error_code = null;
+        item.last_error_message = null;
+        await DB.outboxPut(item);
+        recovered++;
+      } catch (error) {
+        // An unverifiable conflict remains protected; do not guess or overwrite.
+        console.warn('FR.65 çakışması güvenli biçimde yeniden eşleştirilemedi', error.message);
+      }
+    }
+    return recovered;
+  }
+
+  async function reconcileFr65ServerVersion(item, serverRow) {
+    const submitted = item.rows?.[0];
+    const clientVersion = submitted?.updated_at;
+    const serverVersion = serverRow?.updated_at;
+    if (!submitted?.denetim_form_kayitlari ||
+        submitted.denetim_form_kayitlari.saha_veri_akisi !== 'fr65_saha_v1' ||
+        !clientVersion || !serverVersion || clientVersion === serverVersion) return;
+
+    const allItems = await DB.outboxAll();
+    const rebased = AVES_FR65_SAHA_TOOLS.rebaseFollowingUpdates(allItems, item, serverVersion);
+    for (const following of rebased) await DB.outboxPut(following);
+
+    const hasLaterUpdate = allItems.some(next => next.seq > item.seq && next.inspection_id === item.inspection_id &&
+      next.table === 'denetimler' && next.conditional_update);
+    if (!hasLaterUpdate) {
+      const local = await DB.get('denetimler', submitted.id);
+      if (local && String(local.updated_at || '') === String(clientVersion)) {
+        local.updated_at = serverVersion;
+        await DB.put('denetimler', local);
+      }
+    }
+    if (typeof window !== 'undefined' && typeof CustomEvent === 'function') {
+      window.dispatchEvent(new CustomEvent('aves:fr65-server-version', {
+        detail: { inspectionId: item.inspection_id, clientVersion, serverVersion },
+      }));
+    }
+  }
+
   async function korunanKalemler() {
     return (await DB.outboxAll()).filter(it => KORUNAN_DURUMLAR.includes(it.sync_status));
   }
@@ -580,6 +655,7 @@ const Sync = (() => {
     pushRunning = true;
     let allSent = true;
     try {
+      await retrySafeFr65Conflicts();
       const items = (await DB.outboxAll()).filter(item =>
         !item.sync_status || ['pending', 'retry', 'sending'].includes(item.sync_status)
       );
@@ -630,7 +706,8 @@ const Sync = (() => {
             for (const field of ['son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at']) {
               patch[field] = rows[0][field] ?? null;
             }
-            await API.conditionalUpdate(item.table, rows[0].id, condition.expected_updated_at, patch, condition.fields);
+            const serverRow = await API.conditionalUpdate(item.table, rows[0].id, condition.expected_updated_at, patch, condition.fields);
+            await reconcileFr65ServerVersion(item, serverRow);
           } else {
             await API.upsert(item.table, item.rows);
           }
@@ -677,6 +754,13 @@ const Sync = (() => {
           break; // sıra korunur; sonraki denemede kaldığı yerden devam
         }
         await updatePill();
+      }
+      const remaining = await DB.outboxAll();
+      const warning = await DB.kvGet('sync_warning');
+      if (warning?.kind === 'conflict' && !remaining.some(item => item.sync_status === 'conflict')) {
+        await DB.kvDel('sync_warning');
+      } else if (warning?.kind === 'forbidden' && !remaining.some(item => item.sync_status === 'forbidden')) {
+        await DB.kvDel('sync_warning');
       }
     } finally {
       pushRunning = false;
@@ -1077,6 +1161,7 @@ async function localWrite(table, rows, store, options = {}) {
   };
   if (options.insert_only) outboxItem.insert_only = true;
   if (options.conditional_update) outboxItem.conditional_update = options.conditional_update;
+  if (historyItems.length) outboxItem.history_event_ids = historyItems.map(item => item.id);
   const historyOutboxItem = historyItems.length ? {
     operation_id: crypto.randomUUID(),
     user_id: Profile.email || API.email || null,
@@ -1105,6 +1190,7 @@ const UI = (() => {
   let currentDenetimId = null;
   let fotografSayilari = new Map();
   let fotografBekleyenSayisi = 0;
+  let activeFr65VersionListener = null;
   const fr65WriterIds = new Map();
 
   function fr65KimlikKilitAl(lockName) {
@@ -1974,6 +2060,10 @@ const UI = (() => {
   }
 
   async function showList() {
+    if (activeFr65VersionListener) {
+      window.removeEventListener('aves:fr65-server-version', activeFr65VersionListener);
+      activeFr65VersionListener = null;
+    }
     const leavingInspection = currentView === 'inspection' && !!currentDenetimId;
     let denetimler, sahaAll;
     if (leavingInspection) app.style.pointerEvents = 'none';
@@ -3155,6 +3245,10 @@ function showYeniForm() {
   }
 
   async function renderFr65SahaKaydi(initialDenetim = null) {
+    if (activeFr65VersionListener) {
+      window.removeEventListener('aves:fr65-server-version', activeFr65VersionListener);
+      activeFr65VersionListener = null;
+    }
     const d = initialDenetim || await DB.get('denetimler', currentDenetimId);
     if (!d || d.id !== currentDenetimId || !fr65SahaKaydiMi(d)) {
       activeFr65Flush = null;
@@ -3191,6 +3285,16 @@ function showYeniForm() {
     }
     let ownsCaptureDraft = !!ownCaptureDraft && !captureDraftWriterConflict && inspectedCaptureDraft.kind !== 'same';
     let lastCaptureDraftTs = ownsCaptureDraft ? ownCaptureDraft.ts : null;
+    activeFr65VersionListener = event => {
+      const detail = event.detail || {};
+      if (detail.inspectionId !== d.id || baseUpdatedAt !== detail.clientVersion) return;
+      baseUpdatedAt = detail.serverVersion;
+      if (ownsCaptureDraft) {
+        AVES_FORM_DRAFT_JOURNAL.rebaseFr65Capture(
+          localStorage, d.id, API.email, detail.clientVersion, detail.serverVersion, captureWriterId);
+      }
+    };
+    window.addEventListener('aves:fr65-server-version', activeFr65VersionListener);
     let editVersion = 0;
     let saveTimer = null;
     let saveChain = Promise.resolve();
@@ -3603,6 +3707,7 @@ function showYeniForm() {
       <div class="inspection-toolbar">
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">
+          <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
         </div>
@@ -3711,6 +3816,53 @@ function showYeniForm() {
     if (reopen) reopen.onclick = () => duzeltmeNedeniSec(d);
     const deleteAction = document.getElementById('fr65Delete');
     if (deleteAction) deleteAction.onclick = () => fr65SahaKaydiniSil(d, deleteAction);
+    const printAction = document.getElementById('fr65Print');
+    if (printAction) printAction.onclick = async () => {
+      // Open synchronously from the button gesture so mobile popup blockers allow the report.
+      const reportWindow = window.open('about:blank', '_blank');
+      if (!reportWindow) { toast('Çıktı penceresi engellendi; bu site için açılır pencerelere izin verin'); return; }
+      printAction.disabled = true;
+      try {
+        let saveWarning = '';
+        try {
+          if (canEdit) await flushCapture();
+        } catch (error) {
+          saveWarning = error.message || 'Son kayıt doğrulanamadı';
+        }
+        const report = AVES_FR65_SAHA_TOOLS.buildReport(
+          d, collectValues(), sections, fieldConditions);
+        let syncText = saveWarning
+          ? `Kaydetme doğrulanamadı: ${saveWarning}. Bu çıktı ekranda görünen son değerleri içerir; cihaz/sunucu kaydını ayrıca kontrol edin.`
+          : 'Bu çıktı, ekranda görünen FR.65 saha verilerinin yazdırılabilir özetidir.';
+        try {
+          const summary = await Sync.denetimSyncOzeti(d.id);
+          if (!saveWarning && summary.korunan) syncText = `${summary.korunan} işlem cihazda korumada; sunucuya aktarım tamamlanmadı.`;
+          else if (!saveWarning && summary.bekleyen) syncText = `Cihaza kaydedildi; ${summary.bekleyen} işlem sunucu aktarımını bekliyor.`;
+          else if (!saveWarning && !summary.toplam) syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.';
+        } catch (error) { console.warn('FR.65 çıktı senkron durumu okunamadı', error); }
+
+        const metadataHtml = report.metadata.map(item => `<tr><th>${esc(item.label)}</th><td>${esc(item.value)}</td></tr>`).join('');
+        const sectionsHtml = report.sections.map(section => `<section><h2>${esc(section.title)}</h2><table><tbody>${section.fields.map(field =>
+          `<tr><th>${esc(field.label)}</th><td>${esc(field.value)}</td></tr>`).join('')}</tbody></table></section>`).join('');
+        const title = `${report.title} · ${d.musteri_unvani || ''} · ${d.asansor_seri_no || ''}`;
+        const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>
+          *{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#20235b;margin:18px auto;padding:0 18px;max-width:900px}h1{font-size:22px;margin:0 0 5px}h2{font-size:15px;margin:22px 0 7px;padding-bottom:5px;border-bottom:2px solid #ea0048;break-after:avoid}.sub{color:#62677c;margin:0 0 16px}.notice{border:1px solid #d7dbe7;background:#f5f6fa;border-radius:6px;padding:9px 11px;margin:14px 0;color:#33384f;white-space:pre-wrap}.notice.warn{border-color:#d89835;background:#fff5e4}table{width:100%;border-collapse:collapse;table-layout:fixed;margin:5px 0 14px}th,td{border:1px solid #d8dbe5;padding:7px 9px;vertical-align:top;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}th{width:32%;background:#f1f3f8;font-weight:700}section, tr{break-inside:avoid}.empty{color:#62677c;font-style:italic;padding:12px 0}.footer{margin-top:24px;padding-top:9px;border-top:1px solid #d8dbe5;color:#62677c;font-size:10px}.no-print{border:0;border-radius:7px;background:#20235b;color:white;padding:10px 16px;font-weight:700;cursor:pointer;margin:0 0 14px}@media print{body{margin:12mm auto;padding:0}.no-print{display:none!important}}
+        </style></head><body><button class="no-print" onclick="window.print()">Yazdır / PDF olarak kaydet</button><h1>${esc(report.title)}</h1><p class="sub">${esc(d.modul || '')} · ÜB.FR.65 saha veri kaydı · ${report.fieldCount} kayıtlı alan</p>
+        <table><tbody>${metadataHtml || '<tr><td>Denetim bilgisi yok</td></tr>'}</tbody></table>
+        <div class="notice ${saveWarning ? 'warn' : ''}">${esc(syncText)}</div>
+        ${sectionsHtml || '<p class="empty">Bu denetimde henüz FR.65 saha alanı doldurulmamış.</p>'}
+        <div class="footer">Bu çıktı sahada kaydedilen bilgilerin özetidir. Uygunluk veya belgelendirme kararı içermez ve resmî denetim sonuç raporunun yerine geçmez.</div></body></html>`;
+        reportWindow.document.open();
+        reportWindow.document.write(html);
+        reportWindow.document.close();
+        reportWindow.focus();
+        setTimeout(() => { try { reportWindow.print(); } catch {} }, 250);
+      } catch (error) {
+        console.error('FR.65 çıktı oluşturulamadı', error);
+        try { reportWindow.close(); } catch {}
+        toast('FR.65 çıktısı oluşturulamadı; denetim verisi korunuyor');
+      } finally { printAction.disabled = false; }
+    };
     const restoreDraft = document.getElementById('fr65RestoreDraft');
     if (restoreDraft) restoreDraft.onclick = async event => {
       event.currentTarget.disabled = true;
