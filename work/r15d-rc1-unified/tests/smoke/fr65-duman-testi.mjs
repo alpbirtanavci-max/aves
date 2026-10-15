@@ -135,72 +135,84 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.ok(text.includes(typed), 'rapor girilen değeri içermiyor');
     await popup.close();
   });
-  await report.step(`${tag} "Çevrimdışı Kontrol" → bu cihazda hazır işaretlenir`, async () => {
-    await p.click('#fr65Offline');
-    await p.waitForSelector('.preflight-list');
-    const heading = await p.locator('.overlay h3').first().innerText();
-    assert.ok(heading.includes('✓ Çevrimdışı çalışmaya hazır'), `hazır değil: ${heading}`);
-    const marker = await p.evaluate(async id => await DB.kvGet(`offline_ready_${id}`), serverRecord(s).id);
-    assert.equal(marker?.fr65, true, 'hazırlık işareti yazılmadı');
-    await p.click('.overlay .close');
+  await report.step(`${tag} çevrimdışı hazırlık sessizce işaretlenir (düğme yok)`, async () => {
+    assert.equal(await p.locator('#fr65Offline').count(), 0, 'çevrimdışı düğmesi kalkmalıydı');
+    assert.equal(await p.locator('#fr65Backup').count(), 0, 'kayıt içi yedek düğmesi kalkmalıydı');
+    assert.equal(await p.locator('#fr65Summary').count(), 0, 'özet düğmesi tamamlanmadan görünmemeli');
+    await until(async () => (await p.evaluate(async id => (await DB.kvGet(`offline_ready_${id}`))?.fr65 === true, serverRecord(s).id)), 'hazırlık işareti yazılmadı');
   });
-  await report.step(`${tag} "Yedek" → geçerli JSON yedek dosyası iner`, async () => {
-    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#fr65Backup')]);
-    const text = await (await import('node:fs/promises')).readFile(await download.path(), 'utf8');
-    const backup = JSON.parse(text);
-    assert.equal(backup.format, 'aves-fr65-yedek');
-    assert.equal(backup.kayit.id, serverRecord(s).id);
-    assert.ok(Object.values(backup.kayit.denetim_form_kayitlari.forms.FR65.values).some(v => v?.field_value === typed), 'yedek girilen değeri içermiyor');
-    assert.match(backup.paket_hash, /^[0-9a-f]{64}$/);
-    assert.ok(download.suggestedFilename().includes(seri));
+  await report.step(`${tag} senkron durumu en üstte sabit`, async () => {
+    const box = await p.locator('#localSyncState').boundingBox();
+    await p.mouse.wheel(0, 1500);
+    await p.waitForTimeout(250);
+    const after = await p.locator('#localSyncState').boundingBox();
+    assert.ok(after.y >= 0 && after.y < 120, `senkron şeridi kaydırınca görünmüyor (y=${after.y})`);
+    assert.ok(box && after);
+    await p.mouse.wheel(0, -1500);
   });
-  await report.step(`${tag} liste "Yedekle" → tüm cihaz yedeği iner`, async () => {
+  await report.step(`${tag} listede "Yedek al…" küçük bağlantı; seçilen denetimin yedeği iner`, async () => {
     await p.click('#fr65Back');
-    await p.waitForSelector('#btnTumYedek');
-    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#btnTumYedek')]);
+    await p.waitForSelector('#btnYedekSec');
+    assert.equal(await p.locator('#btnTumYedek').count(), 0, 'büyük yedek düğmesi kalkmalıydı');
+    const newBtn = await p.locator('#btnYeni').boundingBox();
+    const bkBtn = await p.locator('#btnYedekSec').boundingBox();
+    assert.ok(bkBtn.y > newBtn.y + newBtn.height, 'yedek bağlantısı listenin altında olmalı');
+    await p.click('#btnYedekSec');
+    await p.waitForSelector('#yedekTumu');
+    assert.equal(await p.locator('#yedekIndir').isDisabled(), true, 'seçim yokken indirme kapalı olmalı');
+    await p.click('#yedekTumu');
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#yedekIndir')]);
     const backup = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'));
     assert.equal(backup.format, 'aves-cihaz-yedek');
-    assert.ok(backup.denetimler.some(x => x.id === serverRecord(s).id), 'yedekte denetim yok');
+    const rec = backup.denetimler.find(x => x.id === serverRecord(s).id);
+    assert.ok(rec, 'yedekte denetim yok');
+    assert.ok(Object.values(rec.denetim_form_kayitlari.forms.FR65.values).some(v => v?.field_value === typed), 'yedek girilen değeri içermiyor');
+    assert.match(backup.paket_hash, /^[0-9a-f]{64}$/);
+    await p.waitForSelector('#yedekIndir', { state: 'detached' });
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
-  await report.step(`${tag} kaydı tamamla → bütünlük mührü sunucuya yazılır`, async () => {
+  await report.step(`${tag} kaydı tamamla → mühür yazılır, veri özeti kendiliğinden açılır`, async () => {
     await openAll(p);
     for (const [prop, value] of [['marka', 'DumanGSM'], ['tip', 'T1'], ['imei', '123456789012345']]) {
       await p.locator(`[data-fr65-capture-key="gsm_modulu"] [data-fr65-capture-prop="${prop}"]`).fill(value);
     }
     await p.click('#fr65SaveNow');
     await p.click('#fr65Complete');
-    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await p.waitForSelector('.fr65-ozet', { timeout: 15000 });
+    const text = await p.locator('.fr65-ozet').innerText();
+    assert.ok(text.includes('Denetim Özeti') && text.includes(seri), 'özet başlık/seri yok');
+    assert.ok(text.includes(typed), 'özet girilen saha verisini içermiyor');
+    assert.ok(text.includes('DumanGSM'), 'özet GSM verisini içermiyor');
+    await until(async () => (await p.locator('#fr65OzetDurum').innerText()).includes('Cihaz ve sunucu eşit'), 'özette senkron durumu görünmüyor');
     await until(() => serverRecord(s).denetim_durumu === 'Çalışma Tamamlandı' && /^[0-9a-f]{64}$/.test(serverRecord(s).butunluk_hash || ''), 'tamamlanma / mühür sunucuda yok');
     assert.equal(serverRecord(s).butunluk_ozeti.tur, 'fr65_saha_v1');
-  });
-  await report.step(`${tag} denetim özeti → mühür geçerli, yedek ve senkron görünür`, async () => {
-    await p.getByText(seri).first().click();
-    await p.waitForSelector('#fr65Summary');
-    await p.click('#fr65Summary');
-    const text = await p.locator('.overlay .modal').innerText();
-    assert.ok(text.includes('Bütünlük mührü geçerli'), 'mühür geçerli görünmüyor');
-    assert.ok(text.includes('Cihaz ve sunucu eşit'), 'senkron durumu görünmüyor');
-    assert.ok(text.includes('Son yedek'), 'yedek durumu görünmüyor');
+    assert.ok((await p.locator('#fr65OzetDurum').innerText()).includes('mühür geçerli'));
   });
   if (persona.rol === 'yonetici') {
-    await report.step(`${tag} kurumsal arşive aktar → sunucuda işaretlenir, listede "arşivde"`, async () => {
+    await report.step(`${tag} özetten kurumsal arşive aktar → sunucuda işaretlenir`, async () => {
       await p.click('#fr65ArsivToggle');
       await until(() => !!serverRecord(s).arsive_aktarildi_at && !!serverRecord(s).arsive_aktaran_email, 'arşiv işareti sunucuda yok');
-      await p.waitForSelector('.overlay .modal:has-text("Kurumsal arşive aktarıldı")');
-      await p.click('.overlay .close');
-      await p.click('#fr65Back');
-      await p.waitForSelector('.pill:has-text("arşivde")');
-      await p.getByText(seri).first().click();
-      await p.waitForSelector('#fr65Back');
     });
   } else {
     await report.step(`${tag} mühendis için arşiv düğmesi görünmez`, async () => {
       assert.equal(await p.locator('#fr65ArsivToggle').count(), 0);
     });
-    await p.click('.overlay .close');
   }
+  await report.step(`${tag} "Tamam" hemen kapatır → liste; arşiv etiketi ve özet düğmesi`, async () => {
+    const t0 = Date.now();
+    await p.click('#fr65OzetKapat');
+    await p.waitForSelector('#btnYeni');
+    assert.ok(Date.now() - t0 < 1500, `kapanış yavaş: ${Date.now() - t0} ms`);
+    assert.equal(await p.locator('.fr65-ozet').count(), 0);
+    if (persona.rol === 'yonetici') await p.waitForSelector('.pill:has-text("arşivde")');
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Summary');
+    await p.click('#fr65Summary');
+    await p.waitForSelector('.fr65-ozet');
+    await p.click('.fr65-ozet .close');
+    await p.waitForSelector('.fr65-ozet', { state: 'detached' });
+  });
   const canDelete = persona.rol === 'yonetici';
   await report.step(`${tag} silme düğmesi: ${canDelete ? 'görünür' : 'görünmez'}`, async () => {
     const count = await p.locator('#fr65Delete').count();

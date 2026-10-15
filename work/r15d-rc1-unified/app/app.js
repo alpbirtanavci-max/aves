@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.92';
+const APP_VERSION = 'R15D-rc3.9.93';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -686,6 +686,11 @@ const Sync = (() => {
               throw err;
             }
             await API.insertIgnoreDuplicates(item.table, rows);
+            // Sunucu updated_at'i kendisi damgalar; sıradaki koşullu güncellemeler yanlış 409 almasın diye eşle.
+            try {
+              const created = await API.select('denetimler', `select=id,updated_at&id=eq.${encodeURIComponent(rows[0].id)}&limit=1`);
+              if (created.length === 1) await reconcileFr65ServerVersion(item, created[0]);
+            } catch (error) { console.warn('FR.65 yeni kayıt sürümü eşlenemedi', error.message); }
           } else if (item.conditional_update) {
             const rows = item.rows || [];
             const condition = item.conditional_update;
@@ -1599,6 +1604,7 @@ const UI = (() => {
   const pendingEditorWrites = new Set();
   const editorDraftTimers = new Map();
   let activeFr65Flush = null;
+  let fr65AktifRapor = null; // özet panelinin bölüm/koşul tanımları (render sırasında dolar)
   let activeFr65PositionSaver = null;
   let activeFr65ScrollHandler = null;
   let activeFr65ScrollSaveTimer = null;
@@ -1772,120 +1778,130 @@ const UI = (() => {
     setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
-  async function fr65YedekPaketiOlustur(d) {
-    const gecmis = await DB.allByIndex('gecmis', 'byDenetim', d.id);
-    const bekleyen = (await DB.outboxAll()).filter(item => item.inspection_id === d.id);
-    const butunluk = await fr65ButunlukOzetiHesapla(d);
+  // Yedek: seçilen denetimlerin cihazdaki tüm verisi (fotoğraf dosyaları hariç).
+  async function yedekPaketiOlustur(idler) {
+    const secili = new Set(idler);
+    const denetimler = (await DB.all('denetimler')).filter(item => secili.has(item.id) && denetimGorunebilirMi(item));
+    const gecerli = new Set(denetimler.map(item => item.id));
+    const saha = (await DB.all('saha')).filter(row => gecerli.has(row.denetim_id));
+    const gecmis = (await DB.all('gecmis')).filter(row => gecerli.has(row.denetim_id));
+    const bekleyen = (await DB.outboxAll()).filter(item => gecerli.has(item.inspection_id));
+    const fotografSayisi = (await DB.all('fotograflar')).filter(foto => gecerli.has(foto.denetim_id) && !foto.deleted_at).length;
     const govde = {
-      format: 'aves-fr65-yedek', surum: 1,
+      format: 'aves-cihaz-yedek', surum: 1,
       olusturuldu: new Date().toISOString(), uygulama: APP_VERSION,
       olusturan: Profile.email || API.email || null,
-      kayit: d, gecmis, bekleyen_senkron: bekleyen, veri_hash: butunluk.hash,
+      not: 'Fotoğraf dosyaları bu yedeğe dahil değildir; fotoğraflar Fotoğraf Arşivi (ZIP) ile ayrıca indirilir.',
+      fotograf_sayisi: fotografSayisi,
+      denetimler, saha_kontrol: saha, gecmis, bekleyen_senkron: bekleyen,
     };
     return { ...govde, paket_hash: await sha256Hex(stableStringify(govde)) };
   }
 
-  async function fr65YedekIndir(denetimId) {
-    const d = await DB.get('denetimler', denetimId);
-    if (!d || !fr65SahaKaydiMi(d)) { toast('Yedeklenecek FR.65 kaydı bulunamadı'); return false; }
-    try {
-      const paket = await fr65YedekPaketiOlustur(d);
-      const tarih = paket.olusturuldu.slice(0, 10);
-      const seri = String(d.asansor_seri_no || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_');
-      await yedekDosyasiIndir(`AVES_FR65_${seri}_${tarih}_yedek.json`, paket);
-      await DB.kvSet(`fr65_yedek_${d.id}`, { at: paket.olusturuldu, hash: paket.veri_hash, paket_hash: paket.paket_hash });
-      toast('Yedek dosyası hazırlandı');
-      return true;
-    } catch (error) {
-      if (error && error.name === 'AbortError') return false;
-      console.error('FR.65 yedeği oluşturulamadı', error);
-      toast('Yedek oluşturulamadı; kayıt cihazda korunuyor');
-      return false;
-    }
-  }
-
-  async function tumVeriYedegiIndir(button = null) {
+  async function yedekIndir(idler, button = null) {
     if (button) button.disabled = true;
     try {
-      const denetimler = (await DB.all('denetimler')).filter(denetimGorunebilirMi);
-      const idler = new Set(denetimler.map(item => item.id));
-      const saha = (await DB.all('saha')).filter(row => idler.has(row.denetim_id));
-      const gecmis = (await DB.all('gecmis')).filter(row => idler.has(row.denetim_id));
-      const bekleyen = (await DB.outboxAll()).filter(item => idler.has(item.inspection_id));
-      const fotografSayisi = (await DB.all('fotograflar')).filter(foto => idler.has(foto.denetim_id) && !foto.deleted_at).length;
-      const govde = {
-        format: 'aves-cihaz-yedek', surum: 1,
-        olusturuldu: new Date().toISOString(), uygulama: APP_VERSION,
-        olusturan: Profile.email || API.email || null,
-        not: 'Fotoğraf dosyaları bu yedeğe dahil değildir; fotoğraflar Fotoğraf Arşivi (ZIP) ile ayrıca indirilir.',
-        fotograf_sayisi: fotografSayisi,
-        denetimler, saha_kontrol: saha, gecmis, bekleyen_senkron: bekleyen,
-      };
-      const paket = { ...govde, paket_hash: await sha256Hex(stableStringify(govde)) };
-      await yedekDosyasiIndir(`AVES_cihaz_yedegi_${paket.olusturuldu.slice(0, 10)}.json`, paket);
-      await DB.kvSet('cihaz_yedegi_son', { at: paket.olusturuldu, adet: denetimler.length, paket_hash: paket.paket_hash });
-      toast(`${denetimler.length} denetimlik yedek hazırlandı`);
+      const paket = await yedekPaketiOlustur(idler);
+      if (!paket.denetimler.length) { toast('Yedeklenecek denetim bulunamadı'); return; }
+      const ad = paket.denetimler.length === 1
+        ? `AVES_${String(paket.denetimler[0].asansor_seri_no || 'denetim').replace(/[^A-Za-z0-9._-]+/g, '_')}_${paket.olusturuldu.slice(0, 10)}_yedek.json`
+        : `AVES_cihaz_yedegi_${paket.olusturuldu.slice(0, 10)}.json`;
+      await yedekDosyasiIndir(ad, paket);
+      for (const item of paket.denetimler) await DB.kvSet(`fr65_yedek_${item.id}`, { at: paket.olusturuldu, paket_hash: paket.paket_hash });
+      toast(`${paket.denetimler.length} denetimlik yedek hazırlandı`);
     } catch (error) {
       if (!(error && error.name === 'AbortError')) {
-        console.error('Cihaz yedeği oluşturulamadı', error);
+        console.error('Yedek oluşturulamadı', error);
         toast('Yedek oluşturulamadı; veriler cihazda korunuyor');
       }
     } finally { if (button) button.disabled = false; }
   }
 
-  async function fr65OzetiniGoster(denetimId) {
-    const d = await DB.get('denetimler', denetimId);
-    if (!d || !fr65SahaKaydiMi(d)) { toast('FR.65 kaydı bulunamadı'); return; }
-    const record = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
-    const count = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(record, d.tahrik_tipi);
-    const tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
-    const tarihGoster = value => value ? new Date(value).toLocaleString('tr-TR') : '';
-    const guncel = await fr65ButunlukOzetiHesapla(d);
-    const sync = await Sync.denetimSyncOzeti(d.id);
-    const hazirlik = await cevrimdisiHazirlikDurumu(d, []);
-    const yedek = await DB.kvGet(`fr65_yedek_${d.id}`);
-    const gecmisAdedi = (await DB.allByIndex('gecmis', 'byDenetim', d.id)).length;
-    const butunlukKart = d.butunluk_hash
-      ? (d.butunluk_hash === guncel.hash
-        ? `<div class="integrity-card ok"><b>✓ Bütünlük mührü geçerli</b><small>Kayıt kapatıldığından beri değişmedi · ${tarihGoster(d.butunluk_hesaplandi_at)}<br>Parmak izi: ${esc(String(d.butunluk_hash).slice(0, 16))}</small></div>`
-        : `<div class="integrity-card pending"><b>⚠ Bütünlük mührü mevcut veriyle eşleşmiyor</b><small>Kayıt kapatıldıktan sonra değiştirilmiş veya yeniden açılmış olabilir. Değişiklik geçmişini inceleyin.<br>Mühür: ${esc(String(d.butunluk_hash).slice(0, 16))} · Şimdiki: ${esc(guncel.hash.slice(0, 16))}</small></div>`)
-      : `<div class="integrity-card pending"><b>Bütünlük mührü yok</b><small>${tamamlandi ? 'Bu kayıt mühür özelliğinden önce kapatılmış.' : 'Kayıt kapatıldığında saha verisinin parmak izi mühürlenir.'}</small></div>`;
-    const senkronMetni = sync.korunan ? `${sync.korunan} işlem cihazda korumada; sunucuya aktarılmadı`
-      : sync.bekleyen ? `${sync.bekleyen} işlem sunucu aktarımını bekliyor`
-      : 'Cihaz ve sunucu eşit; bekleyen aktarım yok';
-    const arsivli = !!d.arsive_aktarildi_at;
+  // Seçim ekranı anında açılır; yalnız cihazdaki kayıt listesini okur.
+  async function yedekSecimiGoster() {
+    const denetimler = (await DB.all('denetimler')).filter(denetimGorunebilirMi)
+      .sort((a, b) => String(b.denetim_tarihi || '').localeCompare(String(a.denetim_tarihi || '')));
     const ov = document.createElement('div');
     ov.className = 'overlay';
     ov.innerHTML = `<div class="modal">
       <button class="close" aria-label="Kapat">×</button>
-      <h3>FR.65 Denetim Özeti</h3>
-      <div class="onay-box">
-        <div class="onay-satir"><span>Firma</span><b>${esc(d.musteri_unvani)}</b></div>
-        <div class="onay-satir"><span>Asansör seri no</span><b>${esc(d.asansor_seri_no)}</b></div>
-        <div class="onay-satir"><span>Modül</span><b>${esc(d.modul || '')}</b></div>
-        <div class="onay-satir"><span>Denetim tarihi</span><b>${esc(d.denetim_tarihi || '')}</b></div>
-        <div class="onay-satir"><span>Denetimi yapan</span><b>${esc(d.denetimi_yapan || d.olusturan_ad || d.olusturan_email || 'Kayıt yok')}</b></div>
-        <div class="onay-satir"><span>Durum</span><b>${esc(d.denetim_durumu || 'Devam Ediyor')}</b></div>
-      </div>
-      <div class="integrity-card ${tamamlandi ? 'ok' : 'pending'}"><b>Saha verisi</b><small>${count.recorded}/${count.total} FR.65 alanında veri · ${gecmisAdedi} değişiklik kaydı<br>Bu özet uygunluk veya belgelendirme kararı içermez.</small></div>
-      ${butunlukKart}
-      <div class="integrity-card ${sync.korunan || sync.bekleyen ? 'pending' : 'ok'}"><b>Sunucu senkronu</b><small>${esc(senkronMetni)}</small></div>
-      <div class="integrity-card ${hazirlik.ready ? 'ok' : 'pending'}"><b>${hazirlik.ready ? '✓ Çevrimdışı çalışmaya hazır' : '⚠ Çevrimdışı hazırlık doğrulanmadı'}</b><small>${esc(hazirlik.detail)}</small></div>
-      <div class="integrity-card ${yedek ? 'ok' : 'pending'}"><b>Veri yedeği</b><small>${yedek ? `Son yedek: ${tarihGoster(yedek.at)}` : 'Bu kayıt için bu cihazdan yedek alınmadı'}</small></div>
-      <div class="integrity-card ${arsivli ? 'ok' : 'pending'}"><b>${arsivli ? '✓ Kurumsal arşive aktarıldı' : 'Kurumsal arşive aktarılmadı'}</b><small>${arsivli
-        ? `${tarihGoster(d.arsive_aktarildi_at)}${d.arsive_aktaran_email ? ` · ${esc(d.arsive_aktaran_email)}` : ''}`
-        : 'Resmî dosya arşive konduğunda yönetim burada işaretler'}</small></div>
-      <button class="btn btn-ghost" id="fr65OzetYedek" style="margin-top:8px">💾 Yedeği indir (JSON)</button>
-      ${Profile.canSeeAllInspections && (tamamlandi || arsivli) ? `<button class="btn btn-ghost" id="fr65ArsivToggle" style="margin-top:8px">${arsivli ? 'Arşiv işaretini kaldır' : 'Arşive aktarıldı olarak işaretle'}</button>` : ''}
+      <h3>Yedek al</h3>
+      ${denetimler.length ? `<label class="backup-all"><input type="checkbox" id="yedekTumu"> Tümünü seç (${denetimler.length})</label>
+      <div class="backup-list">${denetimler.map(item => `<label class="backup-row"><input type="checkbox" class="yedek-sec" value="${esc(item.id)}"><span><b>${esc(item.musteri_unvani || 'Firma yok')}</b><small>${esc(item.asansor_seri_no || '')} · ${esc(item.modul || '')} · ${esc(item.denetim_tarihi || '')}</small></span></label>`).join('')}</div>
+      <button class="btn btn-primary" id="yedekIndir" disabled>Yedeği indir</button>
+      <small class="backup-note">Veriler girdikçe ve bağlantı varken sunucuya zaten yedeklenir. Bu dosya ek bir güvenlik kopyasıdır; fotoğraf dosyaları dahil değildir.</small>`
+        : '<div class="empty">Yedeklenecek denetim yok.</div>'}
     </div>`;
     document.body.appendChild(ov);
     const close = () => ov.remove();
     ov.querySelector('.close').onclick = close;
     ov.onclick = event => { if (event.target === ov) close(); };
-    ov.querySelector('#fr65OzetYedek').onclick = async () => {
-      await fr65YedekIndir(d.id);
-      close(); await fr65OzetiniGoster(d.id);
+    const download = ov.querySelector('#yedekIndir');
+    if (!download) return;
+    const boxes = [...ov.querySelectorAll('.yedek-sec')];
+    const refresh = () => {
+      const n = boxes.filter(box => box.checked).length;
+      download.disabled = n === 0;
+      download.textContent = n ? `Yedeği indir (${n})` : 'Yedeği indir';
+      ov.querySelector('#yedekTumu').checked = n === boxes.length;
     };
+    ov.querySelector('#yedekTumu').onchange = event => { boxes.forEach(box => { box.checked = event.target.checked; }); refresh(); };
+    boxes.forEach(box => { box.onchange = refresh; });
+    download.onclick = async () => {
+      await yedekIndir(boxes.filter(box => box.checked).map(box => box.value), download);
+      close();
+    };
+  }
+
+  // Girilen saha verilerinin özeti. Kayıt kapatılınca otomatik açılır; kapatılmış kayıttan da açılabilir.
+  async function fr65OzetiniGoster(denetimId, { onClose = null } = {}) {
+    const d = await DB.get('denetimler', denetimId);
+    const ctx = fr65AktifRapor && fr65AktifRapor.id === denetimId ? fr65AktifRapor : null;
+    if (!d || !fr65SahaKaydiMi(d) || !ctx) { toast('Denetim özeti hazırlanamadı'); if (onClose) onClose(); return; }
+    const record = AVES_DENETIM_FORM_SETI.normalize(d.denetim_form_kayitlari, d.teknik_dosya_kayitlari);
+    const report = AVES_FR65_SAHA_TOOLS.buildReport(d, record.forms?.FR65?.values || {}, ctx.sections, ctx.fieldConditions);
+    const arsivli = !!d.arsive_aktarildi_at;
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal fr65-ozet">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Denetim Özeti</h3>
+      <div class="fr65-ozet-meta">${report.metadata.map(item => `<div><span>${esc(item.label)}</span><b>${esc(item.value)}</b></div>`).join('')}</div>
+      <div class="fr65-ozet-durum" id="fr65OzetDurum">Durum kontrol ediliyor…</div>
+      ${report.sections.length ? report.sections.map(section => `<section class="fr65-ozet-bolum"><h4>${esc(section.title)}</h4>${section.fields.map(field => `<div class="fr65-ozet-satir"><span>${esc(field.label)}</span><b>${esc(field.value)}</b></div>`).join('')}</section>`).join('')
+        : '<div class="empty">Bu denetimde kayıtlı saha verisi yok.</div>'}
+      ${Profile.canSeeAllInspections ? `<button class="btn btn-ghost" id="fr65ArsivToggle">${arsivli ? '📁 Arşiv işaretini kaldır' : '📁 Kurumsal arşive aktarıldı olarak işaretle'}</button>` : ''}
+      <button class="btn btn-primary" id="fr65OzetKapat">Tamam</button>
+    </div>`;
+    document.body.appendChild(ov);
+    let kapandi = false;
+    let durumZamani = null;
+    const close = () => { if (kapandi) return; kapandi = true; clearInterval(durumZamani); ov.remove(); if (onClose) onClose(); };
+    ov.querySelector('.close').onclick = close;
+    ov.querySelector('#fr65OzetKapat').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+
+    // Özet açıldıktan sonra tamamlanır (açılışı geciktirmez) ve senkron bitene kadar kendini yeniler.
+    const durumuYenile = async () => {
+      try {
+        const sync = await Sync.denetimSyncOzeti(d.id);
+        const guncel = await fr65ButunlukOzetiHesapla(await DB.get('denetimler', d.id) || d);
+        const sonKayit = await DB.get('denetimler', d.id) || d;
+        const muhurGecerli = !!sonKayit.butunluk_hash && sonKayit.butunluk_hash === guncel.hash;
+        const senkron = sync.korunan ? `⚠ ${sync.korunan} işlem cihazda korumada`
+          : sync.bekleyen ? `Cihaza kaydedildi · ${sync.bekleyen} işlem sunucuyu bekliyor`
+          : '✓ Cihaz ve sunucu eşit';
+        const el = ov.querySelector('#fr65OzetDurum');
+        if (el) {
+          el.className = `fr65-ozet-durum ${sync.korunan ? 'error' : (sync.bekleyen ? 'pending' : 'ok')}`;
+          el.textContent = `${senkron}${muhurGecerli ? ' · mühür geçerli' : (sonKayit.butunluk_hash ? ' · ⚠ mühür eşleşmiyor' : '')}${arsivli ? ' · arşivde' : ''}`;
+        }
+        if (!sync.korunan && !sync.bekleyen) clearInterval(durumZamani);
+      } catch (error) { console.warn('FR.65 özet durumu okunamadı', error); }
+    };
+    durumuYenile();
+    durumZamani = setInterval(durumuYenile, 1000);
+
     const arsivToggle = ov.querySelector('#fr65ArsivToggle');
     if (arsivToggle) arsivToggle.onclick = async () => {
       arsivToggle.disabled = true;
@@ -1893,9 +1909,9 @@ const UI = (() => {
         const latest = await DB.get('denetimler', d.id) || d;
         const isaretli = !!latest.arsive_aktarildi_at;
         if (!isaretli) {
-          if (latest.denetim_durumu !== 'Çalışma Tamamlandı') { toast('Arşiv işareti yalnız kapatılmış kayıtta konabilir'); return; }
+          if (latest.denetim_durumu !== 'Çalışma Tamamlandı') { toast('Arşiv işareti yalnız kapatılmış kayıtta konabilir'); arsivToggle.disabled = false; return; }
           const sonYedek = await DB.kvGet(`fr65_yedek_${latest.id}`);
-          if (!sonYedek && !confirm('Bu kayıt için bu cihazdan yedek indirilmedi. Yedeksiz arşive aktarıldı olarak işaretlemek önerilmez. Yine de işaretlensin mi?')) return;
+          if (!sonYedek && !confirm('Bu kayıt için bu cihazdan yedek indirilmedi. Yedeksiz arşive aktarıldı olarak işaretlemek önerilmez. Yine de işaretlensin mi?')) { arsivToggle.disabled = false; return; }
         }
         const expectedUpdatedAt = latest.updated_at;
         const now = new Date().toISOString();
@@ -1909,7 +1925,8 @@ const UI = (() => {
           },
         });
         toast(isaretli ? 'Arşiv işareti kaldırıldı' : 'Arşive aktarıldı olarak işaretlendi');
-        close(); await fr65OzetiniGoster(d.id);
+        arsivToggle.textContent = isaretli ? '📁 Kurumsal arşive aktarıldı olarak işaretle' : '📁 Arşiv işaretini kaldır';
+        arsivToggle.disabled = false;
       } catch (error) {
         console.warn('FR.65 arşiv işareti yazılamadı', error);
         toast('İşaret kaydedilemedi');
@@ -2308,7 +2325,7 @@ const UI = (() => {
     }
     app.innerHTML = `
     <div class="screen">
-      <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}<button class="btn btn-ghost" id="btnTumYedek" title="Bu cihazdaki tüm denetim verisini JSON olarak indir">💾 Yedekle</button></div>
+      <div class="list-head"><h2>Denetimler</h2>${Profile.canCreate ? '<button class="btn-new" id="btnYeni">+ Yeni denetim</button>' : ''}</div>
       <div class="scope-note"><b>Modül G:</b> tam saha checklisti. <b>B / E / H1:</b> FR.65 referanslı ölçü ve kimlik veri kaydı. Eski B/E/H1 kayıtları açılmaz; resmî form üretimi Form Doldurucu’da kalır.</div>
       <div class="inspection-list-tools">
         <input class="searchbox" id="listSearch" type="search" placeholder="Müşteri, adres, seri veya dosya no ara…" value="${esc(listSearch)}">
@@ -2320,6 +2337,7 @@ const UI = (() => {
       </div>
       <div id="dlist">${denetimler.length ? '' : '<div class="empty">Görüntüleyebileceğiniz denetim yok.<br>Denetçiler yalnızca kendi denetimlerini görür.</div>'}</div>
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
+      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button></div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     app.style.pointerEvents = '';
@@ -2460,8 +2478,8 @@ const UI = (() => {
     applyListFilters();
     const btnYeni = document.getElementById('btnYeni');
     if (btnYeni) btnYeni.onclick = showYeniForm;
-    const btnTumYedek = document.getElementById('btnTumYedek');
-    if (btnTumYedek) btnTumYedek.onclick = () => tumVeriYedegiIndir(btnTumYedek);
+    const btnYedekSec = document.getElementById('btnYedekSec');
+    if (btnYedekSec) btnYedekSec.onclick = yedekSecimiGoster;
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
@@ -3918,13 +3936,13 @@ function showYeniForm() {
       </details>`;
     }).join('');
     const safetyHtml = SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('');
+    const fr65Tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
     app.innerHTML = `<div class="screen fr65-capture">
+      <div class="local-sync-state fr65-sync-strip ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
       <div class="inspection-toolbar">
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">
-          <button class="delbtn" id="fr65Summary" title="Denetim özeti, bütünlük, senkron ve arşiv durumu">📋 Denetim Özeti</button>
-          ${canEdit ? '<button class="delbtn" id="fr65Offline" title="Bu cihazdaki çevrimdışı hazırlığı doğrula">📱 Çevrimdışı Kontrol</button>' : ''}
-          <button class="delbtn" id="fr65Backup" title="Bu kaydın yedeğini JSON olarak indir">💾 Yedek</button>
+          ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
@@ -3941,7 +3959,6 @@ function showYeniForm() {
         <div class="dmeta"><b>Tahrik:</b> ${esc(d.tahrik_tipi)} · <b>Yük:</b> ${esc(d.beyan_yuku_kg || '—')} kg · <b>Kapasite:</b> ${esc(d.kapasite_kisi || '—')} kişi · <b>Hız:</b> ${esc(d.beyan_hizi_ms || '—')} m/s · <b>Durak:</b> ${esc(d.durak_sayisi || '—')} · <b>Tarih:</b> ${esc(d.denetim_tarihi || '')}</div>
         <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
-        <div class="local-sync-state ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
       </div>
       <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span><small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez. Önerilen akış kuyu bölümünden başlar; sabit bölüm düğmeleriyle ilerleyin.</small></div>
       ${quickNavHtml}
@@ -4034,28 +4051,13 @@ function showYeniForm() {
     if (reopen) reopen.onclick = () => duzeltmeNedeniSec(d);
     const deleteAction = document.getElementById('fr65Delete');
     if (deleteAction) deleteAction.onclick = () => fr65SahaKaydiniSil(d, deleteAction);
+    fr65AktifRapor = { id: d.id, sections, fieldConditions };
     const summaryAction = document.getElementById('fr65Summary');
     if (summaryAction) summaryAction.onclick = () => fr65OzetiniGoster(d.id);
-    const backupAction = document.getElementById('fr65Backup');
-    if (backupAction) backupAction.onclick = async () => {
-      backupAction.disabled = true;
-      try { await fr65YedekIndir(d.id); } finally { backupAction.disabled = false; }
-    };
-    const offlineAction = document.getElementById('fr65Offline');
-    if (offlineAction) offlineAction.onclick = async () => {
-      offlineAction.disabled = true;
-      offlineAction.textContent = 'Doğrulanıyor…';
-      try {
-        const latest = await DB.get('denetimler', d.id) || d;
-        sahayaHazirlikSonucuGoster(await sahayaHazirla(latest, []));
-      } catch (error) {
-        console.error('FR.65 çevrimdışı kontrol hatası', error);
-        toast('Çevrimdışı kontrol tamamlanamadı');
-      } finally {
-        offlineAction.disabled = false;
-        offlineAction.textContent = '📱 Çevrimdışı Kontrol';
-      }
-    };
+    // Çevrimdışı hazırlık sessizce doğrulanır; kullanıcıdan işlem istenmez.
+    if (canEdit && navigator.onLine) {
+      DB.get('denetimler', d.id).then(latest => latest && sahayaHazirla(latest, [])).catch(() => {});
+    }
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {
       // Open synchronously from the button gesture so mobile popup blockers allow the report.
@@ -4241,7 +4243,7 @@ function showYeniForm() {
           });
           activeFr65Flush = null;
           toast('Saha veri kaydı kapatıldı');
-          await showList();
+          await fr65OzetiniGoster(latest.id, { onClose: () => showList() });
         } catch (error) {
           toast(error.message || 'Kayıt kapatılamadı; veriler korundu');
         } finally {
