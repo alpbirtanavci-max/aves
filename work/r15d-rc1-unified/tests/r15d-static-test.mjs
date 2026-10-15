@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.94 sürümü', index.includes('R15D-RC3.9.94</b>'));
-test('app R15D rc3.9.94 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.94'"));
-test('service worker rc3.9.94 cache', sw.includes("aves-saha-r15d-rc3994'"));
-test('uygulama manifesti rc3.9.94 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.94"'));
+test('index R15D rc3.9.95 sürümü', index.includes('R15D-RC3.9.95</b>'));
+test('app R15D rc3.9.95 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.95'"));
+test('service worker rc3.9.95 cache', sw.includes("aves-saha-r15d-rc3995'"));
+test('uygulama manifesti rc3.9.95 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.95"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
