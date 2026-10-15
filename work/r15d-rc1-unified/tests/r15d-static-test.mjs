@@ -21,6 +21,7 @@ const closureSummaryJs = fs.readFileSync(path.join(appDir, 'kapanis-guven-ozeti.
 const technicalDocsJs = fs.readFileSync(path.join(appDir, 'teknik-dosya-formlari.js'), 'utf8');
 const denetimFormSetsJs = fs.readFileSync(path.join(appDir, 'denetim-form-setleri.js'), 'utf8');
 const formDraftJournalJs = fs.readFileSync(path.join(appDir, 'form-draft-journal.js'), 'utf8');
+const fr65SahaToolsJs = fs.readFileSync(path.join(appDir, 'fr65-saha-tools.js'), 'utf8');
 const technicalDocsContext = {};
 vm.runInNewContext(technicalDocsJs, technicalDocsContext, { filename: 'teknik-dosya-formlari.js' });
 const technicalDocs = technicalDocsContext.AVES_TEKNIK_DOSYA_FORM;
@@ -30,6 +31,9 @@ const denetimFormSets = denetimFormSetsContext.AVES_DENETIM_FORM_SETI;
 const formDraftJournalContext = {};
 vm.runInNewContext(formDraftJournalJs, formDraftJournalContext, { filename: 'form-draft-journal.js' });
 const formDraftJournal = formDraftJournalContext.AVES_FORM_DRAFT_JOURNAL;
+const fr65SahaToolsContext = {};
+vm.runInNewContext(fr65SahaToolsJs, fr65SahaToolsContext, { filename: 'fr65-saha-tools.js' });
+const fr65SahaTools = fr65SahaToolsContext.AVES_FR65_SAHA_TOOLS;
 const closureSummaryFixture = JSON.parse(fs.readFileSync(path.join(testDir, 'kapanis-guven-ozeti-fixture.json'), 'utf8'));
 const formOutput = fs.readFileSync(path.join(appDir, 'form-output.js'), 'utf8');
 const formManifest = JSON.parse(fs.readFileSync(path.join(appDir, 'form-assets', 'form-output-manifest.json'), 'utf8'));
@@ -101,10 +105,51 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.89 sürümü', index.includes('R15D-RC3.9.89</b>'));
-test('app R15D rc3.9.89 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.89'"));
-test('service worker rc3.9.89 cache', sw.includes("aves-saha-r15d-rc3989'"));
-test('uygulama manifesti rc3.9.89 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.89"'));
+test('index R15D rc3.9.90 sürümü', index.includes('R15D-RC3.9.90</b>'));
+test('app R15D rc3.9.90 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.90'"));
+test('service worker rc3.9.90 cache', sw.includes("aves-saha-r15d-rc3990'"));
+test('uygulama manifesti rc3.9.90 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.90"'));
+test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
+  index.includes('<script src="fr65-saha-tools.js"></script>') &&
+  app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
+test('FR.65 sunucu-sürüm uzlaştırması yalnız aynı denetimin sıradaki koşullu güncellemelerini yeniden temeller', (() => {
+  const acknowledged = { seq: 1, inspection_id: 'same', rows: [{ updated_at: 'client-v1' }] };
+  const next = { seq: 2, inspection_id: 'same', table: 'denetimler', sync_status: 'conflict', last_error_code: 409, conditional_update: { expected_updated_at: 'client-v1' } };
+  const otherInspection = { seq: 3, inspection_id: 'other', table: 'denetimler', conditional_update: { expected_updated_at: 'client-v1' } };
+  const otherVersion = { seq: 4, inspection_id: 'same', table: 'denetimler', conditional_update: { expected_updated_at: 'older-v0' } };
+  const changed = fr65SahaTools.rebaseFollowingUpdates([acknowledged, next, otherInspection, otherVersion], acknowledged, 'server-v1');
+  return changed.length === 1 && changed[0] === next && next.conditional_update.expected_updated_at === 'server-v1' &&
+    next.sync_status === 'retry' && next.last_error_code === null &&
+    otherInspection.conditional_update.expected_updated_at === 'client-v1' &&
+    otherVersion.conditional_update.expected_updated_at === 'older-v0';
+})());
+test('FR.65 sahte çakışma onarımı sunucu FR.65 tabanı birebir aynıysa açılır; gerçek saha değişikliğinde kapalı kalır', (() => {
+  const baseline = { saha_veri_akisi: 'fr65_saha_v1', source_form: 'ÜB.FR.65', source_revision: '00', updated_at: 'client-v1', forms: { FR65: { values: { hiz: { field_value: '1.6' } } }, RP14: { review: 'old' } } };
+  const sameVersionDifferentTimestamp = { ...baseline, updated_at: 'server-v1', forms: { ...baseline.forms, RP14: { review: 'newer' } } };
+  const trueRemoteEdit = { ...sameVersionDifferentTimestamp, forms: { ...sameVersionDifferentTimestamp.forms, FR65: { values: { hiz: { field_value: '1.8' } } } } };
+  const merged = fr65SahaTools.mergeCapture(sameVersionDifferentTimestamp, { ...baseline, forms: { ...baseline.forms, FR65: { values: { hiz: { field_value: '2.0' } } } } });
+  return fr65SahaTools.sameCapture(baseline, sameVersionDifferentTimestamp) &&
+    !fr65SahaTools.sameCapture(baseline, trueRemoteEdit) &&
+    merged.forms.FR65.values.hiz.field_value === '2.0' && merged.forms.RP14.review === 'newer';
+})());
+test('FR.65 çıktı özeti girilmiş genel, ölçü ve seri alanlarını kapsar; koşulsuz alanı ve boşları dışarıda bırakır', (() => {
+  const report = fr65SahaTools.buildReport(
+    { musterci_unvani: 'Firma', musteri_unvani: 'Firma A', firma_adresi: 'Firma adresi', denetim_adresi: 'Saha adresi', asansor_seri_no: 'H-1', modul: 'Modül H1' },
+    { hiz: { field_value: '1.6' }, kuyu_genislik_cm: { field_value: '250' }, motor: { marka: 'Marka X', tip: 'Tip Y', seri_no: 'SN-9' }, gsm: { marka: 'GSM', tip: 'M2M', imei: '12345' }, ek_tampon: { var_mi: 'Var' }, second: { field_value: 'gizli' }, empty: { field_value: ' ' } },
+    [
+      { key: 'genel', title: 'Genel', fields: [['hiz', 'Sahada görülen hız (m/s)', 'number'], ['empty', 'Boş alan', 'number']] },
+      { key: 'olculer', title: 'Ölçüler', fields: [['kuyu_genislik_cm', 'Kuyu genişliği (cm)', 'number']] },
+      { key: 'seri', title: 'Seri numaraları', kind: 'serial', fields: [['motor', 'Makine motoru'], ['gsm', 'GSM modülü', 'gsm'], ['ek_tampon', 'Ek tampon', 'optional_serial']] },
+      { key: 'door', title: 'Kapılar', fields: [['second', 'İkinci kapı', 'select']] },
+    ],
+    { second: { key: 'second_door', value: 'Var' } },
+  );
+  const body = JSON.stringify(report);
+  return report.title === 'FR.65 Saha Veri Özeti' && report.fieldCount === 5 &&
+    report.metadata.some(item => item.label === 'Asansörün bulunduğu adres' && item.value === 'Saha adresi') &&
+    body.includes('1.6') && body.includes('250') && body.includes('SN-9') && body.includes('IMEI: 12345') && body.includes('Durum: Var') &&
+    !body.includes('Boş alan') && !body.includes('gizli');
+})());
 test('migration 81 resmî çıktı için 3 nullable kolon ekler, RLS/trigger/veri değiştirmez',
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_uretildi_at timestamptz') &&
   rc3946OutputRecordMigration.includes('add column if not exists resmi_cikti_snapshot_ozeti text') &&
@@ -1769,6 +1814,31 @@ test('FR.65 çevrimdışı güncellemeleri sunucuda updated_at karşılaştırma
   app.includes("await DB.outboxPut(item)") &&
   app.includes("item.table !== 'denetimler'") &&
   app.includes("rows[0].denetim_form_kayitlari.saha_veri_akisi !== 'fr65_saha_v1'"));
+test('FR.65 yalnız geçmişteki önceki değer sunucudakiyle aynıysa eski 409 kaydını güvenli yeniden dener',
+  app.includes('async function retrySafeFr65Conflicts()') &&
+  app.includes('event.created_at === item.created_at && event.islem_turu === \'denetim_guncelleme\'') &&
+  app.includes('AVES_FR65_SAHA_TOOLS.sameCapture(previousCapture, remoteRows[0].denetim_form_kayitlari)') &&
+  app.includes("item.sync_status = 'retry'") &&
+  app.includes('Only the row version drifted') &&
+  app.includes('await retrySafeFr65Conflicts();'));
+test('FR.65 başarılı PATCH yanıtındaki sunucu updated_at değeri yerel sürüme ve sonraki outbox kalemlerine işlenir',
+  app.includes("const serverRow = await API.conditionalUpdate(item.table, rows[0].id") &&
+  app.includes('await reconcileFr65ServerVersion(item, serverRow)') &&
+  app.includes('window.dispatchEvent(new CustomEvent(\'aves:fr65-server-version\'') &&
+  app.includes('baseUpdatedAt = detail.serverVersion') &&
+  app.includes("const selectedFields = [...new Set([...fields, 'updated_at'])]"));
+test('FR.65 çıktı düğmesi son alanları flush eder ve senkron durumuyla birlikte yazdırılabilir PDF özeti üretir', (() => {
+  const start = app.indexOf('async function renderFr65SahaKaydi(');
+  const end = app.indexOf('async function showDenetim(', start);
+  const flow = app.slice(start, end);
+  return flow.includes('id="fr65Print"') &&
+    flow.includes('AVES_FR65_SAHA_TOOLS.buildReport(') &&
+    flow.includes('if (canEdit) await flushCapture();') &&
+    flow.includes('window.open(\'about:blank\', \'_blank\')') &&
+    flow.includes('await Sync.denetimSyncOzeti(d.id)') &&
+    flow.includes('reportWindow.print()') &&
+    flow.includes('resmî denetim sonuç raporunun yerine geçmez');
+})());
 test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler beklenen kayıt sürümüne bağlıdır', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
