@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.97';
+const APP_VERSION = 'R15D-rc3.9.98';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -2783,6 +2783,13 @@ const UI = (() => {
       button.textContent = 'Kaydediliyor…';
       try {
         const id = await olusturFr65Kaydi(f);
+        // Çevrimiçiyken yeni kaydın sunucu sürümü eşlenene kadar (en çok 5 sn) bekle; kullanıcı hemen
+        // seri no / alan girerse ilk düzenleme yanlış sürüme dayanıp çakışma vermesin.
+        if (navigator.onLine && API.loggedIn) {
+          button.textContent = 'Sunucuya kaydediliyor…';
+          try { await Promise.race([Sync.pushOutbox(), new Promise(resolve => setTimeout(resolve, 5000))]); }
+          catch (error) { console.warn('Yeni FR.65 kaydı hemen senkronlanamadı; arka planda denenecek', error.message); }
+        }
         ov.remove();
         await showDenetim(id);
       } catch (error) {
