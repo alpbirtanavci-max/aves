@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.95';
+const APP_VERSION = 'R15D-rc3.9.96';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -1976,19 +1976,29 @@ const UI = (() => {
       }
 
       const serverRows = await API.select('denetimler', `select=id,updated_at&id=eq.${encodeURIComponent(id)}&limit=1`);
-      if (serverRows.length !== 1 || !serverRows[0].updated_at) {
-        throw new Error('Kayıt sunucuda doğrulanamadı; cihazdaki kayıt korunuyor.');
-      }
-      if (String(serverRows[0].updated_at) !== String(latest.updated_at || '')) {
-        throw new Error('Kayıt başka bir oturumda değiştirilmiş. Listeyi yenileyip tekrar kontrol edin; silme yapılmadı.');
-      }
+      // Sunucu boş yanıt verdiyse kayıt orada yoktur (başka yerden/önceki denemede silinmiş ya da hiç ulaşmamış).
+      // Bekleyen işlem de yoksa cihazdaki artık kopya, kullanıcı onayıyla yalnız cihazdan kaldırılır.
+      const sunucudaYok = serverRows.length === 0;
+      if (sunucudaYok) {
+        if (!confirm('Bu kayıt sunucuda bulunamadı (daha önce silinmiş olabilir). Yalnız bu cihazdaki kopya kaldırılsın mı? Kayıt başka yerde yoksa geri getirilemez.')) {
+          if (button) { button.disabled = false; button.textContent = '🗑 Sil'; }
+          return;
+        }
+      } else {
+        if (serverRows.length !== 1 || !serverRows[0].updated_at) {
+          throw new Error('Kayıt sunucuda doğrulanamadı; cihazdaki kayıt korunuyor.');
+        }
+        if (String(serverRows[0].updated_at) !== String(latest.updated_at || '')) {
+          throw new Error('Kayıt başka bir oturumda değiştirilmiş. Listeyi yenileyip tekrar kontrol edin; silme yapılmadı.');
+        }
 
-      let deleteError = null;
-      try {
-        await API.del('denetimler', `id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(serverRows[0].updated_at)}`);
-      } catch (error) { deleteError = error; }
-      const remaining = await API.select('denetimler', `select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
-      if (remaining.length) throw deleteError || new Error('Sunucu silme işlemini doğrulamadı; kayıt cihazda korundu.');
+        let deleteError = null;
+        try {
+          await API.del('denetimler', `id=eq.${encodeURIComponent(id)}&updated_at=eq.${encodeURIComponent(serverRows[0].updated_at)}`);
+        } catch (error) { deleteError = error; }
+        const remaining = await API.select('denetimler', `select=id&id=eq.${encodeURIComponent(id)}&limit=1`);
+        if (remaining.length) throw deleteError || new Error('Sunucu silme işlemini doğrulamadı; kayıt cihazda korundu.');
+      }
 
       await DB.deleteInspectionLocal(id);
       try {
@@ -3317,8 +3327,8 @@ function showYeniForm() {
 
   /* ---- Denetim detay ---- */
   async function sahayaHazirla(d, rows) {
-    // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez.
-    await DB.kvDel(`offline_ready_${d.id}`);
+    // Yeni kontrol tamamlanana kadar önceki cihaz işaretine güvenilmez (FR.65'te geçerli işaret titremesin).
+    if (!fr65SahaKaydiMi(d)) await DB.kvDel(`offline_ready_${d.id}`);
     const checks = [];
     const formsOnly = formOdakliDenetimMi(d, rows);
     // advisory: kırmızı gösterilir ama "hazır" işaretini engellemez (ör. tarayıcı
@@ -4056,7 +4066,10 @@ function showYeniForm() {
     if (summaryAction) summaryAction.onclick = () => fr65OzetiniGoster(d.id);
     // Çevrimdışı hazırlık sessizce doğrulanır; kullanıcıdan işlem istenmez.
     if (canEdit && navigator.onLine) {
-      DB.get('denetimler', d.id).then(latest => latest && sahayaHazirla(latest, [])).catch(() => {});
+      DB.get('denetimler', d.id).then(async latest => {
+        // Geçerli işaret varsa yeniden çizimlerde tekrar çalıştırma (gereksiz iş + işaret titremesi).
+        if (latest && !(await cevrimdisiHazirlikDurumu(latest, [])).ready) await sahayaHazirla(latest, []);
+      }).catch(() => {});
     }
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {
