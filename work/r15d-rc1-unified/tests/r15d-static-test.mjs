@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.95 sürümü', index.includes('R15D-RC3.9.95</b>'));
-test('app R15D rc3.9.95 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.95'"));
-test('service worker rc3.9.95 cache', sw.includes("aves-saha-r15d-rc3995'"));
-test('uygulama manifesti rc3.9.95 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.95"'));
+test('index R15D rc3.9.96 sürümü', index.includes('R15D-RC3.9.96</b>'));
+test('app R15D rc3.9.96 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.96'"));
+test('service worker rc3.9.96 cache', sw.includes("aves-saha-r15d-rc3996'"));
+test('uygulama manifesti rc3.9.96 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.96"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1876,6 +1876,10 @@ test('FR.65 saha kaydı: bütünlük mührü, seçmeli yedek, veri özeti, arşi
 test('senkron döngüsü her kalemi göndermeden önce DB den yeniden okur (eski kopya yeniden eşlenen sürümü ezmez)',
   app.includes("outboxGet: (seq) => p(tx('outbox','readonly').get(seq))") &&
   app.includes('const item = await DB.outboxGet(queued.seq);'));
+test('FR.65 silme: sunucuda bulunmayan yerel kayıt onayla yalnız cihazdan kaldırılır',
+  app.includes('const sunucudaYok = serverRows.length === 0;') &&
+  app.includes('Bu kayıt sunucuda bulunamadı (daha önce silinmiş olabilir). Yalnız bu cihazdaki kopya kaldırılsın mı?') &&
+  app.includes('Geçerli işaret varsa yeniden çizimlerde tekrar çalıştırma'));
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);

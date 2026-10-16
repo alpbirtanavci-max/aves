@@ -297,6 +297,30 @@ async function runModuleG(browser, appUrl, report) {
   await s.context.close();
 }
 
+// Sunucuda artık bulunmayan (ör. önceki silmede yarım kalan) yerel kayıt cihazdan kaldırılabilmeli.
+async function runOrphanDelete(browser, appUrl, report) {
+  const persona = personas.yonetici;
+  const s = await newSession(browser, appUrl, persona);
+  s.page.on('dialog', d => d.accept());
+  const p = s.page;
+  const seri = 'DMN-ORPHAN-001';
+  const tag = '[E/yetim]';
+  await report.step(`${tag} sunucudan silinmiş yerel kayıt → "Sil" cihazdan kaldırır`, async () => {
+    await login(s, persona);
+    await createRecord(s, 'E', seri);
+    await until(() => s.fake.tables.denetimler.length === 1, 'sunucuda denetim kaydı yok');
+    await until(async () => (await p.evaluate(async () => (await DB.all('outbox')).length)) === 0, 'senkron kuyruğu boşalmadı');
+    await p.waitForTimeout(2500); // açılış sonrası gecikmeli yazımlar otursun
+    await until(async () => (await p.evaluate(async () => (await DB.all('outbox')).length)) === 0, 'senkron kuyruğu yeniden dolu');
+    const id = s.fake.tables.denetimler[0].id;
+    s.fake.tables.denetimler.length = 0;
+    await p.click('#fr65Delete');
+    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    assert.equal(await p.evaluate(async i => !!(await DB.get('denetimler', i)), id), false, 'yetim kayıt cihazda kaldı');
+  });
+  await s.context.close();
+}
+
 const app = await startApp();
 const browser = await launch();
 const report = createReporter();
@@ -307,6 +331,8 @@ try {
   }
   console.log('\n== Modül G ==');
   await runModuleG(browser, app.url, report);
+  console.log('\n== Yetim kayıt ==');
+  await runOrphanDelete(browser, app.url, report);
   console.log('\n== Mühendis (silme yetkisi yok) ==');
   await runModule(browser, app.url, 'E', personas.muhendis, report);
 } finally { await browser.close(); app.close(); }
