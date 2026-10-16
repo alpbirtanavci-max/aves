@@ -23,9 +23,9 @@ async function createRecord(s, modul, seri) {
   await p.waitForSelector('#fMusteri');
   await p.fill('#fMusteri', 'Duman Asansör A.Ş.');
   await p.fill('#fFirmaAdres', 'Firma Mah. 1 Sk.');
-  await p.fill('#fSeri', seri);
-  await p.fill('#fAdres', 'Bina Mah. 2 Sk. No:3');
   await p.click(`#sModul [data-v="${modul}"]`);
+  assert.equal(await p.locator('#fSeri').isVisible(), false, 'B/E/H1 açılışında seri no sorulmamalı');
+  assert.equal(await p.locator('#fAdres').isVisible(), false, 'B/E/H1 açılışında saha adresi sorulmamalı');
   await p.click('#sCaptureTahrik [data-v="Elektrikli"]');
   await p.click('#sCaptureMD [data-v="MR"]');
   await p.fill('#fCaptureYuk', '630');
@@ -80,6 +80,13 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await createRecord(s, modul, seri);
     await until(() => s.fake.tables.denetimler.length === 1, 'sunucuda denetim kaydı yok');
     assert.equal(serverRecord(s).modul, `Modül ${modul}`);
+    assert.equal(serverRecord(s).asansor_seri_no, '', 'açılışta seri no boş olmalı');
+  });
+  await report.step(`${tag} seri no ve saha adresi açtıktan sonra girilir → sunucuya yazılır, listede görünür`, async () => {
+    await p.fill('#fr65Seri', seri);
+    await p.fill('#fr65Adres', 'Bina Mah. 2 Sk. No:3');
+    await p.locator('#fr65Adres').blur();
+    await until(() => serverRecord(s).asansor_seri_no === seri && serverRecord(s).denetim_adresi === 'Bina Mah. 2 Sk. No:3', 'künye sunucuya yazılmadı');
     // İlk senkron turu ekranı yeniden çizebilir; kuyruk boşalana kadar bekle.
     await until(async () => (await p.evaluate(async () => (await DB.all('outbox')).length)) === 0, 'ilk senkron kuyruğu boşalmadı');
   });
