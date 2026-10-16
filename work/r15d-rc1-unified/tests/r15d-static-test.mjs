@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.96 sürümü', index.includes('R15D-RC3.9.96</b>'));
-test('app R15D rc3.9.96 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.96'"));
-test('service worker rc3.9.96 cache', sw.includes("aves-saha-r15d-rc3996'"));
-test('uygulama manifesti rc3.9.96 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.96"'));
+test('index R15D rc3.9.98 sürümü', index.includes('R15D-RC3.9.98</b>'));
+test('app R15D rc3.9.98 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.98'"));
+test('service worker rc3.9.98 cache', sw.includes("aves-saha-r15d-rc3998'"));
+test('uygulama manifesti rc3.9.98 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.98"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1880,6 +1880,13 @@ test('FR.65 silme: sunucuda bulunmayan yerel kayıt onayla yalnız cihazdan kald
   app.includes('const sunucudaYok = serverRows.length === 0;') &&
   app.includes('Bu kayıt sunucuda bulunamadı (daha önce silinmiş olabilir). Yalnız bu cihazdaki kopya kaldırılsın mı?') &&
   app.includes('Geçerli işaret varsa yeniden çizimlerde tekrar çalıştırma'));
+test('B/E/H1: seri no ve saha adresi açılışta sorulmaz, kayıt içinde künye olarak girilir; yeni kayıt sunucu sürümü eşlenene kadar beklenir',
+  app.includes('id="fSeriWrap"') && app.includes('id="fAdresWrap"') &&
+  app.includes("document.getElementById('fSeriWrap').classList.toggle('hidden', !isG)") &&
+  app.includes('id="fr65Seri"') && app.includes('id="fr65Adres"') &&
+  app.includes("fields: ['asansor_seri_no', 'denetim_adresi', 'updated_at']") &&
+  app.includes("asansor_seri_no: f.seri || ''") &&
+  app.includes("await Promise.race([Sync.pushOutbox(), new Promise(resolve => setTimeout(resolve, 5000))])"));
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
