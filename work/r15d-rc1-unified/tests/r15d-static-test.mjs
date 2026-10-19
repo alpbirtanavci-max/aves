@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.13.0 sürümü', index.includes('R15D-RC3.13.0</b>'));
-test('app R15D rc3.13.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.13.0'"));
-test('service worker rc3.13.0 cache', sw.includes("aves-saha-r15d-rc3130'"));
-test('uygulama manifesti rc3.13.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.13.0"'));
+test('index R15D rc3.14.0 sürümü', index.includes('R15D-RC3.14.0</b>'));
+test('app R15D rc3.14.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.14.0'"));
+test('service worker rc3.14.0 cache', sw.includes("aves-saha-r15d-rc3140'"));
+test('uygulama manifesti rc3.14.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.14.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1994,9 +1994,9 @@ test('FR.65 çıktı: kuyu şeması (tampon tipine göre), girilmemiş alanlar, 
     const report = { title: 'FR.65 Saha Veri Özeti', metadata: [], sections: [], fieldCount: 0 };
     const full = fr65Cikti.build({ report, values, missing: [{ title: 'Kuyu <b>', fields: ['A', 'B'] }], duzeltmeler: corrections, count: { recorded: 1, total: 3 } });
     return html.includes('class="sema"') && html.includes('Kuyu kesiti') && html.includes('Kuyu planı') && html.includes('Hidrolik') && html.includes('Poliüretan') &&
-      html.includes('kaide') && html.includes('>190<') && emptyHtml === '' &&
+      html.includes('kaide') && html.includes('= 190 cm') && emptyHtml === '' &&
       kesitHidrolik.includes('<rect') && kesitHidrolik !== kesitSecilmemis && kesitSecilmemis.includes('tip seçilmedi') &&
-      sema.OLCULER.length === 19 && missing.length > 0 && missing.some(section => section.fields.length) &&
+      sema.OLCULER.length === 24 && missing.length > 0 && missing.some(section => section.fields.length) &&
       corrections.length === 2 && corrections[0].adet === 2 && corrections[0].neden === 'Eksik bilgi tamamlama' &&
       full.includes('Girilmemiş alanlar') && full.includes('Kuyu &lt;b&gt;') && !full.includes('Kuyu <b>') && full.includes('Düzeltme geçmişi') &&
       full.includes('id="aves-big"') && full.includes('id="aves-print"') && !/onclick=/i.test(full) &&
@@ -2046,6 +2046,21 @@ test('FR.65 PDF: gerçek PDF dosyası üretir (çok sayfalı, sayfa numaralı, T
     app.includes('id="fr65Pdf"') && app.includes('const ciktiBaglami = async () =>') && app.includes('AVES_FR65_PDF.build(') &&
     app.includes("'./fr65-pdf.js'") && sw.includes("'./fr65-pdf.js'") && index.includes('<script src="fr65-pdf.js"></script>');
 })());
+test('FR.65 karşı ağırlık konumu (Arkada / Sağda / Solda) seçilir; şema konuma göre değişir, raylar konsolla duvara bağlı çizilir',
+  (() => {
+    const field = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields.find(([key]) => key === 'karsi_agirlik_konumu');
+    const sema = fr65SemaContext.AVES_FR65_SEMA;
+    const val = n => ({ field_value: String(n) });
+    const base = { kuyu_genislik_cm: val(190), karsi_agirlik_genislik_cm: val(90), karsi_agirlik_derinlik_cm: val(20) };
+    const rear = sema.planOps(sema.valuesOf({ ...base, karsi_agirlik_konumu: val('Arkada') }));
+    const side = sema.planOps(sema.valuesOf({ ...base, karsi_agirlik_konumu: val('Sağda') }));
+    const rearText = rear.filter(op => op.t === 'text').map(op => op.s).join('|');
+    const sideText = side.filter(op => op.t === 'text').map(op => op.s).join('|');
+    return field?.[2] === 'select' && JSON.stringify(technicalDocs.FR65_FIELD_OPTIONS.karsi_agirlik_konumu) === JSON.stringify(['Arkada', 'Sağda', 'Solda']) &&
+      rearText.includes('KARŞI AĞIRLIK 90 × 20 cm (genişlik × derinlik)') &&
+      sideText.includes('90 × 20 cm (gen. × der.)') && rear.length > 150 && side.length > 150 &&
+      rear.some(op => op.t === 'rect' && op.fill === '#4B5070') && !/O 90 × P 20/.test(rearText);
+  })());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);

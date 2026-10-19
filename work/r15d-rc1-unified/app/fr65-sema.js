@@ -1,19 +1,23 @@
-// FR.65 kuyu şemaları: girilen ölçüleri kuyu kesiti ve kuyu planı üzerinde gösterir.
-// Şematiktir, ölçekli değildir. Çizim, SVG ve PDF'in ortak kullandığı basit "çizim komutları" listesi olarak üretilir
-// (rect, line, poly, circle, text); DOM'a dokunmaz.
+// FR.65 kuyu şemaları: girilen ölçüleri teknik resim (CAD) görünümüyle kuyu planı ve kuyu kesiti üzerinde gösterir.
+// Şematiktir, ölçekli değildir. Çizim; SVG ve PDF'in ortak kullandığı basit "çizim komutları" listesi olarak üretilir
+// (rect, line, circle, text); taramalar da çizgi olarak üretilir. DOM'a dokunmaz.
 (function expose(root) {
   'use strict';
 
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
+  const INK = '#1F2340';
   const NAVY = '#20235B';
   const PINK = '#EA0048';
   const GREY = '#8A8FA8';
-  const SOFT = '#F1F3F9';
+  const LIGHT = '#C9CDDD';
+  const HATCH = '#9EA3BA';
+  const GOLD = '#B8941F';
   const WHITE = '#FFFFFF';
+  const TAG = '#E8EAF3';
 
-  // harf, alan anahtarı, ad
+  // harf, alan anahtarı, ad (büyük harfle çizimde kullanılır)
   const OLCULER = [
     ['A', 'kuyu_yuksekligi_cm', 'Kuyu yüksekliği'],
     ['B', 'son_kat_yuksekligi_cm', 'Son kat yüksekliği'],
@@ -34,7 +38,13 @@
     ['Q', 'ray_kapi_mesafesi_cm', 'Ray–kapı mesafesi'],
     ['R', 'ana_ray_karsi_agirlik_ray_mesafesi_cm', 'Ana ray ile karşı ağırlık rayı arası'],
     ['S', 'kabin_kat_kapi_genislik_cm', 'Kabin ve kat kapısı net genişliği'],
+    ['T', 'kabin_kat_kapi_yukseklik_cm', 'Kabin ve kat kapısı net yüksekliği'],
+    ['U', 'kabin_tampon_kaide_yuksekligi_cm', 'Kabin tamponu kaide yüksekliği'],
+    ['V', 'kabin_tampon_yuksekligi_cm', 'Kabin tamponu yüksekliği (kaide hariç)'],
+    ['W', 'karsi_agirlik_tampon_kaide_yuksekligi_cm', 'Karşı ağırlık tamponu kaide yüksekliği'],
+    ['X', 'karsi_agirlik_tampon_yuksekligi_cm', 'Karşı ağırlık tamponu yüksekliği (kaide hariç)'],
   ];
+  const AD = Object.fromEntries(OLCULER.map(([letter, , name]) => [letter, name]));
 
   function formatNumber(value) {
     const text = String(value ?? '').trim().replace(',', '.');
@@ -49,151 +59,410 @@
     for (const [letter, key] of OLCULER) {
       const raw = values && values[key] ? values[key].field_value : '';
       out[letter] = formatNumber(raw);
+      out[`${letter}_ham`] = Number(String(raw ?? '').replace(',', '.'));
     }
-    const tip = key => String((values && values[key] && values[key].field_value) || '').trim();
-    out.kabinTampon = tip('kabin_tampon_tipi');
-    out.kaTampon = tip('karsi_agirlik_tampon_tipi');
+    const field = key => String((values && values[key] && values[key].field_value) || '').trim();
+    out.kabinTampon = field('kabin_tampon_tipi');
+    out.kaTampon = field('karsi_agirlik_tampon_tipi');
+    out.tahrik = field('tahrik_tipi');
+    out.kaKonum = field('karsi_agirlik_konumu');
+    out.hidrolik = /hidrolik/i.test(out.tahrik);
     return out;
   }
 
   // ---- çizim komutları -------------------------------------------------
-  const rect = (x, y, w, h, o = {}) => ({ t: 'rect', x, y, w, h, fill: o.fill || null, stroke: o.stroke || null, sw: o.sw || 1, rx: o.rx || 0, hatch: !!o.hatch, dash: o.dash || null });
-  const line = (x1, y1, x2, y2, o = {}) => ({ t: 'line', x1, y1, x2, y2, stroke: o.stroke || NAVY, sw: o.sw || 1, dash: o.dash || null, arrows: o.arrows || false });
-  const poly = (pts, o = {}) => ({ t: 'poly', pts, stroke: o.stroke || NAVY, sw: o.sw || 1, fill: o.fill || null });
+  const rect = (x, y, w, h, o = {}) => ({ t: 'rect', x, y, w, h, fill: o.fill || null, stroke: o.stroke || null, sw: o.sw || 1, rx: o.rx || 0, dash: o.dash || null });
+  const line = (x1, y1, x2, y2, o = {}) => ({ t: 'line', x1, y1, x2, y2, stroke: o.stroke || INK, sw: o.sw || 1, dash: o.dash || null, arrows: false });
   const circle = (cx, cy, r, o = {}) => ({ t: 'circle', cx, cy, r, fill: o.fill || null, stroke: o.stroke || null, sw: o.sw || 1 });
-  const text = (x, y, s, o = {}) => ({ t: 'text', x, y, s: String(s), size: o.size || 9, weight: o.weight || 400, fill: o.fill || NAVY, anchor: o.anchor || 'start', font: o.font || 'i', rot: o.rot || 0 });
+  const text = (x, y, s, o = {}) => ({ t: 'text', x, y, s: String(s), size: o.size || 9, weight: o.weight || 400, fill: o.fill || INK, anchor: o.anchor || 'start', font: o.font || 'i', rot: o.rot || 0 });
 
-  // Ölçü oku ve rozet (harf + değer)
-  function dim(letter, v, x1, y1, x2, y2, badgeX, badgeY, anchor = 'middle') {
+  // Dikdörtgen içini 45° taramalı çizgilerle doldurur (kırpma elle yapılır; PDF'te kırpma gerekmez).
+  function hatchRect(x, y, w, h, spacing = 5, color = HATCH, sw = 0.6) {
+    const ops = [];
+    for (let k = -h; k < w; k += spacing) {
+      const t1 = Math.max(0, -k);
+      const t2 = Math.min(h, w - k);
+      if (t2 - t1 > 0.5) ops.push(line(x + k + t1, y + h - t1, x + k + t2, y + h - t2, { stroke: color, sw }));
+    }
+    return ops;
+  }
+
+  // Beton duvar: açık gri zemin + tarama + dış/iç çizgi
+  function wall(x, y, w, h) {
+    return [rect(x, y, w, h, { fill: '#F4F5FA', stroke: INK, sw: 1.4 }), ...hatchRect(x, y, w, h, 5)];
+  }
+
+  const textWidth = (s, size) => String(s).length * size * 0.6;
+
+  // Etiketli metin (CAD'deki gri zeminli yazı gibi)
+  function tag(x, y, s, o = {}) {
+    const size = o.size || 9;
+    const w = textWidth(s, size) + 8;
+    const h = size + 5;
+    const rot = o.rot || 0;
+    const ops = [];
+    if (!rot) {
+      const left = o.anchor === 'start' ? x : (o.anchor === 'end' ? x - w : x - w / 2);
+      ops.push(rect(left, y - size - 1, w, h, { fill: o.bg || TAG }));
+      ops.push(text(x, y, s, { ...o, size }));
+    } else {
+      // dikey ölçü yazısı: -90° döner; kutu yatay/dikey boyut değiştirir
+      ops.push(rect(x - size - 1, y - w / 2, h, w, { fill: o.bg || TAG }));
+      ops.push(text(x, y + w / 2 - 4, s, { ...o, size, anchor: 'start', rot }));
+    }
+    return ops;
+  }
+
+  const tick = (x, y, color) => line(x - 3.2, y + 3.2, x + 3.2, y - 3.2, { stroke: color, sw: 1.3 });
+
+  // Yatay ölçü: uzatma çizgileri + eğik uç çizgileri + metin üstte
+  function dimH(v, letter, x1, x2, y, from1, from2, o = {}) {
     const has = !!v[letter];
     const col = has ? PINK : GREY;
-    const horizontal = y1 === y2;
-    const ops = [line(x1, y1, x2, y2, { stroke: col, sw: 1.2, arrows: true })];
-    if (horizontal) {
-      ops.push(line(x1, y1 - 4, x1, y1 + 4, { stroke: col, sw: 1.2 }), line(x2, y2 - 4, x2, y2 + 4, { stroke: col, sw: 1.2 }));
-    } else {
-      ops.push(line(x1 - 4, y1, x1 + 4, y1, { stroke: col, sw: 1.2 }), line(x2 - 4, y2, x2 + 4, y2, { stroke: col, sw: 1.2 }));
-    }
+    const ops = [];
+    ops.push(line(x1, from1, x1, y - 3, { stroke: col, sw: 0.7 }), line(x2, from2, x2, y - 3, { stroke: col, sw: 0.7 }));
+    ops.push(line(x1 - 4, y, x2 + 4, y, { stroke: col, sw: 1 }), tick(x1, y, col), tick(x2, y, col));
+    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${o.name || AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
+    ops.push(...tag((x1 + x2) / 2, y - 3, label, { size: o.size || 8.6, weight: 700, anchor: 'middle', fill: has ? NAVY : GREY, font: 'i' }));
+    return ops;
+  }
+
+  // Dikey ölçü
+  function dimV(v, letter, y1, y2, x, from1, from2, o = {}) {
+    const has = !!v[letter];
+    const col = has ? PINK : GREY;
+    const ops = [];
+    ops.push(line(from1, y1, x - 3, y1, { stroke: col, sw: 0.7 }), line(from2, y2, x - 3, y2, { stroke: col, sw: 0.7 }));
+    ops.push(line(x, y1 - 4, x, y2 + 4, { stroke: col, sw: 1 }), tick(x, y1, col), tick(x, y2, col));
+    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${o.name || AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
+    const size = o.size || 8.6;
+    ops.push(...tag(x - 3, (y1 + y2) / 2, label, { size, weight: 700, fill: has ? NAVY : GREY, rot: -90 }));
+    return ops;
+  }
+
+  // Harfli küçük rozet (kalabalık yerlerde)
+  function badge(letter, v, x, y, anchor = 'middle') {
+    const has = !!v[letter];
+    const col = has ? PINK : GREY;
     const label = has ? v[letter] : '–';
-    const w = Math.max(38, 24 + label.length * 6);
-    const bx = anchor === 'end' ? badgeX - w : (anchor === 'start' ? badgeX : badgeX - w / 2);
-    const by = badgeY - 8;
-    ops.push(
-      rect(bx, by, w, 16, { fill: WHITE, stroke: col, sw: 1, rx: 8 }),
-      circle(bx + 8, by + 8, 6.4, { fill: col }),
-      text(bx + 8, by + 11.2, letter, { size: 8.4, weight: 700, fill: WHITE, anchor: 'middle', font: 'm' }),
-      text(bx + w - 6, by + 11.2, label, { size: 9.4, weight: 700, fill: has ? NAVY : GREY, anchor: 'end' }),
-    );
+    const w = Math.max(34, 22 + label.length * 5.8);
+    const bx = anchor === 'end' ? x - w : (anchor === 'start' ? x : x - w / 2);
+    return [
+      rect(bx, y - 8, w, 16, { fill: WHITE, stroke: col, sw: 1, rx: 8 }),
+      circle(bx + 8, y, 6.2, { fill: col }),
+      text(bx + 8, y + 3, letter, { size: 8, weight: 700, fill: WHITE, anchor: 'middle', font: 'm' }),
+      text(bx + w - 6, y + 3.2, label, { size: 9, weight: 700, fill: has ? NAVY : GREY, anchor: 'end' }),
+    ];
+  }
+
+  // Çift çizgili çerçeve (kabin / karşı ağırlık)
+  function frame(x, y, w, h, o = {}) {
+    const ops = [rect(x, y, w, h, { fill: WHITE, stroke: INK, sw: 2 }), rect(x + 4, y + 4, w - 8, h - 8, { stroke: INK, sw: 0.8 })];
+    if (o.cross) ops.push(line(x + 4, y + 4, x + w - 4, y + h - 4, { stroke: LIGHT, sw: 0.7 }), line(x + w - 4, y + 4, x + 4, y + h - 4, { stroke: LIGHT, sw: 0.7 }));
     return ops;
   }
 
   // Tampon: kaide (beton) + tampon gövdesi. tip: 'Hidrolik' | 'Poliüretan' | ''.
-  // Çizimdeki yükseklikler şematiktir; strok oku tamponun çalışan (hareketli) kısmını gösterir.
   function tampon(cx, tabanY, tip) {
     const ops = [];
     const kaideH = 12;
-    ops.push(rect(cx - 15, tabanY - kaideH, 30, kaideH, { fill: '#D9DCE8', stroke: NAVY, sw: 1.6 }));
+    ops.push(rect(cx - 15, tabanY - kaideH, 30, kaideH, { fill: '#D9DCE8', stroke: INK, sw: 1.6 }));
     const kaideUst = tabanY - kaideH;
     let ust = kaideUst;
     let strokPx = 0;
     if (tip === 'Hidrolik') {
-      // silindir + piston kolu + üst plaka
-      ops.push(rect(cx - 7, kaideUst - 24, 14, 24, { fill: WHITE, stroke: NAVY, sw: 1.8 }));
-      ops.push(line(cx, kaideUst - 24, cx, kaideUst - 36, { stroke: NAVY, sw: 3 }));
-      ops.push(rect(cx - 10, kaideUst - 40, 20, 4, { fill: NAVY, stroke: NAVY, sw: 1, rx: 1 }));
-      ust = kaideUst - 40;
-      strokPx = 22;
+      ops.push(rect(cx - 7, kaideUst - 24, 14, 24, { fill: WHITE, stroke: INK, sw: 1.8 }));
+      ops.push(line(cx, kaideUst - 24, cx, kaideUst - 36, { stroke: INK, sw: 3 }));
+      ops.push(rect(cx - 10, kaideUst - 40, 20, 4, { fill: INK, stroke: INK, sw: 1, rx: 1 }));
+      ust = kaideUst - 40; strokPx = 22;
     } else if (tip === 'Poliüretan') {
-      ops.push(rect(cx - 9, kaideUst - 14, 18, 14, { fill: '#C9CEE3', stroke: NAVY, sw: 1.8, rx: 3 }));
-      ops.push(rect(cx - 11, kaideUst - 18, 22, 4, { fill: NAVY, stroke: NAVY, sw: 1, rx: 1 }));
-      ust = kaideUst - 18;
-      strokPx = 9;
+      ops.push(rect(cx - 9, kaideUst - 14, 18, 14, { fill: '#C9CEE3', stroke: INK, sw: 1.8, rx: 3 }));
+      ops.push(rect(cx - 11, kaideUst - 18, 22, 4, { fill: INK, stroke: INK, sw: 1, rx: 1 }));
+      ust = kaideUst - 18; strokPx = 9;
     } else {
-      ops.push(rect(cx - 8, kaideUst - 20, 16, 20, { fill: null, stroke: GREY, sw: 1.4, dash: [3, 2], rx: 2 }));
-      ust = kaideUst - 20;
-      strokPx = 12;
+      ops.push(rect(cx - 8, kaideUst - 20, 16, 20, { stroke: GREY, sw: 1.4, dash: [3, 2], rx: 2 }));
+      ust = kaideUst - 20; strokPx = 12;
     }
     return { ops, ust, strokPx, kaideUst };
   }
 
-  // Kuyu kesiti (yan görünüş)
-  function kesitOps(v) {
+  const dashDot = [9, 2.5, 2, 2.5];
+
+  // Ray (üstten): taban duvar/konsol tarafında, gövde ve başlık kabine doğru (içe) bakar; pabuç başı sarar.
+  // xBase: tabanın duvara yakın dış kenarı. side: 'sol' ray soldaki, 'sag' sağdaki ray.
+  function rayPlan(xBase, y, side, len = 16) {
     const ops = [];
-    ops.push(rect(130, 40, 150, 360, { fill: SOFT }));
-    ops.push(line(130, 40, 130, 400, { sw: 3 }), line(280, 40, 280, 400, { sw: 3 }), line(124, 40, 286, 40, { sw: 3 }));
-    ops.push(rect(124, 400, 162, 10, { fill: null, stroke: NAVY, sw: 2, hatch: true }));
-    ops.push(line(104, 130, 130, 130, { sw: 2.2 }), line(104, 340, 130, 340, { sw: 2.2 }));
-    ops.push(text(100, 124, 'son kat', { size: 8.5, fill: GREY, anchor: 'end' }), text(100, 334, 'ilk kat', { size: 8.5, fill: GREY, anchor: 'end' }));
-    ops.push(line(130, 130, 280, 130, { stroke: GREY, dash: [4, 3] }), line(130, 340, 280, 340, { stroke: GREY, dash: [4, 3] }));
-    // kabin ve karşı ağırlık
-    ops.push(rect(158, 242, 76, 98, { fill: WHITE, stroke: NAVY, sw: 2.4, rx: 2 }));
-    ops.push(text(196, 266, 'KABİN', { size: 9, weight: 700, anchor: 'middle', font: 'm' }));
-    ops.push(rect(244, 190, 26, 110, { fill: WHITE, stroke: NAVY, sw: 2.4, rx: 2 }));
-    ops.push(text(257, 250, 'KARŞI AĞIRLIK', { size: 8, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
-    ops.push(line(150, 64, 150, 398, { stroke: GREY, sw: 1.6 }), line(242, 64, 242, 398, { stroke: GREY, sw: 1.6 }), line(272, 64, 272, 398, { stroke: GREY, sw: 1.6 }));
-    // tamponlar (kaide + tip'e göre gövde)
-    const kabinT = tampon(196, 400, v.kabinTampon);
-    const kaT = tampon(257, 400, v.kaTampon);
-    ops.push(...kabinT.ops, ...kaT.ops);
-    ops.push(text(196, 424, 'kabin tamponu', { size: 8, fill: GREY, anchor: 'middle' }), text(257, 424, 'KA tamponu', { size: 8, fill: GREY, anchor: 'middle' }));
-    const tipYazi = tip => (tip || 'tip seçilmedi');
-    ops.push(text(196, 434, tipYazi(v.kabinTampon), { size: 7, fill: GREY, anchor: 'middle' }), text(257, 434, tipYazi(v.kaTampon), { size: 7, fill: GREY, anchor: 'middle' }));
-    ops.push(text(205, 58, 'kuyu tavanı', { size: 8.5, fill: GREY, anchor: 'middle' }));
-    // ölçüler
-    ops.push(...dim('B', v, 116, 40, 116, 130, 112, 85, 'end'));
-    ops.push(...dim('C', v, 116, 130, 116, 340, 112, 235, 'end'));
-    ops.push(...dim('D', v, 116, 340, 116, 400, 112, 372, 'end'));
-    ops.push(...dim('A', v, 346, 40, 346, 400, 354, 220, 'start'));
-    ops.push(...dim('E', v, 170, 242, 170, 340, 176, 314, 'start'));
-    ops.push(...dim('F', v, 306, 190, 306, 300, 312, 168, 'start'));
-    // strok okları tamponun çalışan kısmında; kaide hariç
-    ops.push(...dim('G', v, 212, kabinT.ust, 212, kabinT.ust + kabinT.strokPx, 188, kabinT.ust - 8, 'end'));
-    ops.push(...dim('H', v, 270, kaT.ust, 270, kaT.ust + kaT.strokPx, 288, kaT.ust - 8, 'start'));
+    if (side === 'sol') {
+      ops.push(rect(xBase, y, 4, 22, { fill: INK, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase + 4, y + 9, len, 4, { fill: INK }), rect(xBase + 4 + len, y + 7, 3, 8, { fill: INK }));
+      ops.push(rect(xBase + 4 + len - 2, y + 3, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }));
+    } else {
+      ops.push(rect(xBase - 4, y, 4, 22, { fill: INK, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase - 4 - len, y + 9, len, 4, { fill: INK }), rect(xBase - 4 - len - 3, y + 7, 3, 8, { fill: INK }));
+      ops.push(rect(xBase - 4 - len - 7, y + 3, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }));
+    }
     return ops;
   }
 
-  // Kuyu planı (üstten görünüş)
+  // Kapı grubu (üstten): kabin kapısı + kat kapısı, orta açılır iki kanat; eşik ve kasa
+  function kapiPlan(cx, kabinOn) {
+    const ops = [];
+    const half = 44;
+    // kabin kapısı (kabinin ön yüzünde)
+    ops.push(rect(cx - half, kabinOn - 4, half - 1, 5, { fill: INK }), rect(cx + 1, kabinOn - 4, half - 1, 5, { fill: INK }));
+    // eşik
+    ops.push(rect(cx - half - 6, kabinOn + 2, half * 2 + 12, 7, { fill: WHITE, stroke: INK, sw: 1.2 }));
+    // kat kapısı kanatları ve kasa
+    ops.push(rect(cx - half, kabinOn + 14, half - 1, 4, { fill: '#6A6F8E' }), rect(cx + 1, kabinOn + 14, half - 1, 4, { fill: '#6A6F8E' }));
+    ops.push(rect(cx - half - 8, kabinOn + 11, 8, 12, { fill: '#D9DCE8', stroke: INK, sw: 1.2 }), rect(cx + half, kabinOn + 11, 8, 12, { fill: '#D9DCE8', stroke: INK, sw: 1.2 }));
+    return ops;
+  }
+
+  // Ray konsolu: rayın tabanını duvara bağlayan çelik plaka + duvardaki cıvatalar (raylar duvara monte edilir).
+  // dir: 'x' yatay konsol (duvar x1'de, ray x2'de) | 'y' dikey konsol (duvar y1'de, ray y2'de)
+  function konsol(x1, y1, x2, y2) {
+    const ops = [];
+    if (y1 === y2) {
+      const a = Math.min(x1, x2); const w = Math.abs(x2 - x1);
+      ops.push(rect(a, y1 - 3, w, 6, { fill: '#4B5070', stroke: INK, sw: 0.8 }));
+      const wallX = x1 < x2 ? x1 + 4 : x1 - 4;
+      ops.push(circle(wallX, y1, 1.7, { fill: WHITE, stroke: INK, sw: 0.6 }));
+    } else {
+      const a = Math.min(y1, y2); const h = Math.abs(y2 - y1);
+      ops.push(rect(x1 - 3, a, 6, h, { fill: '#4B5070', stroke: INK, sw: 0.8 }));
+      const wallY = y1 < y2 ? y1 + 4 : y1 - 4;
+      ops.push(circle(x1, wallY, 1.7, { fill: WHITE, stroke: INK, sw: 0.6 }));
+    }
+    return ops;
+  }
+
+  // Yan karşı ağırlığın rayları (üstten): kafesin üst ve alt çubuğuna bağlı, gövde ve başlık karşı ağırlığa (içe) bakar.
+  // yBase: tabanın kafes çubuğuna oturduğu kenar; dir: +1 aşağı, -1 yukarı bakar.
+  function rayDikey(xc, yBase, dir, len = 16) {
+    const y0 = (a, h) => (dir > 0 ? yBase + a : yBase - a - h);
+    return [
+      rect(xc - 11, y0(0, 4), 22, 4, { fill: INK, stroke: INK, sw: 1 }),
+      rect(xc - 2, y0(4, len), 4, len, { fill: INK }),
+      rect(xc - 4, y0(4 + len, 3), 8, 3, { fill: INK }),
+      rect(xc - 8, y0(4 + len - 2, 9), 16, 9, { fill: WHITE, stroke: INK, sw: 1.1 }),
+    ];
+  }
+
+  // Kafes (karşı ağırlık muhafazası): çerçeve + kafes taraması
+  function kafes(x, y, w, h) {
+    const ops = [rect(x, y, w, h, { fill: '#FAFAFD', stroke: INK, sw: 1.5 })];
+    for (let k = 8; k < w; k += 8) ops.push(line(x + k, y, x + k, y + h, { stroke: LIGHT, sw: 0.6 }));
+    for (let k = 8; k < h; k += 8) ops.push(line(x, y + k, x + w, y + k, { stroke: LIGHT, sw: 0.6 }));
+    return ops;
+  }
+
+  // Kuyu planı (üstten görünüş). Kapı tarafında duvar çizilmez; yalnız kat girişi çizgisi vardır.
+  // Kabin rayları her zaman kabinin orta derinliğindedir (merkeze yakın). Yan ağırlık kafes içinde durur ve
+  // kabin raylarından biri kafesten çıkar.
   function planOps(v) {
     const ops = [];
-    ops.push(rect(70, 40, 260, 220, { fill: SOFT, stroke: NAVY, sw: 3 }));
-    ops.push(rect(110, 106, 120, 120, { fill: WHITE, stroke: NAVY, sw: 2.4 }));
-    ops.push(text(170, 150, 'KABİN', { size: 9, weight: 700, anchor: 'middle', font: 'm' }));
-    ops.push(rect(125, 60, 90, 26, { fill: WHITE, stroke: NAVY, sw: 2.2 }));
-    ops.push(text(170, 77, 'KARŞI AĞIRLIK', { size: 8, weight: 700, anchor: 'middle', font: 'm' }));
-    [[99, 160], [232, 160], [113, 69], [219, 69]].forEach(([x, y]) => ops.push(rect(x, y, x < 110 && y === 69 ? 8 : 9, x < 110 && y === 69 ? 8 : 9, { fill: NAVY })));
-    ops.push(line(150, 226, 190, 226, { stroke: WHITE, sw: 4 }), line(150, 222, 150, 232, { sw: 2 }), line(190, 222, 190, 232, { sw: 2 }));
-    ops.push(text(170, 246, 'kapı', { size: 8, fill: GREY, anchor: 'middle' }));
-    ops.push(...dim('I', v, 70, 290, 330, 290, 200, 290));
-    ops.push(...dim('J', v, 362, 40, 362, 260, 370, 150, 'start'));
-    ops.push(...dim('N', v, 117, 50, 223, 50, 170, 50));
-    ops.push(...dim('M', v, 104, 98, 236, 98, 170, 98));
-    ops.push(...dim('K', v, 110, 206, 230, 206, 170, 206));
-    ops.push(...dim('L', v, 122, 106, 122, 226, 126, 180, 'start'));
-    ops.push(...dim('R', v, 90, 73, 90, 164, 86, 120, 'end'));
-    ops.push(...dim('Q', v, 252, 164, 252, 226, 256, 195, 'start'));
-    ops.push(...dim('S', v, 150, 262, 190, 262, 170, 273));
-    ops.push(text(240, 76, `KA: O ${v.O || '–'} × P ${v.P || '–'}`, { size: 8.4, weight: 700 }));
+    const konum = v.kaKonum; // 'Arkada' (varsayılan) | 'Sağda' | 'Solda'
+    const yan = !v.hidrolik && (konum === 'Sağda' || konum === 'Solda');
+    const sag = konum === 'Sağda';
+    const L = 136; const R = 424; // kuyu iç yüzleri
+    // arka duvar: arkada karşı ağırlık yoksa (yan ağırlık, hidrolik) kabine yaklaşır
+    const T = !v.hidrolik && !yan ? 106 : 150;
+    // beton duvarlar: üst, sol, sağ
+    ops.push(...wall(120, T - 16, 320, 16), ...wall(120, T, 16, 374 - T), ...wall(424, T, 16, 374 - T));
+    // eksen çizgileri
+    ops.push(line(280, 78, 280, 404, { stroke: GOLD, sw: 0.9, dash: dashDot }));
+    ops.push(line(L + 4, 258, R - 4, 258, { stroke: GOLD, sw: 0.9, dash: dashDot }));
+    // kabin: kuyu genişliğine yayılır (duvara ve ağırlığa yaklaşır); yan ağırlıkta ağırlığın kafesi kadar yer bırakır
+    let car = { x: 168, y: 176, w: 224, h: 164 };
+    if (yan) car = sag ? { x: 168, y: 176, w: 174, h: 164 } : { x: 220, y: 176, w: 174, h: 164 };
+    const cx = car.x + car.w / 2;
+    ops.push(...frame(car.x, car.y, car.w, car.h, { cross: true }));
+    ops.push(text(cx, 248, 'KABİN', { size: 9, weight: 700, anchor: 'middle', font: 'm' }));
+    if (Number.isFinite(v.K_ham) && Number.isFinite(v.L_ham) && v.K_ham > 0 && v.L_ham > 0) {
+      const alan = ((v.K_ham * v.L_ham) / 10000).toFixed(2).replace('.', ',');
+      ops.push(text(cx, 262, `A = ${alan} m² (hesaplanan)`, { size: 7.2, fill: GREY, anchor: 'middle' }));
+    }
+    // yan karşı ağırlığın kafesi önce çizilir: kabin rayı kafesin kabine bakan kenarına monte, üstte görünür
+    if (yan) {
+      const kx0 = sag ? 366 : 136;
+      ops.push(...kafes(kx0, 170, 58, 176));
+    }
+    // kabin rayları: orta derinlikte (merkeze yakın), gövde ve başlık içe (kabine) bakar
+    const railY = 247;
+    const railC = railY + 11;
+    const leftBase = car.x - 30;
+    const rightBase = car.x + car.w + 30;
+    ops.push(...rayPlan(leftBase, railY, 'sol'), ...rayPlan(rightBase, railY, 'sag'));
+    // sol ray duvara (veya kafese) konsolla bağlı; sağ ray duvara (veya kafese) bağlı
+    const leftWall = yan && !sag ? 194 : L;
+    const rightWall = yan && sag ? 366 : R;
+    ops.push(...konsol(leftWall, railC, leftBase, railC), ...konsol(rightWall, railC, rightBase, railC));
+    const leftC = leftBase + 4 + 16 + 1.5;
+    const rightC = rightBase - 4 - 16 - 1.5;
+    // kapı grubu ve kat girişi çizgisi
+    ops.push(...kapiPlan(cx, 340));
+    ops.push(line(104, 374, 456, 374, { stroke: GREY, sw: 1, dash: [6, 3] }));
+    ops.push(text(452, 388, 'kat girişi', { size: 7.6, fill: GREY, anchor: 'end' }));
+    let kaRailC = null;
+    if (!v.hidrolik && !yan) {
+      // arka karşı ağırlık: kabinin arkasında, rayları duvara bağlı
+      const kaX = 200; const kaW = 160;
+      ops.push(...frame(kaX, 112, kaW, 28));
+      ops.push(text(280, 129, 'KARŞI AĞIRLIK', { size: 7.6, weight: 700, anchor: 'middle', font: 'm' }));
+      const kLeft = kaX - 30; const kRight = kaX + kaW + 30;
+      ops.push(...rayPlan(kLeft, 115, 'sol'), ...rayPlan(kRight, 115, 'sag'));
+      kaRailC = 126;
+      ops.push(...tag(280, 156, `KARŞI AĞIRLIK ${v.O || '–'} × ${v.P || '–'} cm (genişlik × derinlik)`, { size: 7.6, weight: 700, anchor: 'middle', fill: v.O || v.P ? NAVY : GREY }));
+      ops.push(...dimH(v, 'N', kLeft + 4 + 16 + 1.5, kRight - 4 - 16 - 1.5, 66, 127, 127));
+    } else if (yan) {
+      // yan karşı ağırlık: kafes içinde; kafes duvara yaslı, kabin rayının biri kafesten çıkar
+      const kx = sag ? 366 : 136;
+      const kafesW = 58;
+      const midX = kx + kafesW / 2;
+      const cwx = midX - 14;
+      ops.push(...frame(cwx, 198, 28, 118));
+      ops.push(text(midX, 262, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
+      // karşı ağırlık rayları: kafesin üst ve alt çubuğuna bağlı, karşı ağırlığa bakar
+      const yTopBase = 172; const yBotBase = 344;
+      ops.push(...rayDikey(midX, yTopBase, +1), ...rayDikey(midX, yBotBase, -1));
+      const yTop = yTopBase + 4 + 16 + 1.5; const yBot = yBotBase - 4 - 16 - 1.5;
+      const wx = midX + 8;
+      ops.push(...tag(sag ? R : L, 166, `KARŞI AĞIRLIK ${v.O || '–'} × ${v.P || '–'} cm (gen. × der.)`, { size: 7.2, weight: 700, anchor: sag ? 'end' : 'start', fill: v.O || v.P ? NAVY : GREY }));
+      kaRailC = 'yan';
+      ops.push(...dimV(v, 'N', yTop, yBot, sag ? 470 : 38, wx, wx, { short: true }));
+    } else {
+      // hidrolik: yan piston ve silindir
+      ops.push(circle(150, 258, 13, { fill: WHITE, stroke: INK, sw: 2 }), circle(150, 258, 5.5, { fill: LIGHT, stroke: INK, sw: 1 }));
+      ops.push(line(163, 258, car.x - 4, 258, { stroke: INK, sw: 2 }));
+      ops.push(text(150, 284, 'piston', { size: 7.4, fill: GREY, anchor: 'middle' }));
+    }
+    // ölçüler: üst zincir (N, M, I), sol (L, J), sağ (R, Q), alt (K, S)
+    ops.push(...dimH(v, 'M', leftC, rightC, 46, railY, railY));
+    ops.push(...dimH(v, 'I', L, R, 26, T, T));
+    ops.push(...dimV(v, 'L', car.y, 340, 92, car.x, car.x));
+    ops.push(...dimV(v, 'J', T, 374, 62, L, L));
+    if (kaRailC !== null && kaRailC !== 'yan') ops.push(...dimV(v, 'R', kaRailC, railC, 470, R, rightBase, { short: true }));
+    ops.push(...dimV(v, 'Q', railC, 340, yan && sag ? 494 : 470, R, car.x + car.w, { short: true }));
+    ops.push(...dimH(v, 'K', car.x, car.x + car.w, 422, 342, 342));
+    ops.push(...dimH(v, 'S', cx - 44, cx + 44, 396, 364, 364, { name: 'KAPI NET GENİŞLİĞİ' }));
+    return ops;
+  }
+
+  // Küçük harfli ölçü oku (tampon kaidesi / gövdesi / stroku)
+  function miniDim(letter, has, x, y1, y2, side) {
+    const col = has ? PINK : GREY;
+    const lx = side === 'sol' ? x - 9 : x + 9;
+    return [
+      line(x, y1, x, y2, { stroke: col, sw: 1.1 }), tick(x, y1, col), tick(x, y2, col),
+      circle(lx, (y1 + y2) / 2, 5.4, { fill: col }),
+      text(lx, (y1 + y2) / 2 + 2.8, letter, { size: 7.2, weight: 700, fill: WHITE, anchor: 'middle', font: 'm' }),
+    ];
+  }
+
+  // Tamponun solunda kaide ve gövde okları, sağında strok oku
+  function bufferDims(v, cx, t, kaideL, bodyL, strokL) {
+    const ops = [];
+    const tabanUst = t.kaideUst;
+    ops.push(...miniDim(kaideL, !!v[kaideL], cx - 19, tabanUst, tabanUst + 12, 'sol'));
+    ops.push(...miniDim(bodyL, !!v[bodyL], cx - 19, t.ust, tabanUst, 'sol'));
+    ops.push(...miniDim(strokL, !!v[strokL], cx + 17, t.ust, t.ust + t.strokPx, 'sag'));
+    return ops;
+  }
+
+  // Tampon bilgi kutusu: tür ve kaide / gövde / strok değerleri
+  function bufferNote(v, cx, y, ad, tip, kaideL, bodyL, strokL) {
+    const val = l => (v[l] ? `${v[l]}` : '–');
+    return [
+      text(cx, y, `${ad}${tip ? ` · ${tip}` : ' · tip seçilmedi'}`, { size: 7.4, weight: 700, fill: INK, anchor: 'middle' }),
+      text(cx, y + 11, `kaide ${kaideL} ${val(kaideL)} · tampon ${bodyL} ${val(bodyL)} · strok ${strokL} ${val(strokL)} cm`, { size: 7, fill: v[kaideL] || v[bodyL] || v[strokL] ? NAVY : GREY, anchor: 'middle' }),
+    ];
+  }
+
+  // Yan görünüşte ray: arkadaki duvara konsollarla bağlı ince şerit (baştan görünür)
+  function raySectionBrackets(xRay, xWall, ys) {
+    const ops = [];
+    ops.push(rect(xRay - 2, 76, 4, 410, { fill: '#C9CDDD', stroke: HATCH, sw: 0.8 }));
+    ys.forEach(y => {
+      if (xWall === null) {
+        // yan duvara görünüşe dik monte: konsol baştan görünür (kısa kulak)
+        ops.push(rect(xRay - 8, y - 3, 16, 6, { fill: '#4B5070', stroke: INK, sw: 0.8 }));
+      } else {
+        const a = Math.min(xRay, xWall); const w = Math.abs(xWall - xRay);
+        ops.push(rect(a, y - 3, w, 6, { fill: '#4B5070', stroke: INK, sw: 0.8 }));
+      }
+    });
+    return ops;
+  }
+
+  // Kuyu kesiti (yan görünüş, kapı solda). Raylar arka duvara (sağ) konsollarla bağlı gösterilir.
+  function kesitOps(v) {
+    const ops = [];
+    const konum = v.kaKonum;
+    const yan = !v.hidrolik && (konum === 'Sağda' || konum === 'Solda');
+    ops.push(rect(176, 76, 200, 410, { fill: '#F4F5FA' }));
+    // tavan döşemesi, çukur döşemesi, sağ duvar ve kat kapısı boşluklu sol duvar
+    ops.push(...wall(160, 60, 232, 16), ...wall(160, 486, 232, 16), ...wall(376, 76, 16, 410));
+    ops.push(...wall(160, 76, 16, 44), ...wall(160, 170, 16, 160), ...wall(160, 420, 16, 66));
+    // kat kapıları (son kat ve ilk kat): kasa + kapı kanadı
+    [[120, 170], [330, 420]].forEach(([top, bottom]) => {
+      ops.push(rect(158, top, 20, 3, { fill: INK }), rect(160, top + 4, 4, bottom - top - 4, { fill: '#6A6F8E' }));
+    });
+    // kat döşemeleri ve kat seviyeleri
+    ops.push(...wall(88, 170, 72, 10), ...wall(88, 420, 72, 10));
+    ops.push(line(176, 170, 376, 170, { stroke: GREY, sw: 0.9, dash: [5, 3] }), line(176, 420, 376, 420, { stroke: GREY, sw: 0.9, dash: [5, 3] }));
+    ops.push(text(84, 164, 'son kat', { size: 8, fill: GREY, anchor: 'end' }), text(84, 414, 'ilk kat', { size: 8, fill: GREY, anchor: 'end' }));
+    // raylar: kabin rayı kabinin orta derinliğinde, karşı ağırlık rayı arka duvara yakın; hepsi konsolla duvara bağlı
+    ops.push(...raySectionBrackets(261, null, [120, 250, 380, 470]));
+    if (!v.hidrolik && !yan) ops.push(...raySectionBrackets(356, 376, [100, 230, 360, 460]));
+    // kabin (kapı sol yüzde)
+    ops.push(...frame(206, 306, 110, 114, { cross: true }));
+    ops.push(text(266, 366, 'KABİN', { size: 9, weight: 700, anchor: 'middle', font: 'm' }));
+    ops.push(rect(206, 332, 5, 88, { fill: INK }));
+    // karşı ağırlık (hidrolikte yok: piston)
+    if (!v.hidrolik && !yan) {
+      ops.push(...frame(342, 226, 22, 124));
+      ops.push(text(353, 290, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
+    } else if (yan) {
+      ops.push(rect(262, 226, 24, 124, { fill: null, stroke: INK, sw: 1.4, dash: [4, 3] }));
+      ops.push(text(274, 290, 'KA (yanda)', { size: 7, fill: GREY, anchor: 'middle', rot: -90 }));
+    } else {
+      ops.push(rect(344, 190, 14, 230, { fill: WHITE, stroke: INK, sw: 1.8 }), line(351, 190, 351, 420, { stroke: LIGHT, sw: 1 }));
+      ops.push(text(351, 182, 'piston', { size: 7.4, fill: GREY, anchor: 'middle' }));
+    }
+    // tamponlar: kaide + gövde + strok
+    const kabinT = tampon(262, 486, v.kabinTampon);
+    const kaT = tampon(353, 486, v.kaTampon);
+    ops.push(...kabinT.ops);
+    ops.push(...bufferDims(v, 262, kabinT, 'U', 'V', 'G'));
+    ops.push(...bufferNote(v, 262, 516, 'kabin tamponu', v.kabinTampon, 'U', 'V', 'G'));
+    if (!v.hidrolik) {
+      ops.push(...kaT.ops);
+      ops.push(...bufferDims(v, 353, kaT, 'W', 'X', 'H'));
+      ops.push(...bufferNote(v, 353, 540, 'KA tamponu', v.kaTampon, 'W', 'X', 'H'));
+    }
+    ops.push(text(276, 70, 'kuyu tavanı', { size: 7.6, fill: INK, anchor: 'middle' }));
+    // ölçüler
+    ops.push(...dimV(v, 'B', 76, 170, 132, 160, 160));
+    ops.push(...dimV(v, 'C', 170, 420, 132, 160, 160));
+    ops.push(...dimV(v, 'D', 420, 486, 132, 160, 160));
+    ops.push(...dimV(v, 'A', 60, 502, 100, 88, 160));
+    ops.push(...dimV(v, 'E', 306, 420, 330, 316, 316, { short: true }));
+    if (!v.hidrolik) ops.push(...dimV(v, 'F', 226, 350, 412, 364, 392, { short: true }));
+    // kapı net yüksekliği: kabin kapısının sol yanında
+    ops.push(...dimV(v, 'T', 332, 420, 192, 206, 206, { name: 'KAPI NET YÜKSEKLİĞİ' }));
     return ops;
   }
 
   // ---- SVG ----------------------------------------------------------------
   const FONT = { m: 'Montserrat,Arial,sans-serif', i: 'Inter,Arial,sans-serif' };
-  const DEFS = `<defs>
-<marker id="ok-p" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${PINK}"/></marker>
-<marker id="ok-g" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L8 4L0 8z" fill="${GREY}"/></marker>
-<pattern id="tarama" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="${GREY}" stroke-width="1.2"/></pattern>
-</defs>`;
 
   function opToSvg(o) {
     if (o.t === 'rect') {
-      const fill = o.hatch ? 'url(#tarama)' : (o.fill || 'none');
-      return `<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"${o.rx ? ` rx="${o.rx}"` : ''} fill="${fill}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw}"` : ''}${o.dash ? ` stroke-dasharray="${o.dash.join(' ')}"` : ''}/>`;
+      return `<rect x="${o.x}" y="${o.y}" width="${o.w}" height="${o.h}"${o.rx ? ` rx="${o.rx}"` : ''} fill="${o.fill || 'none'}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw}"` : ''}${o.dash ? ` stroke-dasharray="${o.dash.join(' ')}"` : ''}/>`;
     }
     if (o.t === 'line') {
-      const marker = o.arrows ? ` marker-start="url(#ok-${o.stroke === PINK ? 'p' : 'g'})" marker-end="url(#ok-${o.stroke === PINK ? 'p' : 'g'})"` : '';
-      return `<line x1="${o.x1}" y1="${o.y1}" x2="${o.x2}" y2="${o.y2}" stroke="${o.stroke}" stroke-width="${o.sw}"${o.dash ? ` stroke-dasharray="${o.dash.join(' ')}"` : ''}${marker}/>`;
+      return `<line x1="${o.x1}" y1="${o.y1}" x2="${o.x2}" y2="${o.y2}" stroke="${o.stroke}" stroke-width="${o.sw}"${o.dash ? ` stroke-dasharray="${o.dash.join(' ')}"` : ''}/>`;
     }
-    if (o.t === 'poly') return `<polyline points="${o.pts.map(p => p.join(',')).join(' ')}" fill="${o.fill || 'none'}" stroke="${o.stroke}" stroke-width="${o.sw}"/>`;
     if (o.t === 'circle') return `<circle cx="${o.cx}" cy="${o.cy}" r="${o.r}" fill="${o.fill || 'none'}"${o.stroke ? ` stroke="${o.stroke}" stroke-width="${o.sw}"` : ''}/>`;
     if (o.t === 'text') {
       const rot = o.rot ? ` transform="rotate(${o.rot} ${o.x} ${o.y})"` : '';
@@ -202,45 +471,47 @@
     return '';
   }
 
-  function toSvg(ops, width, height, label) {
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(label)}" style="width:100%;height:auto">${DEFS}${ops.map(opToSvg).join('')}</svg>`;
+  function toSvg(ops, box, label) {
+    return `<svg viewBox="${box.x0} ${box.y0} ${box.x1 - box.x0} ${box.y1 - box.y0}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(label)}" style="width:100%;height:auto">${ops.map(opToSvg).join('')}</svg>`;
   }
 
-  const KESIT_BOYUT = [440, 440];
-  const PLAN_BOYUT = [440, 340];
+  // Çizimin görünür alanı (PDF ve SVG için kırpma kutusu)
+  const KESIT_KUTU = Object.freeze({ x0: 60, y0: 40, x1: 440, y1: 560 });
+  const PLAN_KUTU = Object.freeze({ x0: 16, y0: 10, x1: 502, y1: 436 });
 
-  function kesit(v) { return toSvg(kesitOps(v), KESIT_BOYUT[0], KESIT_BOYUT[1], 'Kuyu kesiti'); }
-  function plan(v) { return toSvg(planOps(v), PLAN_BOYUT[0], PLAN_BOYUT[1], 'Kuyu planı'); }
+  function kesit(v) { return toSvg(kesitOps(v), KESIT_KUTU, 'Kuyu kesiti'); }
+  function plan(v) { return toSvg(planOps(v), PLAN_KUTU, 'Kuyu planı'); }
 
   function legend(v) {
-    const rows = OLCULER.map(([letter, , name]) =>
+    const rows = OLCULER.filter(([letter]) => !(v.hidrolik && ['F', 'H', 'N', 'O', 'P', 'R', 'W', 'X'].includes(letter))).map(([letter, , name]) =>
       `<div class="lg"><i>${letter}</i><span>${esc(name)}</span><b>${v[letter] ? `${esc(v[letter])} cm` : '–'}</b></div>`).join('');
     return `<div class="legend">${rows}</div>`;
   }
 
   const CSS = `
-.sema{margin:0 0 5mm;break-inside:avoid-page}
-.sema .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sema figure{margin:0;border:1px solid #E3E5EE;border-radius:8px;padding:6px 8px;background:#fff}
+.sema{margin:0 0 5mm}
+.sema .pair{display:grid;grid-template-columns:1fr;gap:8px}
+.sema figure{margin:0;border:1px solid #E3E5EE;border-radius:8px;padding:6px 8px;background:#fff;break-inside:avoid-page}
 .sema figcaption{font:700 9px 'Montserrat',Arial,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#6E7186;margin-bottom:2px}
-.sema .legend{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin-top:6px;font-size:9px}
+.sema svg{max-height:150mm}
+.sema .legend{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;margin-top:6px;font-size:9px;break-inside:avoid-page}
 .sema .lg{display:grid;grid-template-columns:16px 1fr auto;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid #E3E5EE}
 .sema .lg i{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;background:#EA0048;color:#fff;font:700 7.5px 'Montserrat',Arial,sans-serif;font-style:normal}
 .sema .lg b{font-weight:700;color:#20235B}
 .sema .note{margin:4px 0 0;font-size:8.5px;color:#6E7186}
-@media (max-width:620px){.sema .pair{grid-template-columns:1fr}.sema .legend{grid-template-columns:1fr}}`;
+@media (max-width:620px){.sema .legend{grid-template-columns:1fr}}`;
 
   // values: { alan_anahtarı: { field_value } }. Hiç ölçü yoksa boş döner. index: bölüm numarası.
   function build(values, index) {
     const v = valuesOf(values);
     if (!OLCULER.some(([letter]) => v[letter])) return '';
     return `<section class="sema"><h2><span class="no">${esc(index || '')}</span>Kuyu şemaları<em>şematik · ölçekli değil</em></h2>
-<div class="pair"><figure><figcaption>Kuyu kesiti</figcaption>${kesit(v)}</figure><figure><figcaption>Kuyu planı</figcaption>${plan(v)}</figure></div>
-${legend(v)}<p class="note">Şemalar yalnız girilen ölçülerin yerini göstermek içindir; ölçekli değildir ve uygunluk değerlendirmesi içermez. Tampon çizimleri seçilen tampon tipine göre gösterilir; kaideler şematiktir ve ölçüye dahil değildir.</p></section>`;
+<div class="pair"><figure><figcaption>Kuyu planı</figcaption>${plan(v)}</figure><figure><figcaption>Kuyu kesiti</figcaption>${kesit(v)}</figure></div>
+${legend(v)}<p class="note">Şemalar yalnız girilen ölçülerin yerini göstermek içindir; ölçekli değildir ve uygunluk değerlendirmesi içermez. Tampon çizimleri seçilen tampon tipine göre gösterilir; kaideler şematiktir ve ölçüye dahil değildir. Kabin alanı kabin iç genişliği ve derinliğinden hesaplanır.</p></section>`;
   }
 
   root.AVES_FR65_SEMA = Object.freeze({
     build, valuesOf, kesitOps, planOps, kesit, plan, legend, CSS, OLCULER,
-    boyutlar: Object.freeze({ kesit: KESIT_BOYUT, plan: PLAN_BOYUT }),
+    kutular: Object.freeze({ kesit: KESIT_KUTU, plan: PLAN_KUTU }),
   });
 })(globalThis);

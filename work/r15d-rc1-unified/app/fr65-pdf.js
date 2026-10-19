@@ -394,45 +394,53 @@
       }
     }
 
+    function figure(ops, box, titleText, maxH) {
+      const w = box.x1 - box.x0;
+      const h = box.y1 - box.y0;
+      const scale = Math.min((CONTENT_W - 16) / w, maxH / h);
+      const figW = w * scale + 16;
+      const figH = h * scale + 26;
+      ensure(figH + 6);
+      fillRect(MARGIN, y, CONTENT_W, figH, { stroke: LINE, sw: 0.8, r: 5 });
+      drawText(titleText, MARGIN + 10, y + 13, { size: 6.8, color: MUTED, bold: true });
+      const ox = MARGIN + (CONTENT_W - w * scale) / 2 - box.x0 * scale;
+      const oy = y + 20 - box.y0 * scale;
+      drawOps(ops, ox, oy, scale, 1, page);
+      y += figH + 8;
+      void figW;
+    }
+
     function semaBlock(index) {
       if (!SEMA || !c.values) return false;
       const v = SEMA.valuesOf(c.values);
       if (!SEMA.OLCULER.some(([letter]) => v[letter])) return false;
-      newPage();
+      // Her çizim okunaklı olsun diye tam genişlikte çizilir; sığmıyorsa yeni sayfada başlar.
+      ensure(640);
       sectionHeading(index, 'Kuyu şemaları', 'şematik · ölçekli değil');
-      const figW = (CONTENT_W - 8) / 2;
-      const kesit = SEMA.kesitOps(v);
-      const plan = SEMA.planOps(v);
-      // yararlı alan: kesit x 90..420, y 28..440 ; plan x 55..410, y 28..300
-      const kScale = Math.min((figW - 12) / 330, 380 / 412);
-      const pScale = Math.min((figW - 12) / 355, 380 / 272);
-      const figH = Math.max(412 * kScale, 272 * pScale) + 26;
-      fillRect(MARGIN, y, figW, figH, { stroke: LINE, sw: 0.8, r: 5 });
-      fillRect(MARGIN + figW + 8, y, figW, figH, { stroke: LINE, sw: 0.8, r: 5 });
-      drawText('KUYU KESİTİ', MARGIN + 8, y + 12, { size: 6.5, color: MUTED, bold: true });
-      drawText('KUYU PLANI', MARGIN + figW + 16, y + 12, { size: 6.5, color: MUTED, bold: true });
-      drawOps(kesit, MARGIN + 6 - 90 * kScale, y + 18 - 28 * kScale, kScale, 1.18, page);
-      drawOps(plan, MARGIN + figW + 14 - 55 * pScale, y + 18 - 28 * pScale, pScale, 1.18, page);
-      y += figH + 10;
-      // gösterge
-      const half = Math.ceil(SEMA.OLCULER.length / 2);
+      figure(SEMA.planOps(v), SEMA.kutular.plan, 'KUYU PLANI', 400);
+      const hidden = v.hidrolik ? ['F', 'H', 'N', 'O', 'P', 'R', 'W', 'X'] : [];
+      const items = SEMA.OLCULER.filter(([letter]) => !hidden.includes(letter));
+      const half = Math.ceil(items.length / 2);
       const colW = (CONTENT_W - 16) / 2;
+      ensure(half * 14 + 6);
       for (let i = 0; i < half; i += 1) {
         ensure(14);
-        [SEMA.OLCULER[i], SEMA.OLCULER[i + half]].forEach((item, ci) => {
+        [items[i], items[i + half]].forEach((item, ci) => {
           if (!item) return;
           const [letter, , name] = item;
           const x = MARGIN + ci * (colW + 16);
           fillRect(x, y + 1, 11, 11, { fill: PINK, r: 5.5 });
           drawText(letter, x + 5.5, y + 9, { size: 6.5, color: '#FFFFFF', bold: true, anchor: 'middle' });
-          drawText(name, x + 16, y + 9, { size: 7.6, color: INK });
-          drawText(v[letter] ? `${v[letter]} cm` : '–', x + colW, y + 9, { size: 7.6, color: NAVY, bold: true, anchor: 'end' });
+          drawText(name, x + 16, y + 9, { size: 7.2, color: INK });
+          drawText(v[letter] ? `${v[letter]} cm` : '–', x + colW, y + 9, { size: 7.2, color: NAVY, bold: true, anchor: 'end' });
         });
         hLine(MARGIN, MARGIN + colW, y + 13); hLine(MARGIN + colW + 16, MARGIN + CONTENT_W, y + 13);
         y += 14;
       }
-      y += 4;
-      for (const line of wrap('Şemalar yalnız girilen ölçülerin yerini göstermek içindir; ölçekli değildir ve uygunluk değerlendirmesi içermez. Tampon çizimleri seçilen tampon tipine göre gösterilir; kaideler şematiktir ve ölçüye dahil değildir.', 6.8, CONTENT_W)) {
+      y += 6;
+      ensure(660);
+      figure(SEMA.kesitOps(v), SEMA.kutular.kesit, 'KUYU KESİTİ', 640);
+      for (const line of wrap('Şemalar yalnız girilen ölçülerin yerini göstermek içindir; ölçekli değildir ve uygunluk değerlendirmesi içermez. Tampon çizimleri seçilen tampon tipine göre gösterilir (kaide + tampon gövdesi + strok); kaideler şematiktir. Kabin alanı kabin iç genişliği ve derinliğinden hesaplanır.', 6.8, CONTENT_W)) {
         ensure(10); drawText(line, MARGIN, y + 7, { size: 6.8, color: MUTED }); y += 9;
       }
       y += 8;
