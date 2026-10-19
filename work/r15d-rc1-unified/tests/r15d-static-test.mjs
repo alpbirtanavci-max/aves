@@ -105,10 +105,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.98 sürümü', index.includes('R15D-RC3.9.98</b>'));
-test('app R15D rc3.9.98 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.98'"));
-test('service worker rc3.9.98 cache', sw.includes("aves-saha-r15d-rc3998'"));
-test('uygulama manifesti rc3.9.98 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.98"'));
+test('index R15D rc3.9.99 sürümü', index.includes('R15D-RC3.9.99</b>'));
+test('app R15D rc3.9.99 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.99'"));
+test('service worker rc3.9.99 cache', sw.includes("aves-saha-r15d-rc3999'"));
+test('uygulama manifesti rc3.9.99 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.99"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1884,7 +1884,8 @@ test('B/E/H1: seri no ve saha adresi açılışta sorulmaz, kayıt içinde küny
   app.includes('id="fSeriWrap"') && app.includes('id="fAdresWrap"') &&
   app.includes("document.getElementById('fSeriWrap').classList.toggle('hidden', !isG)") &&
   app.includes('id="fr65Seri"') && app.includes('id="fr65Adres"') &&
-  app.includes("fields: ['asansor_seri_no', 'denetim_adresi', 'updated_at']") &&
+  app.includes("fields: [...degisen, 'updated_at']") && app.includes('id="fr65Kimlik"') && app.includes('id="fr65Dosya"') &&
+  app.includes('id="fDosyaWrap"') && app.includes('id="fKimlikWrap"') && index.includes('.grid2{align-items:end;}') &&
   app.includes("asansor_seri_no: f.seri || ''") &&
   app.includes("await Promise.race([Sync.pushOutbox(), new Promise(resolve => setTimeout(resolve, 5000))])"));
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {

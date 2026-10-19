@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.98';
+const APP_VERSION = 'R15D-rc3.9.99';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
@@ -699,7 +699,7 @@ const Sync = (() => {
               'beyan_yuku_kg', 'kapasite_kisi', 'beyan_hizi_ms', 'durak_sayisi', 'bina_asansor_sayisi',
               'denetim_durumu', 'calisma_tamamlandi_at', 'duzeltme_oturumu_id',
               'duzeltme_nedeni', 'duzeltme_baslatildi_at', 'duzeltme_baslatan_email', 'arsive_aktarildi_at', 'arsive_aktaran_email',
-              'asansor_seri_no', 'denetim_adresi',
+              'asansor_seri_no', 'denetim_adresi', 'asansor_kimlik_no', 'dosya_no',
               'duzeltme_baslatan_ad', 'butunluk_ozeti', 'butunluk_hash', 'butunluk_hesaplandi_at',
               'son_degistiren_email', 'son_degistiren_ad', 'son_degistiren_rol', 'son_degistiren_at',
             ]);
@@ -2947,8 +2947,8 @@ function showYeniForm() {
           <div class="field full"><label for="fMusteri">Asansör firması adı *</label><input id="fMusteri" autocomplete="organization"></div>
           <div class="field full"><label for="fFirmaAdres">Asansör firmasının adresi *</label><input id="fFirmaAdres" autocomplete="street-address"></div>
           <div class="field" id="fSeriWrap"><label for="fSeri">Asansör seri no *</label><input id="fSeri" autocomplete="off"></div>
-          <div class="field"><label for="fDosya">Dosya no</label><input id="fDosya" autocomplete="off"></div>
-          <div class="field"><label for="fKimlikNo">Asansör kimlik no</label><input id="fKimlikNo" autocomplete="off"></div>
+          <div class="field" id="fDosyaWrap"><label for="fDosya">Dosya no</label><input id="fDosya" autocomplete="off"></div>
+          <div class="field" id="fKimlikWrap"><label for="fKimlikNo">Asansör kimlik no</label><input id="fKimlikNo" autocomplete="off"></div>
           <div class="field full" id="fAdresWrap"><label for="fAdres">Asansörün bulunduğu adres *</label><input id="fAdres" autocomplete="street-address"></div>
         </div>
       </div>
@@ -3026,6 +3026,8 @@ function showYeniForm() {
       // B/E/H1: seri no ve sahanın adresi kayıt açıldıktan sonra, sahada istenir.
       document.getElementById('fSeriWrap').classList.toggle('hidden', !isG);
       document.getElementById('fAdresWrap').classList.toggle('hidden', !isG);
+      document.getElementById('fDosyaWrap').classList.toggle('hidden', !isG);
+      document.getElementById('fKimlikWrap').classList.toggle('hidden', !isG);
       document.getElementById('fKaydet').textContent = isG ? 'Denetimi başlat' : 'Saha veri kaydını başlat';
       single.sDenetimTuru = moduleTypes[single.module].tur;
     };
@@ -3074,8 +3076,8 @@ function showYeniForm() {
         }
         showFr65OnayEkrani({
           akış: 'fr65_saha_v1', muhendis, musteri, firmaAdresi, seri: '', adres: '',
-          dosya: document.getElementById('fDosya').value.trim() || null,
-          kimlikNo, modul: module.modul, denetimTuru: module.tur,
+          dosya: null,
+          kimlikNo: null, modul: module.modul, denetimTuru: module.tur,
           kontrolProfili: module.profil, tahrik: single.sCaptureTahrik, md: single.sCaptureMD || null,
           yuk: captureYuk, kapasite: captureKapasite, hiz: captureHiz, durak: captureDurak,
           kat: captureKat, binaAsansorSayisi: captureBinaAsansorSayisi,
@@ -3978,8 +3980,12 @@ function showYeniForm() {
         ${canEdit ? `<div class="fr65-kunye">
           <label>Asansör seri no<input id="fr65Seri" value="${esc(d.asansor_seri_no || '')}" autocomplete="off" placeholder="Sahada okuyup girin"></label>
           <label>Asansörün bulunduğu adres<input id="fr65Adres" value="${esc(d.denetim_adresi || '')}" autocomplete="street-address" placeholder="Saha adresi"></label>
+          <label>Asansör kimlik no (varsa)<input id="fr65Kimlik" value="${esc(d.asansor_kimlik_no || '')}" autocomplete="off"></label>
+          <label>Dosya no (varsa)<input id="fr65Dosya" value="${esc(d.dosya_no || '')}" autocomplete="off"></label>
         </div>` : `<div class="dmeta"><b>Asansör seri no:</b> ${esc(d.asansor_seri_no || '—')}</div>
-        <div class="dmeta"><b>Asansörün bulunduğu adres:</b> ${esc(d.denetim_adresi || '—')}</div>`}
+        <div class="dmeta"><b>Asansörün bulunduğu adres:</b> ${esc(d.denetim_adresi || '—')}</div>
+        ${d.asansor_kimlik_no ? `<div class="dmeta"><b>Asansör kimlik no:</b> ${esc(d.asansor_kimlik_no)}</div>` : ''}
+        ${d.dosya_no ? `<div class="dmeta"><b>Dosya no:</b> ${esc(d.dosya_no)}</div>` : ''}`}
         <div class="dmeta"><b>Tahrik:</b> ${esc(d.tahrik_tipi)} · <b>Yük:</b> ${esc(d.beyan_yuku_kg || '—')} kg · <b>Kapasite:</b> ${esc(d.kapasite_kisi || '—')} kişi · <b>Hız:</b> ${esc(d.beyan_hizi_ms || '—')} m/s · <b>Durak:</b> ${esc(d.durak_sayisi || '—')} · <b>Tarih:</b> ${esc(d.denetim_tarihi || '')}</div>
         <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
@@ -4077,37 +4083,40 @@ function showYeniForm() {
     if (deleteAction) deleteAction.onclick = () => fr65SahaKaydiniSil(d, deleteAction);
     fr65AktifRapor = { id: d.id, sections, fieldConditions };
     const kunyeKaydet = () => {
-      const seriInput = document.getElementById('fr65Seri');
-      const adresInput = document.getElementById('fr65Adres');
-      if (!seriInput || !adresInput) return;
-      const yeniSeri = seriInput.value.trim();
-      const yeniAdres = adresInput.value.trim();
+      const girdi = id => document.getElementById(id);
+      if (!girdi('fr65Seri') || !girdi('fr65Adres')) return;
+      const yeni = {
+        asansor_seri_no: girdi('fr65Seri').value.trim(),
+        denetim_adresi: girdi('fr65Adres').value.trim() || null,
+        asansor_kimlik_no: girdi('fr65Kimlik')?.value.trim() || null,
+        dosya_no: girdi('fr65Dosya')?.value.trim() || null,
+      };
       const task = saveChain.then(async () => {
         const latest = await DB.get('denetimler', d.id);
         if (!latest || !fr65SahaKaydiMi(latest) || !canEditDenetim(latest)) return;
-        if ((latest.asansor_seri_no || '') === yeniSeri && (latest.denetim_adresi || '') === yeniAdres) return;
-        if (yeniSeri && normSeriNo(yeniSeri) !== normSeriNo(latest.asansor_seri_no || '')) {
-          if (!await yeniDenetimSeriNoUygunMu(yeniSeri)) { seriInput.value = latest.asansor_seri_no || ''; return; }
+        const degisen = Object.keys(yeni).filter(key => (latest[key] || '') !== (yeni[key] || ''));
+        if (!degisen.length) return;
+        if (degisen.includes('asansor_seri_no') && yeni.asansor_seri_no &&
+            normSeriNo(yeni.asansor_seri_no) !== normSeriNo(latest.asansor_seri_no || '')) {
+          if (!await yeniDenetimSeriNoUygunMu(yeni.asansor_seri_no)) { girdi('fr65Seri').value = latest.asansor_seri_no || ''; return; }
         }
-        latest.asansor_seri_no = yeniSeri;
-        latest.denetim_adresi = yeniAdres || null;
+        Object.assign(latest, yeni);
         latest.updated_at = new Date().toISOString();
         await localWrite('denetimler', latest, 'denetimler', {
           conditional_update: {
             expected_updated_at: baseUpdatedAt,
-            fields: ['asansor_seri_no', 'denetim_adresi', 'updated_at'],
+            fields: [...degisen, 'updated_at'],
           },
         });
         baseUpdatedAt = latest.updated_at;
-        d.asansor_seri_no = latest.asansor_seri_no;
-        d.denetim_adresi = latest.denetim_adresi;
+        Object.assign(d, yeni);
         status('✓ Künye cihaza kaydedildi · sunucu eşitlemesi bekleyebilir');
         refreshSyncState();
       });
       saveChain = task.catch(() => undefined);
       task.catch(error => { console.warn('FR.65 künye kaydedilemedi', error); toast(error.message || 'Künye kaydedilemedi'); });
     };
-    ['fr65Seri', 'fr65Adres'].forEach(id => {
+    ['fr65Seri', 'fr65Adres', 'fr65Kimlik', 'fr65Dosya'].forEach(id => {
       const input = document.getElementById(id);
       if (input) input.onchange = kunyeKaydet;
     });
