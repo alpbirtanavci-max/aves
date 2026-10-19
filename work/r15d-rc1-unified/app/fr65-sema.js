@@ -121,7 +121,7 @@
     const ops = [];
     ops.push(line(x1, from1, x1, y - 3, { stroke: col, sw: 0.7 }), line(x2, from2, x2, y - 3, { stroke: col, sw: 0.7 }));
     ops.push(line(x1 - 4, y, x2 + 4, y, { stroke: col, sw: 1 }), tick(x1, y, col), tick(x2, y, col));
-    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
+    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${o.name || AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
     ops.push(...tag((x1 + x2) / 2, y - 3, label, { size: o.size || 8.6, weight: 700, anchor: 'middle', fill: has ? NAVY : GREY, font: 'i' }));
     return ops;
   }
@@ -133,7 +133,7 @@
     const ops = [];
     ops.push(line(from1, y1, x - 3, y1, { stroke: col, sw: 0.7 }), line(from2, y2, x - 3, y2, { stroke: col, sw: 0.7 }));
     ops.push(line(x, y1 - 4, x, y2 + 4, { stroke: col, sw: 1 }), tick(x, y1, col), tick(x, y2, col));
-    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
+    const label = o.short ? `${letter}  ${has ? v[letter] : '–'}` : `${o.name || AD[letter].toLocaleUpperCase('tr-TR')} = ${has ? `${v[letter]} cm` : '–'}`;
     const size = o.size || 8.6;
     ops.push(...tag(x - 3, (y1 + y2) / 2, label, { size, weight: 700, fill: has ? NAVY : GREY, rot: -90 }));
     return ops;
@@ -187,15 +187,18 @@
 
   const dashDot = [9, 2.5, 2, 2.5];
 
-  // Ray: T profili (taban + gövde) ve araba pabucu. side: 'sol' | 'sag' (kabinin hangi yanında)
-  function rayPlan(x, y, side) {
+  // Ray (üstten): taban duvar/konsol tarafında, gövde ve başlık kabine doğru (içe) bakar; pabuç başı sarar.
+  // xBase: tabanın duvara yakın dış kenarı. side: 'sol' ray soldaki, 'sag' sağdaki ray.
+  function rayPlan(xBase, y, side, len = 16) {
     const ops = [];
     if (side === 'sol') {
-      ops.push(rect(x, y, 6, 22, { fill: INK, stroke: INK, sw: 1 }), rect(x - 10, y + 9, 10, 4, { fill: INK }));
-      ops.push(rect(x + 6, y + 3, 4, 16, { fill: WHITE, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase, y, 4, 22, { fill: INK, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase + 4, y + 9, len, 4, { fill: INK }), rect(xBase + 4 + len, y + 7, 3, 8, { fill: INK }));
+      ops.push(rect(xBase + 4 + len - 2, y + 3, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }));
     } else {
-      ops.push(rect(x + 4, y, 6, 22, { fill: INK, stroke: INK, sw: 1 }), rect(x + 10, y + 9, 10, 4, { fill: INK }));
-      ops.push(rect(x, y + 3, 4, 16, { fill: WHITE, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase - 4, y, 4, 22, { fill: INK, stroke: INK, sw: 1 }));
+      ops.push(rect(xBase - 4 - len, y + 9, len, 4, { fill: INK }), rect(xBase - 4 - len - 3, y + 7, 3, 8, { fill: INK }));
+      ops.push(rect(xBase - 4 - len - 7, y + 3, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }));
     }
     return ops;
   }
@@ -230,8 +233,8 @@
       ops.push(text(280, 250, `A = ${alan} m² (hesaplanan)`, { size: 7.2, fill: GREY, anchor: 'middle' }));
     }
     // kabin rayları (T profil + pabuç) ve ray bağlantı çizgileri
-    ops.push(...rayPlan(176, 238, 'sol'), ...rayPlan(374, 238, 'sag'));
-    ops.push(line(116, 245, 166, 245, { stroke: GREY, sw: 0.8, dash: [3, 2] }), line(404, 245, 444, 245, { stroke: GREY, sw: 0.8, dash: [3, 2] }));
+    ops.push(...rayPlan(159.5, 238, 'sol'), ...rayPlan(400.5, 238, 'sag'));
+    ops.push(line(116, 249, 159.5, 249, { stroke: GREY, sw: 0.8, dash: [3, 2] }), line(400.5, 249, 444, 249, { stroke: GREY, sw: 0.8, dash: [3, 2] }));
     // kapı grubu ve kat girişi çizgisi
     ops.push(...kapiPlan(280, 340));
     ops.push(line(104, 374, 456, 374, { stroke: GREY, sw: 1, dash: [6, 3] }));
@@ -240,8 +243,8 @@
       // karşı ağırlık ve rayları
       ops.push(...frame(214, 118, 132, 28));
       ops.push(text(280, 136, 'KARŞI AĞIRLIK', { size: 7.6, weight: 700, anchor: 'middle', font: 'm' }));
-      ops.push(...rayPlan(190, 125, 'sol'), ...rayPlan(350, 125, 'sag'));
-      ops.push(line(116, 133, 180, 133, { stroke: GREY, sw: 0.8, dash: [3, 2] }), line(370, 133, 444, 133, { stroke: GREY, sw: 0.8, dash: [3, 2] }));
+      ops.push(...rayPlan(182.5, 125, 'sol'), ...rayPlan(377.5, 125, 'sag'));
+      ops.push(line(116, 136, 182.5, 136, { stroke: GREY, sw: 0.8, dash: [3, 2] }), line(377.5, 136, 444, 136, { stroke: GREY, sw: 0.8, dash: [3, 2] }));
       ops.push(text(280, 166, `O ${v.O || '–'} × P ${v.P || '–'} cm`, { size: 7.8, weight: 700, fill: v.O || v.P ? NAVY : GREY, anchor: 'middle' }));
     } else {
       // hidrolik: yan piston ve silindir
@@ -250,15 +253,16 @@
       ops.push(text(146, 284, 'piston', { size: 7.4, fill: GREY, anchor: 'middle' }));
     }
     // ölçüler: üst zincir (N, M, I), sol (L, J), sağ (R, Q), alt (K)
-    if (!v.hidrolik) ops.push(...dimH(v, 'N', 200, 360, 66, 125, 125));
-    ops.push(...dimH(v, 'M', 181, 389, 46, 238, 238));
+    if (!v.hidrolik) ops.push(...dimH(v, 'N', 204, 356, 66, 127, 127));
+    ops.push(...dimH(v, 'M', 181, 379, 46, 240, 240));
     ops.push(...dimH(v, 'I', 116, 444, 26, 106, 106));
     ops.push(...dimV(v, 'L', 190, 340, 84, 190, 190));
     ops.push(...dimV(v, 'J', 106, 374, 58, 116, 116));
     if (!v.hidrolik) ops.push(...dimV(v, 'R', 136, 249, 424, 360, 384, { short: true }));
     ops.push(...dimV(v, 'Q', 249, 340, 424, 384, 316, { short: true }));
     ops.push(...dimH(v, 'K', 190, 370, 422, 342, 342));
-    if (v.S || v.T) ops.push(...tag(280, 402, `KAPI (NET): ${v.S || '–'} × ${v.T || '–'} cm`, { size: 8.2, weight: 700, anchor: 'middle', fill: NAVY }));
+    // kapı net genişliği: kapı kasalarının arasında, kırmızı ölçü çizgisiyle
+    ops.push(...dimH(v, 'S', 236, 324, 396, 364, 364, { name: 'KAPI NET GENİŞLİĞİ' }));
     return ops;
   }
 
@@ -346,7 +350,8 @@
     ops.push(...dimV(v, 'A', 60, 502, 100, 88, 160));
     ops.push(...dimV(v, 'E', 306, 420, 330, 316, 316, { short: true }));
     if (!v.hidrolik) ops.push(...dimV(v, 'F', 226, 350, 412, 364, 392, { short: true }));
-    if (v.S || v.T) ops.push(...tag(226, 376, `KAPI ${v.S || '–'} × ${v.T || '–'} cm`, { size: 7.8, weight: 700, fill: NAVY, rot: -90 }));
+    // kapı net yüksekliği: kabin kapısının sol yanında, kırmızı ölçü çizgisiyle
+    ops.push(...dimV(v, 'T', 332, 420, 192, 206, 206, { name: 'KAPI NET YÜKSEKLİĞİ' }));
     return ops;
   }
 
