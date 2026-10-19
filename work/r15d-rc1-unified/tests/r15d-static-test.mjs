@@ -32,6 +32,10 @@ vm.runInNewContext(fs.readFileSync(path.join(appDir, 'vendor', 'jszip.min.js'), 
 const fr65ExcelContext = {};
 vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-excel.js'), 'utf8'), fr65ExcelContext, { filename: 'fr65-excel.js' });
 const fr65Excel = fr65ExcelContext.AVES_FR65_EXCEL;
+const pdfLibContext = { Promise, setTimeout, clearTimeout, console, TextEncoder, TextDecoder, Uint8Array, ArrayBuffer, Buffer, URL, atob, btoa };
+pdfLibContext.self = pdfLibContext; pdfLibContext.window = pdfLibContext; pdfLibContext.globalThis = pdfLibContext;
+vm.createContext(pdfLibContext);
+for (const file of ['vendor/pdf-lib.min.js', 'vendor/fontkit.umd.min.js']) vm.runInContext(fs.readFileSync(path.join(appDir, file), 'utf8'), pdfLibContext, { filename: file });
 const fr65SemaContext = {};
 vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-sema.js'), 'utf8'), fr65SemaContext, { filename: 'fr65-sema.js' });
 fr65CiktiContext.AVES_FR65_SEMA = fr65SemaContext.AVES_FR65_SEMA;
@@ -118,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.12.0 sürümü', index.includes('R15D-RC3.12.0</b>'));
-test('app R15D rc3.12.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.12.0'"));
-test('service worker rc3.12.0 cache', sw.includes("aves-saha-r15d-rc3120'"));
-test('uygulama manifesti rc3.12.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.12.0"'));
+test('index R15D rc3.13.0 sürümü', index.includes('R15D-RC3.13.0</b>'));
+test('app R15D rc3.13.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.13.0'"));
+test('service worker rc3.13.0 cache', sw.includes("aves-saha-r15d-rc3130'"));
+test('uygulama manifesti rc3.13.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.13.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2017,6 +2021,30 @@ test('FR.65 Excel dışa aktarma: künye + saha verisi (boşlar dahil, sayılar 
     rows.find(row => row.anahtar === 'kuyu_genislik_cm').birim === 'cm' && rows.length > 30 &&
     app.includes('id="fr65Excel"') && app.includes('async function dosyaIndir(file)') && app.includes("'./fr65-excel.js'") &&
     sw.includes("'./fr65-excel.js'") && index.includes('<script src="fr65-excel.js"></script>');
+})());
+test('FR.65 PDF: gerçek PDF dosyası üretir (çok sayfalı, sayfa numaralı, Türkçe yazı tipi gömülü), düğme ve varlıklar bağlı', await (async () => {
+  const ctxPdf = pdfLibContext;
+  for (const [file] of [['fr65-saha-tools.js'], ['fr65-cikti.js'], ['fr65-sema.js'], ['fr65-pdf.js']]) {
+    vm.runInContext(fs.readFileSync(path.join(appDir, file), 'utf8'), ctxPdf, { filename: file });
+  }
+  const val = n => ({ field_value: String(n) });
+  const values = { kuyu_genislik_cm: { field_value: '190', note: 'Uzun bir saha notu '.repeat(12) }, kuyu_derinlik_cm: val(215), kabin_tampon_tipi: val('Hidrolik'), karsi_agirlik_tampon_tipi: val('Poliüretan'),
+    kabin_tampon_stroku_cm: val(15), gsm_modulu: { marka: 'Teltonika', tip: 'FMB', imei: '352093081234567' }, yuk: val(630) };
+  const sections = technicalDocs.visibleFr65Sections('Elektrikli');
+  const d = { musteri_unvani: 'Örnek Şirket Ğ İ Ö Ü Ç', denetim_adresi: 'Kadıköy', asansor_seri_no: 'S1', modul: 'Modül E', tahrik_tipi: 'Elektrikli' };
+  const report = ctxPdf.AVES_FR65_SAHA_TOOLS.buildReport(d, values, sections, technicalDocs.FR65_FIELD_CONDITIONS);
+  const bytes = await ctxPdf.AVES_FR65_PDF.build({
+    PDFLib: ctxPdf.PDFLib, fontkit: ctxPdf.fontkit, fontBytes: new Uint8Array(fs.readFileSync(path.join(appDir, 'form-assets', 'DejaVuSans.ttf'))),
+    logoBytes: new Uint8Array(fs.readFileSync(path.join(appDir, 'aves-logo-white.png'))),
+    report, values, count: technicalDocs.countFr65Capture({ forms: { FR65: { values } } }, 'Elektrikli'),
+    missing: technicalDocs.missingFr65Fields({ forms: { FR65: { values } } }, 'Elektrikli'), duzeltmeler: [],
+    firma: d.musteri_unvani, seri: 'S1', adres: 'Kadıköy', modul: 'Modül E', syncStatus: 'synced', sealStatus: 'absent', surum: 'R15D-test', olusturuldu: 'x',
+  });
+  const header = Buffer.from(bytes.slice(0, 5)).toString('latin1');
+  const loaded = await ctxPdf.PDFLib.PDFDocument.load(bytes);
+  return header === '%PDF-' && loaded.getPageCount() >= 2 && bytes.length > 8000 &&
+    app.includes('id="fr65Pdf"') && app.includes('const ciktiBaglami = async () =>') && app.includes('AVES_FR65_PDF.build(') &&
+    app.includes("'./fr65-pdf.js'") && sw.includes("'./fr65-pdf.js'") && index.includes('<script src="fr65-pdf.js"></script>');
 })());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');

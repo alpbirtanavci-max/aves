@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.12.0';
+const APP_VERSION = 'R15D-rc3.13.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -3969,6 +3969,7 @@ function showYeniForm() {
         <div class="inspection-actions">
           ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
           <button class="delbtn" id="fr65Excel" title="Saha verisini Excel dosyası olarak indir">📊 Excel</button>
+          <button class="delbtn" id="fr65Pdf" title="PDF dosyası hazırla ve paylaş / kaydet">📄 PDF</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
@@ -4158,6 +4159,96 @@ function showYeniForm() {
         }
       } finally { excelAction.disabled = false; }
     };
+    // Yazdırma, PDF ve benzeri çıktılar aynı bağlamı kullanır (ekrandaki değerler + durum/mühür/boş alan/düzeltme).
+    const ciktiBaglami = async () => {
+      let saveWarning = '';
+      try {
+        if (canEdit) await flushCapture();
+      } catch (error) {
+        saveWarning = error.message || 'Son kayıt doğrulanamadı';
+      }
+      const screenValues = collectValues();
+      let latestRecord = null;
+      try { latestRecord = await DB.get('denetimler', d.id) || null; }
+      catch (error) { console.warn('FR.65 çıktı için cihaz kaydı okunamadı', error); }
+      const recordAvailable = !!latestRecord;
+      const reportRecord = latestRecord || d;
+      const savedValues = recordAvailable
+        ? (AVES_DENETIM_FORM_SETI.normalize(latestRecord.denetim_form_kayitlari, latestRecord.teknik_dosya_kayitlari).forms?.FR65?.values || {})
+        : {};
+      const sameStoredValues = recordAvailable && AVES_FR65_CIKTI.sameValues(savedValues, screenValues);
+      // Yazdırılan değerler ekrandaki değerlerdir; mührü ancak aynı içerik cihaz kaydıyla eşleşirse göster.
+      const report = AVES_FR65_SAHA_TOOLS.buildReport(
+        reportRecord, screenValues, sections, fieldConditions);
+      let syncSummary = null;
+      let syncStatus = 'unknown';
+      let syncText = saveWarning
+        ? `Son kaydetme doğrulanamadı (${saveWarning}). Çıktı ekrandaki değerleri içerir; bu değerlerin cihaz veya sunucu kaydı ayrıca doğrulanmalıdır.`
+        : '';
+      try {
+        syncSummary = await Sync.denetimSyncOzeti(d.id);
+        syncStatus = AVES_FR65_CIKTI.syncStatus(syncSummary);
+      } catch (error) { console.warn('FR.65 çıktı senkron durumu okunamadı', error); }
+      if (saveWarning || !recordAvailable || !sameStoredValues) syncStatus = 'unknown';
+      if (!syncText) {
+        if (!recordAvailable) syncText = 'Cihazdaki kayıt okunamadı; bu çıktı için kayıt ve sunucu aktarım durumu doğrulanamadı.';
+        else if (!sameStoredValues) syncText = 'Ekrandaki değerler cihazdaki kayıtlı FR.65 verisiyle eşleşmiyor; bu çıktının aktarım durumu doğrulanamadı.';
+        else if (syncStatus === 'protected') syncText = `${syncSummary.korunan} işlem cihazda korumada; sunucuya aktarım inceleme gerektiriyor.`;
+        else if (syncStatus === 'pending') syncText = `Cihaza kaydedildi; ${syncSummary.bekleyen} işlem sunucu aktarımını bekliyor.`;
+        else if (syncStatus === 'synced') syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.';
+        else syncText = 'Senkron durumu okunamadı; bu çıktı için sunucu eşitliği doğrulanamadı.';
+      }
+      const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(
+        { forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi);
+      let sealMatches = null;
+      if (recordAvailable && latestRecord.butunluk_hash) {
+        try { sealMatches = (await fr65ButunlukOzetiHesapla(latestRecord)).hash === latestRecord.butunluk_hash; }
+        catch (error) { console.warn('FR.65 çıktı mührü doğrulanamadı', error); }
+      }
+      const sealStatus = AVES_FR65_CIKTI.sealStatus({
+        recordAvailable, saveWarning: !!saveWarning, savedValues, reportValues: screenValues,
+        hasSeal: !!latestRecord?.butunluk_hash, sealMatches,
+      });
+      let missing = [];
+      let duzeltmeler = [];
+      try { missing = AVES_TEKNIK_DOSYA_FORM.missingFr65Fields({ forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi); }
+      catch (error) { console.warn('FR.65 boş alanlar hesaplanamadı', error); }
+      try { duzeltmeler = AVES_FR65_CIKTI.duzeltmeOzeti(await DB.allByIndex('gecmis', 'byDenetim', d.id)); }
+      catch (error) { console.warn('FR.65 düzeltme geçmişi okunamadı', error); }
+      return {
+        values: screenValues, missing, duzeltmeler, report, count: total,
+        syncText: syncStatus === 'synced' ? '' : syncText, saveWarning: !!saveWarning, syncStatus, sealStatus,
+        kapandi: reportRecord.denetim_durumu === 'Çalışma Tamamlandı',
+        kapanisTarihi: reportRecord.calisma_tamamlandi_at ? new Date(reportRecord.calisma_tamamlandi_at).toLocaleDateString('tr-TR') : '',
+        muhurKisa: sealStatus === 'valid' ? String(latestRecord.butunluk_hash).slice(0, 16) : '',
+        surum: APP_VERSION, olusturuldu: new Date().toLocaleString('tr-TR'),
+        firma: reportRecord.musteri_unvani || '', seri: reportRecord.asansor_seri_no || '', adres: reportRecord.denetim_adresi || '', modul: reportRecord.modul || '',
+      };
+    };
+    const pdfAction = document.getElementById('fr65Pdf');
+    if (pdfAction) pdfAction.onclick = async () => {
+      pdfAction.disabled = true;
+      toast('PDF hazırlanıyor…');
+      try {
+        const baglam = await ciktiBaglami();
+        const [fontBytes, logoBytes] = await Promise.all([
+          fetch('./form-assets/DejaVuSans.ttf').then(r => { if (!r.ok) throw new Error('PDF yazı tipi alınamadı'); return r.arrayBuffer(); }),
+          fetch('./aves-logo-white.png').then(r => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
+        ]);
+        const bytes = await AVES_FR65_PDF.build({
+          ...baglam, PDFLib: window.PDFLib, fontkit: window.fontkit,
+          fontBytes: new Uint8Array(fontBytes), logoBytes: logoBytes ? new Uint8Array(logoBytes) : null,
+        });
+        const ad = String(baglam.seri || baglam.firma || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 40);
+        await dosyaIndir(new File([bytes], `AVES_FR65_${ad}_${new Date().toISOString().slice(0, 10)}.pdf`, { type: 'application/pdf' }));
+        toast('PDF hazırlandı');
+      } catch (error) {
+        if (!(error && error.name === 'AbortError')) {
+          console.error('FR.65 PDF hatası', error);
+          toast('PDF oluşturulamadı; veri cihazda korunuyor. "Çıktı / PDF" ile yazdırmayı deneyin.', 5000);
+        }
+      } finally { pdfAction.disabled = false; }
+    };
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {
       // Open synchronously from the button gesture so mobile popup blockers allow the report.
@@ -4165,76 +4256,14 @@ function showYeniForm() {
       if (!reportWindow) { toast('Çıktı penceresi engellendi; bu site için açılır pencerelere izin verin'); return; }
       printAction.disabled = true;
       try {
-        let saveWarning = '';
-        try {
-          if (canEdit) await flushCapture();
-        } catch (error) {
-          saveWarning = error.message || 'Son kayıt doğrulanamadı';
-        }
-        const screenValues = collectValues();
-        let latestRecord = null;
-        try { latestRecord = await DB.get('denetimler', d.id) || null; }
-        catch (error) { console.warn('FR.65 çıktı için cihaz kaydı okunamadı', error); }
-        const recordAvailable = !!latestRecord;
-        const reportRecord = latestRecord || d;
-        const savedValues = recordAvailable
-          ? (AVES_DENETIM_FORM_SETI.normalize(latestRecord.denetim_form_kayitlari, latestRecord.teknik_dosya_kayitlari).forms?.FR65?.values || {})
-          : {};
-        const sameStoredValues = recordAvailable && AVES_FR65_CIKTI.sameValues(savedValues, screenValues);
-        // Yazdırılan değerler ekrandaki değerlerdir; mührü ancak aynı içerik cihaz kaydıyla eşleşirse göster.
-        const report = AVES_FR65_SAHA_TOOLS.buildReport(
-          reportRecord, screenValues, sections, fieldConditions);
-        let syncSummary = null;
-        let syncStatus = 'unknown';
-        let syncText = saveWarning
-          ? `Son kaydetme doğrulanamadı (${saveWarning}). Çıktı ekrandaki değerleri içerir; bu değerlerin cihaz veya sunucu kaydı ayrıca doğrulanmalıdır.`
-          : '';
-        try {
-          syncSummary = await Sync.denetimSyncOzeti(d.id);
-          syncStatus = AVES_FR65_CIKTI.syncStatus(syncSummary);
-        } catch (error) { console.warn('FR.65 çıktı senkron durumu okunamadı', error); }
-        if (saveWarning || !recordAvailable || !sameStoredValues) syncStatus = 'unknown';
-        if (!syncText) {
-          if (!recordAvailable) syncText = 'Cihazdaki kayıt okunamadı; bu çıktı için kayıt ve sunucu aktarım durumu doğrulanamadı.';
-          else if (!sameStoredValues) syncText = 'Ekrandaki değerler cihazdaki kayıtlı FR.65 verisiyle eşleşmiyor; bu çıktının aktarım durumu doğrulanamadı.';
-          else if (syncStatus === 'protected') syncText = `${syncSummary.korunan} işlem cihazda korumada; sunucuya aktarım inceleme gerektiriyor.`;
-          else if (syncStatus === 'pending') syncText = `Cihaza kaydedildi; ${syncSummary.bekleyen} işlem sunucu aktarımını bekliyor.`;
-          else if (syncStatus === 'synced') syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.';
-          else syncText = 'Senkron durumu okunamadı; bu çıktı için sunucu eşitliği doğrulanamadı.';
-        }
-        const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(
-          { forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi);
-        let sealMatches = null;
-        if (recordAvailable && latestRecord.butunluk_hash) {
-          try { sealMatches = (await fr65ButunlukOzetiHesapla(latestRecord)).hash === latestRecord.butunluk_hash; }
-          catch (error) { console.warn('FR.65 çıktı mührü doğrulanamadı', error); }
-        }
-        const sealStatus = AVES_FR65_CIKTI.sealStatus({
-          recordAvailable, saveWarning: !!saveWarning, savedValues, reportValues: screenValues,
-          hasSeal: !!latestRecord?.butunluk_hash, sealMatches,
-        });
+        const baglam = await ciktiBaglami();
         // Çıktı penceresi about:blank olduğundan logo veri adresi olarak gömülür; yazı tipleri mutlak adresten yüklenir.
         let logoSrc = '';
         try {
           const blob = await (await fetch('./aves-logo-white.png')).blob();
           logoSrc = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => resolve(''); reader.readAsDataURL(blob); });
         } catch { logoSrc = ''; }
-        let missing = [];
-        let duzeltmeler = [];
-        try { missing = AVES_TEKNIK_DOSYA_FORM.missingFr65Fields({ forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi); }
-        catch (error) { console.warn('FR.65 boş alanlar hesaplanamadı', error); }
-        try { duzeltmeler = AVES_FR65_CIKTI.duzeltmeOzeti(await DB.allByIndex('gecmis', 'byDenetim', d.id)); }
-        catch (error) { console.warn('FR.65 düzeltme geçmişi okunamadı', error); }
-        const html = AVES_FR65_CIKTI.build({
-          values: screenValues, missing, duzeltmeler,
-          report, count: total, syncText: syncStatus === 'synced' ? '' : syncText, saveWarning: !!saveWarning,
-          syncStatus, sealStatus,
-          kapandi: reportRecord.denetim_durumu === 'Çalışma Tamamlandı',
-          kapanisTarihi: reportRecord.calisma_tamamlandi_at ? new Date(reportRecord.calisma_tamamlandi_at).toLocaleDateString('tr-TR') : '',
-          muhurKisa: sealStatus === 'valid' ? String(latestRecord.butunluk_hash).slice(0, 16) : '',
-          surum: APP_VERSION, olusturuldu: new Date().toLocaleString('tr-TR'),
-          baseUrl: new URL('./', location.href).href, logoSrc,
-        });
+        const html = AVES_FR65_CIKTI.build({ ...baglam, baseUrl: new URL('./', location.href).href, logoSrc });
         reportWindow.document.open();
         reportWindow.document.write(html);
         reportWindow.document.close();

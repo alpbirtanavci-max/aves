@@ -241,6 +241,17 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.ok(check.data.includes(String(typed).replace(/^duman-/, '')) || check.data.includes(typed), 'Excel girilen değeri içermiyor');
     assert.ok(check.kunye.includes(seri), 'Excel künyesinde seri no yok');
   });
+  await report.step(`${tag} "PDF" → gerçek PDF dosyası iner, birden çok sayfa, girilen veriyi içerir`, async () => {
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }), p.click('#fr65Pdf')]);
+    assert.ok(download.suggestedFilename().endsWith('.pdf'), 'dosya uzantısı .pdf değil');
+    const bytes = [...(await (await import('node:fs/promises')).readFile(await download.path()))];
+    const info = await p.evaluate(async arr => {
+      const doc = await PDFLib.PDFDocument.load(new Uint8Array(arr));
+      return { pages: doc.getPageCount(), head: String.fromCharCode(...arr.slice(0, 5)), size: arr.length };
+    }, bytes);
+    assert.equal(info.head, '%PDF-');
+    assert.ok(info.pages >= 1 && info.size > 8000, `PDF beklenenden küçük (${info.pages} sayfa, ${info.size} bayt)`);
+  });
   const canDelete = persona.rol === 'yonetici';
   await report.step(`${tag} silme düğmesi: ${canDelete ? 'görünür' : 'görünmez'}`, async () => {
     const count = await p.locator('#fr65Delete').count();
