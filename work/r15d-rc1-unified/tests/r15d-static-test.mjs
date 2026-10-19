@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.13.0 sürümü', index.includes('R15D-RC3.13.0</b>'));
-test('app R15D rc3.13.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.13.0'"));
-test('service worker rc3.13.0 cache', sw.includes("aves-saha-r15d-rc3130'"));
-test('uygulama manifesti rc3.13.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.13.0"'));
+test('index R15D rc3.14.0 sürümü', index.includes('R15D-RC3.14.0</b>'));
+test('app R15D rc3.14.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.14.0'"));
+test('service worker rc3.14.0 cache', sw.includes("aves-saha-r15d-rc3140'"));
+test('uygulama manifesti rc3.14.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.14.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1994,9 +1994,9 @@ test('FR.65 çıktı: kuyu şeması (tampon tipine göre), girilmemiş alanlar, 
     const report = { title: 'FR.65 Saha Veri Özeti', metadata: [], sections: [], fieldCount: 0 };
     const full = fr65Cikti.build({ report, values, missing: [{ title: 'Kuyu <b>', fields: ['A', 'B'] }], duzeltmeler: corrections, count: { recorded: 1, total: 3 } });
     return html.includes('class="sema"') && html.includes('Kuyu kesiti') && html.includes('Kuyu planı') && html.includes('Hidrolik') && html.includes('Poliüretan') &&
-      html.includes('kaide') && html.includes('>190<') && emptyHtml === '' &&
+      html.includes('kaide') && html.includes('= 190 cm') && emptyHtml === '' &&
       kesitHidrolik.includes('<rect') && kesitHidrolik !== kesitSecilmemis && kesitSecilmemis.includes('tip seçilmedi') &&
-      sema.OLCULER.length === 19 && missing.length > 0 && missing.some(section => section.fields.length) &&
+      sema.OLCULER.length === 24 && missing.length > 0 && missing.some(section => section.fields.length) &&
       corrections.length === 2 && corrections[0].adet === 2 && corrections[0].neden === 'Eksik bilgi tamamlama' &&
       full.includes('Girilmemiş alanlar') && full.includes('Kuyu &lt;b&gt;') && !full.includes('Kuyu <b>') && full.includes('Düzeltme geçmişi') &&
       full.includes('id="aves-big"') && full.includes('id="aves-print"') && !/onclick=/i.test(full) &&
