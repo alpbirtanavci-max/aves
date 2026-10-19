@@ -22,6 +22,10 @@ const technicalDocsJs = fs.readFileSync(path.join(appDir, 'teknik-dosya-formlari
 const denetimFormSetsJs = fs.readFileSync(path.join(appDir, 'denetim-form-setleri.js'), 'utf8');
 const formDraftJournalJs = fs.readFileSync(path.join(appDir, 'form-draft-journal.js'), 'utf8');
 const fr65SahaToolsJs = fs.readFileSync(path.join(appDir, 'fr65-saha-tools.js'), 'utf8');
+const fr65CiktiJs = fs.readFileSync(path.join(appDir, 'fr65-cikti.js'), 'utf8');
+const fr65CiktiContext = {};
+vm.runInNewContext(fr65CiktiJs, fr65CiktiContext, { filename: 'fr65-cikti.js' });
+const fr65Cikti = fr65CiktiContext.AVES_FR65_CIKTI;
 const technicalDocsContext = {};
 vm.runInNewContext(technicalDocsJs, technicalDocsContext, { filename: 'teknik-dosya-formlari.js' });
 const technicalDocs = technicalDocsContext.AVES_TEKNIK_DOSYA_FORM;
@@ -105,10 +109,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.9.99 sürümü', index.includes('R15D-RC3.9.99</b>'));
-test('app R15D rc3.9.99 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.9.99'"));
-test('service worker rc3.9.99 cache', sw.includes("aves-saha-r15d-rc3999'"));
-test('uygulama manifesti rc3.9.99 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.9.99"'));
+test('index R15D rc3.10.0 sürümü', index.includes('R15D-RC3.10.0</b>'));
+test('app R15D rc3.10.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.10.0'"));
+test('service worker rc3.10.0 cache', sw.includes("aves-saha-r15d-rc3100'"));
+test('uygulama manifesti rc3.10.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.10.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1832,7 +1836,38 @@ test('FR.65 çıktı düğmesi son alanları flush eder ve senkron durumuyla bir
     flow.includes('window.open(\'about:blank\', \'_blank\')') &&
     flow.includes('await Sync.denetimSyncOzeti(d.id)') &&
     flow.includes('reportWindow.print()') &&
-    flow.includes('resmî denetim sonuç raporunun yerine geçmez');
+    flow.includes('AVES_FR65_CIKTI.build({') &&
+    fr65CiktiJs.includes('resmî denetim sonuç raporunun yerine geçmez');
+})());
+test('FR.65 çıktı tasarımı: ölçü kartları, bileşen tablosu, not satırı, durum etiketleri, kaçışlı ve betiksiz', (() => {
+  const report = {
+    title: 'FR.65 Saha Veri Özeti',
+    metadata: [
+      { label: 'Müşteri / asansör firması', value: 'Firma <b>X</b>' },
+      { label: 'Asansör seri no', value: 'S-1' },
+      { label: 'Modül', value: 'Modül E' },
+    ],
+    fieldCount: 4,
+    sections: [
+      { key: 'kuyu', title: 'Kuyu', fields: [
+        { key: 'kuyu_genislik_cm', label: 'Kuyu genişliği (cm)', value: '2450', raw: '2450', note: '', serial: null },
+        { key: 'kuyu_notlu', label: 'Kuyu dibi (cm)', value: '150 · Not: x', raw: '150', note: 'Not <script>alert(1)</script>', serial: null },
+        { key: 'tip', label: 'Kabin tamponu tipi', value: 'Yağlı', raw: 'Yağlı', note: 'Yağ seviyesi uygun', serial: null },
+      ] },
+      { key: 'seri', title: 'Seri numaraları', fields: [
+        { key: 'motor', label: 'Makine motoru', value: 'x', raw: '', note: '', serial: { durum: '', marka: 'Montanari', tip: 'MGV', third: 'M-1', thirdLabel: 'Seri no' } },
+      ] },
+    ],
+  };
+  const html = fr65Cikti.build({ report, count: { recorded: 4, total: 8 }, kapandi: true, kapanisTarihi: '19.10.2026',
+    senkronEsit: true, muhurDurumu: 'gecerli', muhurKisa: 'abcd1234abcd1234', surum: 'R15D-test', olusturuldu: 'x', baseUrl: 'http://x/', logoSrc: '' });
+  return html.includes('class="cards"') && html.includes('2 450<small>cm</small>') && html.includes('Kuyu genişliği') &&
+    html.includes('<table class="t">') && html.includes('Montanari') && html.includes('class="r note"') && html.includes('<p>Not &lt;script&gt;') &&
+    html.includes('✓ Saha kaydı kapatıldı') && html.includes('✓ Cihaz ve sunucu eşit') && html.includes('Mühür geçerli') &&
+    html.includes('width:50%') && html.includes('Firma &lt;b&gt;X&lt;/b&gt;') && !html.includes('<script>alert') &&
+    html.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && html.includes("url('http://x/fonts/Montserrat-latin-ext.woff2')") &&
+    fr65Cikti.splitUnit('Hız (m/s)').unit === 'm/s' &&
+    app.includes("'./fr65-cikti.js'") && sw.includes("'./fr65-cikti.js'") && index.includes('<script src="fr65-cikti.js"></script>');
 })());
 test('FR.65 oluşturma tekrarları mevcut satırı ezmez; tüm güncellemeler beklenen kayıt sürümüne bağlıdır', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');

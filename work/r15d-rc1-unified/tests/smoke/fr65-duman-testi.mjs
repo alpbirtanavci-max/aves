@@ -135,9 +135,10 @@ async function runModule(browser, appUrl, modul, persona, report) {
   });
   await report.step(`${tag} "Çıktı / PDF" → rapor penceresi değerleri içeriyor`, async () => {
     const [popup] = await Promise.all([p.waitForEvent('popup', { timeout: 8000 }), p.click('#fr65Print')]);
-    await popup.waitForSelector('table', { timeout: 8000 });
+    await popup.waitForSelector('.sheet', { timeout: 8000 });
     const text = await popup.innerText('body');
-    assert.ok(text.includes('FR.65 Saha Veri Özeti'), 'rapor başlığı yok');
+    assert.ok(text.includes('Saha Veri Özeti') && text.includes('ÜB.FR.65'), 'rapor başlığı yok');
+    assert.ok(await popup.locator('.brand').count() === 1 && await popup.locator('.kunye').count() === 1, 'yeni çıktı tasarımı yok');
     assert.ok(text.includes(seri), 'rapor seri no içermiyor');
     assert.ok(text.includes(typed), 'rapor girilen değeri içermiyor');
     await popup.close();
