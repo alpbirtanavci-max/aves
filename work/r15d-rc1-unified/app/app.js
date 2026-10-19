@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.9.99';
+const APP_VERSION = 'R15D-rc3.10.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -4144,6 +4144,7 @@ function showYeniForm() {
         }
         const report = AVES_FR65_SAHA_TOOLS.buildReport(
           d, collectValues(), sections, fieldConditions);
+        let senkronEsit = false;
         let syncText = saveWarning
           ? `Kaydetme doğrulanamadı: ${saveWarning}. Bu çıktı ekranda görünen son değerleri içerir; cihaz/sunucu kaydını ayrıca kontrol edin.`
           : 'Bu çıktı, ekranda görünen FR.65 saha verilerinin yazdırılabilir özetidir.';
@@ -4151,25 +4152,39 @@ function showYeniForm() {
           const summary = await Sync.denetimSyncOzeti(d.id);
           if (!saveWarning && summary.korunan) syncText = `${summary.korunan} işlem cihazda korumada; sunucuya aktarım tamamlanmadı.`;
           else if (!saveWarning && summary.bekleyen) syncText = `Cihaza kaydedildi; ${summary.bekleyen} işlem sunucu aktarımını bekliyor.`;
-          else if (!saveWarning && !summary.toplam) syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.';
+          else if (!saveWarning && !summary.toplam) { syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.'; senkronEsit = true; }
         } catch (error) { console.warn('FR.65 çıktı senkron durumu okunamadı', error); }
 
-        const metadataHtml = report.metadata.map(item => `<tr><th>${esc(item.label)}</th><td>${esc(item.value)}</td></tr>`).join('');
-        const sectionsHtml = report.sections.map(section => `<section><h2>${esc(section.title)}</h2><table><tbody>${section.fields.map(field =>
-          `<tr><th>${esc(field.label)}</th><td>${esc(field.value)}</td></tr>`).join('')}</tbody></table></section>`).join('');
-        const title = `${report.title} · ${d.musteri_unvani || ''} · ${d.asansor_seri_no || ''}`;
-        const html = `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>
-          *{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#20235b;margin:18px auto;padding:0 18px;max-width:900px}h1{font-size:22px;margin:0 0 5px}h2{font-size:15px;margin:22px 0 7px;padding-bottom:5px;border-bottom:2px solid #ea0048;break-after:avoid}.sub{color:#62677c;margin:0 0 16px}.notice{border:1px solid #d7dbe7;background:#f5f6fa;border-radius:6px;padding:9px 11px;margin:14px 0;color:#33384f;white-space:pre-wrap}.notice.warn{border-color:#d89835;background:#fff5e4}table{width:100%;border-collapse:collapse;table-layout:fixed;margin:5px 0 14px}th,td{border:1px solid #d8dbe5;padding:7px 9px;vertical-align:top;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}th{width:32%;background:#f1f3f8;font-weight:700}section, tr{break-inside:avoid}.empty{color:#62677c;font-style:italic;padding:12px 0}.footer{margin-top:24px;padding-top:9px;border-top:1px solid #d8dbe5;color:#62677c;font-size:10px}.no-print{border:0;border-radius:7px;background:#20235b;color:white;padding:10px 16px;font-weight:700;cursor:pointer;margin:0 0 14px}@media print{body{margin:12mm auto;padding:0}.no-print{display:none!important}}
-        </style></head><body><button class="no-print" onclick="window.print()">Yazdır / PDF olarak kaydet</button><h1>${esc(report.title)}</h1><p class="sub">${esc(d.modul || '')} · ÜB.FR.65 saha veri kaydı · ${report.fieldCount} kayıtlı alan</p>
-        <table><tbody>${metadataHtml || '<tr><td>Denetim bilgisi yok</td></tr>'}</tbody></table>
-        <div class="notice ${saveWarning ? 'warn' : ''}">${esc(syncText)}</div>
-        ${sectionsHtml || '<p class="empty">Bu denetimde henüz FR.65 saha alanı doldurulmamış.</p>'}
-        <div class="footer">Bu çıktı sahada kaydedilen bilgilerin özetidir. Uygunluk veya belgelendirme kararı içermez ve resmî denetim sonuç raporunun yerine geçmez.</div></body></html>`;
+        const latestRecord = await DB.get('denetimler', d.id) || d;
+        const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture({ forms: { FR65: { values: collectValues() } } }, d.tahrik_tipi);
+        let muhurDurumu = '';
+        if (latestRecord.butunluk_hash) {
+          try { muhurDurumu = (await fr65ButunlukOzetiHesapla(latestRecord)).hash === latestRecord.butunluk_hash ? 'gecerli' : 'eslesmiyor'; }
+          catch { muhurDurumu = ''; }
+        }
+        // Çıktı penceresi about:blank olduğundan logo veri adresi olarak gömülür; yazı tipleri mutlak adresten yüklenir.
+        let logoSrc = '';
+        try {
+          const blob = await (await fetch('./aves-logo-white.png')).blob();
+          logoSrc = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => resolve(''); reader.readAsDataURL(blob); });
+        } catch { logoSrc = ''; }
+        const html = AVES_FR65_CIKTI.build({
+          report, count: total, syncText: senkronEsit ? '' : syncText, saveWarning: !!saveWarning, senkronEsit,
+          kapandi: latestRecord.denetim_durumu === 'Çalışma Tamamlandı',
+          kapanisTarihi: latestRecord.calisma_tamamlandi_at ? new Date(latestRecord.calisma_tamamlandi_at).toLocaleDateString('tr-TR') : '',
+          muhurDurumu, muhurKisa: latestRecord.butunluk_hash ? String(latestRecord.butunluk_hash).slice(0, 16) : '',
+          surum: APP_VERSION, olusturuldu: new Date().toLocaleString('tr-TR'),
+          baseUrl: new URL('./', location.href).href, logoSrc,
+        });
         reportWindow.document.open();
         reportWindow.document.write(html);
         reportWindow.document.close();
         reportWindow.focus();
-        setTimeout(() => { try { reportWindow.print(); } catch {} }, 250);
+        // Yazı tipleri yüklenmeden yazdırma penceresi açılırsa çıktı yedek yazı tipiyle basılır; en çok 3 sn beklenir.
+        Promise.race([
+          reportWindow.document.fonts ? reportWindow.document.fonts.ready : Promise.resolve(),
+          new Promise(resolve => setTimeout(resolve, 3000)),
+        ]).catch(() => {}).then(() => { try { reportWindow.print(); } catch {} });
       } catch (error) {
         console.error('FR.65 çıktı oluşturulamadı', error);
         try { reportWindow.close(); } catch {}

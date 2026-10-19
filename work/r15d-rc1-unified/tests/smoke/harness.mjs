@@ -45,6 +45,8 @@ export async function newSession(browser, appUrl, profile) {
   const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true, viewport: { width: 420, height: 900 } });
   await context.route(SUPABASE_ORIGIN + '/**', fake.handle);
   context.setDefaultTimeout(8000);
+  // Gerçek yazdırma penceresi sayfayı kilitler; testlerde window.print boş bırakılır (açılan pencereler dahil).
+  await context.addInitScript(() => { window.print = () => {}; });
   // Service Worker bu testte kapalı; çevrimdışı önbellek denetimi gerçek tarayıcıda SW ile yapılır.
   await context.addInitScript(() => { if ('caches' in window) window.caches.match = async () => new Response('x'); });
   const page = await context.newPage();

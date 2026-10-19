@@ -97,6 +97,13 @@
       ['Denetim tarihi', d.denetim_tarihi],
       ['Modül', d.modul],
       ['Tahrik tipi', d.tahrik_tipi],
+      ['Makine dairesi', d.makine_dairesi_tipi],
+      ['Yük · Kapasite · Hız · Durak', [
+        d.beyan_yuku_kg ? `${d.beyan_yuku_kg} kg` : '',
+        d.kapasite_kisi ? `${d.kapasite_kisi} kişi` : '',
+        d.beyan_hizi_ms ? `${d.beyan_hizi_ms} m/s` : '',
+        d.durak_sayisi ? `${d.durak_sayisi} durak` : '',
+      ].filter(Boolean).join(' · ')],
       ['Denetimi yapan', d.denetimi_yapan || d.olusturan_ad],
     ].map(([label, value]) => ({ label, value: text(value) })).filter(item => item.value);
 
@@ -107,6 +114,7 @@
         const value = object(formValues[key]);
         const isSerial = section.kind === 'serial' || ['serial', 'electric', 'gsm', 'optional_serial'].includes(fieldType);
         const parts = [];
+        let serial = null;
         if (isSerial) {
           const thirdKey = fieldType === 'gsm' ? 'imei' : 'seri_no';
           const thirdLabel = thirdKey === 'imei' ? 'IMEI' : 'Seri no';
@@ -116,11 +124,18 @@
           if (text(value[thirdKey])) parts.push(`${thirdLabel}: ${text(value[thirdKey])}`);
           if (!parts.length && text(value.field_value)) parts.push(text(value.field_value));
           if (!parts.length && text(value.var_mi)) parts.push(text(value.var_mi));
+          serial = {
+            durum: fieldType === 'optional_serial' ? text(value.var_mi) : '',
+            marka: text(value.marka), tip: text(value.tip),
+            third: text(value[thirdKey]), thirdLabel,
+          };
         } else if (text(value.field_value)) {
           parts.push(text(value.field_value));
         }
         if (text(value.note)) parts.push(`Not: ${text(value.note)}`);
-        return parts.length ? [{ key, label, value: parts.join(' · ') }] : [];
+        return parts.length
+          ? [{ key, label, value: parts.join(' · '), raw: isSerial ? '' : text(value.field_value), note: text(value.note), serial }]
+          : [];
       });
       return fields.length ? [{ key: section.key, title: section.title, fields }] : [];
     }).flat();
