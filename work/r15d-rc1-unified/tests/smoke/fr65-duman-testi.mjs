@@ -137,8 +137,12 @@ async function runModule(browser, appUrl, modul, persona, report) {
     const [popup] = await Promise.all([p.waitForEvent('popup', { timeout: 8000 }), p.click('#fr65Print')]);
     await popup.waitForSelector('.sheet', { timeout: 8000 });
     const text = await popup.innerText('body');
-    assert.ok(text.includes('Saha Veri Özeti') && text.includes('ÜB.FR.65'), 'rapor başlığı yok');
+    assert.ok(text.includes('SAHA VERİ ÖZETİ') && text.includes('FR.65'), 'rapor başlığı yok');
     assert.ok(await popup.locator('.brand').count() === 1 && await popup.locator('.kunye').count() === 1, 'yeni çıktı tasarımı yok');
+    const syncStates = ['Cihaz ve sunucu eşitlendi', 'Sunucu aktarımı bekliyor', 'Sunucu aktarımı incelemede', 'Senkron durumu doğrulanamadı'];
+    assert.ok(syncStates.some(state => text.includes(state)), 'çıktıda açık senkron durumu yok');
+    const printCss = await popup.locator('style').innerText();
+    assert.ok(printCss.includes('@top-left') && printCss.includes('counter(page)') && printCss.includes('counter(pages)'), 'A4 yinelenen başlık/sayfa numarası yok');
     assert.ok(text.includes(seri), 'rapor seri no içermiyor');
     assert.ok(text.includes(typed), 'rapor girilen değeri içermiyor');
     await popup.close();
