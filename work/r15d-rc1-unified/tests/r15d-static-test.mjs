@@ -26,6 +26,12 @@ const fr65CiktiJs = fs.readFileSync(path.join(appDir, 'fr65-cikti.js'), 'utf8');
 const fr65CiktiContext = {};
 vm.runInNewContext(fr65CiktiJs, fr65CiktiContext, { filename: 'fr65-cikti.js' });
 const fr65Cikti = fr65CiktiContext.AVES_FR65_CIKTI;
+const jszipContext = { Promise, setTimeout, clearTimeout };
+jszipContext.self = jszipContext; jszipContext.window = jszipContext;
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'vendor', 'jszip.min.js'), 'utf8'), jszipContext, { filename: 'jszip.min.js' });
+const fr65ExcelContext = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-excel.js'), 'utf8'), fr65ExcelContext, { filename: 'fr65-excel.js' });
+const fr65Excel = fr65ExcelContext.AVES_FR65_EXCEL;
 const fr65SemaContext = {};
 vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-sema.js'), 'utf8'), fr65SemaContext, { filename: 'fr65-sema.js' });
 fr65CiktiContext.AVES_FR65_SEMA = fr65SemaContext.AVES_FR65_SEMA;
@@ -112,10 +118,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.11.0 sürümü', index.includes('R15D-RC3.11.0</b>'));
-test('app R15D rc3.11.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.11.0'"));
-test('service worker rc3.11.0 cache', sw.includes("aves-saha-r15d-rc3110'"));
-test('uygulama manifesti rc3.11.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.11.0"'));
+test('index R15D rc3.12.0 sürümü', index.includes('R15D-RC3.12.0</b>'));
+test('app R15D rc3.12.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.12.0'"));
+test('service worker rc3.12.0 cache', sw.includes("aves-saha-r15d-rc3120'"));
+test('uygulama manifesti rc3.12.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.12.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1993,6 +1999,25 @@ test('FR.65 çıktı: kuyu şeması (tampon tipine göre), girilmemiş alanlar, 
       app.includes('Satır içi olay işleyicileri CSP ile engellenir') && app.includes("localStorage.setItem('aves_cikti_buyuk_yazi'") &&
       index.includes('<script src="fr65-sema.js"></script>') && sw.includes("'./fr65-sema.js'") && app.includes("'./fr65-sema.js'");
   })() );
+test('FR.65 Excel dışa aktarma: künye + saha verisi (boşlar dahil, sayılar sayı) + düzeltmeler, XML kaçışlı', await (async () => {
+  const values = { kuyu_genislik_cm: { field_value: '2450', note: 'Not <&> "x"' }, hiz: { field_value: '1,6' }, gsm_modulu: { marka: 'Teltonika', tip: 'FMB', imei: '352093081234567' } };
+  const sections = technicalDocs.visibleFr65Sections('Elektrikli');
+  const isActive = (field, vals) => technicalDocs.fr65CaptureFieldActive(field, vals);
+  const bytes = await fr65Excel.build({ JSZip: jszipContext.JSZip, record: { musteri_unvani: 'Örnek & Ortakları', asansor_seri_no: 'S1', id: 'x' }, values, sections, isActive,
+    duzeltmeler: [{ ilk: '2026-10-19T10:00:00Z', kim: 'Ali', neden: 'Eksik bilgi tamamlama', adet: 3 }], meta: { surum: 's', uretildi: 'u' } });
+  const zip = await jszipContext.JSZip.loadAsync(bytes);
+  const names = Object.keys(zip.files);
+  const data = await zip.file('xl/worksheets/sheet2.xml').async('string');
+  const kunye = await zip.file('xl/worksheets/sheet1.xml').async('string');
+  const rows = fr65Excel.dataRows(sections, values, isActive);
+  const wb = await zip.file('xl/workbook.xml').async('string');
+  return names.includes('[Content_Types].xml') && names.includes('xl/worksheets/sheet3.xml') && wb.includes('Saha verisi') && wb.includes('Düzeltmeler') &&
+    data.includes('<v>2450</v>') && data.includes('<v>1.6</v>') && data.includes('Not &lt;&amp;&gt; &quot;x&quot;') && data.includes('352093081234567') &&
+    kunye.includes('Örnek &amp; Ortakları') && rows.some(row => row.girildi === 'Hayır') && rows.some(row => row.girildi === 'Evet') &&
+    rows.find(row => row.anahtar === 'kuyu_genislik_cm').birim === 'cm' && rows.length > 30 &&
+    app.includes('id="fr65Excel"') && app.includes('async function dosyaIndir(file)') && app.includes("'./fr65-excel.js'") &&
+    sw.includes("'./fr65-excel.js'") && index.includes('<script src="fr65-excel.js"></script>');
+})());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
