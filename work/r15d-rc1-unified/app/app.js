@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.11.0';
+const APP_VERSION = 'R15D-rc3.12.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -1764,19 +1764,21 @@ const UI = (() => {
     return { summary, hash: await sha256Hex(stableStringify(summary)) };
   }
 
-  async function yedekDosyasiIndir(dosyaAdi, nesne) {
-    const text = JSON.stringify(nesne, null, 2);
-    const file = new File([text], dosyaAdi, { type: 'application/json' });
+  async function dosyaIndir(file) {
     // iOS ana ekran uygulamasında <a download> güvenilir değil; paylaşım sayfası dosyayı Dosyalar'a kaydettirir.
     if (/iPhone|iPad|iPod/.test(navigator.userAgent || '') && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: dosyaAdi }); return; }
+      try { await navigator.share({ files: [file], title: file.name }); return; }
       catch (error) { if (error && error.name === 'AbortError') throw error; }
     }
     const url = URL.createObjectURL(file);
     const link = document.createElement('a');
-    link.href = url; link.download = dosyaAdi;
+    link.href = url; link.download = file.name;
     document.body.appendChild(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  async function yedekDosyasiIndir(dosyaAdi, nesne) {
+    await dosyaIndir(new File([JSON.stringify(nesne, null, 2)], dosyaAdi, { type: 'application/json' }));
   }
 
   // Yedek: seçilen denetimlerin cihazdaki tüm verisi (fotoğraf dosyaları hariç).
@@ -3966,6 +3968,7 @@ function showYeniForm() {
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">
           ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
+          <button class="delbtn" id="fr65Excel" title="Saha verisini Excel dosyası olarak indir">📊 Excel</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
@@ -4129,6 +4132,32 @@ function showYeniForm() {
         if (latest && !(await cevrimdisiHazirlikDurumu(latest, [])).ready) await sahayaHazirla(latest, []);
       }).catch(() => {});
     }
+    const excelAction = document.getElementById('fr65Excel');
+    if (excelAction) excelAction.onclick = async () => {
+      excelAction.disabled = true;
+      try {
+        try { if (canEdit) await flushCapture(); }
+        catch (error) { toast('Son kayıt doğrulanamadı; cihazdaki kayıtlı değerler aktarılıyor'); }
+        const latest = await DB.get('denetimler', d.id) || d;
+        const record = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        const bytes = await AVES_FR65_EXCEL.build({
+          JSZip: window.JSZip, record: latest, values: record.forms?.FR65?.values || {},
+          sections: AVES_TEKNIK_DOSYA_FORM.visibleFr65Sections(latest.tahrik_tipi),
+          isActive: (field, values) => AVES_TEKNIK_DOSYA_FORM.fr65CaptureFieldActive(field, values),
+          duzeltmeler: AVES_FR65_CIKTI.duzeltmeOzeti(await DB.allByIndex('gecmis', 'byDenetim', d.id)),
+          meta: { surum: APP_VERSION, uretildi: new Date().toLocaleString('tr-TR') },
+        });
+        const ad = String(latest.asansor_seri_no || latest.musteri_unvani || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 40);
+        await dosyaIndir(new File([bytes], `AVES_FR65_${ad}_${new Date().toISOString().slice(0, 10)}.xlsx`,
+          { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+        toast('Excel dosyası hazırlandı');
+      } catch (error) {
+        if (!(error && error.name === 'AbortError')) {
+          console.error('FR.65 Excel dışa aktarma hatası', error);
+          toast('Excel dosyası oluşturulamadı; veri cihazda korunuyor');
+        }
+      } finally { excelAction.disabled = false; }
+    };
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {
       // Open synchronously from the button gesture so mobile popup blockers allow the report.

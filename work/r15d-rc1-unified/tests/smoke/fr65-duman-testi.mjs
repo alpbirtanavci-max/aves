@@ -229,6 +229,18 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.click('.fr65-ozet .close');
     await p.waitForSelector('.fr65-ozet', { state: 'detached' });
   });
+  await report.step(`${tag} "Excel" → geçerli .xlsx iner, girilen değer içinde`, async () => {
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 10000 }), p.click('#fr65Excel')]);
+    assert.ok(download.suggestedFilename().endsWith('.xlsx'), 'dosya uzantısı .xlsx değil');
+    const bytes = [...(await (await import('node:fs/promises')).readFile(await download.path()))];
+    const check = await p.evaluate(async arr => {
+      const zip = await JSZip.loadAsync(new Uint8Array(arr));
+      return { files: Object.keys(zip.files), data: await zip.file('xl/worksheets/sheet2.xml').async('string'), kunye: await zip.file('xl/worksheets/sheet1.xml').async('string') };
+    }, bytes);
+    assert.ok(check.files.includes('xl/workbook.xml'));
+    assert.ok(check.data.includes(String(typed).replace(/^duman-/, '')) || check.data.includes(typed), 'Excel girilen değeri içermiyor');
+    assert.ok(check.kunye.includes(seri), 'Excel künyesinde seri no yok');
+  });
   const canDelete = persona.rol === 'yonetici';
   await report.step(`${tag} silme düğmesi: ${canDelete ? 'görünür' : 'görünmez'}`, async () => {
     const count = await p.locator('#fr65Delete').count();
