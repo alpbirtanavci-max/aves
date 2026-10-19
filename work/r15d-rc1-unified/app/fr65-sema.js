@@ -236,21 +236,15 @@
     return ops;
   }
 
-  // Dikey duvardaki ray (yan karşı ağırlık için): taban duvarda, gövde sola (içe) bakar
-  function rayDuvarSag(xWall, yc, len = 16) {
+  // Yan karşı ağırlığın rayları (üstten): kafesin üst ve alt çubuğuna bağlı, gövde ve başlık karşı ağırlığa (içe) bakar.
+  // yBase: tabanın kafes çubuğuna oturduğu kenar; dir: +1 aşağı, -1 yukarı bakar.
+  function rayDikey(xc, yBase, dir, len = 16) {
+    const y0 = (a, h) => (dir > 0 ? yBase + a : yBase - a - h);
     return [
-      rect(xWall - 4, yc - 11, 4, 22, { fill: INK, stroke: INK, sw: 1 }),
-      rect(xWall - 4 - len, yc - 2, len, 4, { fill: INK }),
-      rect(xWall - 4 - len - 3, yc - 4, 3, 8, { fill: INK }),
-      rect(xWall - 4 - len - 7, yc - 8, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }),
-    ];
-  }
-  function rayDuvarSol(xWall, yc, len = 16) {
-    return [
-      rect(xWall, yc - 11, 4, 22, { fill: INK, stroke: INK, sw: 1 }),
-      rect(xWall + 4, yc - 2, len, 4, { fill: INK }),
-      rect(xWall + 4 + len, yc - 4, 3, 8, { fill: INK }),
-      rect(xWall + 4 + len - 2, yc - 8, 9, 16, { fill: WHITE, stroke: INK, sw: 1.1 }),
+      rect(xc - 11, y0(0, 4), 22, 4, { fill: INK, stroke: INK, sw: 1 }),
+      rect(xc - 2, y0(4, len), 4, len, { fill: INK }),
+      rect(xc - 4, y0(4 + len, 3), 8, 3, { fill: INK }),
+      rect(xc - 8, y0(4 + len - 2, 9), 16, 9, { fill: WHITE, stroke: INK, sw: 1.1 }),
     ];
   }
 
@@ -317,7 +311,6 @@
       ops.push(text(280, 129, 'KARŞI AĞIRLIK', { size: 7.6, weight: 700, anchor: 'middle', font: 'm' }));
       const kLeft = kaX - 30; const kRight = kaX + kaW + 30;
       ops.push(...rayPlan(kLeft, 115, 'sol'), ...rayPlan(kRight, 115, 'sag'));
-      ops.push(...konsol(L, 126, kLeft, 126), ...konsol(R, 126, kRight, 126));
       kaRailC = 126;
       ops.push(...tag(280, 156, `KARŞI AĞIRLIK ${v.O || '–'} × ${v.P || '–'} cm (genişlik × derinlik)`, { size: 7.6, weight: 700, anchor: 'middle', fill: v.O || v.P ? NAVY : GREY }));
       ops.push(...dimH(v, 'N', kLeft + 4 + 16 + 1.5, kRight - 4 - 16 - 1.5, 66, 127, 127));
@@ -325,14 +318,15 @@
       // yan karşı ağırlık: kafes içinde; kafes duvara yaslı, kabin rayının biri kafesten çıkar
       const kx = sag ? 366 : 136;
       const kafesW = 58;
-      const cwx = sag ? 376 : 146;
-      ops.push(...frame(cwx, 192, 28, 112));
-      ops.push(text(cwx + 14, 248, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
-      // karşı ağırlık rayları iki ucunda kafesin duvar tarafına bağlı
-      const wx = sag ? R : L;
-      const yTop = 186; const yBot = 310;
-      if (sag) ops.push(...rayDuvarSag(wx, yTop), ...rayDuvarSag(wx, yBot));
-      else ops.push(...rayDuvarSol(wx, yTop), ...rayDuvarSol(wx, yBot));
+      const midX = kx + kafesW / 2;
+      const cwx = midX - 14;
+      ops.push(...frame(cwx, 198, 28, 118));
+      ops.push(text(midX, 262, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
+      // karşı ağırlık rayları: kafesin üst ve alt çubuğuna bağlı, karşı ağırlığa bakar
+      const yTopBase = 172; const yBotBase = 344;
+      ops.push(...rayDikey(midX, yTopBase, +1), ...rayDikey(midX, yBotBase, -1));
+      const yTop = yTopBase + 4 + 16 + 1.5; const yBot = yBotBase - 4 - 16 - 1.5;
+      const wx = midX + 8;
       ops.push(...tag(sag ? R : L, 166, `KARŞI AĞIRLIK ${v.O || '–'} × ${v.P || '–'} cm (gen. × der.)`, { size: 7.2, weight: 700, anchor: sag ? 'end' : 'start', fill: v.O || v.P ? NAVY : GREY }));
       kaRailC = 'yan';
       ops.push(...dimV(v, 'N', yTop, yBot, sag ? 470 : 38, wx, wx, { short: true }));
