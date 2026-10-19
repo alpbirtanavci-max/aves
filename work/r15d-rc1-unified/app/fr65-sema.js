@@ -172,7 +172,7 @@
     ops.push(...dim('R', v, 90, 73, 90, 164, 86, 120, 'end'));
     ops.push(...dim('Q', v, 252, 164, 252, 226, 256, 195, 'start'));
     ops.push(...dim('S', v, 150, 262, 190, 262, 170, 273));
-    ops.push(text(260, 76, `KA: O ${v.O || '–'} × P ${v.P || '–'}`, { size: 8.4, weight: 700 }));
+    ops.push(text(240, 76, `KA: O ${v.O || '–'} × P ${v.P || '–'}`, { size: 8.4, weight: 700 }));
     return ops;
   }
 
