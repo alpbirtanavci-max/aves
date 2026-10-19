@@ -87,6 +87,7 @@
           ['karsi_agirlik_raylar_arasi_cm', 'Karşı ağırlık rayları arası (cm)', 'number'],
           ['ray_kapi_mesafesi_cm', 'Ray–kapı mesafesi (cm)', 'number'],
           ['ana_ray_karsi_agirlik_ray_mesafesi_cm', 'Ana ray ile karşı ağırlık rayı arası mesafe (cm)', 'number'],
+          ['karsi_agirlik_konumu', 'Karşı ağırlık konumu (kat girişinden bakışla)', 'select'],
           ['karsi_agirlik_parca_sayisi', 'Karşı ağırlık parça sayısı', 'number'],
           ['karsi_agirlik_genislik_cm', 'Karşı ağırlık genişliği (cm)', 'number'],
           ['karsi_agirlik_derinlik_cm', 'Karşı ağırlık derinliği (cm)', 'number'],
@@ -126,6 +127,7 @@
   const FR65_FIELD_OPTIONS = Object.freeze({
     elektrikli_tahrik_yontemi: ['Dişli (redüktörlü)', 'Dişlisiz (gearless)', 'Diğer'],
     makine_konumu: ['Makine dairesi', 'Kuyu içi'],
+    karsi_agirlik_konumu: ['Arkada', 'Sağda', 'Solda'],
     aski_duzeni: ['1:1', '2:1', '4:1', 'Diğer'],
     ikinci_kapi_var: ['Yok', 'Var'],
     ikinci_kapi_yon: ['Sağ', 'Sol', 'Merkezi'],

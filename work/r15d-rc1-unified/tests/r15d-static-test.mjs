@@ -2046,6 +2046,21 @@ test('FR.65 PDF: gerçek PDF dosyası üretir (çok sayfalı, sayfa numaralı, T
     app.includes('id="fr65Pdf"') && app.includes('const ciktiBaglami = async () =>') && app.includes('AVES_FR65_PDF.build(') &&
     app.includes("'./fr65-pdf.js'") && sw.includes("'./fr65-pdf.js'") && index.includes('<script src="fr65-pdf.js"></script>');
 })());
+test('FR.65 karşı ağırlık konumu (Arkada / Sağda / Solda) seçilir; şema konuma göre değişir, raylar konsolla duvara bağlı çizilir',
+  (() => {
+    const field = technicalDocs.FR65.sections.find(section => section.key === 'kuyu').fields.find(([key]) => key === 'karsi_agirlik_konumu');
+    const sema = fr65SemaContext.AVES_FR65_SEMA;
+    const val = n => ({ field_value: String(n) });
+    const base = { kuyu_genislik_cm: val(190), karsi_agirlik_genislik_cm: val(90), karsi_agirlik_derinlik_cm: val(20) };
+    const rear = sema.planOps(sema.valuesOf({ ...base, karsi_agirlik_konumu: val('Arkada') }));
+    const side = sema.planOps(sema.valuesOf({ ...base, karsi_agirlik_konumu: val('Sağda') }));
+    const rearText = rear.filter(op => op.t === 'text').map(op => op.s).join('|');
+    const sideText = side.filter(op => op.t === 'text').map(op => op.s).join('|');
+    return field?.[2] === 'select' && JSON.stringify(technicalDocs.FR65_FIELD_OPTIONS.karsi_agirlik_konumu) === JSON.stringify(['Arkada', 'Sağda', 'Solda']) &&
+      rearText.includes('KARŞI AĞIRLIK 90 × 20 cm (genişlik × derinlik)') &&
+      sideText.includes('KA 90 × 20 cm') && rear.length > 150 && side.length > 150 &&
+      rear.some(op => op.t === 'rect' && op.fill === '#4B5070') && !/O 90 × P 20/.test(rearText);
+  })());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
