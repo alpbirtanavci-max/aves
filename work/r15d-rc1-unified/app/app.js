@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.10.0';
+const APP_VERSION = 'R15D-rc3.10.1';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './app.js', './manifest.json',
@@ -4142,26 +4142,48 @@ function showYeniForm() {
         } catch (error) {
           saveWarning = error.message || 'Son kayıt doğrulanamadı';
         }
+        const screenValues = collectValues();
+        let latestRecord = null;
+        try { latestRecord = await DB.get('denetimler', d.id) || null; }
+        catch (error) { console.warn('FR.65 çıktı için cihaz kaydı okunamadı', error); }
+        const recordAvailable = !!latestRecord;
+        const reportRecord = latestRecord || d;
+        const savedValues = recordAvailable
+          ? (AVES_DENETIM_FORM_SETI.normalize(latestRecord.denetim_form_kayitlari, latestRecord.teknik_dosya_kayitlari).forms?.FR65?.values || {})
+          : {};
+        const sameStoredValues = recordAvailable && AVES_FR65_CIKTI.sameValues(savedValues, screenValues);
+        // Yazdırılan değerler ekrandaki değerlerdir; mührü ancak aynı içerik cihaz kaydıyla eşleşirse göster.
         const report = AVES_FR65_SAHA_TOOLS.buildReport(
-          d, collectValues(), sections, fieldConditions);
-        let senkronEsit = false;
+          reportRecord, screenValues, sections, fieldConditions);
+        let syncSummary = null;
+        let syncStatus = 'unknown';
         let syncText = saveWarning
-          ? `Kaydetme doğrulanamadı: ${saveWarning}. Bu çıktı ekranda görünen son değerleri içerir; cihaz/sunucu kaydını ayrıca kontrol edin.`
-          : 'Bu çıktı, ekranda görünen FR.65 saha verilerinin yazdırılabilir özetidir.';
+          ? `Son kaydetme doğrulanamadı (${saveWarning}). Çıktı ekrandaki değerleri içerir; bu değerlerin cihaz veya sunucu kaydı ayrıca doğrulanmalıdır.`
+          : '';
         try {
-          const summary = await Sync.denetimSyncOzeti(d.id);
-          if (!saveWarning && summary.korunan) syncText = `${summary.korunan} işlem cihazda korumada; sunucuya aktarım tamamlanmadı.`;
-          else if (!saveWarning && summary.bekleyen) syncText = `Cihaza kaydedildi; ${summary.bekleyen} işlem sunucu aktarımını bekliyor.`;
-          else if (!saveWarning && !summary.toplam) { syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.'; senkronEsit = true; }
+          syncSummary = await Sync.denetimSyncOzeti(d.id);
+          syncStatus = AVES_FR65_CIKTI.syncStatus(syncSummary);
         } catch (error) { console.warn('FR.65 çıktı senkron durumu okunamadı', error); }
-
-        const latestRecord = await DB.get('denetimler', d.id) || d;
-        const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture({ forms: { FR65: { values: collectValues() } } }, d.tahrik_tipi);
-        let muhurDurumu = '';
-        if (latestRecord.butunluk_hash) {
-          try { muhurDurumu = (await fr65ButunlukOzetiHesapla(latestRecord)).hash === latestRecord.butunluk_hash ? 'gecerli' : 'eslesmiyor'; }
-          catch { muhurDurumu = ''; }
+        if (saveWarning || !recordAvailable || !sameStoredValues) syncStatus = 'unknown';
+        if (!syncText) {
+          if (!recordAvailable) syncText = 'Cihazdaki kayıt okunamadı; bu çıktı için kayıt ve sunucu aktarım durumu doğrulanamadı.';
+          else if (!sameStoredValues) syncText = 'Ekrandaki değerler cihazdaki kayıtlı FR.65 verisiyle eşleşmiyor; bu çıktının aktarım durumu doğrulanamadı.';
+          else if (syncStatus === 'protected') syncText = `${syncSummary.korunan} işlem cihazda korumada; sunucuya aktarım inceleme gerektiriyor.`;
+          else if (syncStatus === 'pending') syncText = `Cihaza kaydedildi; ${syncSummary.bekleyen} işlem sunucu aktarımını bekliyor.`;
+          else if (syncStatus === 'synced') syncText = 'Cihaz ve sunucu eşit; bekleyen FR.65 aktarımı yok.';
+          else syncText = 'Senkron durumu okunamadı; bu çıktı için sunucu eşitliği doğrulanamadı.';
         }
+        const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(
+          { forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi);
+        let sealMatches = null;
+        if (recordAvailable && latestRecord.butunluk_hash) {
+          try { sealMatches = (await fr65ButunlukOzetiHesapla(latestRecord)).hash === latestRecord.butunluk_hash; }
+          catch (error) { console.warn('FR.65 çıktı mührü doğrulanamadı', error); }
+        }
+        const sealStatus = AVES_FR65_CIKTI.sealStatus({
+          recordAvailable, saveWarning: !!saveWarning, savedValues, reportValues: screenValues,
+          hasSeal: !!latestRecord?.butunluk_hash, sealMatches,
+        });
         // Çıktı penceresi about:blank olduğundan logo veri adresi olarak gömülür; yazı tipleri mutlak adresten yüklenir.
         let logoSrc = '';
         try {
@@ -4169,10 +4191,11 @@ function showYeniForm() {
           logoSrc = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => resolve(''); reader.readAsDataURL(blob); });
         } catch { logoSrc = ''; }
         const html = AVES_FR65_CIKTI.build({
-          report, count: total, syncText: senkronEsit ? '' : syncText, saveWarning: !!saveWarning, senkronEsit,
-          kapandi: latestRecord.denetim_durumu === 'Çalışma Tamamlandı',
-          kapanisTarihi: latestRecord.calisma_tamamlandi_at ? new Date(latestRecord.calisma_tamamlandi_at).toLocaleDateString('tr-TR') : '',
-          muhurDurumu, muhurKisa: latestRecord.butunluk_hash ? String(latestRecord.butunluk_hash).slice(0, 16) : '',
+          report, count: total, syncText: syncStatus === 'synced' ? '' : syncText, saveWarning: !!saveWarning,
+          syncStatus, sealStatus,
+          kapandi: reportRecord.denetim_durumu === 'Çalışma Tamamlandı',
+          kapanisTarihi: reportRecord.calisma_tamamlandi_at ? new Date(reportRecord.calisma_tamamlandi_at).toLocaleDateString('tr-TR') : '',
+          muhurKisa: sealStatus === 'valid' ? String(latestRecord.butunluk_hash).slice(0, 16) : '',
           surum: APP_VERSION, olusturuldu: new Date().toLocaleString('tr-TR'),
           baseUrl: new URL('./', location.href).href, logoSrc,
         });

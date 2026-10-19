@@ -109,10 +109,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.10.0 sürümü', index.includes('R15D-RC3.10.0</b>'));
-test('app R15D rc3.10.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.10.0'"));
-test('service worker rc3.10.0 cache', sw.includes("aves-saha-r15d-rc3100'"));
-test('uygulama manifesti rc3.10.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.10.0"'));
+test('index R15D rc3.10.1 sürümü', index.includes('R15D-RC3.10.1</b>'));
+test('app R15D rc3.10.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.10.1'"));
+test('service worker rc3.10.1 cache', sw.includes("aves-saha-r15d-rc3101'"));
+test('uygulama manifesti rc3.10.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.10.1"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1837,9 +1837,30 @@ test('FR.65 çıktı düğmesi son alanları flush eder ve senkron durumuyla bir
     flow.includes('await Sync.denetimSyncOzeti(d.id)') &&
     flow.includes('reportWindow.print()') &&
     flow.includes('AVES_FR65_CIKTI.build({') &&
+    flow.includes('AVES_FR65_CIKTI.sameValues(savedValues, screenValues)') &&
+    flow.includes("if (saveWarning || !recordAvailable || !sameStoredValues) syncStatus = 'unknown'") &&
+    flow.includes("muhurKisa: sealStatus === 'valid'") &&
     fr65CiktiJs.includes('resmî denetim sonuç raporunun yerine geçmez');
 })());
-test('FR.65 çıktı tasarımı: ölçü kartları, bileşen tablosu, not satırı, durum etiketleri, kaçışlı ve betiksiz', (() => {
+test('FR.65 çıktı durum sınıflandırması: senkron ve mühür doğrulanamıyorsa olumlu gösterilmez', (() => {
+  const saved = { hiz: { field_value: '1' }, seri: { marka: 'X', seri_no: 'S-1' } };
+  return fr65Cikti.syncStatus({ toplam: 0, bekleyen: 0, korunan: 0 }) === 'synced' &&
+    fr65Cikti.syncStatus({ toplam: 2, bekleyen: 2, korunan: 0 }) === 'pending' &&
+    fr65Cikti.syncStatus({ toplam: 2, bekleyen: 1, korunan: 1 }) === 'protected' &&
+    fr65Cikti.syncStatus(null) === 'unknown' &&
+    fr65Cikti.syncStatus({ toplam: 2 }) === 'unknown' &&
+    fr65Cikti.syncStatus({ toplam: 0 }) === 'unknown' &&
+    fr65Cikti.syncStatus({ toplam: -1, bekleyen: 0, korunan: 0 }) === 'unknown' &&
+    fr65Cikti.syncStatus({ toplam: 2, bekleyen: 1, korunan: 0 }) === 'unknown' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: { seri: saved.seri, hiz: saved.hiz }, hasSeal: true, sealMatches: true }) === 'valid' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: saved, saveWarning: true, hasSeal: true, sealMatches: true }) === 'not-covered' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: { hiz: { field_value: '2' } }, hasSeal: true, sealMatches: true }) === 'not-covered' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: saved, hasSeal: true, sealMatches: false }) === 'mismatch' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: saved }) === 'absent' &&
+    fr65Cikti.sealStatus({ recordAvailable: false, savedValues: saved, reportValues: saved, hasSeal: true, sealMatches: true }) === 'unknown' &&
+    fr65Cikti.sealStatus({ recordAvailable: true, savedValues: saved, reportValues: saved, hasSeal: true }) === 'unknown';
+})());
+test('FR.65 çıktı tasarımı: ölçüler taranabilir, bileşen tablosu sıkı, statüler açık, A4 akışı ve metin kaçışı güvenli', (() => {
   const report = {
     title: 'FR.65 Saha Veri Özeti',
     metadata: [
@@ -1852,6 +1873,13 @@ test('FR.65 çıktı tasarımı: ölçü kartları, bileşen tablosu, not satır
       { key: 'kuyu', title: 'Kuyu', fields: [
         { key: 'kuyu_genislik_cm', label: 'Kuyu genişliği (cm)', value: '2450', raw: '2450', note: '', serial: null },
         { key: 'kuyu_notlu', label: 'Kuyu dibi (cm)', value: '150 · Not: x', raw: '150', note: 'Not <script>alert(1)</script>', serial: null },
+        { key: 'kuyu_derinlik_cm', label: 'Kuyu derinliği (cm)', value: '2100', raw: '2100', note: '', serial: null },
+        { key: 'kabin_raylar_arasi_cm', label: 'Kabin ana rayları arası (cm)', value: '1650', raw: '1650', note: '', serial: null },
+        { key: 'karsi_agirlik_raylar_arasi_cm', label: 'Karşı ağırlık rayları arası (cm)', value: '950', raw: '950', note: '', serial: null },
+        { key: 'ray_kapi_mesafesi_cm', label: 'Ray–kapı mesafesi (cm)', value: '120', raw: '120', note: '', serial: null },
+        { key: 'ana_ray_karsi_agirlik_ray_mesafesi_cm', label: 'Ana ray ile karşı ağırlık rayı arası (cm)', value: '780', raw: '780', note: '', serial: null },
+        { key: 'kabin_tampon_stroku_cm', label: 'Kabin tamponu stroku (cm)', value: '120', raw: '120', note: '', serial: null },
+        { key: 'karsi_agirlik_tampon_stroku_cm', label: 'Karşı ağırlık tamponu stroku (cm)', value: '120', raw: '120', note: '', serial: null },
         { key: 'tip', label: 'Kabin tamponu tipi', value: 'Yağlı', raw: 'Yağlı', note: 'Yağ seviyesi uygun', serial: null },
       ] },
       { key: 'seri', title: 'Seri numaraları', fields: [
@@ -1860,12 +1888,23 @@ test('FR.65 çıktı tasarımı: ölçü kartları, bileşen tablosu, not satır
     ],
   };
   const html = fr65Cikti.build({ report, count: { recorded: 4, total: 8 }, kapandi: true, kapanisTarihi: '19.10.2026',
-    senkronEsit: true, muhurDurumu: 'gecerli', muhurKisa: 'abcd1234abcd1234', surum: 'R15D-test', olusturuldu: 'x', baseUrl: 'http://x/', logoSrc: '' });
+    syncStatus: 'synced', sealStatus: 'valid', muhurKisa: 'abcd1234abcd1234', surum: 'R15D-test', olusturuldu: 'x', baseUrl: 'http://x/', logoSrc: '' });
+  const cautiousHtml = fr65Cikti.build({ report, syncStatus: 'unknown', sealStatus: 'not-covered',
+    syncText: 'Bu çıktı doğrulanamadı', surum: 'R15D-test', olusturuldu: 'x' });
   return html.includes('class="cards"') && html.includes('2 450<small>cm</small>') && html.includes('Kuyu genişliği') &&
     html.includes('<table class="t">') && html.includes('Montanari') && html.includes('class="r note"') && html.includes('<p>Not &lt;script&gt;') &&
-    html.includes('✓ Saha kaydı kapatıldı') && html.includes('✓ Cihaz ve sunucu eşit') && html.includes('Mühür geçerli') &&
+    html.includes('✓ Saha kaydı kapatıldı') && html.includes('✓ Cihaz ve sunucu eşitlendi') && html.includes('✓ Saha verisi mührü geçerli') &&
     html.includes('width:50%') && html.includes('Firma &lt;b&gt;X&lt;/b&gt;') && !html.includes('<script>alert') &&
     html.includes('&lt;script&gt;alert(1)&lt;/script&gt;') && html.includes("url('http://x/fonts/Montserrat-latin-ext.woff2')") &&
+    html.includes('FR.65 · SAHA VERİ ÖZETİ') && html.includes('Denetim künyesi') &&
+    html.includes('grid-template-columns:repeat(2,minmax(0,1fr))') && html.includes('counter(page)') && html.includes('counter(pages)') &&
+    html.includes('class="compact-section"') && html.includes('<colgroup>') && fr65CiktiJs.includes('Kuyu koşulları ve tampon bilgileri') &&
+    html.includes('class="compact-section kuyu-continuation"') &&
+    html.includes('section.compact-section{break-inside:avoid-page') &&
+    html.includes('AVES · SAHA DENETİM · ÜB.FR.65 SAHA VERİ ÖZETİ') &&
+    html.includes('Mühür, cihazdaki FR.65 saha değerleri') &&
+    cautiousHtml.includes('Senkron durumu doğrulanamadı') && cautiousHtml.includes('Mühür ekrandaki değerleri kapsamıyor') &&
+    !cautiousHtml.includes('Sunucu aktarımı bekliyor') && !cautiousHtml.includes('Saha verisi mührü geçerli') &&
     fr65Cikti.splitUnit('Hız (m/s)').unit === 'm/s' &&
     app.includes("'./fr65-cikti.js'") && sw.includes("'./fr65-cikti.js'") && index.includes('<script src="fr65-cikti.js"></script>');
 })());
