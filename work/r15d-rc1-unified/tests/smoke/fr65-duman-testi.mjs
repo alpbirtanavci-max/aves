@@ -139,6 +139,13 @@ async function runModule(browser, appUrl, modul, persona, report) {
     const text = await popup.innerText('body');
     assert.ok(text.includes('SAHA VERİ ÖZETİ') && text.includes('FR.65'), 'rapor başlığı yok');
     assert.ok(await popup.locator('.brand').count() === 1 && await popup.locator('.kunye').count() === 1, 'yeni çıktı tasarımı yok');
+    assert.ok(await popup.locator('.sema svg').count() === 2, 'kuyu şemaları (kesit + plan) yok');
+    assert.ok(await popup.locator('.bos').count() === 1, 'girilmemiş alanlar bölümü yok');
+    assert.equal(await popup.locator('.toolbar button').count(), 2, 'yazdır ve büyük yazı düğmeleri yok');
+    await popup.click('#aves-big');
+    assert.equal(await popup.evaluate(() => document.documentElement.classList.contains('big-text')), true, 'büyük yazı açılmadı');
+    await popup.click('#aves-big');
+    assert.equal(await popup.evaluate(() => document.documentElement.classList.contains('big-text')), false, 'büyük yazı kapanmadı');
     const syncStates = ['Cihaz ve sunucu eşitlendi', 'Sunucu aktarımı bekliyor', 'Sunucu aktarımı incelemede', 'Senkron durumu doğrulanamadı'];
     assert.ok(syncStates.some(state => text.includes(state)), 'çıktıda açık senkron durumu yok');
     const printCss = await popup.locator('style').innerText();

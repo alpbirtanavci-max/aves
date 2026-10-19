@@ -338,8 +338,33 @@
     return { recorded, total: fields.length };
   }
 
+  // Girilmemiş (boş) saha alanları, bölüm bölüm. Sayım kurallarıyla aynı süzgeçleri kullanır.
+  function missingFr65Fields(record, tractionType) {
+    const source = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+    const forms = source.forms && typeof source.forms === 'object' ? source.forms : {};
+    const capture = forms.FR65 && typeof forms.FR65 === 'object'
+      ? forms.FR65
+      : (source.fr65 && typeof source.fr65 === 'object' ? source.fr65 : {});
+    const values = capture.values && typeof capture.values === 'object' ? capture.values : {};
+    return visibleFr65Sections(tractionType).map(section => {
+      const fields = section.fields
+        .filter(field => fr65CaptureFieldActive(field, values))
+        .filter(field => {
+          if (field[2] === 'optional_serial') {
+            const value = values[field[0]];
+            return value?.var_mi === 'Var' || ['marka', 'tip', 'seri_no'].some(prop => String(value?.[prop] || '').trim());
+          }
+          if (field[2] === 'optional_select') return !!String(values[field[0]]?.field_value || '').trim();
+          return true;
+        })
+        .filter(field => !fr65CaptureFieldRecorded(field, values[field[0]]))
+        .map(field => field[1]);
+      return { key: section.key, title: section.title, fields };
+    }).filter(section => section.fields.length);
+  }
+
   root.AVES_TEKNIK_DOSYA_FORM = Object.freeze({
     FR65, RP14, FR65_FIELD_OPTIONS, FR65_FIELD_HELP, FR65_FIELD_CONDITIONS, FR65_FLOW_ORDER,
-    visibleFr65Sections, fr65CaptureFieldActive, emptyRecord, normalize, countFr65, emptyFr65Capture, countFr65Capture,
+    visibleFr65Sections, fr65CaptureFieldActive, emptyRecord, normalize, countFr65, emptyFr65Capture, countFr65Capture, missingFr65Fields,
   });
 })(globalThis);

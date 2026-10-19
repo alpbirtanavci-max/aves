@@ -46,6 +46,39 @@
     return sealMatches ? 'valid' : 'mismatch';
   }
 
+  // Geçmiş olaylarından düzeltme oturumları: aynı oturum kimliğine sahip olaylar tek düzeltmedir.
+  function duzeltmeOzeti(events) {
+    const groups = new Map();
+    for (const event of Array.isArray(events) ? events : []) {
+      const id = event && event.duzeltme_oturumu_id;
+      if (!id) continue;
+      const group = groups.get(id) || { id, neden: '', kim: '', ilk: '', adet: 0 };
+      group.adet += 1;
+      group.neden = group.neden || String(event.duzeltme_nedeni || '');
+      group.kim = group.kim || String(event.degistiren_ad || event.degistiren_email || '');
+      const at = String(event.created_at || '');
+      if (at && (!group.ilk || at < group.ilk)) group.ilk = at;
+      groups.set(id, group);
+    }
+    return [...groups.values()].sort((a, b) => a.ilk.localeCompare(b.ilk));
+  }
+
+  function renderMissing(missing) {
+    const list = Array.isArray(missing) ? missing : [];
+    if (!list.length) return '<div class="boxnote ok">✓ Görünen tüm saha alanlarında veri var.</div>';
+    const total = list.reduce((sum, section) => sum + section.fields.length, 0);
+    return `<section class="bos"><h2><span class="no">!</span>Girilmemiş alanlar<em>${total} alan</em></h2>${list.map(section =>
+      `<p><b>${esc(section.title)}</b> (${section.fields.length}): ${section.fields.map(esc).join(', ')}</p>`).join('')}</section>`;
+  }
+
+  function renderCorrections(corrections) {
+    const list = Array.isArray(corrections) ? corrections : [];
+    if (!list.length) return '';
+    const date = value => (value ? new Date(value).toLocaleDateString('tr-TR') : '');
+    return `<section class="duz"><h2><span class="no">↻</span>Düzeltme geçmişi<em>${list.length} düzeltme</em></h2><p class="duz-ozet">Bu kayıt kapatıldıktan sonra ${list.length} kez iz bırakılarak düzeltildi.</p>${list.map(item =>
+      `<div class="r"><span>${esc(date(item.ilk))}${item.kim ? ` · ${esc(item.kim)}` : ''}</span><b>${esc(item.neden || 'Neden belirtilmedi')} · ${item.adet} değişiklik</b></div>`).join('')}</section>`;
+  }
+
   function syncLabel(status) {
     return ({
       synced: '✓ Cihaz ve sunucu eşitlendi',
@@ -181,6 +214,17 @@ table.t td small{display:block;font-weight:400;color:#6E7186}
     return `<section class="${compact}"><h2><span class="no">${index + 1}</span>${esc(section.title)}<em>${fields.length} alan</em></h2>${cards}${rows}${table}</section>`;
   }
 
+  const EXTRA_CSS = `
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.toolbar button{border:0;border-radius:8px;background:#20235B;color:#fff;padding:10px 16px;font:700 13px 'Inter',Arial,sans-serif;cursor:pointer;margin:0}
+.toolbar button.ghost{background:#fff;color:#20235B;border:1.5px solid #20235B}
+.toolbar button[aria-pressed=true]{background:#EA0048;border-color:#EA0048;color:#fff}
+.bos p{margin:0 0 5px;padding:6px 10px;border-radius:6px;background:#F5F6FA;font-size:10px;color:#33384F;line-height:1.5;break-inside:avoid-page}
+.boxnote.ok{margin:0 0 4.5mm;padding:7px 11px;border-radius:8px;background:#EDF8F2;color:#12643D;font-weight:600;font-size:10px}
+.duz .duz-ozet{margin:0 0 6px;font-size:10px;color:#33384F}
+.big-text .sheet{zoom:1.3}
+@media print{.big-text .sheet{zoom:1}}`;
+
   function build(ctx) {
     const c = ctx || {};
     const report = c.report || { title: 'FR.65 Saha Veri Özeti', metadata: [], sections: [], fieldCount: 0 };
@@ -217,8 +261,8 @@ table.t td small{display:block;font-weight:400;color:#6E7186}
       ? report.sections.map(renderSection).join('')
       : '<p class="empty">Bu denetimde henüz FR.65 saha alanı doldurulmamış.</p>';
 
-    return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${fontFaces(c.baseUrl)}${CSS}</style></head><body><div class="sheet">
-<button class="no-print" onclick="window.print()">Yazdır / PDF olarak kaydet</button>
+    return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${fontFaces(c.baseUrl)}${CSS}${EXTRA_CSS}${root.AVES_FR65_SEMA ? root.AVES_FR65_SEMA.CSS : ''}</style></head><body><div class="sheet">
+<div class="no-print toolbar"><button type="button" id="aves-print">Yazdır / PDF olarak kaydet</button><button type="button" id="aves-big" class="ghost" aria-pressed="false">Büyük yazı</button></div>
 <div class="brand">${logo}<div class="doc"><b>FR.65 · SAHA VERİ ÖZETİ</b><span>Denetim kayıt çıktısı${modul ? ` · ${esc(modul)}` : ''}</span></div></div>
 <div class="title"><small>Firma / asansör</small><h1>${esc(firma || 'Firma bilgisi yok')}</h1><p>${seri ? `Seri no <b>${esc(seri)}</b>` : 'Seri no girilmedi'}${adres ? ` · ${esc(adres)}` : ''}</p></div>
 <div class="status">${chips}</div>
@@ -226,10 +270,13 @@ ${kunye ? `<div class="meta-title">Denetim künyesi</div><div class="kunye">${ku
 ${total ? `<div class="progress"><div class="bar"><i style="width:${yuzde}%"></i></div><p>${total} saha alanından ${recorded}'inde veri girilmiş · ${Math.max(0, total - recorded)} alan boş</p></div>` : ''}
 ${c.syncText ? `<div class="notice ${syncState === 'protected' ? 'review' : (syncState === 'synced' ? '' : 'warn')}">${esc(c.syncText)}</div>` : ''}
 ${sections}
+${c.values && root.AVES_FR65_SEMA ? root.AVES_FR65_SEMA.build(c.values, report.sections.length + 1) : ''}
+${c.missing ? renderMissing(c.missing) : ''}
+${renderCorrections(c.duzeltmeler)}
 <div class="disc">Bu çıktı sahada kaydedilen bilgilerin özetidir. Uygunluk veya belgelendirme kararı içermez ve resmî denetim sonuç raporunun yerine geçmez.<div class="integrity-note">Mühür, cihazdaki FR.65 saha değerleri ve bütünlük özetinde yer alan denetim kimliğini doğrular; indirilen PDF dosyasının elektronik imzası değildir.</div></div>
 <div class="foot"><span>AVES Saha Denetim · ${esc(c.surum || '')} · Oluşturulma ${esc(c.olusturuldu || '')}</span>${c.muhurKisa && integrityState === 'valid' ? `<span class="muhur">Kayıt mührü ${esc(c.muhurKisa)}</span>` : ''}</div>
 </div></body></html>`;
   }
 
-  root.AVES_FR65_CIKTI = Object.freeze({ build, esc, splitUnit, formatNumber, sameValues, syncStatus, sealStatus, syncLabel, sealLabel });
+  root.AVES_FR65_CIKTI = Object.freeze({ build, esc, splitUnit, formatNumber, sameValues, syncStatus, sealStatus, syncLabel, sealLabel, duzeltmeOzeti, renderMissing, renderCorrections });
 })(globalThis);

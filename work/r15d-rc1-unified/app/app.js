@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.10.1';
+const APP_VERSION = 'R15D-rc3.11.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -4190,7 +4190,14 @@ function showYeniForm() {
           const blob = await (await fetch('./aves-logo-white.png')).blob();
           logoSrc = await new Promise(resolve => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => resolve(''); reader.readAsDataURL(blob); });
         } catch { logoSrc = ''; }
+        let missing = [];
+        let duzeltmeler = [];
+        try { missing = AVES_TEKNIK_DOSYA_FORM.missingFr65Fields({ forms: { FR65: { values: screenValues } } }, reportRecord.tahrik_tipi); }
+        catch (error) { console.warn('FR.65 boş alanlar hesaplanamadı', error); }
+        try { duzeltmeler = AVES_FR65_CIKTI.duzeltmeOzeti(await DB.allByIndex('gecmis', 'byDenetim', d.id)); }
+        catch (error) { console.warn('FR.65 düzeltme geçmişi okunamadı', error); }
         const html = AVES_FR65_CIKTI.build({
+          values: screenValues, missing, duzeltmeler,
           report, count: total, syncText: syncStatus === 'synced' ? '' : syncText, saveWarning: !!saveWarning,
           syncStatus, sealStatus,
           kapandi: reportRecord.denetim_durumu === 'Çalışma Tamamlandı',
@@ -4202,6 +4209,23 @@ function showYeniForm() {
         reportWindow.document.open();
         reportWindow.document.write(html);
         reportWindow.document.close();
+        // Satır içi olay işleyicileri CSP ile engellenir; düğmeler açan pencereden bağlanır.
+        try {
+          const doc = reportWindow.document;
+          const printButton = doc.getElementById('aves-print');
+          if (printButton) printButton.addEventListener('click', () => reportWindow.print());
+          const bigButton = doc.getElementById('aves-big');
+          if (bigButton) {
+            const apply = on => { doc.documentElement.classList.toggle('big-text', on); bigButton.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+            let on = false;
+            try { on = localStorage.getItem('aves_cikti_buyuk_yazi') === '1'; } catch { on = false; }
+            apply(on);
+            bigButton.addEventListener('click', () => {
+              on = !on; apply(on);
+              try { localStorage.setItem('aves_cikti_buyuk_yazi', on ? '1' : '0'); } catch { /* kalıcılık isteğe bağlı */ }
+            });
+          }
+        } catch (error) { console.warn('Çıktı düğmeleri bağlanamadı', error); }
         reportWindow.focus();
         // Yazı tipleri yüklenmeden yazdırma penceresi açılırsa çıktı yedek yazı tipiyle basılır; en çok 3 sn beklenir.
         Promise.race([

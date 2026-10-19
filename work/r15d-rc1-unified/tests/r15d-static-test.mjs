@@ -26,6 +26,9 @@ const fr65CiktiJs = fs.readFileSync(path.join(appDir, 'fr65-cikti.js'), 'utf8');
 const fr65CiktiContext = {};
 vm.runInNewContext(fr65CiktiJs, fr65CiktiContext, { filename: 'fr65-cikti.js' });
 const fr65Cikti = fr65CiktiContext.AVES_FR65_CIKTI;
+const fr65SemaContext = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-sema.js'), 'utf8'), fr65SemaContext, { filename: 'fr65-sema.js' });
+fr65CiktiContext.AVES_FR65_SEMA = fr65SemaContext.AVES_FR65_SEMA;
 const technicalDocsContext = {};
 vm.runInNewContext(technicalDocsJs, technicalDocsContext, { filename: 'teknik-dosya-formlari.js' });
 const technicalDocs = technicalDocsContext.AVES_TEKNIK_DOSYA_FORM;
@@ -109,10 +112,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.10.1 sürümü', index.includes('R15D-RC3.10.1</b>'));
-test('app R15D rc3.10.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.10.1'"));
-test('service worker rc3.10.1 cache', sw.includes("aves-saha-r15d-rc3101'"));
-test('uygulama manifesti rc3.10.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.10.1"'));
+test('index R15D rc3.11.0 sürümü', index.includes('R15D-RC3.11.0</b>'));
+test('app R15D rc3.11.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.11.0'"));
+test('service worker rc3.11.0 cache', sw.includes("aves-saha-r15d-rc3110'"));
+test('uygulama manifesti rc3.11.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.11.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1962,6 +1965,34 @@ test('B/E/H1: seri no ve saha adresi açılışta sorulmaz, kayıt içinde küny
   app.includes('id="fDosyaWrap"') && app.includes('id="fKimlikWrap"') && index.includes('.grid2{align-items:end;}') &&
   app.includes("asansor_seri_no: f.seri || ''") &&
   app.includes("await Promise.race([Sync.pushOutbox(), new Promise(resolve => setTimeout(resolve, 5000))])"));
+test('FR.65 çıktı: kuyu şeması (tampon tipine göre), girilmemiş alanlar, düzeltme geçmişi ve büyük yazı düğmesi',
+  (() => {
+    const sema = fr65SemaContext.AVES_FR65_SEMA;
+    const val = n => ({ field_value: String(n) });
+    const values = { kuyu_genislik_cm: val(190), kabin_tampon_stroku_cm: val(15), karsi_agirlik_tampon_stroku_cm: val(8), kabin_tampon_tipi: val('Hidrolik'), karsi_agirlik_tampon_tipi: val('Poliüretan') };
+    const html = sema.build(values, 4);
+    const emptyHtml = sema.build({}, 4);
+    const kesitHidrolik = sema.kesit(sema.valuesOf(values));
+    const kesitSecilmemis = sema.kesit(sema.valuesOf({ kuyu_genislik_cm: val(190) }));
+    const missing = technicalDocs.missingFr65Fields({ forms: { FR65: { values: { yuk: { field_value: '630' } } } } }, 'Elektrikli');
+    const corrections = fr65Cikti.duzeltmeOzeti([
+      { duzeltme_oturumu_id: 'a', duzeltme_nedeni: 'Eksik bilgi tamamlama', degistiren_ad: 'Ali', created_at: '2026-10-19T10:00:00Z' },
+      { duzeltme_oturumu_id: 'a', duzeltme_nedeni: 'Eksik bilgi tamamlama', degistiren_ad: 'Ali', created_at: '2026-10-19T10:05:00Z' },
+      { duzeltme_oturumu_id: 'b', duzeltme_nedeni: 'Saha notu düzeltmesi', created_at: '2026-10-20T10:00:00Z' },
+      { duzeltme_oturumu_id: null, created_at: '2026-10-21T10:00:00Z' },
+    ]);
+    const report = { title: 'FR.65 Saha Veri Özeti', metadata: [], sections: [], fieldCount: 0 };
+    const full = fr65Cikti.build({ report, values, missing: [{ title: 'Kuyu <b>', fields: ['A', 'B'] }], duzeltmeler: corrections, count: { recorded: 1, total: 3 } });
+    return html.includes('class="sema"') && html.includes('Kuyu kesiti') && html.includes('Kuyu planı') && html.includes('Hidrolik') && html.includes('Poliüretan') &&
+      html.includes('kaide') && html.includes('>190<') && emptyHtml === '' &&
+      kesitHidrolik.includes('<rect') && kesitHidrolik !== kesitSecilmemis && kesitSecilmemis.includes('tip seçilmedi') &&
+      sema.OLCULER.length === 19 && missing.length > 0 && missing.some(section => section.fields.length) &&
+      corrections.length === 2 && corrections[0].adet === 2 && corrections[0].neden === 'Eksik bilgi tamamlama' &&
+      full.includes('Girilmemiş alanlar') && full.includes('Kuyu &lt;b&gt;') && !full.includes('Kuyu <b>') && full.includes('Düzeltme geçmişi') &&
+      full.includes('id="aves-big"') && full.includes('id="aves-print"') && !/onclick=/i.test(full) &&
+      app.includes('Satır içi olay işleyicileri CSP ile engellenir') && app.includes("localStorage.setItem('aves_cikti_buyuk_yazi'") &&
+      index.includes('<script src="fr65-sema.js"></script>') && sw.includes("'./fr65-sema.js'") && app.includes("'./fr65-sema.js'");
+  })() );
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
