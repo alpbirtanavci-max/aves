@@ -2058,7 +2058,7 @@ test('FR.65 karşı ağırlık konumu (Arkada / Sağda / Solda) seçilir; şema 
     const sideText = side.filter(op => op.t === 'text').map(op => op.s).join('|');
     return field?.[2] === 'select' && JSON.stringify(technicalDocs.FR65_FIELD_OPTIONS.karsi_agirlik_konumu) === JSON.stringify(['Arkada', 'Sağda', 'Solda']) &&
       rearText.includes('KARŞI AĞIRLIK 90 × 20 cm (genişlik × derinlik)') &&
-      sideText.includes('KA 90 × 20 cm') && rear.length > 150 && side.length > 150 &&
+      sideText.includes('90 × 20 cm (gen. × der.)') && rear.length > 150 && side.length > 150 &&
       rear.some(op => op.t === 'rect' && op.fill === '#4B5070') && !/O 90 × P 20/.test(rearText);
   })());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {

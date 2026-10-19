@@ -271,8 +271,10 @@
     const yan = !v.hidrolik && (konum === 'Sağda' || konum === 'Solda');
     const sag = konum === 'Sağda';
     const L = 136; const R = 424; // kuyu iç yüzleri
+    // arka duvar: arkada karşı ağırlık yoksa (yan ağırlık, hidrolik) kabine yaklaşır
+    const T = !v.hidrolik && !yan ? 106 : 150;
     // beton duvarlar: üst, sol, sağ
-    ops.push(...wall(120, 90, 320, 16), ...wall(120, 106, 16, 268), ...wall(424, 106, 16, 268));
+    ops.push(...wall(120, T - 16, 320, 16), ...wall(120, T, 16, 374 - T), ...wall(424, T, 16, 374 - T));
     // eksen çizgileri
     ops.push(line(280, 78, 280, 404, { stroke: GOLD, sw: 0.9, dash: dashDot }));
     ops.push(line(L + 4, 258, R - 4, 258, { stroke: GOLD, sw: 0.9, dash: dashDot }));
@@ -285,6 +287,11 @@
     if (Number.isFinite(v.K_ham) && Number.isFinite(v.L_ham) && v.K_ham > 0 && v.L_ham > 0) {
       const alan = ((v.K_ham * v.L_ham) / 10000).toFixed(2).replace('.', ',');
       ops.push(text(cx, 262, `A = ${alan} m² (hesaplanan)`, { size: 7.2, fill: GREY, anchor: 'middle' }));
+    }
+    // yan karşı ağırlığın kafesi önce çizilir: kabin rayı kafesin kabine bakan kenarına monte, üstte görünür
+    if (yan) {
+      const kx0 = sag ? 366 : 136;
+      ops.push(...kafes(kx0, 170, 58, 176));
     }
     // kabin rayları: orta derinlikte (merkeze yakın), gövde ve başlık içe (kabine) bakar
     const railY = 247;
@@ -305,7 +312,7 @@
     let kaRailC = null;
     if (!v.hidrolik && !yan) {
       // arka karşı ağırlık: kabinin arkasında, rayları duvara bağlı
-      const kaX = 184; const kaW = 192;
+      const kaX = 200; const kaW = 160;
       ops.push(...frame(kaX, 112, kaW, 28));
       ops.push(text(280, 129, 'KARŞI AĞIRLIK', { size: 7.6, weight: 700, anchor: 'middle', font: 'm' }));
       const kLeft = kaX - 30; const kRight = kaX + kaW + 30;
@@ -318,8 +325,6 @@
       // yan karşı ağırlık: kafes içinde; kafes duvara yaslı, kabin rayının biri kafesten çıkar
       const kx = sag ? 366 : 136;
       const kafesW = 58;
-      ops.push(...kafes(kx, 170, kafesW, 176));
-      ops.push(text(kx + kafesW / 2, 358, 'kafes', { size: 7, fill: GREY, anchor: 'middle' }));
       const cwx = sag ? 376 : 146;
       ops.push(...frame(cwx, 192, 28, 112));
       ops.push(text(cwx + 14, 248, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
@@ -328,8 +333,7 @@
       const yTop = 186; const yBot = 310;
       if (sag) ops.push(...rayDuvarSag(wx, yTop), ...rayDuvarSag(wx, yBot));
       else ops.push(...rayDuvarSol(wx, yTop), ...rayDuvarSol(wx, yBot));
-      ops.push(...tag(kx + kafesW / 2, 164, `KA ${v.O || '–'} × ${v.P || '–'} cm`, { size: 7.4, weight: 700, anchor: 'middle', fill: v.O || v.P ? NAVY : GREY }));
-      ops.push(text(kx + kafesW / 2, 154, '(genişlik × derinlik)', { size: 6.6, fill: GREY, anchor: 'middle' }));
+      ops.push(...tag(sag ? R : L, 166, `KARŞI AĞIRLIK ${v.O || '–'} × ${v.P || '–'} cm (gen. × der.)`, { size: 7.2, weight: 700, anchor: sag ? 'end' : 'start', fill: v.O || v.P ? NAVY : GREY }));
       kaRailC = 'yan';
       ops.push(...dimV(v, 'N', yTop, yBot, sag ? 470 : 38, wx, wx, { short: true }));
     } else {
@@ -340,9 +344,9 @@
     }
     // ölçüler: üst zincir (N, M, I), sol (L, J), sağ (R, Q), alt (K, S)
     ops.push(...dimH(v, 'M', leftC, rightC, 46, railY, railY));
-    ops.push(...dimH(v, 'I', L, R, 26, 106, 106));
+    ops.push(...dimH(v, 'I', L, R, 26, T, T));
     ops.push(...dimV(v, 'L', car.y, 340, 92, car.x, car.x));
-    ops.push(...dimV(v, 'J', 106, 374, 62, L, L));
+    ops.push(...dimV(v, 'J', T, 374, 62, L, L));
     if (kaRailC !== null && kaRailC !== 'yan') ops.push(...dimV(v, 'R', kaRailC, railC, 470, R, rightBase, { short: true }));
     ops.push(...dimV(v, 'Q', railC, 340, yan && sag ? 494 : 470, R, car.x + car.w, { short: true }));
     ops.push(...dimH(v, 'K', car.x, car.x + car.w, 422, 342, 342));
