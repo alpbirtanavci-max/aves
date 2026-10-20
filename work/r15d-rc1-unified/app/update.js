@@ -13,11 +13,11 @@
       const stamp = Date.now();
       const [indexResponse, appResponse] = await Promise.all([
         fetch(`/index.html?update_probe=${stamp}`, { cache: 'no-store' }),
-        fetch(`/app.js?update_probe=${stamp}`, { cache: 'no-store' })
+        fetch(`/config.js?update_probe=${stamp}`, { cache: 'no-store' })
       ]);
       if (!indexResponse.ok || !appResponse.ok) throw new Error('Yeni dosyalar indirilemedi.');
       const [indexText, appText] = await Promise.all([indexResponse.text(), appResponse.text()]);
-      if (!indexText.includes(EXPECTED_BUILD) || !appText.includes(`APP_VERSION = '${EXPECTED_BUILD}'`)) {
+      if (!indexText.includes(EXPECTED_BUILD) || !appText.includes(`APP_VERSION = '${EXPECTED_BUILD}`)) {
         throw new Error('Cloudflare henüz yeni sürümü sunmuyor.');
       }
 
