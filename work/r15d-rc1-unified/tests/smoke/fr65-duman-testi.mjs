@@ -212,8 +212,7 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.click('#fr65Back');
     await p.click('#btnYeni');
     await p.waitForSelector('#fMusteri');
-    const oneriler = await p.locator('#firmaListesi option').evaluateAll(list => list.map(o => o.value));
-    assert.ok(oneriler.includes('Duman Asansör A.Ş.'), 'önceki firma öneride yok');
+    await until(async () => (await p.locator('#firmaListesi option').evaluateAll(list => list.map(o => o.value))).includes('Duman Asansör A.Ş.'), 'önceki firma öneride yok');
     await p.fill('#fMusteri', 'duman asansör a.ş.');
     await until(async () => (await p.inputValue('#fFirmaAdres')) === 'Firma Mah. 1 Sk.', 'firma adresi dolmadı');
     await p.fill('#fMusteri', '');
