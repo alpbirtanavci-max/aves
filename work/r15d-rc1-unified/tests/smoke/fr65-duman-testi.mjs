@@ -181,7 +181,8 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.equal(await p.locator('#yedekIndir').isDisabled(), true, 'seçim yokken indirme kapalı olmalı');
     await p.click('#yedekTumu');
     const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#yedekIndir')]);
-    const backup = JSON.parse(await (await import('node:fs/promises')).readFile(await download.path(), 'utf8'));
+    s.yedekYolu = await download.path();
+    const backup = JSON.parse(await (await import('node:fs/promises')).readFile(s.yedekYolu, 'utf8'));
     assert.equal(backup.format, 'aves-cihaz-yedek');
     const rec = backup.denetimler.find(x => x.id === serverRecord(s).id);
     assert.ok(rec, 'yedekte denetim yok');
@@ -266,6 +267,46 @@ async function runModule(browser, appUrl, modul, persona, report) {
       assert.equal(s.fake.tables.denetimler.length, 0, 'sunucuda kayıt kaldı');
       const local = await p.evaluate(async i => !!(await DB.get('denetimler', i)), id);
       assert.equal(local, false, 'cihazda kayıt kaldı');
+    });
+    await report.step(`${tag} bozulmuş/değiştirilmiş yedek reddedilir, hiçbir şey eklenmez`, async () => {
+      const fs = await import('node:fs/promises');
+      const os = await import('node:os');
+      const path = await import('node:path');
+      const bozuk = JSON.parse(await fs.readFile(s.yedekYolu, 'utf8'));
+      bozuk.denetimler[0].musteri_unvani = 'Değiştirilmiş Firma';
+      const bozukYol = path.join(os.tmpdir(), `aves-bozuk-yedek-${Date.now()}.json`);
+      await fs.writeFile(bozukYol, JSON.stringify(bozuk));
+      await p.click('#btnYedekGeri');
+      await p.setInputFiles('#geriDosya', bozukYol);
+      await p.waitForSelector('#geriIcerik .empty');
+      assert.match(await p.locator('#geriIcerik .empty').innerText(), /bozulmuş ya da sonradan değiştirilmiş/);
+      assert.equal(await p.locator('#geriYukle').count(), 0, 'bozuk yedekte geri yükle düğmesi olmamalı');
+      assert.equal(await p.evaluate(async () => (await DB.all('denetimler')).length), 0, 'bozuk yedek kayıt ekledi');
+      await p.click('.modal .close');
+      await fs.unlink(bozukYol);
+    });
+    await report.step(`${tag} yedekten geri yükle → kayıt cihaza döner ve sunucuya yeniden yazılır`, async () => {
+      const id = (await import('node:fs/promises').then(m => m.readFile(s.yedekYolu, 'utf8')).then(JSON.parse)).denetimler[0].id;
+      await p.click('#btnYedekGeri');
+      await p.setInputFiles('#geriDosya', s.yedekYolu);
+      await p.waitForSelector('.geri-sec');
+      assert.equal(await p.locator('.geri-sec:not([disabled])').count(), 1, 'geri yüklenebilir tek kayıt olmalı');
+      await p.click('#geriYukle');
+      await p.waitForSelector('#geriYukle', { state: 'detached' });
+      await until(async () => (await p.evaluate(async i => !!(await DB.get('denetimler', i)), id)), 'kayıt cihaza dönmedi');
+      await until(() => s.fake.tables.denetimler.length === 1, 'kayıt sunucuya yeniden yazılmadı');
+      assert.equal(serverRecord(s).id, id);
+      assert.ok(Object.values(fr65Values(s)).some(v => v?.field_value === typed), 'geri yüklenen kayıtta girilen değer yok');
+    });
+    await report.step(`${tag} aynı yedeği tekrar yüklemek var olan kaydı ezmez`, async () => {
+      await p.waitForSelector('#btnYedekGeri');
+      await p.click('#btnYedekGeri');
+      await p.setInputFiles('#geriDosya', s.yedekYolu);
+      await p.waitForSelector('.geri-sec');
+      assert.equal(await p.locator('.geri-sec:not([disabled])').count(), 0, 'var olan kayıt seçilebilir olmamalı');
+      assert.equal(await p.locator('#geriYukle').isDisabled(), true);
+      assert.match(await p.locator('.backup-row').first().innerText(), /zaten var/);
+      await p.click('.modal .close');
     });
   }
   await report.step(`${tag} sayfa hatası yok`, async () => {
