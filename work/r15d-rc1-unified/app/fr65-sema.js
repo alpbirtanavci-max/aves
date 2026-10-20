@@ -394,14 +394,19 @@
     return ops;
   }
 
-  // Kuyu kesiti (yan görünüş, kapı solda). Raylar arka duvara (sağ) konsollarla bağlı gösterilir.
+  // Kuyu kesiti (yan görünüş, kapı solda). Karşı ağırlığın konumuna göre değişir:
+  // Arkada  : ağırlık arka duvara (sağ) yakın, rayları arka duvara bağlı.
+  // Sağda/Solda (yan): ağırlık kabinin arkasında, kafes içinde görünür (kabin önde, ağırlık geride); arka duvar kabine yaklaşır.
+  // Hidrolik: karşı ağırlık yok, piston var.
   function kesitOps(v) {
     const ops = [];
     const konum = v.kaKonum;
     const yan = !v.hidrolik && (konum === 'Sağda' || konum === 'Solda');
-    ops.push(rect(176, 76, 200, 410, { fill: '#F4F5FA' }));
-    // tavan döşemesi, çukur döşemesi, sağ duvar ve kat kapısı boşluklu sol duvar
-    ops.push(...wall(160, 60, 232, 16), ...wall(160, 486, 232, 16), ...wall(376, 76, 16, 410));
+    // arka duvar (sağ): arkada karşı ağırlık yoksa kabine yaklaşır (planla aynı mantık)
+    const W = !v.hidrolik && !yan ? 376 : 344;
+    ops.push(rect(176, 76, W - 176, 410, { fill: '#F4F5FA' }));
+    // tavan döşemesi, çukur döşemesi, arka duvar ve kat kapısı boşluklu sol duvar
+    ops.push(...wall(160, 60, W + 16 - 160, 16), ...wall(160, 486, W + 16 - 160, 16), ...wall(W, 76, 16, 410));
     ops.push(...wall(160, 76, 16, 44), ...wall(160, 170, 16, 160), ...wall(160, 420, 16, 66));
     // kat kapıları (son kat ve ilk kat): kasa + kapı kanadı
     [[120, 170], [330, 420]].forEach(([top, bottom]) => {
@@ -409,45 +414,64 @@
     });
     // kat döşemeleri ve kat seviyeleri
     ops.push(...wall(88, 170, 72, 10), ...wall(88, 420, 72, 10));
-    ops.push(line(176, 170, 376, 170, { stroke: GREY, sw: 0.9, dash: [5, 3] }), line(176, 420, 376, 420, { stroke: GREY, sw: 0.9, dash: [5, 3] }));
+    ops.push(line(176, 170, W, 170, { stroke: GREY, sw: 0.9, dash: [5, 3] }), line(176, 420, W, 420, { stroke: GREY, sw: 0.9, dash: [5, 3] }));
     ops.push(text(84, 164, 'son kat', { size: 8, fill: GREY, anchor: 'end' }), text(84, 414, 'ilk kat', { size: 8, fill: GREY, anchor: 'end' }));
-    // raylar: kabin rayı kabinin orta derinliğinde, karşı ağırlık rayı arka duvara yakın; hepsi konsolla duvara bağlı
-    ops.push(...raySectionBrackets(261, null, [120, 250, 380, 470]));
-    if (!v.hidrolik && !yan) ops.push(...raySectionBrackets(356, 376, [100, 230, 360, 460]));
-    // kabin (kapı sol yüzde)
+
+    // yan karşı ağırlık: kabinin arkasında (geride) kafes + ağırlık + rayları; kabin bunların önünde çizilir
+    let kaCx = null;
+    if (yan) {
+      // plan derinliği → kesit x eşlemesi: kabin derinliği (110) ↔ plan 164
+      const mapX = py => 206 + (340 - py) * (110 / 164);
+      const kafesX0 = mapX(346); const kafesX1 = mapX(170);
+      ops.push(...kafes(kafesX0, 110, kafesX1 - kafesX0, 376));
+      const rA = mapX(193.5); const rB = mapX(322.5);
+      [rA, rB].forEach(x => ops.push(line(x, 76, x, 486, { stroke: HATCH, sw: 1.6 })));
+      ops.push(...raySectionBrackets(261, null, [120, 250, 380, 470]));
+      const cwX0 = mapX(316); const cwX1 = mapX(198);
+      ops.push(...frame(cwX0, 226, cwX1 - cwX0, 124));
+      ops.push(text((cwX0 + cwX1) / 2, 248, 'KARŞI AĞIRLIK', { size: 7.2, weight: 700, anchor: 'middle', font: 'm' }));
+      kaCx = (cwX0 + cwX1) / 2;
+    }
+    // raylar: kabin rayı kabinin orta derinliğinde (yan duvara dik monte); arkadaki karşı ağırlık rayı arka duvara bağlı
+    if (!yan) ops.push(...raySectionBrackets(261, null, [120, 250, 380, 470]));
+    if (!v.hidrolik && !yan) ops.push(...raySectionBrackets(W - 20, W, [100, 230, 360, 460]));
+
+    // kabin (kapı sol yüzde) — ağırlık ve kafesin önünde
     ops.push(...frame(206, 306, 110, 114, { cross: true }));
     ops.push(text(266, 366, 'KABİN', { size: 9, weight: 700, anchor: 'middle', font: 'm' }));
     ops.push(rect(206, 332, 5, 88, { fill: INK }));
-    // karşı ağırlık (hidrolikte yok: piston)
+
+    // karşı ağırlık (arkada) veya piston (hidrolik)
     if (!v.hidrolik && !yan) {
-      ops.push(...frame(342, 226, 22, 124));
-      ops.push(text(353, 290, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
-    } else if (yan) {
-      ops.push(rect(262, 226, 24, 124, { fill: null, stroke: INK, sw: 1.4, dash: [4, 3] }));
-      ops.push(text(274, 290, 'KA (yanda)', { size: 7, fill: GREY, anchor: 'middle', rot: -90 }));
-    } else {
-      ops.push(rect(344, 190, 14, 230, { fill: WHITE, stroke: INK, sw: 1.8 }), line(351, 190, 351, 420, { stroke: LIGHT, sw: 1 }));
-      ops.push(text(351, 182, 'piston', { size: 7.4, fill: GREY, anchor: 'middle' }));
+      ops.push(...frame(W - 34, 226, 22, 124));
+      ops.push(text(W - 23, 290, 'KARŞI AĞIRLIK', { size: 7.4, weight: 700, anchor: 'middle', font: 'm', rot: -90 }));
+      kaCx = W - 23;
+    } else if (v.hidrolik) {
+      ops.push(rect(W - 32, 190, 14, 230, { fill: WHITE, stroke: INK, sw: 1.8 }), line(W - 25, 190, W - 25, 420, { stroke: LIGHT, sw: 1 }));
+      ops.push(text(W - 25, 182, 'piston', { size: 7.4, fill: GREY, anchor: 'middle' }));
     }
-    // tamponlar: kaide + gövde + strok
-    const kabinT = tampon(262, 486, v.kabinTampon);
-    const kaT = tampon(353, 486, v.kaTampon);
+
+    // tamponlar: kaide + gövde + strok. Karşı ağırlık tamponu ağırlığın altında.
+    const bx = yan ? 232 : 262; // yan ağırlıkta iki tampon yan yana ayrışsın
+    const kabinT = tampon(bx, 486, v.kabinTampon);
     ops.push(...kabinT.ops);
-    ops.push(...bufferDims(v, 262, kabinT, 'U', 'V', 'G'));
-    ops.push(...bufferNote(v, 262, 516, 'kabin tamponu', v.kabinTampon, 'U', 'V', 'G'));
+    ops.push(...bufferDims(v, bx, kabinT, 'U', 'V', 'G'));
+    ops.push(...bufferNote(v, bx, 516, 'kabin tamponu', v.kabinTampon, 'U', 'V', 'G'));
     if (!v.hidrolik) {
+      const kx = yan ? 296 : kaCx;
+      const kaT = tampon(kx, 486, v.kaTampon);
       ops.push(...kaT.ops);
-      ops.push(...bufferDims(v, 353, kaT, 'W', 'X', 'H'));
-      ops.push(...bufferNote(v, 353, 540, 'KA tamponu', v.kaTampon, 'W', 'X', 'H'));
+      ops.push(...bufferDims(v, kx, kaT, 'W', 'X', 'H'));
+      ops.push(...bufferNote(v, kx, 540, 'KA tamponu', v.kaTampon, 'W', 'X', 'H'));
     }
-    ops.push(text(276, 70, 'kuyu tavanı', { size: 7.6, fill: INK, anchor: 'middle' }));
+    ops.push(text((176 + W) / 2, 70, 'kuyu tavanı', { size: 7.6, fill: INK, anchor: 'middle' }));
     // ölçüler
     ops.push(...dimV(v, 'B', 76, 170, 132, 160, 160));
     ops.push(...dimV(v, 'C', 170, 420, 132, 160, 160));
     ops.push(...dimV(v, 'D', 420, 486, 132, 160, 160));
     ops.push(...dimV(v, 'A', 60, 502, 100, 88, 160));
     ops.push(...dimV(v, 'E', 306, 420, 330, 316, 316, { short: true }));
-    if (!v.hidrolik) ops.push(...dimV(v, 'F', 226, 350, 412, 364, 392, { short: true }));
+    if (!v.hidrolik) ops.push(...dimV(v, 'F', 226, 350, W + 36, yan ? kaCx + 20 : W - 12, W + 24, { short: true }));
     // kapı net yüksekliği: kabin kapısının sol yanında
     ops.push(...dimV(v, 'T', 332, 420, 192, 206, 206, { name: 'KAPI NET YÜKSEKLİĞİ' }));
     return ops;
