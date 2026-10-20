@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.14.1 sürümü', index.includes('R15D-RC3.14.1</b>'));
-test('app R15D rc3.14.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.14.1'"));
-test('service worker rc3.14.1 cache', sw.includes("aves-saha-r15d-rc3141'"));
-test('uygulama manifesti rc3.14.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.14.1"'));
+test('index R15D rc3.15.0 sürümü', index.includes('R15D-RC3.15.0</b>'));
+test('app R15D rc3.15.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.15.0'"));
+test('service worker rc3.15.0 cache', sw.includes("aves-saha-r15d-rc3150'"));
+test('uygulama manifesti rc3.15.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.15.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2156,6 +2156,39 @@ test('durak sayısı başlangıç onay ekranında gösteriliyor',
   app.includes("satir('Durak sayısı', f.durak)"));
 test('asansör kimlik no denetim liste kartında gösteriliyor',
   app.includes('<b>Kimlik no:</b> ${esc(d.asansor_kimlik_no)}'));
+
+/* ---- Yedekten geri yükleme (yedek-geri-yukle.js) ---- */
+const yedekCtx = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'yedek-geri-yukle.js'), 'utf8'), yedekCtx, { filename: 'yedek-geri-yukle.js' });
+const YEDEK = yedekCtx.AVES_YEDEK;
+const yedekStable = value => (value === null || typeof value !== 'object') ? JSON.stringify(value)
+  : Array.isArray(value) ? `[${value.map(yedekStable).join(',')}]`
+  : `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${yedekStable(value[key])}`).join(',')}}`;
+const yedekSha = async value => [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value)))].map(b => b.toString(16).padStart(2, '0')).join('');
+const yedekDeps = { sha256Hex: yedekSha, stableStringify: yedekStable };
+const yedekGovde = { format: 'aves-cihaz-yedek', surum: 1, olusturuldu: '2026-01-01T00:00:00Z', denetimler: [
+  { id: 'a', modul: 'Modül B' }, { id: 'b', modul: 'Modül B' }, { id: 'c', modul: 'Modül G' }, { id: 'd', modul: 'Modül E' },
+  { id: 'e', modul: 'Modül H1' }, { id: 'f', modul: 'Modül B' }, { id: 'a', modul: 'Modül B' }, {} ],
+  gecmis: [{ id: 'g1', denetim_id: 'a' }, { id: 'g2', denetim_id: 'b' }] };
+const yedekPaket = { ...yedekGovde, paket_hash: await yedekSha(yedekStable(yedekGovde)) };
+const yedekDogru = await YEDEK.dogrula(yedekPaket, yedekDeps);
+const yedekBozuk = await YEDEK.dogrula({ ...yedekPaket, denetimler: [{ id: 'x', modul: 'Modül B' }] }, yedekDeps);
+const yedekYabanci = await YEDEK.dogrula({ format: 'baska' }, yedekDeps);
+const yedekHashsiz = await YEDEK.dogrula(yedekGovde, yedekDeps);
+const yedekPlan = YEDEK.planla(yedekPaket, {
+  yerelIdler: new Set(['b']), bekleyenSilme: new Set(['d']), gorunebilir: d => d.id !== 'e', fr65Mi: d => d.modul !== 'Modül G',
+});
+const yedekDurum = Object.fromEntries(yedekPlan.kayitlar.map(k => [k.id + ':' + k.durum, true]));
+test('yedek doğrulama: sağlam paket geçer, değiştirilmiş/yabancı/özetsiz paket reddedilir',
+  yedekDogru.ok && !yedekBozuk.ok && /değiştirilmiş/.test(yedekBozuk.hata) && !yedekYabanci.ok && !yedekHashsiz.ok);
+test('yedek planı: yalnız cihazda olmayan, görünür, FR.65 kayıtları geri yüklenebilir',
+  yedekPlan.yuklenebilirSayisi === 2 && yedekDurum['a:geri_yuklenebilir'] && yedekDurum['f:geri_yuklenebilir'] &&
+  yedekDurum['b:zaten_var'] && yedekDurum['c:desteklenmiyor'] && yedekDurum['d:silme_bekliyor'] && yedekDurum['e:yetki'] &&
+  yedekDurum['a:tekrar'] && yedekPlan.kayitlar.some(k => k.durum === 'gecersiz'));
+test('yedek geçmişi yalnız ilgili denetime ait satırları verir', YEDEK.gecmisSatirlari(yedekPaket, 'a').length === 1 && YEDEK.gecmisSatirlari(yedekPaket, 'zz').length === 0);
+test('geri yükleme arayüzü: modül çevrimdışı pakette, düğme listede, var olan kayıt ezilmiyor',
+  index.includes('<script src="yedek-geri-yukle.js"></script>') && app.includes("'./yedek-geri-yukle.js'") && sw.includes("'./yedek-geri-yukle.js'") &&
+  app.includes('id="btnYedekGeri"') && app.includes('insert_only: true') && app.includes('AVES_YEDEK.dogrula'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

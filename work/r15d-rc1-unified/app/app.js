@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.14.1';
+const APP_VERSION = 'R15D-rc3.15.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -1856,6 +1856,90 @@ const UI = (() => {
     };
   }
 
+  // Yedek dosyasından geri yükleme: yalnız cihazda olmayan FR.65 kayıtları eklenir; var olan hiçbir kayıt ezilmez.
+  // Eklenen kayıt normal "yeni kayıt" gibi sunucuya gönderilir (var olan satır sunucuda da ezilmez).
+  async function yedekGeriYuklemePlani(paket) {
+    const yerel = await DB.all('denetimler');
+    const bekleyenSilme = new Set((await DB.outboxAll()).filter(item => item.op === 'delete' && item.table === 'denetimler')
+      .map(item => ((item.filter || '').match(/id=eq\.(.+)/) || [])[1]).filter(Boolean));
+    return AVES_YEDEK.planla(paket, {
+      yerelIdler: new Set(yerel.map(item => item.id)),
+      bekleyenSilme,
+      gorunebilir: denetimGorunebilirMi,
+      fr65Mi: fr65SahaKaydiMi,
+    });
+  }
+
+  async function yedekGeriYukle(paket, secilenIdler) {
+    const secili = new Set(secilenIdler);
+    const plan = await yedekGeriYuklemePlani(paket); // yükleme anında yeniden denetlenir
+    let eklenen = 0;
+    for (const kayit of plan.kayitlar) {
+      if (!kayit.yuklenebilir || !secili.has(kayit.id)) continue;
+      const d = JSON.parse(JSON.stringify(kayit.denetim));
+      const silinenler = (await DB.kvGet('deleted_ids')) || [];
+      if (silinenler.includes(d.id)) await DB.kvSet('deleted_ids', silinenler.filter(x => x !== d.id));
+      await localWrite('denetimler', d, 'denetimler', { insert_only: true });
+      for (const row of AVES_YEDEK.gecmisSatirlari(paket, d.id)) await DB.put('gecmis', row);
+      eklenen++;
+    }
+    return eklenen;
+  }
+
+  function yedekGeriYuklemeGoster() {
+    if (!Profile.canCreate) { toast('Geri yükleme için denetim oluşturma yetkisi gerekir'); return; }
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Yedekten geri yükle</h3>
+      <div id="geriIcerik">
+        <p class="backup-note">Daha önce “Yedek al” ile indirdiğiniz .json dosyasını seçin. Yalnız bu cihazda bulunmayan B / E / H1 kayıtları eklenir; cihazdaki hiçbir kayıt değiştirilmez.</p>
+        <input type="file" id="geriDosya" accept=".json,application/json">
+      </div>
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+    const icerik = ov.querySelector('#geriIcerik');
+    ov.querySelector('#geriDosya').onchange = async event => {
+      const dosya = event.target.files && event.target.files[0];
+      if (!dosya) return;
+      let paket;
+      try { paket = JSON.parse(await dosya.text()); }
+      catch { icerik.innerHTML = '<div class="empty">Dosya okunamadı; geçerli bir AVES yedeği değil. Hiçbir şey geri yüklenmedi.</div>'; return; }
+      const dogru = await AVES_YEDEK.dogrula(paket, { sha256Hex, stableStringify });
+      if (!dogru.ok) { icerik.innerHTML = `<div class="empty">${esc(dogru.hata)}</div>`; return; }
+      const plan = await yedekGeriYuklemePlani(paket);
+      icerik.innerHTML = `<div class="backup-list">${plan.kayitlar.map((k, i) => `<label class="backup-row"><input type="checkbox" class="geri-sec" value="${esc(k.id || '')}" ${k.yuklenebilir ? 'checked' : 'disabled'}><span><b>${esc(k.denetim?.musteri_unvani || 'Firma yok')}</b><small>${esc(k.denetim?.asansor_seri_no || '')} · ${esc(k.denetim?.modul || '')} · ${esc(k.neden)}</small></span></label>`).join('')}</div>
+        <button class="btn btn-primary" id="geriYukle" ${plan.yuklenebilirSayisi ? '' : 'disabled'}>Seçilenleri geri yükle</button>
+        <small class="backup-note">Yedek ${esc(String(paket.olusturuldu || '').slice(0, 10))} tarihli. Fotoğraf dosyaları yedekte yoktur.</small>`;
+      const dugme = icerik.querySelector('#geriYukle');
+      const kutular = [...icerik.querySelectorAll('.geri-sec:not([disabled])')];
+      const yenile = () => {
+        const n = kutular.filter(kutu => kutu.checked).length;
+        dugme.disabled = n === 0;
+        dugme.textContent = n ? `Seçilenleri geri yükle (${n})` : 'Seçilenleri geri yükle';
+      };
+      kutular.forEach(kutu => { kutu.onchange = yenile; });
+      yenile();
+      dugme.onclick = async () => {
+        dugme.disabled = true;
+        try {
+          const eklenen = await yedekGeriYukle(paket, kutular.filter(kutu => kutu.checked).map(kutu => kutu.value));
+          toast(eklenen ? `${eklenen} denetim geri yüklendi` : 'Geri yüklenecek kayıt kalmadı');
+          close();
+          showList();
+        } catch (error) {
+          console.error('Geri yükleme başarısız', error);
+          toast('Geri yükleme tamamlanamadı; cihazdaki kayıtlar değişmedi');
+          dugme.disabled = false;
+        }
+      };
+    };
+  }
+
   // Girilen saha verilerinin özeti. Kayıt kapatılınca otomatik açılır; kapatılmış kayıttan da açılabilir.
   async function fr65OzetiniGoster(denetimId, { onClose = null } = {}) {
     const d = await DB.get('denetimler', denetimId);
@@ -2350,7 +2434,7 @@ const UI = (() => {
       </div>
       <div id="dlist">${denetimler.length ? '' : '<div class="empty">Görüntüleyebileceğiniz denetim yok.<br>Denetçiler yalnızca kendi denetimlerini görür.</div>'}</div>
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
-      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button></div>
+      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button><button type="button" class="backup-link" id="btnYedekGeri">📂 Yedekten geri yükle…</button></div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     app.style.pointerEvents = '';
@@ -2493,6 +2577,8 @@ const UI = (() => {
     if (btnYeni) btnYeni.onclick = showYeniForm;
     const btnYedekSec = document.getElementById('btnYedekSec');
     if (btnYedekSec) btnYedekSec.onclick = yedekSecimiGoster;
+    const btnYedekGeri = document.getElementById('btnYedekGeri');
+    if (btnYedekGeri) btnYedekGeri.onclick = yedekGeriYuklemeGoster;
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
