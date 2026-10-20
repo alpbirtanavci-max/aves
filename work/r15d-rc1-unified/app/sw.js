@@ -1,11 +1,11 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc3171';
+const CACHE = 'aves-saha-r15d-rc3180';
 const ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json', './logo.png', './aves-logo-white.png',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-docx.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json', './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
   './form-output.js', './vendor/jszip.min.js', './vendor/pdf-lib.min.js', './vendor/fontkit.umd.min.js',
-  './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf',
+  './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf', './form-assets/UB_FR_65.docx',
   './form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf',
   './form-assets/UB_FR_39_R02.docx', './form-assets/UB_FR_39_R02.pdf',
   './update.html', './update.js',

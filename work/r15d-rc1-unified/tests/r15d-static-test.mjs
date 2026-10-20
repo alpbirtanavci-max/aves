@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.17.1 sürümü', index.includes('R15D-RC3.17.1</b>'));
-test('app R15D rc3.17.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.17.1'"));
-test('service worker rc3.17.1 cache', sw.includes("aves-saha-r15d-rc3171'"));
-test('uygulama manifesti rc3.17.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.17.1"'));
+test('index R15D rc3.18.0 sürümü', index.includes('R15D-RC3.18.0</b>'));
+test('app R15D rc3.18.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.18.0'"));
+test('service worker rc3.18.0 cache', sw.includes("aves-saha-r15d-rc3180'"));
+test('uygulama manifesti rc3.18.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.18.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -1717,7 +1717,7 @@ test('yeni Modül G ve B/E/H1 formu firma adresi ile asansör adresini ayrı ve 
     followup.includes('firma_adresi: kaynak.firma_adresi || null') &&
     app.includes('takipKaynak.firma_adresi = window.prompt') && app.includes('takipKaynak.denetim_adresi = window.prompt');
 })());
-test('B/E/H1 FR.65 saha ekranında dosya değeri yok; sade bileşen kimliği ve sabit ölçü sekmeleri var', (() => {
+test('B/E/H1 FR.65 saha ekranında teknik dosya değeri yalnız isteğe bağlı katlanır kutuda; sade bileşen kimliği ve sabit ölçü sekmeleri var', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
   const end = app.indexOf('async function showDenetim(', start);
   const flow = app.slice(start, end);
@@ -1726,7 +1726,7 @@ test('B/E/H1 FR.65 saha ekranında dosya değeri yok; sade bileşen kimliği ve 
     flow.includes('target.scrollIntoView') && flow.includes('data-fr65-capture-prop="field_value"') &&
     flow.includes('data-fr65-capture-prop="marka"') && flow.includes('data-fr65-capture-prop="tip"') &&
     flow.includes('${thirdProp}') &&
-    !flow.includes('data-fr65-capture-prop="file_value"') && !flow.includes('Teknik dosya') &&
+    !flow.includes('data-fr65-capture-prop="file_value"') && flow.includes('data-fr65-capture-prop="teknik_deger"') && flow.includes('<details class="fr65-capture-note') &&
     !flow.includes('dosyadaki beyan') && !flow.includes('Eşleşti') && !flow.includes('Fark var') &&
     index.includes('.fr65-quick-nav{position:sticky') && index.includes('.fr65-capture .tech-section>summary{position:static');
 })());
@@ -2242,6 +2242,73 @@ test('her sayısal cm alanı için aralık tanımlı (yük, hız, kapasite dahil
 test('birim uyarısı ve sıradaki boş alan düğmesi arayüzde bağlı; modül çevrimdışı pakette',
   index.includes('<script src="deger-kontrol.js"></script>') && app.includes("'./deger-kontrol.js'") && sw.includes("'./deger-kontrol.js'") &&
   app.includes('data-fr65-uyari') && app.includes('AVES_DEGER_KONTROL.kontrol') && app.includes('id="fr65NextEmpty"') && app.includes('missingFr65Fields({ forms: { FR65: { values: collectValues() } } }'));
+
+/* ---- ÜB.FR.65 Word çıktısı (fr65-docx.js) ---- */
+const docxCtx = { ArrayBuffer, Uint8Array, Uint16Array, Uint32Array, Buffer, Promise, setTimeout, clearTimeout };
+docxCtx.self = docxCtx; docxCtx.window = docxCtx;
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'vendor', 'jszip.min.js'), 'utf8'), docxCtx, { filename: 'jszip.min.js' });
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'fr65-docx.js'), 'utf8'), docxCtx, { filename: 'fr65-docx.js' });
+const DOCX = docxCtx.AVES_FR65_DOCX;
+const docxTemplateBytes = fs.readFileSync(path.join(appDir, 'form-assets', 'UB_FR_65.docx'));
+const docxTemplate = docxTemplateBytes.buffer.slice(docxTemplateBytes.byteOffset, docxTemplateBytes.byteOffset + docxTemplateBytes.byteLength);
+const docxTemplateXml = await (await docxCtx.JSZip.loadAsync(docxTemplate)).file('word/document.xml').async('string');
+const dv = (saha, teknik) => ({ field_value: saha, ...(teknik ? { teknik_deger: teknik } : {}) });
+const docxValues = {
+  hiz: dv('1', '1'), yuk: dv('800', '800'), durak_sayisi: dv('6', '6'), kat_sayisi: dv('6'),
+  seyir_mesafesi_cm: dv('1500', '15000'), kuyu_yuksekligi_cm: dv('1800', '18000'),
+  kabin_genislik_cm: dv('130', '1300'), kuyu_genislik_cm: dv('230', '2290'), kabin_kat_kapi_genislik_cm: dv('90', '900'),
+  karsi_agirlik_konumu: dv('Sağda', 'sağ'), halat_sayisi: dv('7', '7X6.5'), halat_capi_mm: dv('6.5'),
+  kat_kapisi_kilitleri: { marka: 'ALYANS', tip: 'ALYO', seri_no: '23034753', teknik_seri: '23034753' },
+  elektrikli_makine: { marka: 'AKIŞ', tip: 'AYG', seri_no: '869A', teknik_seri: '869B' },
+  parasut_freni: { marka: 'ERK', tip: 'EL-7', seri_no: '1059' },
+};
+const docxRecord = { tahrik_tipi: 'Elektrikli', makine_dairesi_tipi: 'MRL', modul: 'Modül B', musteri_unvani: 'Deneme A.Ş.', asansor_seri_no: 'gla65', denetim_adresi: 'Test Mah. 1', denetim_tarihi: '2026-10-13', denetimi_yapan: 'Ad Soyad' };
+const docxSonuc = await DOCX.build({ JSZip: docxCtx.JSZip, template: docxTemplate, record: docxRecord, values: docxValues });
+const docxXml = await (await docxCtx.JSZip.loadAsync(docxSonuc.bytes)).file('word/document.xml').async('string');
+const docxModel = DOCX._model.modelKur(docxXml);
+const docxCell = (tb, r, c) => {
+  const cell = DOCX._model.hucre(docxModel, tb, r, c);
+  if (!cell) return null;
+  const parts = [...cell.s.matchAll(/<w:t(?: [^>]*)?>([^<]*)<\/w:t>|<w:sym [^>]*\/>/g)].map(m => (m[1] !== undefined ? m[1] : '✓'));
+  return parts.join('').trim();
+};
+const tagSay = (xml, tag) => (xml.match(new RegExp(`<${tag}[ >]`, 'g')) || []).length;
+test('Word şablonu boş: eski firma/imza verisi yok, onay kutuları sıfır, yapı bütün',
+  !/GÜVENLİFT|EMRULLAH|26008201|869AYG|ALYANS|EMKASAN|T89B/.test(docxTemplateXml) &&
+  !docxTemplateXml.includes('<w:default w:val="1"/>') && docxTemplateXml.includes('Teknik Dosya') && docxTemplateXml.includes('EŞLEŞME  SONUÇLARI'));
+test('Word çıktısı: etiket dengesi bozulmadı (tablo/satır/hücre/paragraf sayıları şablonla aynı)',
+  ['w:tbl', 'w:tr', 'w:tc', 'w:p'].every(tag => tagSay(docxXml, tag) === tagSay(docxTemplateXml, tag)) &&
+  (docxXml.match(/<\/w:tc>/g) || []).length === (docxXml.match(/<w:tc>/g) || []).length);
+test('Word çıktısı: başlık, adres, modül/ürün kutuları ve imza satırı doluyor',
+  docxCell(0, 0, 1) === 'Deneme A.Ş.' && docxCell(1, 1, 1) === 'Test Mah. 1' && docxCell(1, 3, 2) === 'GLA65' &&
+  (docxXml.match(/<w:default w:val="1"\/>/g) || []).length === 5 &&
+  /İnceleme Tarihi: 13\/10\/2026.*AD SOYAD/.test(docxXml.replace(/<[^>]+>/g, '')));
+test('Word çıktısı: saha ve teknik değer birim çevrilerek yazılır, S eşitlikte ✓ farkta X',
+  docxCell(1, 5, 1) === '800' && docxCell(1, 5, 2) === '800' && docxCell(1, 5, 3) === '✓' &&
+  docxCell(1, 6, 1) === '15' && docxCell(1, 6, 2) === '15' && docxCell(1, 6, 3) === '✓' && docxCell(1, 7, 2) === '18' &&
+  docxCell(3, 11, 1) === '1300' && docxCell(3, 11, 2) === '1300' && docxCell(3, 11, 3) === '✓' &&
+  docxCell(3, 24, 1) === '2290' && docxCell(3, 24, 2) === '2300' && docxCell(3, 24, 3) === 'X' &&
+  docxCell(3, 13, 2) === '900' && docxCell(3, 13, 6) === '900' && docxCell(3, 20, 2) === 'SAĞ' && docxCell(3, 20, 3) === '✓' &&
+  docxCell(3, 6, 5) === '7X6.5' && docxCell(3, 6, 7) === '✓');
+test('Word çıktısı: teknik değer girilmemişse S boş; komponent tablosunda seri karşılaştırılır; ilgisizler N/A',
+  docxCell(1, 6, 7) === '' && docxCell(2, 4, 6) === '23034753' && docxCell(2, 4, 7) === '✓' &&
+  docxCell(2, 11, 6) === '869A' && docxCell(2, 11, 5) === '869B' && docxCell(2, 11, 7) === 'X' &&
+  docxCell(2, 5, 6) === '1059' && docxCell(2, 5, 7) === '' && docxCell(2, 12, 7) === 'N/A' && docxCell(2, 13, 7) === 'N/A');
+test('Word çıktısı: özet sayıları ve SONUÇ kutusu (X varsa "eşleşmemiştir")',
+  docxSonuc.ozet.uygunDegil === 3 && docxSonuc.ozet.uygun >= 10 && docxSonuc.ozet.tdGirilmemis >= 1 &&
+  /<w:default w:val="0"\/>[\s\S]*<w:default w:val="1"\/>/.test(docxXml.slice(docxXml.lastIndexOf('</w:tbl>'))));
+test('Word S karşılaştırması: biçim/birim/Türkçe karakter farkını yok sayar, boşsa karar vermez',
+  DOCX.karsilastir('1 m/sn', '1') === 'esit' && DOCX.karsilastir('50x70x100/sol arka', '50X70X100/SOL ARKA') === 'esit' &&
+  DOCX.karsilastir('AKIS', 'AKIŞ') === 'esit' && DOCX.karsilastir('4,9', '4.9') === 'esit' && DOCX.karsilastir('2300', '2290') === 'fark' &&
+  DOCX.karsilastir('', '5') === null && DOCX.karsilastir('5', '') === null);
+test('Word çıktısı arayüzü: düğme, şablon çevrimdışı pakette, teknik değer kutuları sayımlara girmiyor',
+  index.includes('<script src="fr65-docx.js"></script>') && app.includes("'./fr65-docx.js'") && sw.includes("'./fr65-docx.js'") &&
+  app.includes("'./form-assets/UB_FR_65.docx'") && sw.includes("'./form-assets/UB_FR_65.docx'") && app.includes('id="fr65Word"') &&
+  app.includes('AVES_FR65_DOCX.build') &&
+  !technicalDocs.countFr65Capture({ forms: { FR65: { values: { kabin_genislik_cm: { teknik_deger: '1300' } } } } }, 'Elektrikli').recorded);
+test('Kuyu bölümünde kuyu dibi / kabin üstü güvenlik hacmi alanları var',
+  technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kuyu_dibi_guvenlik_hacmi') &&
+  technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kabin_ustu_guvenlik_hacmi'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
