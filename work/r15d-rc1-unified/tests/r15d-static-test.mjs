@@ -9,7 +9,9 @@ const appDir = path.join(root, 'app');
 const dataDir = path.join(root, 'data');
 const databaseDir = path.join(root, 'database');
 
-const app = fs.readFileSync(path.join(appDir, 'app.js'), 'utf8');
+// app.js bölündü: testler, yükleme sırasıyla birleştirilmiş uygulama kaynağını (eski tek dosya gibi) tarar.
+const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'app', 'baslat'];
+const app = appParcalari.map(ad => fs.readFileSync(path.join(appDir, ad + '.js'), 'utf8')).join(String.fromCharCode(10));
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
 const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
 const index = fs.readFileSync(path.join(appDir, 'index.html'), 'utf8');
@@ -122,10 +124,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.18.0 sürümü', index.includes('R15D-RC3.18.0</b>'));
-test('app R15D rc3.18.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.18.0'"));
-test('service worker rc3.18.0 cache', sw.includes("aves-saha-r15d-rc3180'"));
-test('uygulama manifesti rc3.18.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.18.0"'));
+test('index R15D rc3.18.1 sürümü', index.includes('R15D-RC3.18.1</b>'));
+test('app R15D rc3.18.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.18.1'"));
+test('service worker rc3.18.1 cache', sw.includes("aves-saha-r15d-rc3181'"));
+test('uygulama manifesti rc3.18.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.18.1"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));

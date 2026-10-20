@@ -45,9 +45,13 @@ Kısa ömürlü branch → PR → inceleme → merge → branch sil. Ölü branc
 
 ## 4. Sürüm bumpı — dört dosya birlikte
 
-`app/app.js` (`APP_VERSION`), `app/index.html` (`R15D-RCx.y.z</b>`), `app/manifest.json`
+`app/config.js` (`APP_VERSION`), `app/index.html` (`R15D-RCx.y.z</b>`), `app/manifest.json`
 (`"version"`), `app/sw.js` (`CACHE = 'aves-saha-...'`). Dördü aynı sürümü göstermezse
 statik test kırmızı olur.
+
+### Uygulama dosyaları (rc3.18.1'de `app.js` bölündü)
+
+Klasik betikler, yükleme sırasıyla ve ortak global kapsamda çalışır: `config.js` (sürüm, sabitler, çevrimdışı dosya listesi) → `db.js` (IndexedDB) → `api.js` (Supabase REST) → `profil.js` → `senkron.js` → `yerel-yazma.js` → `app.js` (arayüz, UI) → `baslat.js` (toast, SW, açılış). Yeni dosya eklenirse `index.html` betik sırası, `sw.js` `ASSETS` ve `config.js` `OFFLINE_CORE_ASSETS` listeleri birlikte güncellenir. Statik test bu dosyaları sırayla birleştirip tek kaynak gibi tarar.
 
 ## 5. Test sözleşmesi
 
@@ -55,7 +59,7 @@ statik test kırmızı olur.
   Her davranış değişikliği önce testi günceller.
 - **Statik testin yeşil olması RLS mantığının doğru olduğu anlamına gelmez.** Statik
   test metin arar; yetki kararını doğrulamaz.
-- **Değişmez kural:** `app.js` içindeki her `canSee* / canEdit* / canDelete* / *GorunebilirMi`
+- **Değişmez kural:** `app.js` (arayüz) ve `senkron.js` içindeki her `canSee* / canEdit* / canDelete* / *GorunebilirMi`
   kontrolünün karşılığı bir RLS politikası olmalı. İstemci kontrolü gevşetilirse veya
   yeni bir görünürlük yolu açılırsa (ör. `takip_atanan_email`), ilgili **SELECT ve
   UPDATE** politikaları aynı PR'da güncellenir.

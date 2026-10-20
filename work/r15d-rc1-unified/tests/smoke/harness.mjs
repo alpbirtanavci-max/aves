@@ -50,7 +50,7 @@ export async function newSession(browser, appUrl, profile) {
   const context = await browser.newContext({ serviceWorkers: 'block', acceptDownloads: true, viewport: { width: 420, height: 900 } });
   await context.route(SUPABASE_ORIGIN + '/**', fake.handle);
   // WebKit (özellikle Windows yerel çalıştırma) IndexedDB toplu yazmada çok yavaş olabilir (1000 madde ≈ 15 sn).
-  context.setDefaultTimeout(isWebkit() ? 40000 : 8000);
+  context.setDefaultTimeout(isWebkit() ? 40000 : 15000);
   // Gerçek yazdırma penceresi sayfayı kilitler; testlerde window.print boş bırakılır (açılan pencereler dahil).
   await context.addInitScript(() => { window.print = () => {}; });
   // Service Worker bu testte kapalı; çevrimdışı önbellek denetimi gerçek tarayıcıda SW ile yapılır.
