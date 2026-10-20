@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.15.0 sürümü', index.includes('R15D-RC3.15.0</b>'));
-test('app R15D rc3.15.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.15.0'"));
-test('service worker rc3.15.0 cache', sw.includes("aves-saha-r15d-rc3150'"));
-test('uygulama manifesti rc3.15.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.15.0"'));
+test('index R15D rc3.16.0 sürümü', index.includes('R15D-RC3.16.0</b>'));
+test('app R15D rc3.16.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.16.0'"));
+test('service worker rc3.16.0 cache', sw.includes("aves-saha-r15d-rc3160'"));
+test('uygulama manifesti rc3.16.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.16.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2189,6 +2189,32 @@ test('yedek geçmişi yalnız ilgili denetime ait satırları verir', YEDEK.gecm
 test('geri yükleme arayüzü: modül çevrimdışı pakette, düğme listede, var olan kayıt ezilmiyor',
   index.includes('<script src="yedek-geri-yukle.js"></script>') && app.includes("'./yedek-geri-yukle.js'") && sw.includes("'./yedek-geri-yukle.js'") &&
   app.includes('id="btnYedekGeri"') && app.includes('insert_only: true') && app.includes('AVES_YEDEK.dogrula'));
+
+/* ---- Tanılama raporu (tanilama.js) ---- */
+const tanCtx = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'tanilama.js'), 'utf8'), tanCtx, { filename: 'tanilama.js' });
+const TAN = tanCtx.AVES_TANILAMA;
+const tanRapor = TAN.olustur({
+  simdi: '2026-02-03T10:20:30Z', uygulama: 'R15D-rc9', eposta: 'm@x.test', rol: 'muhendis', cihazId: 'abcdef123456', userAgent: 'UA', cevrimici: false,
+  outbox: [
+    { table: 'denetimler', op: 'upsert', inspection_id: 'insp-123456789', sync_status: 'conflict', attempt_count: 3, last_error_code: 409, last_error_message: 'Kayıt çakıştı', rows: [{ musteri_unvani: 'GİZLİ FİRMA A.Ş.', denetim_form_kayitlari: { x: 'GİZLİ DEĞER' } }] },
+    { table: 'saha_kontrol', inspection_id: 'insp-123456789' },
+  ],
+  denetimler: [{ id: 'insp-123456789', modul: 'Modül B', denetim_durumu: 'Devam Ediyor', musteri_unvani: 'GİZLİ FİRMA A.Ş.', asansor_seri_no: 'GİZLİ-SERİ' }],
+  hazirIdler: ['insp-123456789'], bekleyenFotograf: 2,
+  senkronUyarisi: { kind: 'conflict', message: 'çakışma var', ts: 5 },
+  hatalar: Array.from({ length: 25 }, (_, i) => ({ t: 't' + i, tur: 'error', mesaj: 'hata ' + i, kaynak: 'app.js:1' })),
+});
+const tanJson = JSON.stringify(tanRapor);
+test('tanılama raporu: özet sayılar ve durum dağılımı doğru',
+  tanRapor.senkron.bekleyen_islem === 2 && tanRapor.senkron.duruma_gore.conflict === 1 && tanRapor.senkron.duruma_gore.pending === 1 &&
+  tanRapor.senkron.bekleyen_fotograf === 2 && tanRapor.cihaz.id === 'abcdef12' && tanRapor.denetimler.kayitlar[0].calisma_hazir === true &&
+  tanRapor.son_hatalar.length === 20 && tanRapor.son_hatalar[19].mesaj === 'hata 24');
+test('tanılama raporu saha cevabı, firma adı, seri no ve işlem satırı içeriği taşımıyor', !/GİZLİ/.test(tanJson) && !tanJson.includes('denetim_form_kayitlari'));
+test('tanılama özet metni uyarı ve sayıları içeriyor', /ÇEVRİMDIŞI/.test(TAN.ozetMetni(tanRapor)) && /çakışma var/.test(TAN.ozetMetni(tanRapor)) && /Bekleyen işlem: 2/.test(TAN.ozetMetni(tanRapor)));
+test('tanılama arayüzü: modül çevrimdışı pakette, liste ve senkron merkezinde düğme, hata günlüğü bağlı',
+  index.includes('<script src="tanilama.js"></script>') && app.includes("'./tanilama.js'") && sw.includes("'./tanilama.js'") &&
+  app.includes('id="btnTanilama"') && app.includes('id="syncTanilama"') && app.includes("addEventListener('unhandledrejection'") && app.includes('AVES_TANILAMA.olustur'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
