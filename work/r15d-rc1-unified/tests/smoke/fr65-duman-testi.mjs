@@ -192,6 +192,22 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
+  await report.step(`${tag} tanılama bilgisi paylaşılır: teknik durum var, saha verisi/firma adı yok`, async () => {
+    await p.click('#fr65Back');
+    await p.waitForSelector('#btnTanilama');
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }), p.click('#btnTanilama')]);
+    const metin = await (await import('node:fs/promises')).readFile(await download.path(), 'utf8');
+    const rapor = JSON.parse(metin);
+    assert.equal(rapor.format, 'aves-tanilama');
+    assert.match(rapor.uygulama, /^R15D-rc/);
+    assert.equal(rapor.kullanici.e_posta, persona.email);
+    assert.ok(rapor.denetimler.toplam >= 1, 'denetim sayısı yok');
+    assert.equal(typeof rapor.senkron.bekleyen_islem, 'number');
+    assert.ok(!metin.includes('Duman Asansör'), 'rapor firma adı sızdırıyor');
+    assert.ok(!metin.includes(typed), 'rapor saha cevabı sızdırıyor');
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Back');
+  });
   await report.step(`${tag} kaydı tamamla → mühür yazılır, veri özeti kendiliğinden açılır`, async () => {
     // GSM dahil hiçbir zorunlu alan doldurulmadan kapatılabilmeli.
     await p.click('#fr65SaveNow');

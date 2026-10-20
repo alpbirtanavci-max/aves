@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.15.0';
+const APP_VERSION = 'R15D-rc3.16.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -999,6 +999,7 @@ const Sync = (() => {
       <div class="print-actions">
         <button class="btn btn-primary" id="syncCenterNow">Şimdi senkronize et</button>
         ${yetkiKalemleri.length ? '<button class="btn btn-ghost" id="syncRetryForbidden">Yetki kayıtlarını yeniden dene</button>' : ''}
+        <button class="btn btn-ghost" id="syncTanilama">Tanılama bilgisini paylaş</button>
         <button class="btn btn-ghost" id="syncReviewClose">Kapat</button>
       </div>
       ${cakismaVar ? '<p class="photo-help" style="margin-top:10px">Çakışma kayıtları otomatik gönderilmez; başka cihazdaki değişikliği ezmemek için korunur. Karşılaştırma akışı ayrı geliştirmede eklenecek.</p>' : ''}
@@ -1007,6 +1008,7 @@ const Sync = (() => {
     const close = () => ov.remove();
     ov.querySelector('.close').onclick = close;
     ov.querySelector('#syncReviewClose').onclick = close;
+    ov.querySelector('#syncTanilama').onclick = () => { if (typeof UI !== 'undefined' && UI.tanilamaPaylas) UI.tanilamaPaylas(); };
     ov.onclick = e => { if (e.target === ov) close(); };
 
     ov.querySelector('#syncCenterNow').onclick = async () => {
@@ -1856,6 +1858,51 @@ const UI = (() => {
     };
   }
 
+  // Tanılama paylaşımı: cihazın teknik durumu tek dosyada (saha cevabı, firma adı, parola içermez).
+  async function tanilamaGirdisiTopla() {
+    const outbox = await DB.outboxAll();
+    const denetimler = await DB.all('denetimler');
+    const fotolar = (await DB.all('fotograflar')).filter(f => f.sync_status === 'pending' && f.blob).length;
+    const hazirIdler = [];
+    for (const d of denetimler) {
+      const marker = await DB.kvGet(`offline_ready_${d.id}`);
+      if (marker) hazirIdler.push(d.id);
+    }
+    const persist = await DB.kvGet('storage_persist');
+    let bosAlanMb = null;
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        const est = await navigator.storage.estimate();
+        if (est.quota) bosAlanMb = Math.round(Math.max(0, est.quota - (est.usage || 0)) / 1024 / 1024);
+      }
+    } catch { bosAlanMb = null; }
+    return {
+      simdi: new Date().toISOString(), uygulama: APP_VERSION,
+      eposta: Profile.email || API.email || null, rol: Profile.role || null,
+      cihazId: await getDeviceId(), userAgent: navigator.userAgent, cevrimici: navigator.onLine,
+      kuruluUygulama: isNativeApp() || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true,
+      serviceWorker: !('serviceWorker' in navigator) ? 'desteklenmiyor' : navigator.serviceWorker.controller ? 'etkin' : 'kontrol yok',
+      kaliciDepolama: !persist ? 'bilinmiyor' : persist.granted ? 'verildi' : persist.supported ? 'verilmedi' : 'desteklenmiyor',
+      bosAlanMb, outbox, denetimler, hazirIdler, bekleyenFotograf: fotolar,
+      senkronUyarisi: await DB.kvGet('sync_warning'),
+      hatalar: (await DB.kvGet('hata_gunlugu')) || [],
+    };
+  }
+
+  async function tanilamaPaylas() {
+    try {
+      const rapor = AVES_TANILAMA.olustur(await tanilamaGirdisiTopla());
+      const ad = `AVES_tanilama_${rapor.olusturuldu.slice(0, 16).replace(/[-:T]/g, '')}.json`;
+      await dosyaIndir(new File([JSON.stringify(rapor, null, 2)], ad, { type: 'application/json' }));
+      toast('Tanılama dosyası hazırlandı; destek ekibine gönderin');
+    } catch (error) {
+      if (!(error && error.name === 'AbortError')) {
+        console.error('Tanılama hazırlanamadı', error);
+        toast('Tanılama dosyası hazırlanamadı');
+      }
+    }
+  }
+
   // Yedek dosyasından geri yükleme: yalnız cihazda olmayan FR.65 kayıtları eklenir; var olan hiçbir kayıt ezilmez.
   // Eklenen kayıt normal "yeni kayıt" gibi sunucuya gönderilir (var olan satır sunucuda da ezilmez).
   async function yedekGeriYuklemePlani(paket) {
@@ -2434,7 +2481,7 @@ const UI = (() => {
       </div>
       <div id="dlist">${denetimler.length ? '' : '<div class="empty">Görüntüleyebileceğiniz denetim yok.<br>Denetçiler yalnızca kendi denetimlerini görür.</div>'}</div>
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
-      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button><button type="button" class="backup-link" id="btnYedekGeri">📂 Yedekten geri yükle…</button></div>
+      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button><button type="button" class="backup-link" id="btnYedekGeri">📂 Yedekten geri yükle…</button><button type="button" class="backup-link" id="btnTanilama">🩺 Tanılama bilgisini paylaş</button></div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     app.style.pointerEvents = '';
@@ -2579,6 +2626,8 @@ const UI = (() => {
     if (btnYedekSec) btnYedekSec.onclick = yedekSecimiGoster;
     const btnYedekGeri = document.getElementById('btnYedekGeri');
     if (btnYedekGeri) btnYedekGeri.onclick = yedekGeriYuklemeGoster;
+    const btnTanilama = document.getElementById('btnTanilama');
+    if (btnTanilama) btnTanilama.onclick = tanilamaPaylas;
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
@@ -6898,7 +6947,7 @@ function showYeniForm() {
   }
 
   return {
-    showLogin, afterLogin, showList, bekleyenFotograflariYukle,
+    showLogin, afterLogin, showList, bekleyenFotograflariYukle, tanilamaPaylas,
     flushPendingEdits: flushEditorWrites,
     preserveFr65Position: () => { if (activeFr65PositionSaver) activeFr65PositionSaver(); },
     recoverDrafts: taslaklariTaraVeKurtar,
@@ -7002,6 +7051,18 @@ async function ensurePersistentStorage() {
     await DB.kvSet('storage_persist', { supported: true, granted: false, error: String((error && error.message) || error), checked_at: now });
   }
 }
+
+// Tanılama için son yakalanmamış hatalar cihazda tutulur (en fazla 30; saha cevabı içermez).
+let hataGunluguYaziliyor = Promise.resolve();
+function hataGunlugunaYaz(tur, mesaj, kaynak) {
+  hataGunluguYaziliyor = hataGunluguYaziliyor.then(async () => {
+    const log = (await DB.kvGet('hata_gunlugu')) || [];
+    log.push({ t: new Date().toISOString(), tur, mesaj: String(mesaj || '').slice(0, 200), kaynak: String(kaynak || '').slice(0, 120) });
+    await DB.kvSet('hata_gunlugu', log.slice(-30));
+  }).catch(() => {});
+}
+window.addEventListener('error', event => hataGunlugunaYaz('error', event.message, `${String(event.filename || '').split('/').pop()}:${event.lineno || 0}`));
+window.addEventListener('unhandledrejection', event => hataGunlugunaYaz('promise', event.reason && event.reason.message ? event.reason.message : event.reason, ''));
 
 // Odaktaki bir alanda 700ms yazım gecikmesi dolmadan uygulama arka plana
 // alınırsa/kapatılırsa (telefon donması, yanlışlıkla kapatma, işletim
