@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.16.0 sürümü', index.includes('R15D-RC3.16.0</b>'));
-test('app R15D rc3.16.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.16.0'"));
-test('service worker rc3.16.0 cache', sw.includes("aves-saha-r15d-rc3160'"));
-test('uygulama manifesti rc3.16.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.16.0"'));
+test('index R15D rc3.17.0 sürümü', index.includes('R15D-RC3.17.0</b>'));
+test('app R15D rc3.17.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.17.0'"));
+test('service worker rc3.17.0 cache', sw.includes("aves-saha-r15d-rc3170'"));
+test('uygulama manifesti rc3.17.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.17.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2215,6 +2215,33 @@ test('tanılama özet metni uyarı ve sayıları içeriyor', /ÇEVRİMDIŞI/.tes
 test('tanılama arayüzü: modül çevrimdışı pakette, liste ve senkron merkezinde düğme, hata günlüğü bağlı',
   index.includes('<script src="tanilama.js"></script>') && app.includes("'./tanilama.js'") && sw.includes("'./tanilama.js'") &&
   app.includes('id="btnTanilama"') && app.includes('id="syncTanilama"') && app.includes("addEventListener('unhandledrejection'") && app.includes('AVES_TANILAMA.olustur'));
+
+/* ---- Birim / aralık uyarısı (deger-kontrol.js) ---- */
+const dkCtx = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'deger-kontrol.js'), 'utf8'), dkCtx, { filename: 'deger-kontrol.js' });
+const DK = dkCtx.AVES_DEGER_KONTROL;
+test('birim uyarısı: metre, milimetre ve cm/sn girişlerini yakalar',
+  /Metre olarak mı girdiniz\? 0,9 m = 90 cm/.test(DK.kontrol('kabin_kat_kapi_genislik_cm', '0,9').mesaj) &&
+  /Metre olarak/.test(DK.kontrol('kuyu_genislik_cm', 2.1).mesaj) &&
+  /Milimetre olarak mı girdiniz\? 900 mm = 90 cm/.test(DK.kontrol('kabin_kat_kapi_genislik_cm', 900).mesaj) &&
+  /cm\/s olarak/.test(DK.kontrol('hiz', 100).mesaj));
+test('birim uyarısı: olağan değerlerde, boşta, bilinmeyen alanda ve metinde uyarı yok',
+  DK.kontrol('kabin_kat_kapi_genislik_cm', 90) === null && DK.kontrol('kuyu_genislik_cm', '') === null &&
+  DK.kontrol('olmayan_alan', 99999) === null && DK.kontrol('kuyu_genislik_cm', 'abc') === null &&
+  DK.kontrol('hiz', '1,6') === null && DK.kontrol('yuk', 630) === null && DK.kontrol('kabin_tampon_kaide_yuksekligi_cm', 0) === null);
+test('birim uyarısı: aralık dışı ve negatif değer uyarılır ama engellenmez',
+  DK.kontrol('durak_sayisi', 500).tur === 'aralik' && DK.kontrol('kuyu_dibi_cm', -5).tur === 'negatif');
+test('her sayısal cm alanı için aralık tanımlı (yük, hız, kapasite dahil)',
+  (() => {
+    const sayilar = [];
+    technicalDocs.FR65.sections.forEach(s => s.fields.forEach(f => { if (f[2] === 'number' && /_cm$/.test(f[0])) sayilar.push(f[0]); }));
+    const eksik = sayilar.filter(k => !DK.ARALIK[k]);
+    // tanımsız cm alanları listelenir (bilinçli muaf olanlar yoksa boş olmalı)
+    return eksik.length === 0 ? true : (console.log('Aralığı olmayan cm alanları:', eksik.join(', ')), false);
+  })());
+test('birim uyarısı ve sıradaki boş alan düğmesi arayüzde bağlı; modül çevrimdışı pakette',
+  index.includes('<script src="deger-kontrol.js"></script>') && app.includes("'./deger-kontrol.js'") && sw.includes("'./deger-kontrol.js'") &&
+  app.includes('data-fr65-uyari') && app.includes('AVES_DEGER_KONTROL.kontrol') && app.includes('id="fr65NextEmpty"') && app.includes('missingFr65Fields({ forms: { FR65: { values: collectValues() } } }'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

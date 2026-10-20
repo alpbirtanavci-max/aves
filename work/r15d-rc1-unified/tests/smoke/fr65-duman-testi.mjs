@@ -208,6 +208,24 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
+  await report.step(`${tag} yanlış birim uyarısı çıkar (değer korunur); "sıradaki boş alana git" boş alana odaklanır`, async () => {
+    const satir = p.locator('[data-fr65-capture-key="kabin_kat_kapi_genislik_cm"]');
+    const kapi = satir.locator('input[data-fr65-capture-prop="field_value"]');
+    await openSectionOf(kapi);
+    await kapi.fill('0.9');
+    const uyari = satir.locator('[data-fr65-uyari]');
+    await uyari.waitFor({ state: 'visible' });
+    assert.match(await uyari.innerText(), /Metre olarak mı girdiniz\? 0,9 m = 90 cm/);
+    assert.equal(await kapi.inputValue(), '0.9', 'uyarı değeri değiştirmemeli');
+    await kapi.fill('90');
+    await uyari.waitFor({ state: 'hidden' });
+    await p.click('#fr65NextEmpty');
+    await until(() => p.evaluate(() => {
+      const a = document.activeElement;
+      const row = a && a.closest && a.closest('[data-fr65-capture-key]');
+      return !!row && !a.value && row.dataset.fr65CaptureKey !== 'kabin_kat_kapi_genislik_cm';
+    }), 'boş alana odaklanılmadı');
+  });
   await report.step(`${tag} kaydı tamamla → mühür yazılır, veri özeti kendiliğinden açılır`, async () => {
     // GSM dahil hiçbir zorunlu alan doldurulmadan kapatılabilmeli.
     await p.click('#fr65SaveNow');

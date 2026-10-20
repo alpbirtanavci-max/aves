@@ -9,10 +9,10 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.16.0';
+const APP_VERSION = 'R15D-rc3.17.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
@@ -3956,7 +3956,7 @@ function showYeniForm() {
         const numberValue = raw && Number.isFinite(Number(raw)) ? raw : '';
         const preserveLegacy = !!raw && !numberValue;
         const integerCount = key === 'kabin_giris_sayisi';
-        fieldControl = `<input type="number" min="${integerCount ? '1' : '0'}" step="${integerCount ? '1' : 'any'}" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}`;
+        fieldControl = `<input type="number" min="${integerCount ? '1' : '0'}" step="${integerCount ? '1' : 'any'}" inputmode="decimal" aria-label="${esc(label)}" data-fr65-capture-prop="field_value" data-fr65-preserve-legacy="${preserveLegacy ? 'true' : 'false'}" value="${esc(numberValue)}" placeholder="${esc(label.match(/\(([^)]+)\)/)?.[1] || 'Sahada görülen / ölçülen değer')}" ${disabled}>${preserveLegacy ? `<small class="fr65-legacy-value">Önceki kayıt: ${esc(raw)}</small><button type="button" class="fr65-clear-legacy" data-fr65-clear-legacy="${esc(key)}" ${disabled}>Eski değeri temizle</button>` : ''}<small class="fr65-birim-uyari" data-fr65-uyari role="status" ${AVES_DEGER_KONTROL.kontrol(key, numberValue) ? '' : 'hidden'}>${esc(AVES_DEGER_KONTROL.kontrol(key, numberValue)?.mesaj ? '⚠ ' + AVES_DEGER_KONTROL.kontrol(key, numberValue).mesaj : '')}</small>`;
       } else {
         const compactMeasure = section.group === 'olcu';
         const compactPlaceholder = label.includes('(cm') ? 'Ölçüyü cm olarak girin' : 'Sahada görülen bilgi';
@@ -4129,7 +4129,7 @@ function showYeniForm() {
         <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
       </div>
-      <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span><small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez. Önerilen akış kuyu bölümünden başlar; sabit bölüm düğmeleriyle ilerleyin.</small></div>
+      <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span>${canEdit ? '<button type="button" class="btn btn-ghost fr65-next-empty" id="fr65NextEmpty">Sıradaki boş alana git ↓</button>' : ''}<small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez. Önerilen akış kuyu bölümünden başlar; sabit bölüm düğmeleriyle ilerleyin.</small></div>
       ${quickNavHtml}
       ${sectionsHtml}
       <div id="fr65CaptureSaveStatus" class="photo-help">${canEdit ? 'Alanları yazdıkça cihaza otomatik kaydedilir.' : 'Salt okunur gösterim.'}</div>
@@ -4156,6 +4156,34 @@ function showYeniForm() {
       const maxScrollY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
       window.scrollTo(0, Math.min(savedScrollY, maxScrollY));
     }));
+    // Birim/aralık uyarısı: yalnız bilgilendirir, değeri değiştirmez, kaydı engellemez.
+    document.querySelectorAll('[data-fr65-uyari]').forEach(uyari => {
+      const input = uyari.closest('[data-fr65-capture-key]')?.querySelector('input[data-fr65-capture-prop="field_value"]');
+      if (!input) return;
+      const key = uyari.closest('[data-fr65-capture-key]').dataset.fr65CaptureKey;
+      input.addEventListener('input', () => {
+        const sonuc = AVES_DEGER_KONTROL.kontrol(key, input.value);
+        uyari.hidden = !sonuc;
+        uyari.textContent = sonuc ? `⚠ ${sonuc.mesaj}` : '';
+      });
+    });
+    // İlk boş alana (önerilen akış sırasıyla) gider, bölümü açar ve alana odaklanır.
+    const nextEmptyButton = document.getElementById('fr65NextEmpty');
+    if (nextEmptyButton) nextEmptyButton.onclick = () => {
+      const missing = AVES_TEKNIK_DOSYA_FORM.missingFr65Fields({ forms: { FR65: { values: collectValues() } } }, d.tahrik_tipi);
+      if (!missing.length) { toast('Boş alan kalmadı ✓'); return; }
+      const sectionElement = document.getElementById(`fr65Section-${missing[0].key}`);
+      if (!sectionElement) return;
+      sectionElement.open = true;
+      rememberCaptureSection(missing[0].key);
+      const label = missing[0].fields[0];
+      const article = Array.from(sectionElement.querySelectorAll('[data-fr65-capture-key]'))
+        .find(row => (row.querySelector('b')?.textContent || '').trim() === label) || sectionElement;
+      article.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const control = article.querySelector('[data-fr65-capture-prop]:not([disabled])');
+      if (control) setTimeout(() => control.focus({ preventScroll: true }), 350);
+      toast(`${missing[0].title}: ${label}${missing.reduce((sum, s) => sum + s.fields.length, 0) > 1 ? ` · toplam ${missing.reduce((sum, s) => sum + s.fields.length, 0)} boş alan` : ''}`);
+    };
     document.querySelectorAll('[data-fr65-jump]').forEach(button => {
       button.onclick = () => {
         const target = document.getElementById(`fr65Section-${button.dataset.fr65Jump}`);
