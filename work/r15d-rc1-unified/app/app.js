@@ -3007,7 +3007,6 @@ function showYeniForm() {
         <div class="inspection-actions">
           ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
           <button class="delbtn" id="fr65Excel" title="Saha verisini Excel dosyası olarak indir">📊 Excel</button>
-          <button class="delbtn" id="fr65Pdf" title="PDF dosyası hazırla ve paylaş / kaydet">📄 PDF</button>
           <button class="delbtn" id="fr65Word" title="ÜB.FR.65 Teknik Dosya–Saha Eşleşme Formu (Word)">📝 Word</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
@@ -3314,30 +3313,6 @@ function showYeniForm() {
         surum: APP_VERSION, olusturuldu: new Date().toLocaleString('tr-TR'),
         firma: reportRecord.musteri_unvani || '', seri: reportRecord.asansor_seri_no || '', adres: reportRecord.denetim_adresi || '', modul: reportRecord.modul || '',
       };
-    };
-    const pdfAction = document.getElementById('fr65Pdf');
-    if (pdfAction) pdfAction.onclick = async () => {
-      pdfAction.disabled = true;
-      toast('PDF hazırlanıyor…');
-      try {
-        const baglam = await ciktiBaglami();
-        const [fontBytes, logoBytes] = await Promise.all([
-          fetch('./form-assets/DejaVuSans.ttf').then(r => { if (!r.ok) throw new Error('PDF yazı tipi alınamadı'); return r.arrayBuffer(); }),
-          fetch('./aves-logo-white.png').then(r => (r.ok ? r.arrayBuffer() : null)).catch(() => null),
-        ]);
-        const bytes = await AVES_FR65_PDF.build({
-          ...baglam, PDFLib: window.PDFLib, fontkit: window.fontkit,
-          fontBytes: new Uint8Array(fontBytes), logoBytes: logoBytes ? new Uint8Array(logoBytes) : null,
-        });
-        const ad = String(baglam.seri || baglam.firma || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 40);
-        await dosyaIndir(new File([bytes], `AVES_FR65_${ad}_${new Date().toISOString().slice(0, 10)}.pdf`, { type: 'application/pdf' }));
-        toast('PDF hazırlandı');
-      } catch (error) {
-        if (!(error && error.name === 'AbortError')) {
-          console.error('FR.65 PDF hatası', error);
-          toast('PDF oluşturulamadı; veri cihazda korunuyor. "Çıktı / PDF" ile yazdırmayı deneyin.', 5000);
-        }
-      } finally { pdfAction.disabled = false; }
     };
     const printAction = document.getElementById('fr65Print');
     if (printAction) printAction.onclick = async () => {

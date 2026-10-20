@@ -335,6 +335,7 @@ async function runModule(browser, appUrl, modul, persona, report) {
   await report.step(`${tag} "Word" → ÜB.FR.65 formu iner; saha + teknik değer yazılır, S ✓ ile eşleşmeyi gösterir`, async () => {
     const [download] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }), p.click('#fr65Word')]);
     assert.ok(download.suggestedFilename().endsWith('.docx'), 'dosya uzantısı .docx değil');
+    assert.equal(await p.locator('#fr65Pdf').count(), 0, 'ayrı PDF düğmesi kaldırılmıştı');
     const bytes = [...(await (await import('node:fs/promises')).readFile(await download.path()))];
     const check = await p.evaluate(async arr => {
       const zip = await JSZip.loadAsync(new Uint8Array(arr));
@@ -348,17 +349,6 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.ok(check.xml.includes(seri.toUpperCase()), 'Word seri no içermiyor');
     assert.ok((check.xml.match(/<w:sym /g) || []).length >= 3, 'S sütununda ✓ yok (açıklama satırı + kapı genişlikleri)');
     assert.ok((check.xml.match(/>900</g) || []).length >= 4, 'kapı genişliği (teknik + saha) yazılmadı');
-  });
-  await report.step(`${tag} "PDF" → gerçek PDF dosyası iner, birden çok sayfa, girilen veriyi içerir`, async () => {
-    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }), p.click('#fr65Pdf')]);
-    assert.ok(download.suggestedFilename().endsWith('.pdf'), 'dosya uzantısı .pdf değil');
-    const bytes = [...(await (await import('node:fs/promises')).readFile(await download.path()))];
-    const info = await p.evaluate(async arr => {
-      const doc = await PDFLib.PDFDocument.load(new Uint8Array(arr));
-      return { pages: doc.getPageCount(), head: String.fromCharCode(...arr.slice(0, 5)), size: arr.length };
-    }, bytes);
-    assert.equal(info.head, '%PDF-');
-    assert.ok(info.pages >= 1 && info.size > 8000, `PDF beklenenden küçük (${info.pages} sayfa, ${info.size} bayt)`);
   });
   const canDelete = persona.rol === 'yonetici';
   await report.step(`${tag} silme düğmesi: ${canDelete ? 'görünür' : 'görünmez'}`, async () => {
