@@ -9,15 +9,15 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.17.1';
+const APP_VERSION = 'R15D-rc3.18.0';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
-  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
+  './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-docx.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
   './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
   './fonts/Montserrat-latin-ext.woff2', './fonts/Montserrat-latin.woff2',
   // Resmî çıktı çevrimdışı da üretilebilsin (10b): manifest + yazı tipi + form şablonları.
-  './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf',
+  './form-assets/form-output-manifest.json', './form-assets/DejaVuSans.ttf', './form-assets/UB_FR_65.docx',
   './form-assets/UB_FR_38_R04.docx', './form-assets/UB_FR_38_R04.pdf',
   './form-assets/UB_FR_39_R02.docx', './form-assets/UB_FR_39_R02.pdf',
 ];
@@ -3913,6 +3913,25 @@ function showYeniForm() {
         <label>Tip<input data-fr65-capture-prop="tip" value="${esc(value.tip || '')}" autocomplete="off" ${disabled}></label>
         <label>${thirdLabel}<input data-fr65-capture-prop="${thirdProp}" value="${esc(value[thirdProp] || '')}" autocomplete="off" ${disabled}></label>
       </div>`;
+    // Word formu (ÜB.FR.65) için isteğe bağlı "teknik dosyadaki değer"; sayımlara girmez, S sütununu besler.
+    const technicalUnits = AVES_FR65_DOCX.teknikAlanlari();
+    const technicalSerialKeys = new Set(AVES_FR65_DOCX.komponentler('Elektrikli').concat(AVES_FR65_DOCX.komponentler('Hidrolik')).map(item => item.anahtar));
+    const renderSerialTechnical = (key, value, disabled) => {
+      if (!technicalSerialKeys.has(key)) return '';
+      const full = ['elektrikli_makine', 'hidrolik_motor'].includes(key);
+      const open = ['teknik_marka', 'teknik_tip', 'teknik_seri'].some(prop => String(value[prop] || '').trim());
+      return `<details class="fr65-capture-note fr65-teknik" ${open ? 'open' : ''}>
+        <summary>✎ Teknik dosyadaki değer (Word formu için)</summary>
+        <div class="fr65-serial-fields">
+          ${full ? `<label>Marka<input data-fr65-capture-prop="teknik_marka" value="${esc(value.teknik_marka || '')}" autocomplete="off" ${disabled}></label>
+          <label>Tip<input data-fr65-capture-prop="teknik_tip" value="${esc(value.teknik_tip || '')}" autocomplete="off" ${disabled}></label>` : ''}
+          <label>Seri no<input data-fr65-capture-prop="teknik_seri" value="${esc(value.teknik_seri || '')}" autocomplete="off" ${disabled}></label>
+        </div>
+      </details>`;
+    };
+    const renderTechnicalValue = (key, value, disabled) => (key in technicalUnits)
+      ? `<label class="fr65-teknik-deger">Teknik dosyadaki değer${technicalUnits[key] ? ` (${esc(technicalUnits[key])})` : ''}<input data-fr65-capture-prop="teknik_deger" value="${esc(value.teknik_deger || '')}" autocomplete="off" ${disabled}></label>`
+      : '';
     const renderCaptureField = (section, field) => {
       const [key, label, fieldType] = field;
       const value = normalized.forms.FR65?.values?.[key] || {};
@@ -3951,7 +3970,7 @@ function showYeniForm() {
       }
       if (section.kind === 'serial' || fieldType === 'serial') {
         return `<article class="tech-field fr65-serial-row" data-fr65-capture-key="${esc(key)}">
-          <b>${esc(label)}</b>${renderSerialInputs(value, disabled)}
+          <b>${esc(label)}</b>${renderSerialInputs(value, disabled)}${renderSerialTechnical(key, value, disabled)}
         </article>`;
       }
       const options = fieldOptions[key] || [];
@@ -3988,8 +4007,9 @@ function showYeniForm() {
       return `${wrapperOpen}<article class="tech-field" data-fr65-capture-key="${esc(key)}">
         <b>${esc(label)}</b>
         ${fieldControlHtml}${help}
-        <details class="fr65-capture-note ${section.group === 'olcu' ? 'fr65-measure-note' : ''}" ${value.note ? 'open' : ''}>
-          <summary>✎ Açıklama ekle / düzenle</summary>
+        <details class="fr65-capture-note ${section.group === 'olcu' ? 'fr65-measure-note' : ''}" ${value.note || value.teknik_deger ? 'open' : ''}>
+          <summary>${key in technicalUnits ? '✎ Teknik dosya değeri / açıklama' : '✎ Açıklama ekle / düzenle'}</summary>
+          ${renderTechnicalValue(key, value, disabled)}
           <label>Açıklama veya saha notu<textarea data-fr65-capture-prop="note" placeholder="Konum, ölçüm noktası veya kısa gözlem" ${disabled}>${esc(value.note || '')}</textarea></label>
         </details>
       </article>${wrapperClose}`;
@@ -4126,6 +4146,7 @@ function showYeniForm() {
           ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
           <button class="delbtn" id="fr65Excel" title="Saha verisini Excel dosyası olarak indir">📊 Excel</button>
           <button class="delbtn" id="fr65Pdf" title="PDF dosyası hazırla ve paylaş / kaydet">📄 PDF</button>
+          <button class="delbtn" id="fr65Word" title="ÜB.FR.65 Teknik Dosya–Saha Eşleşme Formu (Word)">📝 Word</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
           ${canDeleteDenetim(d) && denetimSahibiMi(d) ? '<button class="delbtn" id="fr65Delete" title="FR.65 saha kaydını sil">🗑 Sil</button>' : ''}
@@ -4342,6 +4363,29 @@ function showYeniForm() {
           toast('Excel dosyası oluşturulamadı; veri cihazda korunuyor');
         }
       } finally { excelAction.disabled = false; }
+    };
+    const wordAction = document.getElementById('fr65Word');
+    if (wordAction) wordAction.onclick = async () => {
+      wordAction.disabled = true;
+      try {
+        try { if (canEdit) await flushCapture(); }
+        catch (error) { toast('Son kayıt doğrulanamadı; cihazdaki kayıtlı değerler aktarılıyor'); }
+        const latest = await DB.get('denetimler', d.id) || d;
+        const record = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
+        const template = await fetch('./form-assets/UB_FR_65.docx').then(r => { if (!r.ok) throw new Error('Form şablonu alınamadı'); return r.arrayBuffer(); });
+        const sonuc = await AVES_FR65_DOCX.build({ JSZip: window.JSZip, template, record: latest, values: record.forms?.FR65?.values || {} });
+        const ad = String(latest.asansor_seri_no || latest.musteri_unvani || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 40);
+        await dosyaIndir(new File([sonuc.bytes], `UB_FR_65_${ad}_${new Date().toISOString().slice(0, 10)}.docx`,
+          { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+        const ozet = sonuc.ozet;
+        toast(`Word formu hazırlandı · ${ozet.uygun} eşleşti, ${ozet.uygunDegil} farklı` +
+          (ozet.tdGirilmemis ? ` · ${ozet.tdGirilmemis} alanda teknik dosya değeri girilmedi` : ''));
+      } catch (error) {
+        if (!(error && error.name === 'AbortError')) {
+          console.error('FR.65 Word çıktısı hatası', error);
+          toast('Word formu oluşturulamadı; veri cihazda korunuyor');
+        }
+      } finally { wordAction.disabled = false; }
     };
     // Yazdırma, PDF ve benzeri çıktılar aynı bağlamı kullanır (ekrandaki değerler + durum/mühür/boş alan/düzeltme).
     const ciktiBaglami = async () => {

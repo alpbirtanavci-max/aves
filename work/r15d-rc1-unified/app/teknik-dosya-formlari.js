@@ -96,6 +96,8 @@
           ['kismen_kapali_kuyu_detay', 'Kısmen çevrili kuyu açıklaması'],
           ['kuyu_alti_kullanim_yuk', 'Kuyu altında kullanılabilir alan / yük bulunan hacim var mı?', 'select'],
           ['kuyu_alti_kullanim_yuk_detay', 'Kuyu altındaki kullanılabilir alan / yük bilgisi'],
+          ['kuyu_dibi_guvenlik_hacmi', 'Kuyu dibi güvenlik hacmi (yer ve tip; örn. 50X70X100 / sol arka)'],
+          ['kabin_ustu_guvenlik_hacmi', 'Kabin üstü güvenlik hacmi (yer ve tip; örn. 50X70X100 / kabin arka)'],
           ['kabin_tampon_tipi', 'Kabin tamponu tipi', 'select'],
           ['kabin_tampon_kaide_yuksekligi_cm', 'Kabin tamponu kaide yüksekliği (cm)', 'number'],
           ['kabin_tampon_yuksekligi_cm', 'Kabin tamponu yüksekliği (cm; kaide hariç)', 'number'],

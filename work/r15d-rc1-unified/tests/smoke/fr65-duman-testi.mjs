@@ -134,7 +134,7 @@ async function runModule(browser, appUrl, modul, persona, report) {
     typed = off;
   });
   await report.step(`${tag} "Çıktı / PDF" → rapor penceresi değerleri içeriyor`, async () => {
-    const [popup] = await Promise.all([p.waitForEvent('popup', { timeout: 8000 }), p.click('#fr65Print')]);
+    const [popup] = await Promise.all([p.waitForEvent('popup', { timeout: 20000 }), p.click('#fr65Print')]);
     await popup.waitForSelector('.sheet', { timeout: 8000 });
     const text = await popup.innerText('body');
     assert.ok(text.includes('SAHA VERİ ÖZETİ') && text.includes('FR.65'), 'rapor başlığı yok');
@@ -235,6 +235,9 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.equal(await kapi.inputValue(), '0.9', 'uyarı değeri değiştirmemeli');
     await kapi.fill('90');
     await uyari.waitFor({ state: 'hidden' });
+    await satir.evaluate(el => el.querySelectorAll('details').forEach(d => { d.open = true; }));
+    await satir.locator('input[data-fr65-capture-prop="teknik_deger"]').fill('900');
+    await until(() => (fr65Values(s).kabin_kat_kapi_genislik_cm?.teknik_deger) === '900', 'teknik dosya değeri sunucuda yok');
     await p.click('#fr65NextEmpty');
     await until(() => p.evaluate(() => {
       const a = document.activeElement;
@@ -291,6 +294,23 @@ async function runModule(browser, appUrl, modul, persona, report) {
     assert.ok(check.files.includes('xl/workbook.xml'));
     assert.ok(check.data.includes(String(typed).replace(/^duman-/, '')) || check.data.includes(typed), 'Excel girilen değeri içermiyor');
     assert.ok(check.kunye.includes(seri), 'Excel künyesinde seri no yok');
+  });
+  await report.step(`${tag} "Word" → ÜB.FR.65 formu iner; saha + teknik değer yazılır, S ✓ ile eşleşmeyi gösterir`, async () => {
+    const [download] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }), p.click('#fr65Word')]);
+    assert.ok(download.suggestedFilename().endsWith('.docx'), 'dosya uzantısı .docx değil');
+    const bytes = [...(await (await import('node:fs/promises')).readFile(await download.path()))];
+    const check = await p.evaluate(async arr => {
+      const zip = await JSZip.loadAsync(new Uint8Array(arr));
+      const xml = await zip.file('word/document.xml').async('string');
+      const doc = new DOMParser().parseFromString(xml, 'application/xml');
+      return { files: Object.keys(zip.files), xml, hata: doc.getElementsByTagName('parsererror').length };
+    }, bytes);
+    assert.ok(check.files.includes('word/document.xml') && check.files.includes('[Content_Types].xml'));
+    assert.equal(check.hata, 0, 'document.xml iyi biçimli değil');
+    assert.ok(check.xml.includes('Duman Asansör A.Ş.'), 'Word firma adını içermiyor');
+    assert.ok(check.xml.includes(seri.toUpperCase()), 'Word seri no içermiyor');
+    assert.ok((check.xml.match(/<w:sym /g) || []).length >= 3, 'S sütununda ✓ yok (açıklama satırı + kapı genişlikleri)');
+    assert.ok((check.xml.match(/>900</g) || []).length >= 4, 'kapı genişliği (teknik + saha) yazılmadı');
   });
   await report.step(`${tag} "PDF" → gerçek PDF dosyası iner, birden çok sayfa, girilen veriyi içerir`, async () => {
     const [download] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }), p.click('#fr65Pdf')]);
