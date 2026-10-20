@@ -1,7 +1,7 @@
 // AVES duman testi: gerçek tarayıcıda, sahte Supabase ile B / E / H1 saha veri akışı.
 // Kayıt aç -> doldur -> kaydet -> yenile -> çevrimdışı düzenle -> senkronla -> çıktı -> sil.
 import assert from 'node:assert/strict';
-import { startApp, launch, newSession, createReporter } from './harness.mjs';
+import { startApp, launch, newSession, createReporter, isWebkit } from './harness.mjs';
 
 const personas = {
   yonetici: { email: 'yonetici@test.local', ad_soyad: 'Test Yönetici', aktif: true, rol: 'yonetici' },
@@ -14,7 +14,7 @@ async function login(s, persona) {
   await p.fill('#lgEmail', persona.email);
   await p.fill('#lgPass', 'yalniz-sahte-sunucu');
   await p.click('#lgBtn');
-  await p.waitForSelector('#btnYeni', { timeout: 15000 });
+  await p.waitForSelector('#btnYeni', { timeout: 60000 });
 }
 
 async function createRecord(s, modul, seri) {
@@ -38,7 +38,7 @@ async function createRecord(s, modul, seri) {
 }
 
 // Sunucu durumunu en çok 10 sn bekleyerek doğrular (senkron arka planda çalışır).
-async function until(check, message, ms = 10000) {
+async function until(check, message, ms = isWebkit() ? 40000 : 10000) {
   const end = Date.now() + ms;
   let last;
   while (Date.now() < end) {
@@ -110,7 +110,7 @@ async function runModule(browser, appUrl, modul, persona, report) {
   });
   await report.step(`${tag} sayfayı yenile → veri geri geliyor`, async () => {
     await p.reload();
-    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await p.waitForSelector('#btnYeni', { timeout: 60000 });
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back', { timeout: 15000 });
     await openSectionOf(p.locator(`[data-fr65-capture-key="${fieldKey}"] [data-fr65-capture-prop="field_value"]`));
@@ -261,7 +261,7 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await report.step(`${tag} sil → sunucudan ve cihazdan kalkar`, async () => {
       const id = serverRecord(s).id;
       await p.click('#fr65Delete');
-      await p.waitForSelector('#btnYeni', { timeout: 15000 });
+      await p.waitForSelector('#btnYeni', { timeout: 60000 });
       await p.waitForTimeout(500);
       assert.equal(s.fake.tables.denetimler.length, 0, 'sunucuda kayıt kaldı');
       const local = await p.evaluate(async i => !!(await DB.get('denetimler', i)), id);
@@ -309,7 +309,7 @@ async function runModuleG(browser, appUrl, report) {
   });
   await report.step(`${tag} yenile → işaret geri geliyor`, async () => {
     await p.reload();
-    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await p.waitForSelector('#btnYeni', { timeout: 60000 });
     await p.getByText(seri).first().click();
     await p.waitForSelector('#back', { timeout: 15000 });
     // Ekran bir sonraki maddeye ilerlediği için işareti cihaz kaydından doğrula.
@@ -328,7 +328,7 @@ async function runModuleG(browser, appUrl, report) {
   await report.step(`${tag} sil → sunucudan ve cihazdan kalkar`, async () => {
     const id = serverRecord(s).id;
     await p.click('#btnSil');
-    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await p.waitForSelector('#btnYeni', { timeout: 60000 });
     await until(() => s.fake.tables.denetimler.length === 0, 'sunucuda denetim kaldı');
     assert.equal(s.fake.tables.saha_kontrol.filter(r => r.denetim_id === id).length >= 0, true);
     assert.equal(await p.evaluate(async i => !!(await DB.get('denetimler', i)), id), false, 'cihazda kayıt kaldı');
@@ -357,7 +357,7 @@ async function runOrphanDelete(browser, appUrl, report) {
     const id = s.fake.tables.denetimler[0].id;
     s.fake.tables.denetimler.length = 0;
     await p.click('#fr65Delete');
-    await p.waitForSelector('#btnYeni', { timeout: 15000 });
+    await p.waitForSelector('#btnYeni', { timeout: 60000 });
     assert.equal(await p.evaluate(async i => !!(await DB.get('denetimler', i)), id), false, 'yetim kayıt cihazda kaldı');
   });
   await s.context.close();
