@@ -124,10 +124,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.18.1 sürümü', index.includes('R15D-RC3.18.1</b>'));
-test('app R15D rc3.18.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.18.1'"));
-test('service worker rc3.18.1 cache', sw.includes("aves-saha-r15d-rc3181'"));
-test('uygulama manifesti rc3.18.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.18.1"'));
+test('index R15D rc3.19.0 sürümü', index.includes('R15D-RC3.19.0</b>'));
+test('app R15D rc3.19.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.19.0'"));
+test('service worker rc3.19.0 cache', sw.includes("aves-saha-r15d-rc3190'"));
+test('uygulama manifesti rc3.19.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.19.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2311,6 +2311,53 @@ test('Word çıktısı arayüzü: düğme, şablon çevrimdışı pakette, tekni
 test('Kuyu bölümünde kuyu dibi / kabin üstü güvenlik hacmi alanları var',
   technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kuyu_dibi_guvenlik_hacmi') &&
   technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kabin_ustu_guvenlik_hacmi'));
+
+/* ---- Cihaz senkron durumu (cihaz-durumu.js + migration 87) ---- */
+const cdCtx = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'cihaz-durumu.js'), 'utf8'), cdCtx, { filename: 'cihaz-durumu.js' });
+const CD = cdCtx.AVES_CIHAZ_DURUMU;
+const cdId = n => `0000000${n}-0000-4000-8000-000000000000`;
+const cdOlustur = CD.olustur({
+  cihazId: 'abcdef1234567890', surum: 'R15D-rc9', cevrimici: true, bekleyenFotograf: 2,
+  outbox: [
+    { table: 'denetimler', sync_status: 'conflict', inspection_id: cdId(1), created_at: '2026-01-01T10:00:00Z', last_error_message: 'Çakışma', rows: [{ musteri_unvani: 'GİZLİ FİRMA' }] },
+    { table: 'denetimler', sync_status: 'pending', inspection_id: cdId(1), created_at: '2026-01-01T11:00:00Z' },
+    { table: 'saha_kontrol', sync_status: 'forbidden', inspection_id: cdId(2), created_at: '2026-01-01T12:00:00Z' },
+    { table: 'denetimler', inspection_id: 'uuid-degil' },
+  ],
+});
+test('cihaz durumu satırı: sayılar, denetim kimlikleri ve en eski bekleyen doğru; geçersiz kimlik atılır',
+  cdOlustur.satir.bekleyen_islem === 4 && cdOlustur.satir.cakisma === 1 && cdOlustur.satir.yetki_bekleyen === 1 &&
+  cdOlustur.satir.bekleyen_fotograf === 2 && cdOlustur.satir.en_eski_bekleyen_at === '2026-01-01T10:00:00Z' &&
+  cdOlustur.satir.denetimler.length === 2 && cdOlustur.satir.denetimler.find(d => d.id === cdId(1)).bekleyen === 1 &&
+  cdOlustur.satir.son_hata === 'Çakışma');
+test('cihaz durumu satırı saha cevabı / firma adı taşımıyor', !/GİZLİ|musteri_unvani|rows/.test(JSON.stringify(cdOlustur.satir)));
+test('cihaz durumu imzası: aynı durum aynı imza, durum değişince farklı',
+  cdOlustur.imza === CD.olustur({ cihazId: 'x', surum: 'y', cevrimici: true, bekleyenFotograf: 2, outbox: [
+    { sync_status: 'conflict', inspection_id: cdId(1) }, { sync_status: 'pending', inspection_id: cdId(1) }, { sync_status: 'forbidden', inspection_id: cdId(2) }, {}] }).imza &&
+  cdOlustur.imza !== CD.olustur({ cihazId: 'x', surum: 'y', cevrimici: true, bekleyenFotograf: 0, outbox: [] }).imza);
+const cdSimdi = Date.parse('2026-02-10T12:00:00Z');
+const cdSatir = (o) => ({ bildirildi_at: '2026-02-10T11:55:00Z', bekleyen_islem: 0, cakisma: 0, yetki_bekleyen: 0, bekleyen_fotograf: 0, ...o });
+test('cihaz durumu sınıflandırma: sorunlu / sessiz / bekliyor / temiz ve sıralama',
+  CD.durum(cdSatir({ bekleyen_islem: 2, cakisma: 1 }), cdSimdi).seviye === 'sorunlu' &&
+  CD.durum(cdSatir({ bekleyen_islem: 1, bildirildi_at: '2026-02-08T00:00:00Z' }), cdSimdi).seviye === 'sessiz' &&
+  CD.durum(cdSatir({ bekleyen_islem: 1 }), cdSimdi).seviye === 'bekliyor' &&
+  CD.durum(cdSatir({ bekleyen_fotograf: 3 }), cdSimdi).seviye === 'bekliyor' &&
+  CD.durum(cdSatir({}), cdSimdi).seviye === 'temiz' &&
+  CD.durum(cdSatir({ bekleyen_islem: 1, bildirildi_at: '2026-02-08T00:00:00Z' }), cdSimdi).nedenler.some(n => /24 saatten/.test(n)) &&
+  CD.sirala([cdSatir({ cihaz_id: 'T' }), cdSatir({ cihaz_id: 'B', bekleyen_islem: 1 }), cdSatir({ cihaz_id: 'S', yetki_bekleyen: 1, bekleyen_islem: 1 })], cdSimdi).map(x => x.satir.cihaz_id).join('') === 'SBT');
+test('cihaz durumu geçen süre metni', CD.gecenSure('2026-02-10T11:59:40Z', cdSimdi) === 'şimdi' && CD.gecenSure('2026-02-10T11:15:00Z', cdSimdi) === '45 dk önce' && CD.gecenSure('2026-02-10T06:00:00Z', cdSimdi) === '6 sa önce' && CD.gecenSure('2026-02-05T12:00:00Z', cdSimdi) === '5 gün önce');
+const mig87 = fs.readFileSync(path.join(databaseDir, '87_r15d_rc3190_cihaz_senkron_durumu.sql'), 'utf8');
+test('migration 87: RLS açık, e-posta oturumdan, silme yok, yönetici okur, anon yok, boyut sınırı',
+  mig87.includes('enable row level security') && mig87.includes('new.email := public.aves_oturum_emaili()') && mig87.includes('new.bildirildi_at := now()') &&
+  mig87.includes('aves_tum_denetimleri_gorebilir_mi()') && mig87.includes('grant select, insert, update on public.cihaz_senkron_durumu to authenticated') &&
+  !/grant[^;]*delete[^;]*cihaz_senkron_durumu/i.test(mig87) && mig87.includes('revoke all on public.cihaz_senkron_durumu from anon, authenticated') &&
+  mig87.includes('jsonb_array_length(new.denetimler) > 50'));
+test('cihaz durumu arayüzü: modül çevrimdışı pakette, bildirim sessizce kapanır, yalnız yönetim görünümü düğmesi',
+  index.includes('<script src="cihaz-durumu.js"></script>') && app.includes("'./cihaz-durumu.js'") && sw.includes("'./cihaz-durumu.js'") &&
+  app.includes("Profile.canSeeAllInspections ? '<button type=\"button\" class=\"backup-link\" id=\"btnCihazDurum\"") &&
+  app.includes('durumBildirimiKapali = true') && app.includes("API.upsert('cihaz_senkron_durumu'") &&
+  app.includes('Sunucuda cihaz durumu tablosu henüz kurulmamış') && ci.includes('87_cihaz_senkron_durumu.sql'));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);

@@ -208,6 +208,43 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
+  await report.step(`${tag} cihaz durumu sunucuya bildirilir (saha verisi yok); ${persona.rol === 'yonetici' ? 'yönetici görünümü sorunlu cihazı gösterir' : 'mühendis yönetim görünümünü görmez'}`, async () => {
+    const satirlar = () => s.fake.tables.cihaz_senkron_durumu;
+    await until(() => satirlar().length >= 1, 'cihaz durumu hiç bildirilmedi');
+    const ilk = satirlar()[0];
+    assert.equal(ilk.email, persona.email);
+    assert.match(ilk.uygulama_surumu, /^R15D-rc/);
+    assert.equal(typeof ilk.bekleyen_islem, 'number');
+    assert.ok(!JSON.stringify(satirlar()).includes('Duman'), 'cihaz durumu firma adı/saha verisi sızdırıyor');
+    await p.click('#fr65Back');
+    await p.waitForSelector('#btnYedekSec');
+    if (persona.rol !== 'yonetici') {
+      assert.equal(await p.locator('#btnCihazDurum').count(), 0, 'mühendis için cihaz durumu düğmesi görünmemeli');
+    } else {
+      const id = serverRecord(s).id;
+      // Takılı bir çakışma kalemi enjekte et, bildir, yönetici görünümünde gör, sonra temizle.
+      const seq = await p.evaluate(async denetimId => DB.outboxAdd({
+        operation_id: 'duman-cakisma', entity_type: 'denetimler', operation_type: 'upsert', table: 'denetimler', rows: [], inspection_id: denetimId,
+        sync_status: 'conflict', created_at: '2026-01-01T10:00:00.000Z', last_error_message: 'duman testi çakışması', ts: Date.now(), attempt_count: 1,
+      }), id);
+      await p.evaluate(() => Sync.durumBildir({ zorla: true }));
+      await until(() => satirlar()[0].cakisma === 1, 'çakışma sunucuya bildirilmedi');
+      assert.equal(satirlar()[0].denetimler[0].id, id);
+      await p.click('#btnCihazDurum');
+      await p.waitForSelector('#cihazIcerik .fr65-ozet-bolum');
+      const metin = await p.locator('#cihazIcerik').innerText();
+      assert.match(metin, /Sorunlu/);
+      assert.match(metin, /1 çakışma/);
+      assert.match(metin, /duman testi çakışması/);
+      assert.ok(metin.includes('Duman Asansör A.Ş.'), 'denetim adı görünümde yok');
+      await p.click('.modal .close');
+      await p.evaluate(async key => DB.outboxDel(key), seq);
+      await p.evaluate(() => Sync.durumBildir({ zorla: true }));
+      await until(() => satirlar()[0].cakisma === 0, 'temizlenen durum sunucuya bildirilmedi');
+    }
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Back');
+  });
   await report.step(`${tag} yeni denetimde önceki firma önerilir; adres boşsa dolar, elle yazılan ezilmez`, async () => {
     await p.click('#fr65Back');
     await p.click('#btnYeni');

@@ -106,6 +106,20 @@ gerçek uygulamada (veya PostgREST üzerinden `app.js` gövdesini birebir taklit
 | 4.3 | B | tüm denetimleri `select` | görür (önceki gibi) |
 | 4.4 | A | kendi denetimini `delete` | RED (mühendis silemez) |
 
+## 4b. Migration 87 — `cihaz_senkron_durumu` (cihaz senkron durumu)
+
+Otomatik senaryo: `tests/database/87_cihaz_senkron_durumu.sql` (CI rls-test job'ı). Production öncesi aynı dosya Supabase branch'te de koşulmalı.
+
+| # | Aktör | İşlem | Beklenen |
+|---|---|---|---|
+| 4b.1 | A | kendi cihaz satırını `insert` (başkasının e-postasıyla) | satır A'nın e-postasıyla, sunucu saatiyle yazılır |
+| 4b.2 | A | aynı cihaz için upsert | tek satır güncellenir |
+| 4b.3 | A / C | `select` | yalnız kendi satırı |
+| 4b.4 | B (yönetici) / T (teknik müdür) | `select` | tüm satırlar |
+| 4b.5 | B | başkasının satırını `update` / herkes `delete` | etki yok / RED |
+| 4b.6 | D (pasif) / anon | `insert` / `select` | RED |
+| 4b.7 | A | 51 öğeli liste / negatif sayı | RED |
+
 ## 5. PR'a eklenecek çıktı
 
 - Hangi Supabase branch'inde koşuldu, hangi migration'lar uygulanmıştı.

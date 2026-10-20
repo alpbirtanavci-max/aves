@@ -710,6 +710,59 @@ const UI = (() => {
     }
   }
 
+  // Yönetici / teknik müdür: hangi cihaz neyi sunucuya gönderemedi. Cihazlar durumlarını kendileri bildirir
+  // (çevrimdışı cihaz son bildirdiği durumu gösterir; "haber yok" süresi görünür).
+  async function cihazDurumlariniGoster() {
+    if (!Profile.canSeeAllInspections) { toast('Bu görünüm yalnız yönetici ve teknik müdür içindir'); return; }
+    const ov = document.createElement('div');
+    ov.className = 'overlay';
+    ov.innerHTML = `<div class="modal fr65-ozet">
+      <button class="close" aria-label="Kapat">×</button>
+      <h3>Cihaz senkron durumları</h3>
+      <div id="cihazIcerik" class="photo-help">Yükleniyor…</div>
+    </div>`;
+    document.body.appendChild(ov);
+    const close = () => ov.remove();
+    ov.querySelector('.close').onclick = close;
+    ov.onclick = event => { if (event.target === ov) close(); };
+    const icerik = ov.querySelector('#cihazIcerik');
+    try {
+      const kayitlar = await API.select('cihaz_senkron_durumu', 'select=*&order=bildirildi_at.desc&limit=300');
+      const kisiler = new Map();
+      try { (await API.select('kullanici_profilleri', 'select=email,ad_soyad')).forEach(p => kisiler.set(String(p.email).toLowerCase(), p.ad_soyad)); }
+      catch (error) { console.warn('Kullanıcı adları okunamadı', error); }
+      const idler = [...new Set(kayitlar.flatMap(k => (k.denetimler || []).map(d => d.id)))].filter(id => AVES_CIHAZ_DURUMU.UUID.test(id)).slice(0, 80);
+      const denetimAdlari = new Map();
+      if (idler.length) {
+        try { (await API.select('denetimler', `select=id,musteri_unvani,asansor_seri_no&id=in.(${idler.join(',')})`)).forEach(d => denetimAdlari.set(d.id, `${d.musteri_unvani || 'Firma yok'} · ${d.asansor_seri_no || '-'}`)); }
+        catch (error) { console.warn('Denetim adları okunamadı', error); }
+      }
+      const simdi = Date.now();
+      const sirali = AVES_CIHAZ_DURUMU.sirala(kayitlar, simdi);
+      const etiket = { sorunlu: ['Sorunlu', 'bad'], sessiz: ['Haber yok', 'bad'], bekliyor: ['Bekliyor', 'pending'], temiz: ['Eşitlenmiş', 'ok'] };
+      if (!sirali.length) { icerik.innerHTML = 'Henüz hiçbir cihaz durum bildirmedi. Mühendislerin uygulamayı güncelleyip açması gerekir.'; return; }
+      const sorunSayisi = sirali.filter(x => x.seviye !== 'temiz').length;
+      icerik.className = '';
+      icerik.innerHTML = `<div class="photo-help">${sorunSayisi ? `${sorunSayisi} cihazda eşitlenmemiş iş var` : 'Tüm cihazlar eşitlenmiş görünüyor'}. Her cihaz durumunu açıkken ve bağlantı varken bildirir; yaşı satırda yazar.</div>` +
+        sirali.map(({ satir, seviye, nedenler, bekleSaat }) => {
+          const ad = kisiler.get(String(satir.email).toLowerCase()) || satir.email;
+          const [metin, css] = etiket[seviye];
+          const kayitlarHtml = (satir.denetimler || []).map(d => `<div class="sync-review-row ${d.cakisma ? 'is-conflict' : ''}"><b>${esc(denetimAdlari.get(d.id) || `Denetim ${String(d.id).slice(0, 8)}`)}</b><small>${[d.bekleyen && `${d.bekleyen} işlem`, d.cakisma && `${d.cakisma} çakışma`, d.yetki && `${d.yetki} yetki incelemesi`].filter(Boolean).join(' · ')}</small></div>`).join('');
+          return `<section class="fr65-ozet-bolum"><h4>${esc(ad)} <span class="pill ${css}">${metin}</span></h4>
+            <div class="fr65-ozet-satir"><span>Cihaz · sürüm</span><b>${esc(String(satir.cihaz_id).slice(0, 8))} · ${esc(satir.uygulama_surumu || '-')}</b></div>
+            <div class="fr65-ozet-satir"><span>Son bildirim</span><b>${esc(AVES_CIHAZ_DURUMU.gecenSure(satir.bildirildi_at, simdi))}${satir.cevrimici ? '' : ' (çevrimdışıydı)'}</b></div>
+            ${nedenler.length ? `<div class="fr65-ozet-satir"><span>Durum</span><b>${esc(nedenler.join(' · '))}</b></div>` : ''}
+            ${bekleSaat >= 1 ? `<div class="fr65-ozet-satir"><span>En eski bekleyen</span><b>${esc(String(bekleSaat))} saattir</b></div>` : ''}
+            ${satir.son_hata ? `<div class="fr65-ozet-satir"><span>Son hata</span><b>${esc(satir.son_hata)}</b></div>` : ''}
+            ${kayitlarHtml}</section>`;
+        }).join('');
+    } catch (error) {
+      icerik.textContent = error && error.status === 404
+        ? 'Sunucuda cihaz durumu tablosu henüz kurulmamış (migration 87 uygulanmalı).'
+        : 'Cihaz durumları okunamadı. Bağlantıyı kontrol edip tekrar deneyin.';
+    }
+  }
+
   // Yedek dosyasından geri yükleme: yalnız cihazda olmayan FR.65 kayıtları eklenir; var olan hiçbir kayıt ezilmez.
   // Eklenen kayıt normal "yeni kayıt" gibi sunucuya gönderilir (var olan satır sunucuda da ezilmez).
   async function yedekGeriYuklemePlani(paket) {
@@ -1288,7 +1341,7 @@ const UI = (() => {
       </div>
       <div id="dlist">${denetimler.length ? '' : '<div class="empty">Görüntüleyebileceğiniz denetim yok.<br>Denetçiler yalnızca kendi denetimlerini görür.</div>'}</div>
       <div class="empty hidden" id="listNoResult">Arama ölçütlerine uyan denetim bulunamadı.</div>
-      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button><button type="button" class="backup-link" id="btnYedekGeri">📂 Yedekten geri yükle…</button><button type="button" class="backup-link" id="btnTanilama">🩺 Tanılama bilgisini paylaş</button></div>
+      <div class="backup-bar"><button type="button" class="backup-link" id="btnYedekSec">💾 Yedek al…</button><button type="button" class="backup-link" id="btnYedekGeri">📂 Yedekten geri yükle…</button><button type="button" class="backup-link" id="btnTanilama">🩺 Tanılama bilgisini paylaş</button>${Profile.canSeeAllInspections ? '<button type="button" class="backup-link" id="btnCihazDurum">📡 Cihaz senkron durumları</button>' : ''}</div>
       <div class="about-note">Bu uygulama saha kontrol yardımcısıdır; resmi muayene formu veya rapor yerine geçmez.</div>
     </div>`;
     app.style.pointerEvents = '';
@@ -1435,6 +1488,8 @@ const UI = (() => {
     if (btnYedekGeri) btnYedekGeri.onclick = yedekGeriYuklemeGoster;
     const btnTanilama = document.getElementById('btnTanilama');
     if (btnTanilama) btnTanilama.onclick = tanilamaPaylas;
+    const btnCihazDurum = document.getElementById('btnCihazDurum');
+    if (btnCihazDurum) btnCihazDurum.onclick = cihazDurumlariniGoster;
   }
 
   async function showTamamlananDenetimSecimi(d, rows = []) {
