@@ -253,6 +253,7 @@ const Sync = (() => {
     } finally {
       pushRunning = false;
       await updatePill();
+      durumBildir();
       if (typeof UI !== 'undefined' && UI.refresh && UI.canRefreshSafely()) UI.refresh();
     }
     return allSent && (await DB.outboxCount()) === 0;
@@ -549,13 +550,38 @@ const Sync = (() => {
     toast(completed ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek');
   }
 
+  // Cihaz senkron durumu sunucuya (en iyi çaba) bildirilir: yönetici hangi cihazın neyi gönderemediğini görür.
+  // Saha cevabı veya firma bilgisi gönderilmez. Tablo yoksa/izin yoksa bu oturumda sessizce kapanır.
+  let durumBildirimiKapali = false;
+  let sonDurumBildirimi = { imza: null, at: 0 };
+  async function durumBildir({ zorla = false } = {}) {
+    if (durumBildirimiKapali || !navigator.onLine || !API.loggedIn || !Profile.email) return;
+    try {
+      const outbox = await DB.outboxAll();
+      let { satir, imza } = AVES_CIHAZ_DURUMU.olustur({
+        cihazId: await getDeviceId(), surum: APP_VERSION, cevrimici: navigator.onLine, outbox, bekleyenFotograf: 0,
+      });
+      const taze = Date.now() - sonDurumBildirimi.at < 15 * 60 * 1000;
+      if (!zorla && imza === sonDurumBildirimi.imza && taze) return;
+      // Fotoğraf sayısı blob'lu kayıtları taradığı için yalnız gerçekten bildirirken hesaplanır.
+      satir.bekleyen_fotograf = (await DB.all('fotograflar')).filter(f => f.sync_status === 'pending' && f.blob).length;
+      imza = AVES_CIHAZ_DURUMU.olustur({ cihazId: satir.cihaz_id, surum: APP_VERSION, cevrimici: true, outbox, bekleyenFotograf: satir.bekleyen_fotograf }).imza;
+      await API.upsert('cihaz_senkron_durumu', [satir]);
+      sonDurumBildirimi = { imza, at: Date.now() };
+    } catch (error) {
+      if ([400, 401, 403, 404].includes(error && error.status)) durumBildirimiKapali = true;
+    }
+  }
+
   function start() {
     window.addEventListener('online', full);
     window.addEventListener('offline', updatePill);
     setInterval(() => { pushOutbox(); }, 20000);
+    setInterval(() => { durumBildir(); }, 60000);
+    window.addEventListener('online', () => { durumBildir({ zorla: true }); });
     updatePill();
   }
 
-  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri };
+  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir };
 })();
 

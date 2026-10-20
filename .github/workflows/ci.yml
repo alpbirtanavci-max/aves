@@ -95,3 +95,7 @@ jobs:
         run: $PSQL -f work/r15d-rc1-unified/database/86_r15d_rc3978_firma_adresi.sql
       - name: Migration 86 adres ayrımı senaryosu
         run: $PSQL -f work/r15d-rc1-unified/tests/database/86_firma_adresi.sql
+      - name: Migration 87 uygula (cihaz senkron durumu)
+        run: $PSQL -f work/r15d-rc1-unified/database/87_r15d_rc3190_cihaz_senkron_durumu.sql
+      - name: Cihaz senkron durumu senaryoları (dört-persona + pasif + anon)
+        run: $PSQL -f work/r15d-rc1-unified/tests/database/87_cihaz_senkron_durumu.sql

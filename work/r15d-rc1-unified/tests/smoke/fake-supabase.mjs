@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 
 export function createFakeSupabase({ profile, now = () => new Date().toISOString() }) {
-  const tables = { denetimler: [], saha_kontrol: [], denetim_fotograflari: [], madde_kutuphanesi: [], denetim_degisim_gecmisi: [], kullanici_profilleri: [profile], kutuphane_bolum_surumleri: [] };
+  const tables = { denetimler: [], saha_kontrol: [], denetim_fotograflari: [], madde_kutuphanesi: [], denetim_degisim_gecmisi: [], kullanici_profilleri: [profile], kutuphane_bolum_surumleri: [], cihaz_senkron_durumu: [] };
   // Madde kütüphanesi: repodaki gerçek tohum veri (uygulama >=900 madde ister).
   try {
     const seed = JSON.parse(readFileSync(new URL('../../data/madde_kutuphanesi.json', import.meta.url), 'utf8'));
@@ -70,6 +70,13 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
       const prefer = req.headers()['prefer'] || '';
       const incoming = Array.isArray(body) ? body : [body];
       for (const row of incoming) {
+        if (m[1] === 'cihaz_senkron_durumu') {
+          // Sunucu tetikleyicisi: e-posta oturumdan, zaman sunucudan; (email, cihaz_id) birincil anahtar.
+          const yeni = { ...row, email: profile.email, bildirildi_at: now() };
+          const k = table.findIndex(r => r.email === profile.email && r.cihaz_id === row.cihaz_id);
+          if (k >= 0) table[k] = { ...table[k], ...yeni }; else table.push(yeni);
+          continue;
+        }
         const i = table.findIndex(r => (r.id ?? null) !== null && r.id === row.id);
         if (i >= 0) { if (!prefer.includes('ignore-duplicates')) table[i] = { ...table[i], ...row, updated_at: stamp() }; }
         else table.push({ ...row, updated_at: m[1] === 'denetimler' ? stamp() : row.updated_at });
