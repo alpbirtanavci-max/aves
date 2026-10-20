@@ -208,6 +208,22 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
+  await report.step(`${tag} yeni denetimde önceki firma önerilir; adres boşsa dolar, elle yazılan ezilmez`, async () => {
+    await p.click('#fr65Back');
+    await p.click('#btnYeni');
+    await p.waitForSelector('#fMusteri');
+    await until(async () => (await p.locator('#firmaListesi option').evaluateAll(list => list.map(o => o.value))).includes('Duman Asansör A.Ş.'), 'önceki firma öneride yok');
+    await p.fill('#fMusteri', 'duman asansör a.ş.');
+    await until(async () => (await p.inputValue('#fFirmaAdres')) === 'Firma Mah. 1 Sk.', 'firma adresi dolmadı');
+    await p.fill('#fMusteri', '');
+    await p.fill('#fFirmaAdres', 'Elle Yazılmış Adres');
+    await p.fill('#fMusteri', 'Duman Asansör A.Ş.');
+    await p.waitForTimeout(300);
+    assert.equal(await p.inputValue('#fFirmaAdres'), 'Elle Yazılmış Adres', 'elle yazılan adres ezildi');
+    await p.click('#back');
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Back');
+  });
   await report.step(`${tag} yanlış birim uyarısı çıkar (değer korunur); "sıradaki boş alana git" boş alana odaklanır`, async () => {
     const satir = p.locator('[data-fr65-capture-key="kabin_kat_kapi_genislik_cm"]');
     const kapi = satir.locator('input[data-fr65-capture-prop="field_value"]');

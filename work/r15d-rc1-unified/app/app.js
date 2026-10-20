@@ -9,7 +9,7 @@ const CONFIG = {
   key: 'sb_publishable_WVlR6u3sfDiu8V121t4x-Q_4yxHCJ2W',
 };
 
-const APP_VERSION = 'R15D-rc3.17.0';
+const APP_VERSION = 'R15D-rc3.17.1';
 const DB_VERSION = 6;
 const OFFLINE_CORE_ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './fr65-pdf.js', './app.js', './manifest.json',
@@ -3081,7 +3081,7 @@ function showYeniForm() {
       </div>
       <div class="form-card"><h3>Asansör bilgileri</h3>
         <div class="grid2">
-          <div class="field full"><label for="fMusteri">Asansör firması adı *</label><input id="fMusteri" autocomplete="organization"></div>
+          <div class="field full"><label for="fMusteri">Asansör firması adı *</label><input id="fMusteri" autocomplete="organization" list="firmaListesi"><datalist id="firmaListesi"></datalist></div>
           <div class="field full"><label for="fFirmaAdres">Asansör firmasının adresi *</label><input id="fFirmaAdres" autocomplete="street-address"></div>
           <div class="field" id="fSeriWrap"><label for="fSeri">Asansör seri no *</label><input id="fSeri" autocomplete="off"></div>
           <div class="field" id="fDosyaWrap"><label for="fDosya">Dosya no</label><input id="fDosya" autocomplete="off"></div>
@@ -3146,6 +3146,27 @@ function showYeniForm() {
       <button type="button" class="btn btn-primary" id="fKaydet">Denetimi başlat</button>
       <div style="height:20px"></div>
     </div>`;
+    // Daha önce çalışılan firmalar: yazarken öneri çıkar; tam eşleşince boş firma adresi kendiliğinden dolar.
+    (async () => {
+      try {
+        const norm = value => String(value || '').trim().toLocaleLowerCase('tr').replace(/\s+/g, ' ');
+        const rows = (await DB.all('denetimler')).filter(denetimGorunebilirMi).filter(r => r.musteri_unvani && r.firma_adresi)
+          .sort((a, b) => String(b.created_at || b.denetim_tarihi || '').localeCompare(String(a.created_at || a.denetim_tarihi || '')));
+        const firmalar = new Map();
+        rows.forEach(r => { if (!firmalar.has(norm(r.musteri_unvani))) firmalar.set(norm(r.musteri_unvani), { ad: r.musteri_unvani, adres: r.firma_adresi }); });
+        const liste = document.getElementById('firmaListesi');
+        if (!liste) return;
+        liste.innerHTML = [...firmalar.values()].map(f => `<option value="${esc(f.ad)}"></option>`).join('');
+        const musteri = document.getElementById('fMusteri');
+        const adres = document.getElementById('fFirmaAdres');
+        const doldur = () => {
+          const bulunan = firmalar.get(norm(musteri.value));
+          if (bulunan && !adres.value.trim()) { adres.value = bulunan.adres; toast('Firma adresi önceki kayıttan dolduruldu'); }
+        };
+        musteri.addEventListener('input', doldur);
+        musteri.addEventListener('change', doldur);
+      } catch (error) { console.warn('Firma önerileri hazırlanamadı', error); }
+    })();
     document.getElementById('back').onclick = showList;
 
     // seçim davranışı
