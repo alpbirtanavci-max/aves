@@ -122,10 +122,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.14.0 sürümü', index.includes('R15D-RC3.14.0</b>'));
-test('app R15D rc3.14.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.14.0'"));
-test('service worker rc3.14.0 cache', sw.includes("aves-saha-r15d-rc3140'"));
-test('uygulama manifesti rc3.14.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.14.0"'));
+test('index R15D rc3.14.1 sürümü', index.includes('R15D-RC3.14.1</b>'));
+test('app R15D rc3.14.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.14.1'"));
+test('service worker rc3.14.1 cache', sw.includes("aves-saha-r15d-rc3141'"));
+test('uygulama manifesti rc3.14.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.14.1"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2060,6 +2060,22 @@ test('FR.65 karşı ağırlık konumu (Arkada / Sağda / Solda) seçilir; şema 
       rearText.includes('KARŞI AĞIRLIK 90 × 20 cm (genişlik × derinlik)') &&
       sideText.includes('90 × 20 cm (gen. × der.)') && rear.length > 150 && side.length > 150 &&
       rear.some(op => op.t === 'rect' && op.fill === '#4B5070') && !/O 90 × P 20/.test(rearText);
+  })());
+test('FR.65 kuyu kesiti karşı ağırlık konumuna göre değişir: arkada arka duvara yakın, yanda kafes içinde kabinin gerisinde, hidrolikte piston',
+  (() => {
+    const sema = fr65SemaContext.AVES_FR65_SEMA;
+    const val = n => ({ field_value: String(n) });
+    const base = { kuyu_yuksekligi_cm: val(3400), karsi_agirlik_yukseklik_cm: val(250) };
+    const texts = ops => ops.filter(op => op.t === 'text').map(op => op.s);
+    const rear = sema.kesitOps(sema.valuesOf({ ...base, tahrik_tipi: val('Elektrikli'), karsi_agirlik_konumu: val('Arkada') }));
+    const side = sema.kesitOps(sema.valuesOf({ ...base, tahrik_tipi: val('Elektrikli'), karsi_agirlik_konumu: val('Sağda') }));
+    const hyd = sema.kesitOps(sema.valuesOf({ ...base, tahrik_tipi: val('Hidrolik') }));
+    const rightWall = ops => Math.max(...ops.filter(op => op.t === 'rect' && op.h === 410 && op.w === 16).map(op => op.x));
+    const lattice = ops => ops.filter(op => op.t === 'line' && op.stroke === '#C9CDDD').length;
+    return rightWall(rear) === 376 && rightWall(side) === 344 && rightWall(hyd) === 344 &&
+      lattice(side) > lattice(rear) + 10 &&
+      texts(rear).includes('KARŞI AĞIRLIK') && texts(side).includes('KARŞI AĞIRLIK') && !texts(hyd).includes('KARŞI AĞIRLIK') &&
+      texts(hyd).includes('piston') && !texts(side).includes('KA (yanda)');
   })());
 test('FR.65 hızlı ardışık yazımda tamamlanan eski snapshot baselineı ilerletir, yeni taslağı temizlemeden sürümünü yeniler', (() => {
   const start = app.indexOf('async function renderFr65SahaKaydi(');
