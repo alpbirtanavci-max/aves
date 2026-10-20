@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "node work/r15d-rc1-unified/tests/r15d-static-test.mjs",
-    "test:duman": "node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs"
+    "test:duman": "node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs",
+    "test:duman:safari": "PLAYWRIGHT_BROWSER=webkit node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs"
   },
   "engines": {
     "node": ">=22"
