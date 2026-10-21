@@ -9,8 +9,8 @@ const appDir = path.join(root, 'app');
 const dataDir = path.join(root, 'data');
 const databaseDir = path.join(root, 'database');
 
-// app.js bölündü: testler, yükleme sırasıyla birleştirilmiş uygulama kaynağını (eski tek dosya gibi) tarar.
-const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'app', 'baslat'];
+// app.js ve UI kapanışı bölündü: testler, yükleme sırasıyla birleştirilmiş uygulama kaynağını (eski tek dosya gibi) tarar.
+const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'ui-durum', 'ui-foto', 'ui-yonetim', 'ui-kayit', 'ui-liste', 'ui-yeni', 'ui-fr65', 'ui-denetim', 'ui-taslak', 'ui-form', 'ui-madde', 'ui-kapanis', 'ui-son', 'baslat'];
 const app = appParcalari.map(ad => fs.readFileSync(path.join(appDir, ad + '.js'), 'utf8')).join(String.fromCharCode(10));
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
 const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
@@ -120,10 +120,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.19.1 sürümü', index.includes('R15D-RC3.19.1</b>'));
-test('app R15D rc3.19.1 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.19.1'"));
-test('service worker rc3.19.1 cache', sw.includes("aves-saha-r15d-rc3191'"));
-test('uygulama manifesti rc3.19.1 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.19.1"'));
+test('index R15D rc3.20.0 sürümü', index.includes('R15D-RC3.20.0</b>'));
+test('app R15D rc3.20.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.20.0'"));
+test('service worker rc3.20.0 cache', sw.includes("aves-saha-r15d-rc3200'"));
+test('uygulama manifesti rc3.20.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.20.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -529,7 +529,7 @@ test('denetim değişiklik olayları izlenir ve çıkış sırasında kullanıc�
 test('madde sonuçları tek segmentli kontrol olarak stilleniyor', index.includes('.mstates{display:grid;grid-template-columns:1fr 1fr 1fr auto'));
 test('tarayıcı favicon isteği mevcut uygulama ikonuna yönleniyor', index.includes('rel="icon"') && index.includes('href="icon-192.png"'));
 test('fiziksel bölüm eşlemesi uygulamadan önce yükleniyor',
-  index.indexOf('section-mapping.js') < index.indexOf('app.js') && sw.includes("'./section-mapping.js'"));
+  index.indexOf('section-mapping.js') < index.indexOf('ui-durum.js') && sw.includes("'./section-mapping.js'"));
 test('eksik veya bozuk fiziksel bölüm eşlemesi uygulamayı sessizce başlatmıyor',
   app.includes("Object.keys(AVES_FIZIKSEL_BOLUM_ESLEMESI).length !== 70") &&
   app.includes('AVES fiziksel bölüm eşlemesi yüklenemedi'));
@@ -1133,7 +1133,7 @@ test('sunucu eksik liste döndürürse yerel denetimler korunuyor', app.includes
 test('sunucu eksik sayfa döndürürse yerel checklist korunuyor', app.includes("const localRows = await DB.allByIndex('saha', 'byDenetim', denetimId)") && app.includes('const merged = new Map(localRows.map'));
 test('kütüphane kimlik bütünlüğü kontrolü', app.includes('new Set(ids).size !== ids.length'));
 test('kütüphane içerik hash kaydı', app.includes('content_hash: contentHash'));
-const localWrite = app.slice(app.indexOf('async function localWrite'), app.indexOf('/* ================= UI ================= */'));
+const localWrite = app.slice(app.indexOf('async function localWrite'), app.indexOf('AVES Saha Denetim — paylaşılan arayüz durumu'));
 test('localWrite atomik metodu kullanıyor', localWrite.includes('DB.putAllWithOutbox'));
 test('localWrite tam sync çağırmıyor', !localWrite.includes('Sync.full()'));
 test('outbox operation kimliği', localWrite.includes('operation_id: operationId'));
@@ -1159,8 +1159,8 @@ test('denetim tamamlanmadan bekleyen alan yazımları bitiriliyor',
   app.includes('async function flushEditorWrites()') && app.includes('await flushEditorWrites();'));
 test('eşzamanlı push tamamlandı sayılmıyor', app.includes('if (pushRunning) return false'));
 test('yeniden deneme artan bekleme kullanıyor', app.includes('const backoff = Math.min(60000'));
-test('senkron sonrası yalnız açık denetim listesi yenileniyor', app.includes("else if (currentView === 'list') showList()"));
-test('arka plan senkronu yeni denetim formunu kapatmıyor', app.includes("currentView = 'new-inspection'") && app.includes("else if (currentView === 'list') showList()"));
+test('senkron sonrası yalnız açık denetim listesi yenileniyor', app.includes("else if (currentView === 'list') showList({ arkaPlan: true })"));
+test('arka plan senkronu yeni denetim formunu kapatmıyor', app.includes("currentView = 'new-inspection'") && app.includes("else if (currentView === 'list') showList({ arkaPlan: true })"));
 test('müşteri ünvanı alanı erişilebilir ve normal input', app.includes('label for="fMusteri"') && app.includes('id="fMusteri" autocomplete="organization"'));
 test('seri numaralarına denetim alt çubuğundan her zaman erişiliyor', app.includes('id="btnSeriler"') && app.includes('seriNumaralariGoster'));
 test('seri numaraları bölge bazında yapılandırılıyor', ['kabin_tamponlari','karsi_agirlik_tamponlari','parasut_frenleri','kat_kapilari','kumanda_kartlari'].every(key => app.includes(key)));
@@ -1428,7 +1428,7 @@ test('birleşik denetim formu scripti çevrimdışı paket ve HTML yükleme sır
   index.includes('<script src="teknik-dosya-formlari.js"></script>') &&
   index.includes('<script src="denetim-form-setleri.js"></script>') &&
   index.includes('<script src="form-draft-journal.js"></script>') &&
-  index.indexOf('denetim-form-setleri.js') < index.indexOf('app.js') &&
+  index.indexOf('denetim-form-setleri.js') < index.indexOf('ui-durum.js') &&
   app.includes("'./denetim-form-setleri.js'") && sw.includes("'./denetim-form-setleri.js'") &&
   app.includes("'./form-draft-journal.js'") && sw.includes("'./form-draft-journal.js'") &&
   app.includes("'denetim_form_kayitlari'") && app.includes("'teknik_dosya_kayitlari'"));
@@ -2334,6 +2334,24 @@ test('cihaz durumu arayüzü: modül çevrimdışı pakette, bildirim sessizce k
   app.includes("Profile.canSeeAllInspections ? '<button type=\"button\" class=\"backup-link\" id=\"btnCihazDurum\"") &&
   app.includes('durumBildirimiKapali = true') && app.includes("API.upsert('cihaz_senkron_durumu'") &&
   app.includes('Sunucuda cihaz durumu tablosu henüz kurulmamış') && ci.includes('87_cihaz_senkron_durumu.sql'));
+
+/* ---- Arayüz dosyaları (eski UI kapanışı bölündü): ortak global kapsam kuralları ---- */
+const uiDosyalar = appParcalari.filter(ad => ad.startsWith('ui-'));
+const uiUstDuzeyAdlar = new Map();
+appParcalari.forEach(ad => {
+  const kaynak = fs.readFileSync(path.join(appDir, ad + '.js'), 'utf8');
+  for (const m of kaynak.matchAll(/^(?:async function|function|const|let|var)\s+([A-Za-z_$][\w$]*)/gm)) {
+    uiUstDuzeyAdlar.set(m[1], [...(uiUstDuzeyAdlar.get(m[1]) || []), ad]);
+  }
+});
+const uiTekrarlar = [...uiUstDuzeyAdlar].filter(([, dosyalar]) => dosyalar.length > 1);
+test('uygulama dosyalarında üst düzey adlar benzersiz (ortak global kapsam; çakışma yükleme hatası olur)',
+  uiTekrarlar.length === 0 && uiUstDuzeyAdlar.size > 180 ? true : (console.log('Tekrarlanan üst düzey adlar:', JSON.stringify(uiTekrarlar)), false));
+test('arayüz: eski UI kapanışı yok; UI nesnesi ui-son.js içinde; dosyalar index sırasıyla yükleniyor',
+  uiDosyalar.length === 13 && !app.includes('const UI = (() =>') && fs.readFileSync(path.join(appDir, 'ui-son.js'), 'utf8').includes('const UI = {') &&
+  !fs.existsSync(path.join(appDir, 'app.js')) &&
+  appParcalari.every((ad, i) => i === 0 || index.indexOf(`<script src="${ad}.js"></script>`) > index.indexOf(`<script src="${appParcalari[i - 1]}.js"></script>`)) &&
+  appParcalari.every(ad => sw.includes(`'./${ad}.js'`) && app.includes(`'./${ad}.js'`)));
 
 const failed = checks.filter(check => !check.ok);
 for (const check of checks) console.log(`${check.ok ? 'PASS' : 'FAIL'}  ${check.name}`);
