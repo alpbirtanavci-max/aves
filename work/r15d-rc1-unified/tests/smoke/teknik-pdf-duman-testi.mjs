@@ -122,7 +122,10 @@ try {
     const yuklenen = store.get(T[0].object_path);
     if (yuklenen) assert.deepEqual(Buffer.from(yuklenen), pdfMetinli); // Playwright WebKit istek gövdesini vermeyebilir (null)
     assert.ok(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.pdf$/.test(T[0].object_path), 'yol <denetim>/<uuid>.pdf olmalı');
-    await p.waitForSelector('.fr65-pdf-candidate', { timeout: 15000 });
+    await p.waitForSelector('.fr65-pdf-candidate', { timeout: 15000 }).catch(async hata => {
+      const ek = await p.evaluate(async id => { const r = await DB.get('teknik_pdf', id); return r && r.extracted_fields && `${r.extracted_fields.status}: ${r.extracted_fields.message}`; }, idOf());
+      throw new Error(`aday yok (${ek}) | ${hata.message}`);
+    });
     assert.ok(await p.locator('.fr65-pdf-candidate').count() >= 2, 'hız / yük adayları bulunmalı');
     assert.match(await p.locator('#fr65TechnicalPdfCard').innerText(), /otomatik aktarılmaz/);
   });
