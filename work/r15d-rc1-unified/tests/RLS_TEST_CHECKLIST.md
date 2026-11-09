@@ -125,3 +125,19 @@ Otomatik senaryo: `tests/database/87_cihaz_senkron_durumu.sql` (CI rls-test job'
 - Hangi Supabase branch'inde koşuldu, hangi migration'lar uygulanmıştı.
 - Her senaryo satırı için ✅ / ❌ ve ❌ olanların açıklaması.
 - `aves_oturum_emaili()` claim kaynağının doğrulandığına dair not.
+
+## 4c. Migration 88 — `denetim_teknik_pdf` + `denetim-teknik-dosyalari` kovası (teknik dosya PDF'i)
+
+Otomatik senaryo: `tests/database/88_teknik_pdf.sql` (CI `rls-test`; `storage.objects` için yerel bootstrap'ta sahte `storage.buckets/objects` var).
+
+| # | Persona | Eylem | Beklenen |
+|---|---------|-------|----------|
+| 4c.1 | A | kendi açık denetimine PDF satırı ekler (`uploaded_by` başkası) | kendi e-postasıyla eklenir; sahte `uploaded_by` reddedilir |
+| 4c.2 | B / C | PDF satırını okur | B (yönetim) ve C (atanmış) görür |
+| 4c.3 | D | ilgisiz denetime ekler / günceller / siler; okur | hepsi reddedilir, satır görünmez |
+| 4c.4 | A | tamamlanmış denetime PDF ekler / günceller / siler | reddedilir (kilitli) |
+| 4c.5 | anon | okur | yetki yok |
+| 4c.6 | A | `storage.objects`: uuid olmayan ad, iç içe yol, başka kova, tamamlanmış denetim, ilgisiz kullanıcı | hepsi reddedilir |
+| 4c.7 | A/B/C/D/pasif | nesne okuma ve silme | A, B, C görür; C siler; D ve pasif göremez/değiştiremez |
+| 4c.8 | — | kova ayarları | özel, 20 MB, yalnız `application/pdf` |
+

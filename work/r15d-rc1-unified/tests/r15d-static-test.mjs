@@ -10,7 +10,7 @@ const dataDir = path.join(root, 'data');
 const databaseDir = path.join(root, 'database');
 
 // app.js ve UI kapanışı bölündü: testler, yükleme sırasıyla birleştirilmiş uygulama kaynağını (eski tek dosya gibi) tarar.
-const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'ui-durum', 'ui-foto', 'ui-yonetim', 'ui-kayit', 'ui-liste', 'ui-yeni', 'ui-fr65', 'ui-denetim', 'ui-taslak', 'ui-form', 'ui-madde', 'ui-kapanis', 'ui-son', 'baslat'];
+const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'teknik-pdf', 'ui-durum', 'ui-foto', 'ui-yonetim', 'ui-kayit', 'ui-liste', 'ui-yeni', 'ui-fr65', 'ui-denetim', 'ui-taslak', 'ui-form', 'ui-madde', 'ui-kapanis', 'ui-son', 'baslat'];
 const app = appParcalari.map(ad => fs.readFileSync(path.join(appDir, ad + '.js'), 'utf8')).join(String.fromCharCode(10));
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
 const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
@@ -120,10 +120,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.20.0 sürümü', index.includes('R15D-RC3.20.0</b>'));
-test('app R15D rc3.20.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.20.0'"));
-test('service worker rc3.20.0 cache', sw.includes("aves-saha-r15d-rc3200'"));
-test('uygulama manifesti rc3.20.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.20.0"'));
+test('index R15D rc3.21.0 sürümü', index.includes('R15D-RC3.21.0</b>'));
+test('app R15D rc3.21.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.0'"));
+test('service worker rc3.21.0 cache', sw.includes("aves-saha-r15d-rc3210'"));
+test('uygulama manifesti rc3.21.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.0"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -366,11 +366,11 @@ test('senkron merkezi: syncCenter + sync_warning kilidi kırılır + export',
 test('manual() gerçek outbox + bekleyen fotoğraf durumuna bakar, Senkron Merkezi açar',
   app.includes('const outboxVar = (await DB.outboxCount()) > 0;') &&
   app.includes('const fotoVar = !warning && !outboxVar && (await bekleyenFotoOzeti()).size > 0;') &&
-  app.includes('if (warning || outboxVar || fotoVar) { await syncCenter(); return; }'));
+  app.includes('if (warning || outboxVar || fotoVar || pdfVar) { await syncCenter(); return; }'));
 test('Senkron Merkezi bekleyen fotoğrafları denetime göre özetler ve "Şimdi senkronize et" onları da gönderir',
   app.includes('async function bekleyenFotoOzeti()') &&
   app.includes("f.sync_status !== 'pending' || !f.blob") &&
-  app.includes('const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys()]);') &&
+  app.includes('const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys(), ...pdfByDenetim.keys()]);') &&
   app.includes('if (foto) parts.push(`${foto} fotoğraf`);') &&
   app.includes('UI.bekleyenFotograflariYukle()') &&
   app.includes('showLogin, afterLogin, showList, bekleyenFotograflariYukle,'));
@@ -588,7 +588,7 @@ test('yerel yazımdan sonra denetim sayacı anında güncelleniyor', app.include
 test('son açık madde cihazda hatırlanıyor', app.includes('async function rememberPosition') && app.includes('last_position_'));
 test('denetim yeniden açıldığında son konum yükleniyor', app.includes('const savedPosition = await DB.kvGet'));
 
-test('IndexedDB v6 geçmiş ve fotoğraf depoları', app.includes('const DB_VERSION = 6') && app.includes("createObjectStore('gecmis'") && app.includes("createObjectStore('fotograflar'"));
+test('IndexedDB v7 geçmiş, fotoğraf ve teknik PDF depoları', app.includes('const DB_VERSION = 7') && app.includes("createObjectStore('gecmis'") && app.includes("createObjectStore('fotograflar'") && app.includes("createObjectStore('teknik_pdf'"));
 test('fotoğraflar madde değil sabit saha kategorisine bağlı (Seri No ile aynı desen)', app.includes('FOTOGRAF_KATEGORILERI') &&
   ['genel_kimlik','kuyu_dibi','kuyu_boyunca','durak_kapilari','kabin_kabin_ustu','makine_sase','hidrolik_grubu','kumanda_grubu','ozel_sistemler'].every(k => app.includes(`'${k}'`)) &&
   !app.includes('KRITIK_FOTOGRAF_MADDELERI'));
@@ -763,7 +763,7 @@ test('FR.65 yerel silme atomiktir; saha ve fotoğraf satırları da temizlenir, 
   const start = app.indexOf('deleteInspectionLocal: (id) =>');
   const end = app.indexOf('clear: (store)', start);
   const remove = app.slice(start, end);
-  return remove.includes("db.transaction(['denetimler', 'saha', 'fotograflar', 'kv'], 'readwrite')") &&
+  return remove.includes("db.transaction(['denetimler', 'saha', 'fotograflar', 'teknik_pdf', 'kv'], 'readwrite')") &&
     remove.includes("removeIndexedRows('saha')") &&
     remove.includes("removeIndexedRows('fotograflar')") &&
     !remove.includes("t.objectStore('gecmis')");
@@ -2287,6 +2287,34 @@ test('Word çıktısı arayüzü: düğme, şablon çevrimdışı pakette, tekni
 test('Kuyu bölümünde kuyu dibi / kabin üstü güvenlik hacmi alanları var',
   technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kuyu_dibi_guvenlik_hacmi') &&
   technicalDocs.FR65.sections.find(s => s.key === 'kuyu').fields.some(f => f[0] === 'kabin_ustu_guvenlik_hacmi'));
+
+/* ---- Teknik dosya PDF'i (teknik-pdf.js + pdf-field-reader.mjs + migration 88) ---- */
+const config = fs.readFileSync(path.join(appDir, 'config.js'), 'utf8');
+const teknikPdfSrc = fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8');
+const pdfOkuyucuSrc = fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'), 'utf8');
+const migration88 = fs.readFileSync(path.join(root, 'database', '88_r15d_rc3192_teknik_dosya_pdf.sql'), 'utf8');
+test('teknik PDF: dış AI/OCR çağrısı yok, çıkarım yalnız yerel; aday saha alanlarına otomatik yazılmaz',
+  !/openai|anthropic|gemini|tesseract|fetch\(['"`]https?:/i.test(teknikPdfSrc + pdfOkuyucuSrc) &&
+  pdfOkuyucuSrc.includes('pdfjs-local-rules-v1') && !teknikPdfSrc.includes('saveFr65') &&
+  app.includes('Aday değer kopyalandı; saha ölçümüne otomatik aktarılmadı'));
+test('teknik PDF okuyucu temizliği (destroy) söz vermese de çıkarımı bozmaz',
+  pdfOkuyucuSrc.includes('async function kapat(') && pdfOkuyucuSrc.includes('await nesne.destroy?.()') &&
+  !pdfOkuyucuSrc.includes('.destroy().catch'));
+test('PDF.js çevrimdışı çekirdek pakette değil; yalnız teknik PDF kullanılınca ayrı önbelleğe alınır',
+  !config.includes('vendor/pdfjs') && !sw.includes('vendor/pdfjs') && !config.includes('pdf-field-reader') &&
+  teknikPdfSrc.includes("caches.open('aves-saha-pdfjs-") && sw.includes("startsWith('aves-saha-pdfjs-')") &&
+  config.includes("'./teknik-pdf.js'") && sw.includes("'./teknik-pdf.js'"));
+test('migration 88: özel kova, RLS, silme yalnız açık denetimde, nesne yolu <denetim>/<uuid>.pdf, 20 MB, yalnız PDF',
+  migration88.includes('enable row level security') && migration88.includes("public = false") &&
+  migration88.includes('file_size_limit') && migration88.includes("array['application/pdf']") &&
+  migration88.includes("denetim_durumu in ('Devam Ediyor','Gözden Geçirme')") &&
+  migration88.includes("revoke all on public.denetim_teknik_pdf from anon, authenticated") &&
+  !/to anon/.test(migration88));
+test('FR.65 silme: bağlı teknik PDF varken kayıt silinmez (cihaz + sunucu denetimi)',
+  app.includes("API.select('denetim_teknik_pdf'") && app.includes('Bu denetime bağlı teknik dosya PDF’si var.') &&
+  app.includes("DB.get('teknik_pdf'"));
+test('eşitleme göstergesi bekleyen/çakışan PDF’i sayar ve PDF ekranı göstergeyi yeniler',
+  app.includes('bekleyenTeknikPdfOzeti') && app.includes('Sync.updatePill().catch(() => {}); // bekleyen PDF'));
 
 /* ---- Cihaz senkron durumu (cihaz-durumu.js + migration 87) ---- */
 const cdCtx = {};

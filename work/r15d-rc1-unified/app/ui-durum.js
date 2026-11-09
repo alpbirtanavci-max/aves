@@ -10,6 +10,7 @@ let currentDenetimId = null;
 let fotografSayilari = new Map();
 let fotografBekleyenSayisi = 0;
 let activeFr65VersionListener = null;
+let activeFr65PdfObjectUrls = [];
 const fr65WriterIds = new Map();
 
 function fr65KimlikKilitAl(lockName) {

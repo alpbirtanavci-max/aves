@@ -32,6 +32,10 @@ jobs:
         env:
           PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
         run: node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs
+      - name: Teknik dosya PDF duman testi (sahte ozel depo)
+        env:
+          PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
+        run: node work/r15d-rc1-unified/tests/smoke/teknik-pdf-duman-testi.mjs
 
   duman-testi-safari:
     name: Duman testi (Safari / WebKit motoru)
@@ -49,6 +53,10 @@ jobs:
         env:
           PLAYWRIGHT_BROWSER: webkit
         run: node work/r15d-rc1-unified/tests/smoke/fr65-duman-testi.mjs
+      - name: Teknik dosya PDF duman testi (WebKit)
+        env:
+          PLAYWRIGHT_BROWSER: webkit
+        run: node work/r15d-rc1-unified/tests/smoke/teknik-pdf-duman-testi.mjs
 
   rls-test:
     name: RLS dort-persona senaryo testi
@@ -99,3 +107,7 @@ jobs:
         run: $PSQL -f work/r15d-rc1-unified/database/87_r15d_rc3190_cihaz_senkron_durumu.sql
       - name: Cihaz senkron durumu senaryoları (dört-persona + pasif + anon)
         run: $PSQL -f work/r15d-rc1-unified/tests/database/87_cihaz_senkron_durumu.sql
+      - name: Migration 88 uygula (teknik dosya PDF - tablo + storage.objects)
+        run: $PSQL -f work/r15d-rc1-unified/database/88_r15d_rc3192_teknik_dosya_pdf.sql
+      - name: Teknik PDF senaryoları (dört-persona + pasif + anon + storage)
+        run: $PSQL -f work/r15d-rc1-unified/tests/database/88_teknik_pdf.sql

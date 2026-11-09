@@ -3,7 +3,9 @@
 import { readFileSync } from 'node:fs';
 
 export function createFakeSupabase({ profile, now = () => new Date().toISOString() }) {
-  const tables = { denetimler: [], saha_kontrol: [], denetim_fotograflari: [], madde_kutuphanesi: [], denetim_degisim_gecmisi: [], kullanici_profilleri: [profile], kutuphane_bolum_surumleri: [], cihaz_senkron_durumu: [] };
+  const tables = { denetimler: [], saha_kontrol: [], denetim_fotograflari: [], madde_kutuphanesi: [], denetim_degisim_gecmisi: [], kullanici_profilleri: [profile], kutuphane_bolum_surumleri: [], cihaz_senkron_durumu: [], denetim_teknik_pdf: [] };
+  // Özel depolama: yol -> bayt (yalnız teknik PDF kovası gerçekçi; diğer kovalar eskisi gibi 200 döner).
+  const storage = new Map();
   // Madde kütüphanesi: repodaki gerçek tohum veri (uygulama >=900 madde ister).
   try {
     const seed = JSON.parse(readFileSync(new URL('../../data/madde_kutuphanesi.json', import.meta.url), 'utf8'));
@@ -50,6 +52,23 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     if (url.pathname === '/auth/v1/token') {
       return route.fulfill(json(200, { access_token: 'fake-access', refresh_token: 'fake-refresh', user: { email: profile.email } }));
     }
+    const TEKNIK = '/storage/v1/object/denetim-teknik-dosyalari/';
+    const TEKNIK_OKU = '/storage/v1/object/authenticated/denetim-teknik-dosyalari/';
+    if (method === 'POST' && url.pathname.startsWith(TEKNIK)) {
+      storage.set(decodeURIComponent(url.pathname.slice(TEKNIK.length)), req.postDataBuffer());
+      return route.fulfill(json(200, { Key: 'denetim-teknik-dosyalari' }));
+    }
+    if (method === 'GET' && url.pathname.startsWith(TEKNIK_OKU)) {
+      const bytes = storage.get(decodeURIComponent(url.pathname.slice(TEKNIK_OKU.length)));
+      if (!bytes) return route.fulfill(json(404, { message: 'nesne yok' }));
+      return route.fulfill({ status: 200, contentType: 'application/pdf', headers: { 'access-control-allow-origin': '*' }, body: bytes });
+    }
+    if (method === 'DELETE' && url.pathname === '/storage/v1/object/denetim-teknik-dosyalari') {
+      let silinecek = [];
+      try { silinecek = JSON.parse(req.postData() || '{}').prefixes || []; } catch { /* boş */ }
+      silinecek.forEach(p => storage.delete(p));
+      return route.fulfill(json(200, silinecek.map(name => ({ name }))));
+    }
     if (url.pathname.startsWith('/storage/')) return route.fulfill(json(200, { Key: 'x' }));
     const m = /^\/rest\/v1\/([a-z_]+)$/.exec(url.pathname);
     if (!m || !tables[m[1]]) { entry.unhandled = true; return route.fulfill(json(404, { message: 'sahte sunucuda yok: ' + url.pathname })); }
@@ -77,6 +96,13 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
           if (k >= 0) table[k] = { ...table[k], ...yeni }; else table.push(yeni);
           continue;
         }
+        if (m[1] === 'denetim_teknik_pdf') {
+          // Birincil anahtar denetim_id; upsert tek satırı değiştirir, sunucu saatini yazar.
+          const k = table.findIndex(r => r.denetim_id === row.denetim_id);
+          const yeni = { ...row, updated_at: now() };
+          if (k >= 0) table[k] = { ...table[k], ...yeni }; else table.push(yeni);
+          continue;
+        }
         const i = table.findIndex(r => (r.id ?? null) !== null && r.id === row.id);
         if (i >= 0) { if (!prefer.includes('ignore-duplicates')) table[i] = { ...table[i], ...row, updated_at: stamp() }; }
         else table.push({ ...row, updated_at: m[1] === 'denetimler' ? stamp() : row.updated_at });
@@ -95,5 +121,5 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     }
     return route.fulfill(json(405, {}));
   }
-  return { tables, log, state, handle };
+  return { tables, log, state, storage, handle };
 }

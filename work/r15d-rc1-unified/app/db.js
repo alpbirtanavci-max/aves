@@ -55,6 +55,7 @@ const DB = (() => {
             cursor.continue();
           };
         }
+        if (!d.objectStoreNames.contains('teknik_pdf')) d.createObjectStore('teknik_pdf', { keyPath: 'denetim_id' });
       };
       req.onsuccess = () => { db = req.result; res(); };
       req.onerror = () => rej(req.error);
@@ -132,8 +133,9 @@ const DB = (() => {
     allByIndex: (store, idx, val) => p(tx(store,'readonly').index(idx).getAll(val)),
     del: (store, key) => p(tx(store,'readwrite').delete(key)),
     deleteInspectionLocal: (id) => new Promise((resolve, reject) => {
-      const t = db.transaction(['denetimler', 'saha', 'fotograflar', 'kv'], 'readwrite');
+      const t = db.transaction(['denetimler', 'saha', 'fotograflar', 'teknik_pdf', 'kv'], 'readwrite');
       t.objectStore('denetimler').delete(id);
+      t.objectStore('teknik_pdf').delete(id);
       const removeIndexedRows = storeName => {
         const store = t.objectStore(storeName);
         const request = store.index('byDenetim').openKeyCursor(IDBKeyRange.only(id));

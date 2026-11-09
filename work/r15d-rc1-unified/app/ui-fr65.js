@@ -11,6 +11,8 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
     window.removeEventListener('aves:fr65-server-version', activeFr65VersionListener);
     activeFr65VersionListener = null;
   }
+  activeFr65PdfObjectUrls.forEach(url => URL.revokeObjectURL(url));
+  activeFr65PdfObjectUrls = [];
   const d = initialDenetim || await DB.get('denetimler', currentDenetimId);
   if (!d || d.id !== currentDenetimId || !fr65SahaKaydiMi(d)) {
     activeFr65Flush = null;
@@ -18,6 +20,9 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
     await showList();
     return;
   }
+  let teknikPdfRecord = null;
+  try { teknikPdfRecord = await AVES_TEKNIK_PDF.load(d.id); }
+  catch (error) { console.warn('FR.65 teknik PDF bilgisi okunamadı; saha verisi korunuyor', error); }
   stopFr65ScrollTracking();
   const editPermission = canEditDenetim(d) && !inspectionReadOnly;
   const normalized = denetimFormKaydi(d);
@@ -486,6 +491,80 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
   }).join('');
   const safetyHtml = SAHA_KANIT_PLANI.guvenlik.map(item => `<li>${esc(item)}</li>`).join('');
   const fr65Tamamlandi = d.denetim_durumu === 'Çalışma Tamamlandı';
+  let teknikPdfObjectUrl = null;
+  let teknikPdfRemoteObjectUrl = null;
+  let teknikPdfCandidates = [];
+  const teknikPdfHtml = record => {
+    if (teknikPdfObjectUrl) URL.revokeObjectURL(teknikPdfObjectUrl);
+    if (teknikPdfRemoteObjectUrl) URL.revokeObjectURL(teknikPdfRemoteObjectUrl);
+    teknikPdfObjectUrl = record?.blob instanceof Blob ? URL.createObjectURL(record.blob) : null;
+    teknikPdfRemoteObjectUrl = record?.conflict_remote?.blob instanceof Blob
+      ? URL.createObjectURL(record.conflict_remote.blob) : null;
+    activeFr65PdfObjectUrls = [teknikPdfObjectUrl, teknikPdfRemoteObjectUrl].filter(Boolean);
+    const extraction = record?.extracted_fields || {};
+    const remoteVersion = record?.conflict_remote || null;
+    const metrics = Array.isArray(extraction.values) ? extraction.values : [];
+    const equipment = Array.isArray(extraction.equipment) ? extraction.equipment : [];
+    teknikPdfCandidates = [...metrics, ...equipment];
+    const pendingDelete = record?.sync_status === 'delete_pending';
+    const conflict = record?.sync_status === 'conflict';
+    const pending = ['pending', 'metadata_pending'].includes(record?.sync_status);
+    const state = !record ? 'Bu denetime henüz PDF eklenmedi.'
+      : pendingDelete ? 'PDF silme isteği bekliyor; cihazdaki dosya aktarım tamamlanana kadar korunuyor.'
+      : conflict ? 'PDF başka bir cihazda değişmiş olabilir. İki kopyayı da koruyor; Senkron Merkezi’nde inceleyin.'
+      : pending ? (record.uploaded_to_storage ? 'PDF yüklendi; kayıt bilgisi sunucuya aktarılmayı bekliyor.' : 'PDF cihazda güvenle saklandı; sunucu aktarımı bekliyor.')
+      : !record.blob ? 'PDF sunucuya kayıtlı; bu cihaza henüz indirilmedi.'
+      : 'PDF ve çıkarım bilgileri bu denetimle eşitlendi.';
+    const statusClass = conflict ? 'conflict' : (pending || pendingDelete ? 'pending' : '');
+    const extractionMessage = extraction.status === 'no_text_layer'
+      ? 'Bu PDF’de seçilebilir metin bulunamadı. Muhtemelen taranmış görüntüdür; OCR yapılmıyor.'
+      : extraction.status === 'reader_error' || extraction.status === 'not_extracted'
+        ? `Metin okunamadı: ${extraction.message || 'PDF biçimi desteklenmedi.'}`
+        : extraction.status === 'no_matches'
+          ? 'PDF metni okundu; seçilen hız, kapasite, durak, model veya ekipman bilgileri bulunamadı.'
+          : extraction.status === 'candidates_found'
+            ? `${extraction.text_page_count || 0}/${extraction.page_count || 0} metin içeren sayfada aday bilgi bulundu.`
+            : '';
+    const candidateHtml = teknikPdfCandidates.length
+      ? `<details class="fr65-pdf-extraction" open><summary>Çıkarılan adaylar · ${teknikPdfCandidates.length}</summary>
+          <small>Bunlar teknik dosyada bulunan metin adaylarıdır; doğruluğu sayfa ve alıntıdan kontrol edin. Sahada görülen/ölçülen alanlara otomatik aktarılmaz.</small>
+          ${teknikPdfCandidates.map((candidate, index) => `<article class="fr65-pdf-candidate">
+            <b>${esc(candidate.label || candidate.key || 'Bilgi')}: ${esc(candidate.value || '')}</b>
+            <small>Sayfa ${esc(candidate.page || '—')} · ${esc(candidate.evidence || '')}</small>
+            <button type="button" class="btn btn-ghost" data-fr65-pdf-copy="${index}">Değeri kopyala</button>
+          </article>`).join('')}
+        </details>`
+      : record && extractionMessage
+        ? `<div class="fr65-pdf-empty">${esc(extractionMessage)}</div>` : '';
+    const remoteVersionHtml = remoteVersion ? `<div class="fr65-pdf-file fr65-pdf-remote">
+      <b>Sunucu kopyası · karşılaştırma için indirildi</b>
+      <span>${esc(remoteVersion.file_name || 'Teknik dosya.pdf')} · ${Math.ceil(Number(remoteVersion.file_size_bytes || 0) / 1024)} KB · SHA-256 ${esc(String(remoteVersion.sha256 || '').slice(0, 16))}…</span>
+      <div class="fr65-pdf-actions">${teknikPdfRemoteObjectUrl ? `<a class="btn btn-ghost" href="${teknikPdfRemoteObjectUrl}" target="_blank" rel="noopener">Sunucu PDF’sini aç</a><a class="btn btn-ghost" href="${teknikPdfRemoteObjectUrl}" download="${esc(remoteVersion.file_name || 'sunucu-teknik-dosya.pdf')}">Sunucu PDF’sini indir</a>` : ''}</div>
+      <small>Karşılaştırmadan sonra yalnızca aşağıdaki seçiminizle bu kopyalardan biri etkin kalır.</small>
+    </div>` : '';
+    return `<section class="fr65-pdf-card" id="fr65TechnicalPdfCard" aria-labelledby="fr65TechnicalPdfTitle">
+      <div class="fr65-pdf-head"><h3 id="fr65TechnicalPdfTitle">Teknik dosya PDF</h3>
+        <small>PDF bu denetime bağlı saklanır (en fazla 20 MB / 250 sayfa). Metin çıkarımı cihazda, sabit kurallarla yapılır; dış AI ve OCR kullanılmaz. Taranmış PDF’den metin çıkarılamayabilir.</small>
+      </div>
+      <div class="fr65-pdf-state ${statusClass}" role="status">${esc(state)}</div>
+      ${record ? `<div class="fr65-pdf-file"><b>${esc(record.file_name || 'Teknik dosya.pdf')}</b>
+        <span>${Math.ceil(Number(record.file_size_bytes || 0) / 1024)} KB · ${record.page_count ? `${esc(record.page_count)} sayfa` : 'sayfa sayısı okunamadı'} · SHA-256 ${esc(String(record.sha256 || '').slice(0, 16))}…</span>
+        ${record.sync_error ? `<span class="fr65-pdf-note warn">${esc(record.sync_error)}</span>` : ''}</div>` : ''}
+      ${remoteVersionHtml}
+      <div class="fr65-pdf-actions">
+        ${canEdit && !pendingDelete && !conflict ? `<button type="button" class="btn btn-primary" id="fr65PdfChoose">${record ? 'PDF’yi değiştir' : 'Teknik dosya PDF ekle'}</button><input type="file" id="fr65PdfFile" accept="application/pdf,.pdf" hidden>` : ''}
+        ${record && teknikPdfObjectUrl ? `<a class="btn btn-ghost" href="${teknikPdfObjectUrl}" target="_blank" rel="noopener">PDF’yi aç</a><a class="btn btn-ghost" href="${teknikPdfObjectUrl}" download="${esc(record.file_name || 'teknik-dosya.pdf')}">PDF’yi indir</a>` : ''}
+        ${record && !teknikPdfObjectUrl && !pendingDelete && !conflict && !pending ? '<button type="button" class="btn btn-ghost" id="fr65PdfDownload">Bu cihaza indir</button>' : ''}
+        ${canEdit && record && !pendingDelete && !conflict ? '<button type="button" class="btn btn-ghost" id="fr65PdfRemove">PDF’yi denetimden kaldır</button>' : ''}
+        ${conflict && !remoteVersion ? '<button type="button" class="btn btn-ghost" id="fr65PdfCompare">Sunucu PDF’sini indir ve karşılaştır</button>' : ''}
+        ${conflict && remoteVersion && canEdit ? '<button type="button" class="btn btn-ghost" id="fr65PdfUseLocal">Bu cihazdaki PDF’yi kullan</button><button type="button" class="btn btn-ghost" id="fr65PdfUseRemote">Sunucu PDF’sini kullan</button>' : ''}
+        ${conflict ? '<button type="button" class="btn btn-ghost" id="fr65PdfSyncCenter">Senkron Merkezi’ni aç</button>' : ''}
+        <button type="button" class="btn btn-ghost" id="fr65PdfOffline">Çevrimdışı PDF desteğini hazırla</button>
+        ${record && ['reader_error', 'not_extracted'].includes(extraction.status) && record.blob ? '<button type="button" class="btn btn-ghost" id="fr65PdfRetry">Metni yeniden oku</button>' : ''}
+      </div>
+      ${candidateHtml}
+    </section>`;
+  };
   app.innerHTML = `<div class="screen fr65-capture">
       <div class="local-sync-state fr65-sync-strip ${protectedCount ? 'error' : (outbox.length ? 'pending' : 'ok')}" id="localSyncState">${esc(localState)}</div>
       <div class="inspection-toolbar">
@@ -518,6 +597,7 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
         <div class="dmeta"><b>Durum:</b> ${esc(d.denetim_durumu || 'Devam Ediyor')}</div>
         ${canEdit ? `<aside class="saha-guvenlik" role="note"><b>⚠ Denetim başladıktan sonra saha güvenliği</b><ul>${safetyHtml}</ul><small>Bu hatırlatma, şirketin onaylı risk analizi ve güvenli çalışma prosedürünün yerini almaz.</small></aside>` : ''}
       </div>
+      ${teknikPdfHtml(teknikPdfRecord)}
       <div class="tech-source"><b>FR.65 referanslı saha veri toplama</b><span id="fr65CaptureCount">${count.recorded}/${count.total} saha alanında veri var</span>${canEdit ? '<button type="button" class="btn btn-ghost fr65-next-empty" id="fr65NextEmpty">Sıradaki boş alana git ↓</button>' : ''}<small>Yalnız sahada görülen/ölçülen bilgiler ve bileşen kimlikleri kaydedilir; uygunluk veya belgelendirme kararı üretilmez. Önerilen akış kuyu bölümünden başlar; sabit bölüm düğmeleriyle ilerleyin.</small></div>
       ${quickNavHtml}
       ${sectionsHtml}
@@ -527,6 +607,160 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
   updateSummary();
   updateCaptureConditions();
   updateSummary();
+  const refreshTeknikPdfCard = record => {
+    teknikPdfRecord = record || null;
+    Sync.updatePill().catch(() => {}); // bekleyen PDF sayısı eşitleme göstergesine yansısın
+    const oldCard = document.getElementById('fr65TechnicalPdfCard');
+    if (!oldCard) return;
+    const holder = document.createElement('div');
+    holder.innerHTML = teknikPdfHtml(teknikPdfRecord);
+    const newCard = holder.firstElementChild;
+    if (!newCard) return;
+    oldCard.replaceWith(newCard);
+    bindTeknikPdfCard();
+  };
+  const bindTeknikPdfCard = () => {
+    const card = document.getElementById('fr65TechnicalPdfCard');
+    if (!card) return;
+    const choose = card.querySelector('#fr65PdfChoose');
+    const fileInput = card.querySelector('#fr65PdfFile');
+    if (choose && fileInput) choose.onclick = () => fileInput.click();
+    if (fileInput) fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      if (choose) { choose.disabled = true; choose.textContent = 'PDF okunuyor…'; }
+      try {
+        const record = await AVES_TEKNIK_PDF.attach(d.id, file, teknikPdfRecord);
+        refreshTeknikPdfCard(record);
+        toast(record?.sync_status === 'synced'
+          ? 'PDF denetime eklendi, metin adayları cihazda çıkarıldı ve sunucuya eşitlendi'
+          : 'PDF ve metin adayları cihazda korundu; sunucu eşitlemesi bekliyor');
+      } catch (error) {
+        console.warn('Teknik dosya PDF eklenemedi; FR.65 verileri korundu', error);
+        toast(error.message || 'PDF eklenemedi; mevcut saha verileri korundu');
+        if (choose) { choose.disabled = false; choose.textContent = teknikPdfRecord ? 'PDF’yi değiştir' : 'Teknik dosya PDF ekle'; }
+      } finally { fileInput.value = ''; }
+    };
+    const download = card.querySelector('#fr65PdfDownload');
+    if (download) download.onclick = async () => {
+      download.disabled = true;
+      try {
+        const record = await AVES_TEKNIK_PDF.download(d.id);
+        refreshTeknikPdfCard(record);
+        toast('PDF bu cihaza indirildi; internet olmadan da açılabilir');
+      } catch (error) {
+        console.warn('Teknik dosya PDF indirilemedi', error);
+        toast(error.message || 'PDF indirilemedi');
+      } finally {
+        const current = document.getElementById('fr65PdfDownload');
+        if (current) current.disabled = false;
+      }
+    };
+    const remove = card.querySelector('#fr65PdfRemove');
+    if (remove) remove.onclick = async () => {
+      if (!confirm('Bu teknik dosya PDF’si denetimden kaldırılsın mı? Senkron tamamlanana kadar cihazdaki kopya korunur.')) return;
+      remove.disabled = true;
+      try {
+        const record = await AVES_TEKNIK_PDF.remove(d.id);
+        refreshTeknikPdfCard(record);
+        toast(record ? 'PDF silme isteği cihazda korundu; bağlantı gelince tamamlanacak' : 'Teknik dosya PDF’si denetimden kaldırıldı');
+      } catch (error) {
+        console.warn('Teknik dosya PDF kaldırılamadı; cihazdaki kopya korundu', error);
+        toast(error.message || 'PDF kaldırılamadı; cihazdaki kopya korundu');
+        remove.disabled = false;
+      }
+    };
+    const retry = card.querySelector('#fr65PdfRetry');
+    if (retry) retry.onclick = async () => {
+      retry.disabled = true;
+      try {
+        const record = await AVES_TEKNIK_PDF.retryExtraction(d.id);
+        refreshTeknikPdfCard(record);
+        toast(record?.extracted_fields?.status === 'candidates_found'
+          ? 'Metin yeniden okundu; bulunan adayları sayfa ve kanıtla kontrol edin'
+          : 'PDF yeniden okundu; otomatik çıkarım için metin katmanı bulunamadı');
+      } catch (error) {
+        console.warn('Teknik dosya PDF tekrar okunamadı', error);
+        toast(error.message || 'PDF yeniden okunamadı');
+        retry.disabled = false;
+      }
+    };
+    const offline = card.querySelector('#fr65PdfOffline');
+    if (offline) offline.onclick = async () => {
+      offline.disabled = true;
+      try {
+        await AVES_TEKNIK_PDF.prepareOfflineReader();
+        toast('Çevrimdışı PDF okuyucu dosyaları bu cihazda hazır');
+      } catch (error) {
+        console.warn('Çevrimdışı PDF okuyucu hazırlanamadı', error);
+        toast(error.message || 'Çevrimdışı PDF okuyucu hazırlanamadı');
+      } finally {
+        const current = document.getElementById('fr65PdfOffline');
+        if (current) current.disabled = false;
+      }
+    };
+    const syncCenter = card.querySelector('#fr65PdfSyncCenter');
+    if (syncCenter) syncCenter.onclick = () => Sync.manual();
+    const compare = card.querySelector('#fr65PdfCompare');
+    if (compare) compare.onclick = async () => {
+      compare.disabled = true;
+      compare.textContent = 'Sunucu PDF’si indiriliyor…';
+      try {
+        const record = await AVES_TEKNIK_PDF.compareConflictVersion(d.id);
+        refreshTeknikPdfCard(record);
+        toast('İki PDF de cihazda korundu; önce kopyaları açıp karşılaştırın');
+      } catch (error) {
+        console.warn('Sunucu PDF kopyası karşılaştırma için indirilemedi', error);
+        toast(error.message || 'Sunucu PDF’si indirilemedi; iki kopya da korundu');
+        compare.disabled = false;
+        compare.textContent = 'Sunucu PDF’sini indir ve karşılaştır';
+      }
+    };
+    const useLocal = card.querySelector('#fr65PdfUseLocal');
+    if (useLocal) useLocal.onclick = async () => {
+      if (!confirm('Bu cihazdaki PDF sunucuda etkin kopya olacak ve sunucudaki eski PDF değiştirilecek. Önce iki PDF’yi karşılaştırdınız mı?')) return;
+      useLocal.disabled = true;
+      try {
+        const record = await AVES_TEKNIK_PDF.keepDeviceVersion(d.id);
+        refreshTeknikPdfCard(record);
+        toast(record?.sync_status === 'synced'
+          ? 'Bu cihazdaki PDF seçildi ve sunucuyla eşitlendi'
+          : 'Bu cihazdaki PDF seçildi; sunucu eşitlemesi bekliyor ve yerel kopya korunuyor');
+      } catch (error) {
+        console.warn('Cihazdaki PDF seçilemedi; iki kopya korundu', error);
+        toast(error.message || 'PDF seçimi tamamlanamadı; iki kopya da korundu');
+        useLocal.disabled = false;
+      }
+    };
+    const useRemote = card.querySelector('#fr65PdfUseRemote');
+    if (useRemote) useRemote.onclick = async () => {
+      if (!confirm('Sunucudaki PDF bu cihazda etkin kopya olacak. Bu cihazdaki PDF, seçiminizden sonra kaldırılacak. Önce iki PDF’yi karşılaştırdınız mı?')) return;
+      useRemote.disabled = true;
+      try {
+        const record = await AVES_TEKNIK_PDF.useServerVersion(d.id);
+        refreshTeknikPdfCard(record);
+        toast('Sunucu PDF’si seçildi; bu cihazda doğrulanmış kopyası saklandı');
+      } catch (error) {
+        console.warn('Sunucu PDF’si seçilemedi; iki kopya korundu', error);
+        toast(error.message || 'PDF seçimi tamamlanamadı; iki kopya da korundu');
+        useRemote.disabled = false;
+      }
+    };
+    card.querySelectorAll('[data-fr65-pdf-copy]').forEach(button => {
+      button.onclick = async () => {
+        const candidate = teknikPdfCandidates[Number(button.dataset.fr65PdfCopy)];
+        if (!candidate?.value) return;
+        try {
+          await navigator.clipboard.writeText(candidate.value);
+          toast('Aday değer kopyalandı; saha ölçümüne otomatik aktarılmadı');
+        } catch (error) {
+          console.warn('Teknik PDF adayı panoya kopyalanamadı', error);
+          toast('Kopyalama engellendi; değeri metinden elle seçebilirsiniz');
+        }
+      };
+    });
+  };
+  bindTeknikPdfCard();
   activeFr65PositionSaver = () => {
     if (currentView !== 'inspection' || currentDenetimId !== d.id) return;
     try { localStorage.setItem(captureScrollStorageKey, String(Math.max(0, Math.round(window.scrollY || window.pageYOffset || 0)))); }

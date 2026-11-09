@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FR.65 Saha Veri Özeti · Örnek Asansör A.Ş. · S1</title>
+<style>
+@font-face{font-family:'Montserrat';font-weight:400 700;src:url('../../app/fonts/Montserrat-latin.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-weight:400 700;src:url('../../app/fonts/Inter-latin.woff2') format('woff2');}
+:root{--navy:#20235B;--navy-dk:#161840;--fuchsia:#EA0048;--ink:#1A1C2E;--muted:#6E7186;--line:#E3E5EE;--soft:#F5F6FA;--ok:#12643D;--okbg:#EDF8F2;}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:#E9EAF0;font:11px/1.45 'Inter',Arial,sans-serif;color:var(--ink)}
+.page{width:210mm;min-height:297mm;margin:12px auto;background:#fff;box-shadow:0 2px 14px rgba(20,22,64,.18);padding:0 0 18mm}
+.brand{background:var(--navy);color:#fff;padding:9mm 14mm 7mm;border-bottom:3px solid var(--fuchsia);display:flex;justify-content:space-between;align-items:center}
+.brand img{height:9mm}
+.brand .doc{text-align:right;font-family:'Montserrat',sans-serif}
+.brand .doc b{display:block;font-size:15px;letter-spacing:.01em}
+.brand .doc span{font-size:9.5px;opacity:.8;letter-spacing:.08em;text-transform:uppercase}
+.wrap{padding:0 14mm}
+.title{margin:8mm 0 4mm}
+.title small{font:600 9px 'Montserrat',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--fuchsia)}
+.title h1{margin:2px 0 0;font:700 21px/1.2 'Montserrat',sans-serif;color:var(--navy)}
+.title p{margin:3px 0 0;color:var(--muted);font-size:11.5px}
+.status{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 6mm}
+.chip{border:1px solid var(--line);background:var(--soft);border-radius:99px;padding:4px 11px;font-weight:600;font-size:10px;color:var(--navy)}
+.chip.ok{background:var(--okbg);border-color:#BFE4CF;color:var(--ok)}
+.kunye{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:7mm}
+.kunye div{padding:7px 11px;border-bottom:1px solid var(--line)}
+.kunye div:nth-child(odd){border-right:1px solid var(--line)}
+.kunye div:nth-last-child(-n+2){border-bottom:0}
+.kunye span{display:block;font:600 8px 'Montserrat',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:1px}
+.kunye b{font-weight:600;font-size:11.5px}
+.progress{margin:0 0 7mm}
+.progress .bar{height:6px;border-radius:9px;background:var(--line);overflow:hidden}
+.progress .bar i{display:block;height:100%;width:85%;background:linear-gradient(90deg,var(--navy),var(--fuchsia))}
+.progress p{margin:4px 0 0;font-size:10px;color:var(--muted)}
+section{margin:0 0 6.5mm;break-inside:avoid}
+section h2{display:flex;align-items:center;gap:8px;margin:0 0 7px;padding-bottom:5px;border-bottom:2px solid var(--navy);font:700 12.5px 'Montserrat',sans-serif;color:var(--navy)}
+section h2 .no{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:var(--fuchsia);color:#fff;font-size:10px}
+section h2 em{margin-left:auto;font:600 9px 'Inter',sans-serif;font-style:normal;color:var(--muted)}
+.rows .r{display:grid;grid-template-columns:46% 1fr;gap:10px;padding:5px 2px;border-bottom:1px solid var(--line)}
+.rows .r:last-child{border-bottom:0}
+.rows .r span{color:#444A66}
+.rows .r b{font-weight:600}
+.rows .r.note b{font-weight:400;font-style:italic;color:#444A66;border-left:3px solid var(--fuchsia);padding-left:8px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:linear-gradient(180deg,#fff,var(--soft))}
+.card strong{display:block;font:700 19px/1.1 'Montserrat',sans-serif;color:var(--navy)}
+.card strong small{font:600 10px 'Inter',sans-serif;color:var(--muted);margin-left:2px}
+.card span{display:block;margin-top:3px;font-size:9.5px;color:#444A66}
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+th{background:var(--navy);color:#fff;text-align:left;font:600 8.5px 'Montserrat',sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px}
+th:first-child{border-radius:6px 0 0 0}th:last-child{border-radius:0 6px 0 0}
+td{padding:6px 9px;border-bottom:1px solid var(--line)}
+tr:nth-child(even) td{background:var(--soft)}
+td:first-child{font-weight:600;color:var(--navy)}
+.foot{margin:8mm 14mm 0;padding-top:4mm;border-top:1px solid var(--line);color:var(--muted);font-size:9px;display:flex;justify-content:space-between;gap:14px}
+.foot .muhur{font-family:ui-monospace,Consolas,monospace;color:var(--navy)}
+.disc{margin:4mm 14mm 0;padding:7px 11px;border-radius:8px;background:var(--soft);color:#444A66;font-size:9px}
+.no-print{position:fixed;right:14px;top:14px;background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 14px;font:700 12px 'Inter',sans-serif;cursor:pointer}
+@page{size:A4;margin:0}
+@media print{body{background:#fff}.page{margin:0;box-shadow:none;width:auto;min-height:auto;break-after:page}.no-print{display:none}}
+</style>
+</head>
+<body>
+<button class="no-print" onclick="window.print()">Yazdır / PDF olarak kaydet</button>
+
+<div class="page">
+  <div class="brand">
+    <img src="../../app/aves-logo-white.png" alt="AVES">
+    <div class="doc"><b>Saha Veri Özeti</b><span>ÜB.FR.65 · Modül E</span></div>
+  </div>
+  <div class="wrap">
+    <div class="title">
+      <small>Denetim kaydı</small>
+      <h1>Örnek Asansör Sanayi ve Ticaret A.Ş.</h1>
+      <p>Seri no <b>S1-2026-0417</b> · Bina Mah. 2. Sk. No:3, Kadıköy / İstanbul</p>
+    </div>
+    <div class="status">
+      <span class="chip ok">✓ Saha kaydı kapatıldı · 19.10.2026</span>
+      <span class="chip">52 / 61 alanda veri</span>
+      <span class="chip ok">✓ Cihaz ve sunucu eşit</span>
+      <span class="chip">Mühür geçerli</span>
+    </div>
+
+    <div class="kunye">
+      <div><span>Müşteri / asansör firması</span><b>Örnek Asansör Sanayi ve Ticaret A.Ş.</b></div>
+      <div><span>Firma adresi</span><b>Organize Sanayi Bölgesi 5. Cad. No:12, Gebze</b></div>
+      <div><span>Asansörün bulunduğu adres</span><b>Bina Mah. 2. Sk. No:3, Kadıköy</b></div>
+      <div><span>Asansör seri no</span><b>S1-2026-0417</b></div>
+      <div><span>Asansör kimlik no</span><b>34-KDK-00812</b></div>
+      <div><span>Dosya no</span><b>2026/E-0418</b></div>
+      <div><span>Tahrik · Makine dairesi</span><b>Elektrikli · MR</b></div>
+      <div><span>Yük · Kapasite · Hız · Durak</span><b>630 kg · 8 kişi · 1,0 m/s · 6 durak</b></div>
+      <div><span>Denetim tarihi</span><b>19.10.2026</b></div>
+      <div><span>Denetimi yapan</span><b>Ahmet Yılmaz</b></div>
+    </div>
+
+    <div class="progress">
+      <div class="bar"><i></i></div>
+      <p>61 saha alanından 52'sinde veri girilmiş · 9 alan boş bırakılmış</p>
+    </div>
+
+    <section>
+      <h2><span class="no">1</span>Kuyu ve boşluk ölçüleri <em>9 alan</em></h2>
+      <div class="cards">
+        <div class="card"><strong>2 450<small>cm</small></strong><span>Kuyu genişliği</span></div>
+        <div class="card"><strong>2 180<small>cm</small></strong><span>Kuyu derinliği</span></div>
+        <div class="card"><strong>1 150<small>cm</small></strong><span>Kuyu dibi derinliği</span></div>
+        <div class="card"><strong>3 400<small>cm</small></strong><span>Son kat yüksekliği</span></div>
+        <div class="card"><strong>1 820<small>cm</small></strong><span>Kabin ana rayları arası</span></div>
+        <div class="card"><strong>1 650<small>cm</small></strong><span>Karşı ağırlık rayları arası</span></div>
+      </div>
+      <div class="rows" style="margin-top:6px">
+        <div class="r"><span>Kuyu altında kullanılabilir alan var mı?</span><b>Yok</b></div>
+        <div class="r note"><span>Kuyu dibi notu</span><b>Merdiven ile erişim; ışıklandırma yeterli, sızıntı izi görülmedi.</b></div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="no">2</span>Kabin ve kabin / kat kapısı <em>8 alan</em></h2>
+      <div class="rows">
+        <div class="r"><span>Kabin tamponu tipi</span><b>Yağlı</b></div>
+        <div class="r"><span>Kabin tamponu stroku</span><b>150 cm</b></div>
+        <div class="r"><span>Karşı ağırlık tamponu tipi</span><b>Yağlı</b></div>
+        <div class="r"><span>Karşı ağırlık tamponu stroku</span><b>150 cm</b></div>
+        <div class="r"><span>Kabin kapısı açılma biçimi</span><b>Teleskopik</b></div>
+        <div class="r note"><span>Kabin notu</span><b>Kabin tabanında yük etiketi okunaklı; alarm butonu çalışıyor.</b></div>
+      </div>
+    </section>
+
+    <section>
+      <h2><span class="no">3</span>Bileşen seri numaraları <em>4 bileşen</em></h2>
+      <table>
+        <thead><tr><th>Bileşen</th><th>Marka / üretici</th><th>Tip</th><th>Seri no / IMEI</th></tr></thead>
+        <tbody>
+          <tr><td>Makine motoru</td><td>Montanari</td><td>MGV-630</td><td>M-882014</td></tr>
+          <tr><td>Hız regülatörü</td><td>Fermator</td><td>FR-10</td><td>FR-55120</td></tr>
+          <tr><td>Kumanda panosu</td><td>Arkel</td><td>AK-2000</td><td>AK-77310</td></tr>
+          <tr><td>GSM modülü</td><td>Teltonika</td><td>FMB-120</td><td>352093081234567</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+  <div class="foot"><span>AVES Saha Denetim · R15D-rc3.9.99 · Oluşturulma 19.10.2026 14:32</span><span class="muhur">Mühür 8f3a9c21d04b77e1</span><span>Sayfa 1 / 2</span></div>
+</div>
+
+<div class="page">
+  <div class="brand">
+    <img src="../../app/aves-logo-white.png" alt="AVES">
+    <div class="doc"><b>Saha Veri Özeti</b><span>Örnek Asansör A.Ş. · S1-2026-0417</span></div>
+  </div>
+  <div class="wrap">
+    <section style="margin-top:8mm">
+      <h2><span class="no">4</span>Kılavuz ray bilgileri <em>4 alan</em></h2>
+      <div class="rows">
+        <div class="r"><span>Kabin ray tipi</span><b>T89</b></div>
+        <div class="r"><span>Karşı ağırlık ray tipi</span><b>T70</b></div>
+        <div class="r"><span>Kabin ray bağlantı aralığı</span><b>140 cm</b></div>
+        <div class="r"><span>Karşı ağırlık ray bağlantı aralığı</span><b>160 cm</b></div>
+      </div>
+    </section>
+    <section>
+      <h2><span class="no">5</span>Elektrik ve kumanda <em>6 alan</em></h2>
+      <div class="rows">
+        <div class="r"><span>Kumanda panosu konumu</span><b>Son kat kapı yanı</b></div>
+        <div class="r"><span>Koruyucu topraklama</span><b>Var</b></div>
+        <div class="r"><span>Acil durum / test panosu (MRL)</span><b>Uygulanmaz</b></div>
+        <div class="r"><span>Alarm ve iki yönlü haberleşme</span><b>Var · GSM tabanlı</b></div>
+        <div class="r note"><span>Elektrik notu</span><b>Pano kapağı kilitli; anahtar bina yönetiminde.</b></div>
+      </div>
+    </section>
+  </div>
+  <div class="disc">Bu çıktı sahada kaydedilen bilgilerin özetidir. Uygunluk veya belgelendirme kararı içermez ve resmî denetim sonuç raporunun yerine geçmez.</div>
+  <div class="foot"><span>AVES Saha Denetim · R15D-rc3.9.99 · Oluşturulma 19.10.2026 14:32</span><span class="muhur">Mühür 8f3a9c21d04b77e1</span><span>Sayfa 2 / 2</span></div>
+</div>
+</body>
+</html>

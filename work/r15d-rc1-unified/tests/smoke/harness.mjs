@@ -17,7 +17,7 @@ function loadPlaywright() {
   throw new Error('playwright bulunamadı (CI: npm i --no-save playwright-core)');
 }
 
-const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.css': 'text/css', '.ttf': 'font/ttf', '.woff2': 'font/woff2' };
+const mime = { '.js': 'text/javascript', '.mjs': 'text/javascript', '.bcmap': 'application/octet-stream', '.pfb': 'application/octet-stream', '.ttf': 'font/ttf', '.html': 'text/html; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.css': 'text/css', '.ttf': 'font/ttf', '.woff2': 'font/woff2' };
 
 export async function startApp() {
   const server = http.createServer((req, res) => {
