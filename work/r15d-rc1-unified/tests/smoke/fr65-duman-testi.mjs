@@ -245,6 +245,29 @@ async function runModule(browser, appUrl, modul, persona, report) {
     await p.getByText(seri).first().click();
     await p.waitForSelector('#fr65Back');
   });
+  await report.step(`${tag} arka plan liste yenilemesi, kullanıcı başka ekrana geçtiyse ekranı ezmez (yarış)`, async () => {
+    await p.click('#fr65Back');
+    await p.waitForSelector('#btnYedekSec');
+    const sonuc = await p.evaluate(async () => {
+      // showList veri okurken (ilk await'te) kullanıcı bir kayıt ekranı açmış gibi davran.
+      currentView = 'list';
+      const bekleyen = showList({ arkaPlan: true });
+      currentView = 'inspection'; currentDenetimId = 'yaris-testi';
+      document.getElementById('app').innerHTML = '<div id="kayit-ekrani">kayıt ekranı</div>';
+      const donus = await bekleyen;
+      const ezildi = !document.getElementById('kayit-ekrani');
+      const gorunum = currentView;
+      currentView = 'list'; currentDenetimId = null;
+      await showList(); // normal çağrı listeyi her zaman gösterir
+      return { donus, ezildi, gorunum, listeVar: !!document.getElementById('btnYeni') };
+    });
+    assert.equal(sonuc.ezildi, false, 'arka plan yenilemesi açık kayıt ekranını listeyle ezdi');
+    assert.equal(sonuc.donus, false);
+    assert.equal(sonuc.gorunum, 'inspection', 'arka plan yenilemesi görünümü değiştirdi');
+    assert.equal(sonuc.listeVar, true, 'normal showList listeyi göstermeli');
+    await p.getByText(seri).first().click();
+    await p.waitForSelector('#fr65Back');
+  });
   await report.step(`${tag} yeni denetimde önceki firma önerilir; adres boşsa dolar, elle yazılan ezilmez`, async () => {
     await p.click('#fr65Back');
     await p.click('#btnYeni');

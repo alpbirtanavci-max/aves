@@ -49,9 +49,9 @@ Kısa ömürlü branch → PR → inceleme → merge → branch sil. Ölü branc
 (`"version"`), `app/sw.js` (`CACHE = 'aves-saha-...'`). Dördü aynı sürümü göstermezse
 statik test kırmızı olur.
 
-### Uygulama dosyaları (rc3.18.1'de `app.js` bölündü)
+### Uygulama dosyaları (rc3.20.0'da `app.js` kalktı)
 
-Klasik betikler, yükleme sırasıyla ve ortak global kapsamda çalışır: `config.js` (sürüm, sabitler, çevrimdışı dosya listesi) → `db.js` (IndexedDB) → `api.js` (Supabase REST) → `profil.js` → `senkron.js` → `yerel-yazma.js` → `app.js` (arayüz, UI) → `baslat.js` (toast, SW, açılış). Yeni dosya eklenirse `index.html` betik sırası, `sw.js` `ASSETS` ve `config.js` `OFFLINE_CORE_ASSETS` listeleri birlikte güncellenir. Statik test bu dosyaları sırayla birleştirip tek kaynak gibi tarar.
+Klasik betikler, yükleme sırasıyla ve ortak global kapsamda çalışır: `config.js` (sürüm, sabitler, çevrimdışı dosya listesi) → `db.js` (IndexedDB) → `api.js` (Supabase REST) → `profil.js` → `senkron.js` → `yerel-yazma.js` → arayüz dosyaları `ui-durum.js` (paylaşılan durum değişkenleri, yetki/kimlik yardımcıları) → `ui-foto.js` → `ui-yonetim.js` (yedek, tanılama, cihaz durumları) → `ui-kayit.js` → `ui-liste.js` (giriş, liste, takip) → `ui-yeni.js` (yeni denetim) → `ui-fr65.js` (B/E/H1 saha veri ekranı) → `ui-denetim.js` (Modül G ekranı) → `ui-taslak.js` → `ui-form.js` → `ui-madde.js` → `ui-kapanis.js` → `ui-son.js` (`UI` nesnesi) → `baslat.js` (toast, SW, açılış). Eski tek `UI` kapanışı kaldırıldı; arayüz fonksiyonları ve durum değişkenleri artık global kapsamdadır, bu yüzden **üst düzey adlar tüm uygulama dosyalarında benzersiz olmalıdır** (statik test denetler). Yeni dosya eklenirse `index.html` betik sırası, `sw.js` `ASSETS` ve `config.js` `OFFLINE_CORE_ASSETS` listeleri birlikte güncellenir. Statik test bu dosyaları sırayla birleştirip tek kaynak gibi tarar.
 
 ## 5. Test sözleşmesi
 
@@ -59,7 +59,7 @@ Klasik betikler, yükleme sırasıyla ve ortak global kapsamda çalışır: `con
   Her davranış değişikliği önce testi günceller.
 - **Statik testin yeşil olması RLS mantığının doğru olduğu anlamına gelmez.** Statik
   test metin arar; yetki kararını doğrulamaz.
-- **Değişmez kural:** `app.js` (arayüz) ve `senkron.js` içindeki her `canSee* / canEdit* / canDelete* / *GorunebilirMi`
+- **Değişmez kural:** `ui-*.js` (arayüz) ve `senkron.js` içindeki her `canSee* / canEdit* / canDelete* / *GorunebilirMi`
   kontrolünün karşılığı bir RLS politikası olmalı. İstemci kontrolü gevşetilirse veya
   yeni bir görünürlük yolu açılırsa (ör. `takip_atanan_email`), ilgili **SELECT ve
   UPDATE** politikaları aynı PR'da güncellenir.
