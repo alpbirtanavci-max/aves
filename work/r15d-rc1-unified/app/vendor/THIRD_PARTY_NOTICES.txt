@@ -4,7 +4,7 @@ AVES Saha form output runtime includes the following unmodified browser builds:
 - pdf-lib — MIT License — https://github.com/Hopding/pdf-lib
 - @pdf-lib/fontkit — MIT License — https://github.com/Hopding/fontkit
 - DejaVu Sans — Bitstream Vera / DejaVu license — https://dejavu-fonts.github.io/
-- PDF.js 6.2.108 — Apache License 2.0 — https://github.com/mozilla/pdf.js
+- PDF.js 6.2.108 (npm pdfjs-dist, "legacy" derleme: eski Safari/iOS uyumu) — Apache License 2.0 — https://github.com/mozilla/pdf.js
   License text: ./pdfjs/LICENSE
 
 These components are distributed under their respective upstream licenses.
