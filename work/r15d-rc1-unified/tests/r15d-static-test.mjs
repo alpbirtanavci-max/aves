@@ -2302,7 +2302,7 @@ test('teknik PDF okuyucu temizliği (destroy) söz vermese de çıkarımı bozma
   !pdfOkuyucuSrc.includes('.destroy().catch'));
 test('PDF.js çevrimdışı çekirdek pakette değil; yalnız teknik PDF kullanılınca ayrı önbelleğe alınır',
   !config.includes('vendor/pdfjs') && !sw.includes('vendor/pdfjs') && !config.includes('pdf-field-reader') &&
-  teknikPdfSrc.includes("caches.open('aves-saha-pdfjs-") && sw.includes("startsWith('aves-saha-pdfjs-')") &&
+  teknikPdfSrc.includes("caches.open('aves-pdfjs-") && sw.includes("startsWith('aves-pdfjs-')") && !sw.includes('aves-saha-pdfjs') &&
   config.includes("'./teknik-pdf.js'") && sw.includes("'./teknik-pdf.js'"));
 test('migration 88: özel kova, RLS, silme yalnız açık denetimde, nesne yolu <denetim>/<uuid>.pdf, 20 MB, yalnız PDF',
   migration88.includes('enable row level security') && migration88.includes("public = false") &&

@@ -80,7 +80,27 @@ try {
   const T = s.fake.tables.denetim_teknik_pdf;
   const store = s.fake.storage;
   const durum = () => p.locator('#fr65TechnicalPdfCard .fr65-pdf-state').innerText();
-  const dosya = (name, buffer) => p.setInputFiles('#fr65PdfFile', { name, mimeType: 'application/pdf', buffer });
+  // Dosya sayfa içinde bellekten üretilir (Playwright'ın setInputFiles dosyası WebKit'te çevrimdışıyken okunamıyor: "I/O read operation failed").
+  const dosya = (name, buffer) => p.evaluate(({ name, bytes }) => {
+    const dt = new DataTransfer();
+    dt.items.add(new File([new Uint8Array(bytes)], name, { type: 'application/pdf' }));
+    const input = document.getElementById('fr65PdfFile');
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }, { name, bytes: Array.from(buffer) });
+  // Çevrimdışı taklidi: sahte sunucu bağlantıyı keser + navigator.onLine yanlışlanır. (context.setOffline kullanılmaz: WebKit'te
+  // Blob okumalarını da engelleyip "I/O read operation failed" verir; gerçek Safari çevrimdışıyken Blob okuyabilir.)
+  const offline = async v => {
+    s.fake.state.offline = v;
+    await p.evaluate(v => { Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => !v }); window.dispatchEvent(new Event(v ? 'offline' : 'online')); }, v);
+  };
+  // Kaldırma bittiğinde hem sunucu hem kart güncel olmalı (kart yenilenmeden dosya seçmek eski girdiye yazar).
+  const kaldir = async () => {
+    await p.click('#fr65PdfRemove');
+    await until(() => T.length === 0 && store.size === 0, 'sunucudan silinmedi');
+    await until(async () => /henüz PDF eklenmedi/.test(await durum()), 'kart sıfırlanmadı');
+  };
+  const bildirim = () => p.evaluate(() => (document.querySelector('.toast, #toast') || {}).textContent);
   const idOf = () => s.fake.tables.denetimler[0].id;
   const yerel = () => p.evaluate(async id => { const r = await DB.get('teknik_pdf', id); return r ? { durum: r.sync_status, yol: r.object_path, blob: !!r.blob } : null; }, idOf());
 
@@ -93,12 +113,14 @@ try {
 
   await report.step('PDF ekle (çevrimiçi) → sunucuda satır + özel depoda dosya, SHA-256 doğru, aday çıkarıldı', async () => {
     await dosya('teknik.pdf', pdfMetinli);
-    await until(async () => /eşitlendi/.test(await durum()), 'PDF eşitlenmedi: ' + await durum());
+    try { await until(async () => /eşitlendi/.test(await durum()), 'PDF eşitlenmedi'); }
+    catch (e) { throw new Error(`${e.message}: ${await durum()} | bildirim: ${await p.evaluate(() => (document.querySelector('.toast, #toast') || {}).textContent)} | hatalar: ${s.errors.join(' | ').slice(0, 300)}`); }
     assert.equal(T.length, 1);
     assert.equal(T[0].sha256, sha(pdfMetinli));
     assert.equal(T[0].denetim_id, idOf());
     assert.equal(store.size, 1);
-    assert.deepEqual(Buffer.from(store.get(T[0].object_path)), pdfMetinli);
+    const yuklenen = store.get(T[0].object_path);
+    if (yuklenen) assert.deepEqual(Buffer.from(yuklenen), pdfMetinli); // Playwright WebKit istek gövdesini vermeyebilir (null)
     assert.ok(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.pdf$/.test(T[0].object_path), 'yol <denetim>/<uuid>.pdf olmalı');
     await p.waitForSelector('.fr65-pdf-candidate', { timeout: 15000 });
     assert.ok(await p.locator('.fr65-pdf-candidate').count() >= 2, 'hız / yük adayları bulunmalı');
@@ -124,35 +146,32 @@ try {
     await until(() => T[0]?.sha256 === sha(pdfMetinsiz), 'yeni PDF sunucuya gitmedi');
     await until(() => !store.has(eski), 'eski nesne depoda kaldı');
     assert.equal(store.size, 1);
-    await until(async () => /seçilebilir metin bulunamadı/.test(await p.locator('#fr65TechnicalPdfCard').innerText()), 'metinsiz PDF uyarısı yok');
+    await until(async () => /seçilebilir metin bulunamadı/.test(await p.locator('#fr65TechnicalPdfCard').innerText()), 'metinsiz PDF uyarısı yok: ' + (await p.locator('#fr65TechnicalPdfCard').innerText()).replace(/\n/g, ' / ').slice(0, 500) + ' | ' + await bildirim());
   });
 
   await report.step('geçersiz dosya (PDF değil) reddedilir; mevcut PDF korunur', async () => {
-    await p.setInputFiles('#fr65PdfFile', { name: 'x.pdf', mimeType: 'application/pdf', buffer: Buffer.from('bu bir pdf degil') });
+    await dosya('x.pdf', Buffer.from('bu bir pdf degil'));
     await p.waitForTimeout(800);
     assert.equal(T[0].sha256, sha(pdfMetinsiz));
     assert.equal(store.size, 1);
   });
 
   await report.step('PDF’yi kaldır → satır, depo nesnesi ve cihaz kaydı gider', async () => {
-    await p.click('#fr65PdfRemove');
-    await until(() => T.length === 0 && store.size === 0, 'sunucudan silinmedi');
+    await kaldir();
     assert.equal(await yerel(), null);
-    await until(async () => /henüz PDF eklenmedi/.test(await durum()), 'kart sıfırlanmadı');
   });
 
   await report.step('çevrimdışı PDF ekle → cihazda bekler, sunucuya gitmez; bağlanınca gönderilir', async () => {
-    await p.click('#fr65PdfOffline'); // okuyucu dosyaları çevrimdışı önbelleğe
-    await p.waitForTimeout(3000);
-    await s.context.setOffline(true); s.fake.state.offline = true;
+    await p.evaluate(() => AVES_TEKNIK_PDF.prepareOfflineReader().catch(() => {})); // okuyucu dosyaları çevrimdışı önbelleğe (WebKit'te yavaş olabilir)
+    await offline(true);
     await dosya('cevrimdisi.pdf', pdfCevrimdisi);
-    await until(async () => /sunucu aktarımı bekliyor/.test(await durum()), 'bekleme durumu görünmedi: ' + await durum());
+    await until(async () => /sunucu aktarımı bekliyor/.test(await durum()), 'bekleme durumu görünmedi: ' + await durum() + ' | ' + await bildirim());
     assert.equal(T.length, 0);
     assert.equal(store.size, 0);
     const l = await yerel();
     assert.equal(l.durum, 'pending');
     assert.equal(l.blob, true, 'PDF cihazda saklanmalı');
-    await s.context.setOffline(false); s.fake.state.offline = false;
+    await offline(false);
     await p.evaluate(() => Sync.full());
     await until(() => T.length === 1 && store.size === 1, 'bağlanınca gönderilmedi');
     assert.equal(T[0].sha256, sha(pdfCevrimdisi));
@@ -160,23 +179,23 @@ try {
   });
 
   await report.step('çevrimdışıyken mevcut eşitlenmiş PDF değiştirilemez (iki kopya korunur)', async () => {
-    await s.context.setOffline(true); s.fake.state.offline = true;
+    await offline(true);
     await dosya('degistir.pdf', pdfMetinli);
     await p.waitForTimeout(800);
-    assert.equal((await yerel()).durum, 'synced');
-    await s.context.setOffline(false); s.fake.state.offline = false;
+    const l = await yerel();
+    assert.equal(l.durum, 'synced', `durum=${l.durum} onLine=${await p.evaluate(() => navigator.onLine)} bildirim=${await bildirim()}`);
+    await offline(false);
   });
 
   await report.step('çakışma: başka cihaz aynı denetime PDF yazmış → iki kopya korunur, sunucu ezilmez', async () => {
-    await p.click('#fr65PdfRemove');
-    await until(() => T.length === 0 && store.size === 0, 'temizlik başarısız');
-    await s.context.setOffline(true); s.fake.state.offline = true;
+    await kaldir();
+    await offline(true);
     await dosya('benim.pdf', pdfMetinli);
     await until(async () => (await yerel())?.durum === 'pending', 'yerel bekleyen kayıt yok');
     const yol = `${idOf()}/${randomUUID()}.pdf`;
     T.push({ denetim_id: idOf(), file_name: 'baska.pdf', object_path: yol, file_size_bytes: pdfBaskaCihaz.length, sha256: sha(pdfBaskaCihaz), page_count: 1, text_page_count: 1, extracted_fields: {}, uploaded_by: 'baska@test.local', updated_at: new Date().toISOString() });
     store.set(yol, pdfBaskaCihaz);
-    await s.context.setOffline(false); s.fake.state.offline = false;
+    await offline(false);
     await p.evaluate(() => Sync.full());
     await until(async () => (await yerel())?.durum === 'conflict', 'çakışma algılanmadı: ' + JSON.stringify(await yerel()));
     assert.equal(T[0].sha256, sha(pdfBaskaCihaz), 'sunucudaki PDF ezilmemeli');
@@ -200,14 +219,13 @@ try {
   });
 
   await report.step('Senkron Merkezi’nde bekleyen PDF sayılır (çevrimdışı + bekleyen)', async () => {
-    await p.click('#fr65PdfRemove');
-    await until(() => T.length === 0, 'temizlik');
-    await s.context.setOffline(true); s.fake.state.offline = true;
+    await kaldir();
+    await offline(true);
     await dosya('bekleyen.pdf', pdfCevrimdisi);
-    await until(async () => (await yerel())?.durum === 'pending', 'bekleyen yok');
+    await until(async () => (await yerel())?.durum === 'pending', 'bekleyen yok: ' + JSON.stringify(await yerel()) + ' | ' + await bildirim() + ' | ' + await durum());
     const pill = await p.locator('.syncpill').first().innerText();
     assert.match(pill, /1 bekliyor/);
-    await s.context.setOffline(false); s.fake.state.offline = false;
+    await offline(false);
     await p.evaluate(() => Sync.full());
     await until(() => T.length === 1, 'gönderilmedi');
   });
@@ -222,8 +240,7 @@ try {
   });
 
   await report.step('PDF kaldırıldıktan sonra FR.65 kaydı silinebilir', async () => {
-    await p.click('#fr65PdfRemove');
-    await until(() => T.length === 0 && store.size === 0, 'PDF kaldırılmadı');
+    await kaldir();
     const id = idOf();
     await p.click('#fr65Delete');
     await p.waitForSelector('#btnYeni', { timeout: 60000 });

@@ -64,7 +64,7 @@ window.AVES_TEKNIK_PDF = (() => {
       if (navigator.onLine) return true;
       throw new Error('Bu tarayıcı çevrimdışı PDF okuyucu önbelleğini desteklemiyor.');
     }
-    const cache = await caches.open('aves-saha-pdfjs-v6.2.108');
+    const cache = await caches.open('aves-pdfjs-v6.2.108');
     const coreUrls = [
       './pdf-field-reader.mjs',
       './vendor/pdfjs/pdf.min.mjs',
@@ -91,7 +91,13 @@ window.AVES_TEKNIK_PDF = (() => {
   }
 
   async function readPdf(file) {
-    await prepareOfflineReader();
+    // Önbellek yalnız çevrimdışı kullanım içindir. Çevrimiçiyken önbellek yazılamasa bile okuyucu ağdan yüklenir;
+    // çevrimdışıyken hazır değilse hata verilir ve PDF "metin okunamadı" durumuyla cihazda korunur.
+    try { await prepareOfflineReader(); }
+    catch (error) {
+      if (!navigator.onLine) throw error;
+      console.warn('PDF okuyucu önbelleği hazırlanamadı; okuyucu ağdan yükleniyor', error);
+    }
     const reader = await import('./pdf-field-reader.mjs');
     return reader.extractTechnicalPdf(file);
   }
@@ -343,11 +349,13 @@ window.AVES_TEKNIK_PDF = (() => {
     if (!file || file.size <= 0 || file.size > MAX_BYTES) throw new Error('PDF boş veya 20 MB sınırından büyük.');
     const signature = new Uint8Array(await file.slice(0, 5).arrayBuffer());
     if (String.fromCharCode(...signature) !== '%PDF-') throw new Error('Seçilen dosya geçerli PDF görünmüyor.');
-    const current = existing || await DB.get('teknik_pdf', denetimId) || await load(denetimId);
+    // Ekranın elindeki kayıt eski kalmış olabilir (arka planda eşitlenmiş/çakışmış); karar için cihazdaki güncel kayıt esastır.
+    const current = await DB.get('teknik_pdf', denetimId) || existing || await load(denetimId);
     if (current?.sync_status === 'conflict') throw new Error('Önce Senkron Merkezi’nde teknik PDF çakışmasını çözün.');
     if (current?.sync_status === 'synced' && !navigator.onLine) {
       throw new Error('Mevcut PDF’yi çevrimdışıyken değiştiremeyiz; önce internet bağlantısı kurun.');
     }
+    const bytes = new Uint8Array(await file.arrayBuffer());
     let extracted;
     try {
       extracted = await readPdf(file);
@@ -366,13 +374,15 @@ window.AVES_TEKNIK_PDF = (() => {
       object_path: `${denetimId}/${crypto.randomUUID()}.pdf`,
       previous_object_path: current?.previous_object_path || current?.object_path || null,
       file_size_bytes: file.size,
-      sha256: await sha256HexBytes(new Uint8Array(await file.arrayBuffer())),
+      sha256: await sha256HexBytes(bytes),
       page_count: extracted.page_count || null,
       text_page_count: extracted.text_page_count ?? null,
       extracted_fields: extracted,
       uploaded_by: API.email,
       updated_at: new Date().toISOString(),
-      blob: file,
+      // Dosya seçicinin File nesnesi değil, bellek içi kopya saklanır: Safari/WebKit seçici dosyasını IndexedDB'ye yazamaz
+      // ve iOS seçicinin geçici dosyası kaybolabilir.
+      blob: new Blob([bytes], { type: 'application/pdf' }),
       sync_status: 'pending',
       upload_attempted: false,
       uploaded_to_storage: false,

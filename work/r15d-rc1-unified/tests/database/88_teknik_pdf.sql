@@ -93,7 +93,7 @@ declare v_etki integer; v_hata boolean := false; v_gunc integer; v_sil integer;
 begin
   set local role authenticated;
   set local request.jwt.claims = '{"role":"authenticated","email":"c.atanan@test.local"}';
-  update public.denetim_teknik_pdf set file_name = 'c-guncelledi.pdf';
+  update public.denetim_teknik_pdf set file_name = 'c-guncelledi.pdf', uploaded_by = 'c.atanan@test.local';
   get diagnostics v_etki = row_count;
   set local request.jwt.claims = '{"role":"authenticated","email":"a.ilk@test.local"}';
   begin
