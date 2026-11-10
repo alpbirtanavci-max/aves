@@ -29,9 +29,11 @@ const fold = value => String(value || '')
 const EQUIPMENT = [
   { key: 'makine_motor', label: 'Makine / motor', pattern: /\b(makine|motor|machine|traction machine)\b/ },
   { key: 'kapi_kilidi', label: 'Kapı kilitleri', pattern: /\b(kat kapisi.{0,18}kilit|kapi kilidi|door lock)\b/ },
-  { key: 'guvenlik_tertibati', label: 'Güvenlik tertibatı / paraşüt fren', pattern: /\b(parasut|guvenlik tertibati|safety gear|safety device)\b/ },
-  { key: 'tampon', label: 'Kabin / karşı ağırlık tamponu', pattern: /\b(tampon|buffer)\b/ },
-  { key: 'hiz_regulatoru', label: 'Hız regülatörü', pattern: /\b(hiz regulatoru|overspeed governor|governor)\b/ },
+  { key: 'guvenlik_tertibati', label: 'Güvenlik tertibatı / paraşüt fren', pattern: /\b(parasut\w*|guvenlik tertibati\w*|safety gear|safety device)\b/ },
+  { key: 'tampon', label: 'Kabin / karşı ağırlık tamponu', pattern: /\b(tampon\w*|buffer)\b/ },
+  { key: 'hiz_regulatoru', label: 'Hız regülatörü', pattern: /\b(hiz regulator\w*|regulator\w*|overspeed governor|governor)\b/ },
+  { key: 'fren', label: 'Fren', pattern: /\b(fren\w*|brake)\b/ },
+  { key: 'ana_kart', label: 'Ana kart / kontrol kartı', pattern: /\b(ana kart\w*|ana kontrol kart\w*|main board|control board)\b/ },
   { key: 'ucm', label: 'UCM tertibatı', pattern: /\bucm\b|istemsiz kabin hareketi|unintended car movement/ },
   { key: 'gsm_modulu', label: 'GSM modülü', pattern: /\b(gsm modulu|gsm module|alarm modulu|alarm module)\b/ },
 ];
@@ -55,6 +57,86 @@ function pageLines(items, page) {
     .filter(row => row.text);
 }
 
+// "Güvenlik Aksamı Kayıt Formu" gibi sütunlu tablolar: satırlara bölünmüş hücreleri (adres gibi çok satırlı)
+// sıra numarasına göre bir araya getirir; marka/model/üretici ayrı alan olarak okunur.
+const TABLE_ROLES = [
+  ['maker', /\buretici\b|\bithalatci\b/],
+  ['brand', /\bmarka/],
+  ['model', /\bmodel\b/],
+  ['component', /\bguvenlik aksami\b|\bkomponent\b|\bbilesen\b|\baksam adi\b/],
+];
+
+function tableRows(items, page) {
+  const cells = [];
+  for (const item of items) {
+    if (!item || typeof item.str !== 'string' || !item.str.trim()) continue;
+    const x = Number(item.transform?.[4]);
+    const y = Number(item.transform?.[5]);
+    if (Number.isFinite(x) && Number.isFinite(y)) cells.push({ x, y, text: item.str.trim() });
+  }
+  const headerHit = cells.filter(cell => {
+    const text = fold(cell.text);
+    return /\bguvenlik aksami\b|\bkomponent\b|\bbilesen\b/.test(text) && !/\b(form|formu|kayit|liste|listesi)\b/.test(text);
+  });
+  if (!headerHit.length) return [];
+  const headerTop = Math.max(...headerHit.map(cell => cell.y));
+  // Başlık bölgesi: bileşen başlığının hemen çevresi (üst/alt 30 birim).
+  const header = cells.filter(cell => cell.y <= headerTop + 12 && cell.y >= headerTop - 30);
+  const columns = [];
+  for (const cell of header.sort((a, b) => a.x - b.x)) {
+    const last = columns[columns.length - 1];
+    if (last && Math.abs(cell.x - last.x) <= 6) last.texts.push(cell.text);
+    else columns.push({ x: cell.x, texts: [cell.text] });
+  }
+  for (const column of columns) {
+    const folded = fold(column.texts.join(' '));
+    column.role = (TABLE_ROLES.find(([, pattern]) => pattern.test(folded)) || [null])[0];
+  }
+  const component = columns.find(column => column.role === 'component');
+  if (!component) return [];
+  const body = cells.filter(cell => cell.y < headerTop - 30);
+  const first = columns[0];
+  const anchors = body.filter(cell => /^\d{1,3}$/.test(cell.text) && cell.x < (columns[1] ? columns[1].x - 4 : first.x + 40))
+    .sort((a, b) => b.y - a.y);
+  if (!anchors.length) return [];
+  const rows = anchors.map(anchor => ({ no: anchor.text, y: anchor.y, cells: [] }));
+  for (const cell of body) {
+    let best = rows[0];
+    for (const row of rows) if (Math.abs(row.y - cell.y) < Math.abs(best.y - cell.y)) best = row;
+    let column = columns[0];
+    for (const candidateColumn of columns) if (candidateColumn.x <= cell.x + 4) column = candidateColumn;
+    best.cells.push({ ...cell, role: column.role, columnX: column.x });
+  }
+  const join = (row, role) => row.cells.filter(cell => cell.role === role)
+    .sort((a, b) => b.y - a.y || a.x - b.x).map(cell => cell.text).join(' ').replace(/\s+/g, ' ').trim();
+  return rows.map(row => {
+    const all = row.cells.sort((a, b) => a.columnX - b.columnX || b.y - a.y).map(cell => cell.text).join(' · ');
+    return {
+      page,
+      no: row.no,
+      name: join(row, 'component'),
+      brand: join(row, 'brand'),
+      model: join(row, 'model'),
+      maker: join(row, 'maker'),
+      evidence: `${row.no} · ${all.replace(/^\d+ · /, '')}`,
+    };
+  }).filter(row => row.name);
+}
+
+function tableCandidates(rows) {
+  return rows.map(row => {
+    const known = EQUIPMENT.find(component => component.pattern.test(fold(row.name)));
+    const value = [row.brand, row.model].filter(Boolean).join(' ') || row.maker || '';
+    return {
+      key: known ? known.key : 'komponent',
+      label: row.name.slice(0, 60),
+      value: value.slice(0, 100),
+      page: row.page,
+      evidence: row.evidence.slice(0, 240),
+    };
+  }).filter(item => item.value);
+}
+
 function candidate(key, label, value, line) {
   return {
     key,
@@ -65,7 +147,7 @@ function candidate(key, label, value, line) {
   };
 }
 
-function extractCandidates(lines) {
+function extractCandidates(lines, tablePages = new Set()) {
   const values = [];
   const equipment = [];
   const seenValues = new Set();
@@ -113,7 +195,7 @@ function extractCandidates(lines) {
     }
 
     for (const component of EQUIPMENT) {
-      if (!component.pattern.test(text)) continue;
+      if (tablePages.has(line.page) || !component.pattern.test(text)) continue;
       let evidenceLine = line;
       const hasIdentity = /\b(marka|imalatci|manufacturer|brand|seri\s*(?:no|numarasi)|serial(?:\s*(?:no|number))?|tip|model|type|imei)\b/.test(text) || /[:=]/.test(text);
       if (!hasIdentity) {
@@ -158,6 +240,7 @@ export async function extractTechnicalPdf(file) {
     pdf = await loadingTask.promise;
     if (pdf.numPages > MAX_PAGES) throw new Error(`PDF ${MAX_PAGES} sayfadan uzun; dosyayı bölerek ekleyin.`);
     const lines = [];
+    const tableItems = [];
     let textPageCount = 0;
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
       const page = await pdf.getPage(pageNumber);
@@ -165,13 +248,15 @@ export async function extractTechnicalPdf(file) {
       const result = pageLines(content.items, pageNumber);
       if (result.length) textPageCount++;
       lines.push(...result);
+      tableItems.push(...tableCandidates(tableRows(content.items, pageNumber)));
       page.cleanup();
     }
-    const extracted = extractCandidates(lines);
+    const extracted = extractCandidates(lines, new Set(tableItems.map(item => item.page)));
+    extracted.equipment = [...tableItems, ...extracted.equipment].slice(0, 40);
     const status = textPageCount === 0 ? 'no_text_layer'
       : (extracted.values.length || extracted.equipment.length ? 'candidates_found' : 'no_matches');
     return {
-      reader: 'pdfjs-local-rules-v1',
+      reader: 'pdfjs-local-rules-v2',
       status,
       parsed_at: new Date().toISOString(),
       page_count: pdf.numPages,

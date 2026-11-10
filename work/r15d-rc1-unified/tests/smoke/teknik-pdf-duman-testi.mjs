@@ -7,8 +7,8 @@ import { startApp, launch, newSession, createReporter, isWebkit } from './harnes
 const persona = { email: 'yonetici@test.local', ad_soyad: 'Test Yönetici', aktif: true, rol: 'yonetici' };
 
 // Elle yazılmış en küçük PDF: standart Helvetica yazı tipi, seçilebilir metin (satırlar boş ise metinsiz/taranmış gibi).
-function makePdf(lines, title) {
-  const content = lines.length
+function makePdf(lines, title, ham) {
+  const content = ham ? ham : lines.length
     ? 'BT /F1 12 Tf 50 750 Td 16 TL ' + lines.map(l => `(${l.replace(/[()\\]/g, '')}) Tj T*`).join(' ') + ' ET'
     : '0.9 g 50 700 200 40 re f';
   const objects = [
@@ -27,6 +27,29 @@ function makePdf(lines, title) {
   out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R /Info 6 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
   return Buffer.from(out, 'latin1');
 }
+// Gerçek "Güvenlik Aksamı Kayıt Formu" düzeninin yapay kopyası: başlık satırı, sıra no, çok satırlı hücreler (adres).
+const tabloSatirlari = [
+  ['1', 'DKARE', ['Kabin Tamponu'], 'SELKAS', 'SLK B10', ['Firma A Mh. Cd. No:55', 'Istanbul'], '2528', 'Y'],
+  ['2', 'DKARE', ['Karsi Agirlik', 'Tamponu'], 'SELKAS', 'SLK B10', ['Firma A Mh. Cd. No:55', 'Istanbul'], '2528', 'Y'],
+  ['3', 'DKARE', ['Regulator'], 'ERKAN', 'EL-R', ['Firma B Mah. Sok.', 'No:36 KONYA'], '2528', 'Y'],
+  ['4', 'DKARE', ['Kapi Kilidi'], 'LIFTUP', 'LIFTUP LOCK', ['Firma C Mah. 5 Cad.', 'AYDIN'], '2528', 'Y'],
+  ['5', 'DKARE', ['Fren'], 'ERKAN', 'EL-8', ['Firma B Mah. Sok.', 'No:36 KONYA'], '2528', 'Y'],
+  ['6', 'LIFTX', ['Ana Kart'], 'LS', 'LIFTONE', ['Firma D Mah. Sok.', 'ISTANBUL'], '0400', 'Y'],
+];
+function tabloIcerik() {
+  const yaz = (x, y, t) => `BT /F1 10 Tf 1 0 0 1 ${x} ${y} Tm (${t}) Tj ET`;
+  const par = [yaz(285, 529, 'ASANSOR GUVENLIK AKSAMI KAYIT FORMU'), yaz(53, 495, 'Sira No'), yaz(107, 502, 'A Tipi Muayene'), yaz(107, 488, 'Kurulusu Adi'),
+    yaz(206, 502, 'Guvenlik Aksami'), yaz(206, 488, 'Adi'), yaz(300, 495, 'Urun Markasi'), yaz(373, 502, 'Urun'), yaz(373, 488, 'Model/Tipi'),
+    yaz(448, 495, 'Uretici/Ithalatci Adi Adresi'), yaz(641, 495, 'Onaylanmis Kurulus'), yaz(749, 495, 'Ithal/Yerli')];
+  tabloSatirlari.forEach(([no, kurulus, ad, marka, model, adres, onay, yerli], i) => {
+    const y = 437 - i * 63;
+    par.push(yaz(75, y, no), yaz(107, y, kurulus), yaz(300, y, marka), yaz(373, y, model), yaz(677, y, onay), yaz(759, y, yerli));
+    ad.forEach((t, k) => par.push(yaz(206, y + (ad.length === 2 ? 7 - k * 15 : 0), t)));
+    adres.forEach((t, k) => par.push(yaz(448, y + 14 - k * 14, t)));
+  });
+  return par.join('\n');
+}
+const pdfTablo = makePdf([], 'tablo', tabloIcerik());
 const sha = buf => createHash('sha256').update(buf).digest('hex');
 const pdfMetinli = makePdf(['Anma hiz: 1.0 m/s', 'Anma yuku 630 kg', 'Durak sayisi: 6', 'Model: GTW-630'], 'metinli');
 const pdfMetinsiz = makePdf([], 'taranmis');
@@ -129,6 +152,18 @@ try {
     });
     assert.ok(await p.locator('.fr65-pdf-candidate').count() >= 2, 'hız / yük adayları bulunmalı');
     assert.match(await p.locator('#fr65TechnicalPdfCard').innerText(), /otomatik aktarılmaz/);
+  });
+
+  await report.step('sütunlu komponent tablosu (kayıt formu düzeni): 6 komponent, marka + model doğru ayrılır', async () => {
+    const sonuc = await p.evaluate(async bytes => {
+      const r = await import('./pdf-field-reader.mjs');
+      return r.extractTechnicalPdf(new File([new Uint8Array(bytes)], 'tablo.pdf'));
+    }, Array.from(pdfTablo));
+    const ozet = sonuc.equipment.map(e => `${e.label}=${e.value}`);
+    assert.deepEqual(ozet, ['Kabin Tamponu=SELKAS SLK B10', 'Karsi Agirlik Tamponu=SELKAS SLK B10', 'Regulator=ERKAN EL-R',
+      'Kapi Kilidi=LIFTUP LIFTUP LOCK', 'Fren=ERKAN EL-8', 'Ana Kart=LS LIFTONE']);
+    assert.deepEqual(sonuc.equipment.map(e => e.key), ['tampon', 'tampon', 'hiz_regulatoru', 'kapi_kilidi', 'fren', 'ana_kart']);
+    assert.ok(sonuc.equipment.every(e => e.page === 1 && e.evidence.includes('·')), 'sayfa ve kanıt satırı olmalı');
   });
 
   await report.step('adaylar saha alanlarına yazılmaz (FR.65 değerleri değişmedi)', async () => {
