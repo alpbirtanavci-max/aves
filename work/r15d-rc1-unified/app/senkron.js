@@ -96,19 +96,22 @@ const Sync = (() => {
     const outbox = await DB.outboxAll();
     const n = outbox.length;
     const warning = await DB.kvGet('sync_warning');
+    const pdfByDenetim = await bekleyenTeknikPdfOzeti();
+    const pdfToplam = [...pdfByDenetim.values()].reduce((sum, item) => sum + item.total, 0);
+    const pdfCakisma = [...pdfByDenetim.values()].reduce((sum, item) => sum + item.conflict, 0);
     // KV yazılmadan uygulama kapanmış olabilir; gerçek outbox durumu esastır.
     const korunan = outbox.filter(it => KORUNAN_DURUMLAR.includes(it.sync_status));
-    const uyariVar = !!warning || korunan.length > 0;
+    const uyariVar = !!warning || korunan.length > 0 || pdfCakisma > 0;
     if (!navigator.onLine) {
       pill.className = 'syncpill offline';
-      label.textContent = n > 0 ? `Çevrimdışı · ${n} bekliyor` : 'Çevrimdışı';
+      label.textContent = n + pdfToplam > 0 ? `Çevrimdışı · ${n + pdfToplam} bekliyor` : 'Çevrimdışı';
     } else if (uyariVar) {
       pill.className = 'syncpill error';
-      const cakisma = warning ? warning.kind === 'conflict' : korunan.some(x => x.sync_status === 'conflict');
+      const cakisma = warning ? warning.kind === 'conflict' : (pdfCakisma > 0 || korunan.some(x => x.sync_status === 'conflict'));
       label.textContent = (cakisma ? 'Çakışma uyarısı' : 'Yetki uyarısı') + ' · dokun';
-    } else if (n > 0) {
+    } else if (n + pdfToplam > 0) {
       pill.className = 'syncpill pending';
-      label.textContent = `${n} bekliyor`;
+      label.textContent = `${n + pdfToplam} bekliyor`;
     } else {
       pill.className = 'syncpill';
       label.textContent = 'Senkron';
@@ -374,6 +377,10 @@ const Sync = (() => {
     running = true;
     let completed = false;
     try {
+      if (window.AVES_TEKNIK_PDF) {
+        try { await window.AVES_TEKNIK_PDF.pushPending(); }
+        catch (error) { console.warn('Teknik PDF aktarımı sürecek; cihazdaki dosya korundu', error); }
+      }
       const sent = await pushOutbox();
       if (!sent) return false; // yerel değişiklik sunucuya gitmediyse PULL ile üzerine yazma
       await pullKutuphane();
@@ -426,13 +433,29 @@ const Sync = (() => {
     return map;
   }
 
+  async function bekleyenTeknikPdfOzeti() {
+    const map = new Map();
+    if (!window.AVES_TEKNIK_PDF) return map;
+    for (const item of await DB.all('teknik_pdf')) {
+      if (!['pending', 'metadata_pending', 'delete_pending', 'conflict'].includes(item.sync_status)) continue;
+      if (item.sync_status === 'pending' && !item.blob) continue;
+      const summary = map.get(item.denetim_id) || { total: 0, conflict: 0 };
+      summary.total++;
+      if (item.sync_status === 'conflict') summary.conflict++;
+      map.set(item.denetim_id, summary);
+    }
+    return map;
+  }
+
   async function syncCenter() {
     const items = await DB.outboxAll();
     const warning = await DB.kvGet('sync_warning');
     const fotoByDenetim = await bekleyenFotoOzeti();
+    const pdfByDenetim = await bekleyenTeknikPdfOzeti();
     const fotoToplam = [...fotoByDenetim.values()].reduce((a, b) => a + b, 0);
-    if (!items.length && !fotoToplam && !warning) { toast('Bekleyen senkron işlemi yok'); return; }
-    if (!items.length && !fotoToplam && warning) {
+    const pdfToplam = [...pdfByDenetim.values()].reduce((a, b) => a + b.total, 0);
+    if (!items.length && !fotoToplam && !pdfToplam && !warning) { toast('Bekleyen senkron işlemi yok'); return; }
+    if (!items.length && !fotoToplam && !pdfToplam && warning) {
       await DB.kvDel('sync_warning');
       await updatePill();
       toast('Senkron uyarısı temizlendi');
@@ -450,17 +473,18 @@ const Sync = (() => {
       if (!grup.has(key)) grup.set(key, []);
       grup.get(key).push(it);
     }
-    const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys()]);
+    const tumIdler = new Set([...grup.keys(), ...fotoByDenetim.keys(), ...pdfByDenetim.keys()]);
     const satirlar = [...tumIdler]
-      .map(id => [id, outboxOzeti(grup.get(id) || []), fotoByDenetim.get(id) || 0])
-      .sort((a, b) => (b[1].korunan - a[1].korunan) || ((b[1].toplam + b[2]) - (a[1].toplam + a[2])))
-      .map(([id, o, foto]) => {
+      .map(id => [id, outboxOzeti(grup.get(id) || []), fotoByDenetim.get(id) || 0, pdfByDenetim.get(id) || { total: 0, conflict: 0 }])
+      .sort((a, b) => (b[1].korunan + b[3].conflict - a[1].korunan - a[3].conflict) || ((b[1].toplam + b[2] + b[3].total) - (a[1].toplam + a[2] + a[3].total)))
+      .map(([id, o, foto, pdf]) => {
         const parts = [];
         if (o.bekleyen) parts.push(`${o.bekleyen} işlem`);
         if (foto) parts.push(`${foto} fotoğraf`);
+        if (pdf.total) parts.push(`${pdf.total} teknik PDF${pdf.conflict ? ` · ${pdf.conflict} çakışma` : ''}`);
         if (o.yetki) parts.push(`${o.yetki} yetki incelemesi`);
         if (o.cakisma) parts.push(`${o.cakisma} çakışma`);
-        return `<div class="sync-review-row ${o.cakisma ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
+        return `<div class="sync-review-row ${o.cakisma || pdf.conflict ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
           `<small>${parts.join(' · ') || 'sunucu aktarımı bekliyor'}${o.sonHata ? ` · ${escSync(o.sonHata).slice(0, 140)}` : ''}</small></div>`;
       }).join('');
 
@@ -472,7 +496,7 @@ const Sync = (() => {
     ov.innerHTML = `<div class="modal">
       <button class="close" aria-label="Kapat">×</button>
       <h3>Senkron Merkezi</h3>
-      <div class="photo-help">${warning ? escSync(warning.message) + ' ' : ''}Hiçbir saha cevabı silinmedi; cihazda korunuyor. Bağlantı geldikçe bekleyen işlemler ve fotoğraflar otomatik gönderilir.</div>
+      <div class="photo-help">${warning ? escSync(warning.message) + ' ' : ''}Hiçbir saha cevabı silinmedi; cihazda korunuyor. Bağlantı geldikçe bekleyen işlemler, fotoğraflar ve teknik PDF dosyaları otomatik gönderilir.</div>
       <div class="sync-review-list">${satirlar}</div>
       <div class="print-actions">
         <button class="btn btn-primary" id="syncCenterNow">Şimdi senkronize et</button>
@@ -497,10 +521,11 @@ const Sync = (() => {
       if (typeof UI !== 'undefined' && UI.bekleyenFotograflariYukle) {
         try { await UI.bekleyenFotograflariYukle(); } catch (e) { console.warn('Fotoğraf gönderimi sürdü', e); }
       }
+      const kalanPdf = [...(await bekleyenTeknikPdfOzeti()).values()].reduce((a, b) => a + b.total, 0);
       const kalan = await korunanKalemler();
       const kalanFoto = [...(await bekleyenFotoOzeti()).values()].reduce((a, b) => a + b, 0);
       toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor`
-        : kalanFoto ? `${kalanFoto} fotoğraf gönderilemedi; yeniden denenecek`
+        : (kalanFoto || kalanPdf) ? `${kalanFoto ? `${kalanFoto} fotoğraf` : ''}${kalanFoto && kalanPdf ? ' · ' : ''}${kalanPdf ? `${kalanPdf} teknik PDF` : ''} gönderilemedi; cihazda korunuyor`
         : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
       await updatePill();
     };
@@ -543,7 +568,8 @@ const Sync = (() => {
     // Fotoğraf taraması blob'ları yüklediği için ağırdır; yalnız hızlı-senkron
     // yolundan önce (uyarı/outbox yokken) bir kez bakılır.
     const fotoVar = !warning && !outboxVar && (await bekleyenFotoOzeti()).size > 0;
-    if (warning || outboxVar || fotoVar) { await syncCenter(); return; }
+    const pdfVar = !warning && !outboxVar && !fotoVar && (await bekleyenTeknikPdfOzeti()).size > 0;
+    if (warning || outboxVar || fotoVar || pdfVar) { await syncCenter(); return; }
     if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
     toast('Senkronize ediliyor…');
     const completed = await full();

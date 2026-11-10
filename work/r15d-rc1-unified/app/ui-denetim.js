@@ -397,6 +397,28 @@ async function renderDenetim() {
       toast(`Bu denetime bağlı ${bagliTakipler.length} takip denetimi var; zincirin ana kaydı silinemez`);
       return;
     }
+    if (fr65SahaKaydiMi(d)) {
+      try {
+        const localPdf = await DB.get('teknik_pdf', currentDenetimId);
+        if (localPdf) {
+          toast('Bu denetime bağlı teknik PDF var. Önce FR.65 ekranından PDF’yi kaldırıp senkronize edin; kayıt silinmedi.');
+          return;
+        }
+        if (!navigator.onLine || !API.loggedIn) {
+          toast('FR.65 kaydını silmeden önce teknik PDF bağlantısı çevrimiçi kontrol edilmeli; kayıt korunuyor.');
+          return;
+        }
+        const remotePdf = await API.select('denetim_teknik_pdf', `select=denetim_id&denetim_id=eq.${encodeURIComponent(currentDenetimId)}&limit=1`);
+        if (remotePdf.length) {
+          toast('Bu denetime bağlı teknik PDF var. Önce FR.65 ekranından PDF’yi kaldırıp senkronize edin; kayıt silinmedi.');
+          return;
+        }
+      } catch (error) {
+        console.warn('Denetim silinmeden önce teknik PDF bağlantısı doğrulanamadı', error);
+        toast('Teknik PDF bağlantısı doğrulanamadı; denetim silinmedi. Bağlantıyı kontrol edip yeniden deneyin.');
+        return;
+      }
+    }
     if (!confirm(`"${d.musteri_unvani} · ${d.asansor_seri_no}" denetimi ve tüm maddeleri silinecek. Emin misiniz?`)) return;
     if (!confirm('Bu işlem geri alınamaz. Silinsin mi?')) return;
     const sahaRows = await DB.allByIndex('saha', 'byDenetim', currentDenetimId);

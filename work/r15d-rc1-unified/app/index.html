@@ -651,6 +651,26 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .grid2 .field.full label{min-height:0;}
 .field input,.field select{-webkit-appearance:none;appearance:none;box-sizing:border-box;}
 .field input[type=number]{-moz-appearance:textfield;}
+.fr65-pdf-card{display:grid;gap:10px;margin:12px 0;padding:14px;background:#fff;border:1px solid #dce0ea;border-radius:10px;box-shadow:var(--shadow-card);}
+.fr65-pdf-head{display:grid;gap:5px;}
+.fr65-pdf-head h3{margin:0;color:var(--navy);font-size:15px;}
+.fr65-pdf-head small,.fr65-pdf-note,.fr65-pdf-file span,.fr65-pdf-state{color:var(--muted);font-size:11.5px;line-height:1.45;}
+.fr65-pdf-state{display:block;padding:7px 9px;border-radius:7px;background:#f1f3f7;color:#434a5c;font-weight:650;}
+.fr65-pdf-state.pending{background:#fff4de;color:#805600;}
+.fr65-pdf-state.conflict{background:#fde8ef;color:#9e153d;}
+.fr65-pdf-file{display:grid;gap:2px;padding:9px;border:1px solid #edf0f4;border-radius:7px;overflow-wrap:anywhere;}
+.fr65-pdf-file b{font-size:12px;color:var(--ink);}
+.fr65-pdf-note{margin:0;}
+.fr65-pdf-note.warn{padding:8px;border-radius:7px;background:#fff5e5;color:#765000;}
+.fr65-pdf-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.fr65-pdf-actions .btn{min-height:42px;margin:0;padding:9px;font-size:12px;}
+.fr65-pdf-extraction{display:grid;gap:7px;padding-top:9px;border-top:1px solid #edf0f4;}
+.fr65-pdf-extraction>b{font-size:12px;color:var(--navy);}
+.fr65-pdf-extraction>small,.fr65-pdf-empty{font-size:11px;color:var(--muted);}
+.fr65-pdf-candidate{display:grid;gap:4px;padding:8px;border:1px solid #e7eaf1;border-radius:7px;background:#fafbfe;}
+.fr65-pdf-candidate b{font-size:11.5px;overflow-wrap:anywhere;}
+.fr65-pdf-candidate small{font-size:10.5px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere;}
+@media(max-width:420px){.fr65-pdf-actions{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -658,7 +678,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <button type="button" class="brand-home" id="brandHome" disabled aria-label="AVES Saha Denetim" title="AVES Saha Denetim">
     <span class="brand-lockup">
       <img src="aves-logo-white.png" alt="" aria-hidden="true">
-      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.20.0</b></span>
+      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.21.0</b></span>
     </span>
   </button>
   <div class="spacer"></div>
@@ -695,6 +715,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <script src="profil.js"></script>
 <script src="senkron.js"></script>
 <script src="yerel-yazma.js"></script>
+<script src="teknik-pdf.js"></script>
 <script src="ui-durum.js"></script>
 <script src="ui-foto.js"></script>
 <script src="ui-yonetim.js"></script>

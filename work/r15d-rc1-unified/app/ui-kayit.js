@@ -105,6 +105,11 @@ async function fr65SahaKaydiniSil(denetim, button = null) {
   if (button) { button.disabled = true; button.textContent = 'Senkronize ediliyor…'; }
   try {
     if (currentView === 'inspection' && currentDenetimId === id && activeFr65Flush) await activeFr65Flush();
+    const localTechnicalPdfBeforeSync = await DB.get('teknik_pdf', id);
+    const remoteTechnicalPdfBeforeSync = await API.select('denetim_teknik_pdf', `select=denetim_id&denetim_id=eq.${encodeURIComponent(id)}&limit=1`);
+    if (localTechnicalPdfBeforeSync || remoteTechnicalPdfBeforeSync.length) {
+      throw new Error('Bu denetime bağlı teknik dosya PDF’si var. Önce FR.65 ekranından PDF’yi kaldırıp senkronize edin; kayıt korunuyor.');
+    }
     const pendingBeforeSync = await Sync.denetimSyncOzeti(id);
     if (pendingBeforeSync.items.length) await Sync.full();
     const pendingAfterSync = await Sync.denetimSyncOzeti(id);
@@ -128,6 +133,11 @@ async function fr65SahaKaydiniSil(denetim, button = null) {
       throw new Error('Bu denetime bağlı fotoğraflar var. Önce fotoğrafları arşivleyip ayrı kaldırın; kayıt korunuyor.');
     }
 
+    const localTechnicalPdf = await DB.get('teknik_pdf', id);
+    const remoteTechnicalPdf = await API.select('denetim_teknik_pdf', `select=denetim_id&denetim_id=eq.${encodeURIComponent(id)}&limit=1`);
+    if (localTechnicalPdf || remoteTechnicalPdf.length) {
+      throw new Error('Bu denetime bağlı teknik dosya PDF’si var. Önce FR.65 ekranından PDF’yi kaldırıp senkronize edin; kayıt korunuyor.');
+    }
     const serverRows = await API.select('denetimler', `select=id,updated_at&id=eq.${encodeURIComponent(id)}&limit=1`);
     // Sunucu boş yanıt verdiyse kayıt orada yoktur (başka yerden/önceki denemede silinmiş ya da hiç ulaşmamış).
     // Bekleyen işlem de yoksa cihazdaki artık kopya, kullanıcı onayıyla yalnız cihazdan kaldırılır.

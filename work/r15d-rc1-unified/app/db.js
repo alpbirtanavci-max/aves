@@ -55,19 +55,41 @@ const DB = (() => {
             cursor.continue();
           };
         }
+        if (!d.objectStoreNames.contains('teknik_pdf')) d.createObjectStore('teknik_pdf', { keyPath: 'denetim_id' });
       };
       req.onsuccess = () => { db = req.result; res(); };
       req.onerror = () => rej(req.error);
     });
   }
   function tx(store, mode) { return db.transaction(store, mode).objectStore(store); }
+  // Teknik PDF: Blob/File yerine bayt dizisi (ArrayBuffer) saklanır. Safari/WebKit seçici dosyasını (ve bazı bağlamlarda
+  // Blob'u) IndexedDB'ye yazamayabilir; iOS seçicinin geçici dosyası da kaybolabilir. Okurken Blob'a geri çevrilir.
+  const pdfAlanlari = ['blob'];
+  async function pdfPaketle(kayit) {
+    if (!kayit) return kayit;
+    const cikis = { ...kayit };
+    for (const alan of pdfAlanlari) {
+      if (cikis[alan] instanceof Blob) { cikis[`${alan}_bytes`] = await cikis[alan].arrayBuffer(); cikis[`${alan}_type`] = cikis[alan].type || 'application/pdf'; delete cikis[alan]; }
+    }
+    if (cikis.conflict_remote) cikis.conflict_remote = await pdfPaketle(cikis.conflict_remote);
+    return cikis;
+  }
+  function pdfAc(kayit) {
+    if (!kayit) return kayit;
+    const cikis = { ...kayit };
+    for (const alan of pdfAlanlari) {
+      if (cikis[`${alan}_bytes`]) { cikis[alan] = new Blob([cikis[`${alan}_bytes`]], { type: cikis[`${alan}_type`] || 'application/pdf' }); delete cikis[`${alan}_bytes`]; delete cikis[`${alan}_type`]; }
+    }
+    if (cikis.conflict_remote) cikis.conflict_remote = pdfAc(cikis.conflict_remote);
+    return cikis;
+  }
   const p = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
   return {
     open,
     kvGet: (k) => p(tx('kv','readonly').get(k)),
     kvSet: (k, v) => p(tx('kv','readwrite').put(v, k)),
     kvDel: (k) => p(tx('kv','readwrite').delete(k)),
-    put: (store, obj) => p(tx(store,'readwrite').put(obj)),
+    put: async (store, obj) => { const veri = store === 'teknik_pdf' ? await pdfPaketle(obj) : obj; return p(tx(store,'readwrite').put(veri)); },
     putAll: (store, arr) => new Promise((res, rej) => {
       const t = db.transaction(store,'readwrite'); const s = t.objectStore(store);
       arr.forEach(o => s.put(o));
@@ -127,13 +149,14 @@ const DB = (() => {
       t.onerror = () => rej(t.error || new Error('Yerel kayıt işlemi başarısız'));
       t.onabort = () => rej(t.error || new Error('Yerel kayıt işlemi iptal edildi'));
     }),
-    get: (store, key) => p(tx(store,'readonly').get(key)),
-    all: (store) => p(tx(store,'readonly').getAll()),
+    get: async (store, key) => { const r = await p(tx(store,'readonly').get(key)); return store === 'teknik_pdf' ? pdfAc(r) : r; },
+    all: async (store) => { const r = await p(tx(store,'readonly').getAll()); return store === 'teknik_pdf' ? r.map(pdfAc) : r; },
     allByIndex: (store, idx, val) => p(tx(store,'readonly').index(idx).getAll(val)),
     del: (store, key) => p(tx(store,'readwrite').delete(key)),
     deleteInspectionLocal: (id) => new Promise((resolve, reject) => {
-      const t = db.transaction(['denetimler', 'saha', 'fotograflar', 'kv'], 'readwrite');
+      const t = db.transaction(['denetimler', 'saha', 'fotograflar', 'teknik_pdf', 'kv'], 'readwrite');
       t.objectStore('denetimler').delete(id);
+      t.objectStore('teknik_pdf').delete(id);
       const removeIndexedRows = storeName => {
         const store = t.objectStore(storeName);
         const request = store.index('byDenetim').openKeyCursor(IDBKeyRange.only(id));

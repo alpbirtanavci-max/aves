@@ -476,6 +476,27 @@ async function sahayaHazirla(d, rows) {
     add('Kütüphane manifesti doğrulandı', !!manifest && manifest.count === library.length && !!manifest.content_hash, manifest ? `${library.length} madde · ${String(manifest.content_hash || '').slice(0,12)}…` : 'Manifest yok');
   }
 
+  const technicalPdf = await DB.get('teknik_pdf', d.id).catch(() => null);
+  if (!technicalPdf) {
+    add('Teknik dosya PDF çevrimdışı kullanımı', true, 'PDF eklenmedi — isteğe bağlı');
+  } else if (!technicalPdf.blob) {
+    add('Teknik dosya PDF çevrimdışı kullanımı', false, 'PDF bu cihazda değil; denetim içinden indirin', true);
+  } else {
+    let pdfReaderReady = false;
+    let pdfReaderDetail = 'PDF okuyucu dosyaları henüz hazır değil';
+    try {
+      await AVES_TEKNIK_PDF.prepareOfflineReader();
+      pdfReaderReady = true;
+      pdfReaderDetail = 'PDF bu cihazda; yerel metin okuyucu dosyaları önbelleğe alındı';
+    } catch (error) { pdfReaderDetail = String(error?.message || pdfReaderDetail); }
+    add('Teknik dosya PDF çevrimdışı kullanımı', pdfReaderReady, pdfReaderDetail, true);
+  }
+  if (technicalPdf) {
+    const pdfSynced = technicalPdf.sync_status === 'synced';
+    add('Teknik dosya PDF eşitleme durumu', pdfSynced,
+      pdfSynced ? 'PDF sunucuda eşitlenmiş' : `${technicalPdf.sync_error || 'PDF aktarımı bekliyor'} — cihazdaki kopya korunuyor`, true);
+  }
+
   const profileVerifiedAt = await DB.kvGet('profile_verified_at');
   const profileVerifiedEmail = await DB.kvGet('profile_verified_email');
   add('Kullanıcı yetkisi çevrimiçiyken doğrulandı', !!profileVerifiedAt && profileVerifiedEmail === Profile.email, profileVerifiedAt ? new Date(profileVerifiedAt).toLocaleString('tr-TR') : 'Doğrulama yok');
