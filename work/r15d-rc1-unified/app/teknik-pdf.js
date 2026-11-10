@@ -148,7 +148,7 @@ window.AVES_TEKNIK_PDF = (() => {
     try { extracted = await readPdf(blob); }
     catch (error) {
       extracted = {
-        reader: 'pdfjs-local-rules-v1', status: 'reader_error',
+        reader: 'pdfjs-local-rules-v2', status: 'reader_error',
         message: String(error?.message || 'PDF metni okunamadı').slice(0, 180),
         parsed_at: new Date().toISOString(), page_count: remote.page_count || null,
         text_page_count: remote.text_page_count ?? 0, values: [], equipment: [],
@@ -362,7 +362,7 @@ window.AVES_TEKNIK_PDF = (() => {
     } catch (error) {
       if (String(error?.message || '').includes('250 sayfadan uzun')) throw error;
       extracted = {
-        reader: 'pdfjs-local-rules-v1',
+        reader: 'pdfjs-local-rules-v2',
         status: navigator.onLine ? 'reader_error' : 'not_extracted',
         message: String(error?.message || 'PDF metni okunamadı').slice(0, 180),
         parsed_at: new Date().toISOString(), page_count: null, text_page_count: 0, values: [], equipment: [],

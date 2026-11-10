@@ -2295,7 +2295,7 @@ const pdfOkuyucuSrc = fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'),
 const migration88 = fs.readFileSync(path.join(root, 'database', '88_r15d_rc3192_teknik_dosya_pdf.sql'), 'utf8');
 test('teknik PDF: dış AI/OCR çağrısı yok, çıkarım yalnız yerel; aday saha alanlarına otomatik yazılmaz',
   !/openai|anthropic|gemini|tesseract|fetch\(['"`]https?:/i.test(teknikPdfSrc + pdfOkuyucuSrc) &&
-  pdfOkuyucuSrc.includes('pdfjs-local-rules-v1') && !teknikPdfSrc.includes('saveFr65') &&
+  pdfOkuyucuSrc.includes('pdfjs-local-rules-v2') && !teknikPdfSrc.includes('saveFr65') &&
   app.includes('Aday değer kopyalandı; saha ölçümüne otomatik aktarılmadı'));
 test('PDF okuyucu eski Safari icin ReadableStream async yineleyici polyfill icerir',
   pdfOkuyucuSrc.includes('ReadableStream.prototype[Symbol.asyncIterator]') && pdfOkuyucuSrc.indexOf('Symbol.asyncIterator') < pdfOkuyucuSrc.indexOf('export async function extractTechnicalPdf'));
