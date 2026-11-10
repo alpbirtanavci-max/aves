@@ -2297,6 +2297,8 @@ test('teknik PDF: dış AI/OCR çağrısı yok, çıkarım yalnız yerel; aday s
   !/openai|anthropic|gemini|tesseract|fetch\(['"`]https?:/i.test(teknikPdfSrc + pdfOkuyucuSrc) &&
   pdfOkuyucuSrc.includes('pdfjs-local-rules-v1') && !teknikPdfSrc.includes('saveFr65') &&
   app.includes('Aday değer kopyalandı; saha ölçümüne otomatik aktarılmadı'));
+test('PDF okuyucu eski Safari icin ReadableStream async yineleyici polyfill icerir',
+  pdfOkuyucuSrc.includes('ReadableStream.prototype[Symbol.asyncIterator]') && pdfOkuyucuSrc.indexOf('Symbol.asyncIterator') < pdfOkuyucuSrc.indexOf('export async function extractTechnicalPdf'));
 test('teknik PDF okuyucu temizliği (destroy) söz vermese de çıkarımı bozmaz',
   pdfOkuyucuSrc.includes('async function kapat(') && pdfOkuyucuSrc.includes('await nesne.destroy?.()') &&
   !pdfOkuyucuSrc.includes('.destroy().catch'));

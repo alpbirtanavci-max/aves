@@ -1,5 +1,19 @@
 import * as pdfjsLib from './vendor/pdfjs/pdf.min.mjs';
 
+// Safari/iOS (<=18.x) ReadableStream'i `for await` ile gezemez; PDF.js getTextContent() buna dayanir.
+if (typeof ReadableStream !== 'undefined' && !ReadableStream.prototype[Symbol.asyncIterator]) {
+  ReadableStream.prototype[Symbol.asyncIterator] = async function* readableStreamYinele() {
+    const okuyucu = this.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await okuyucu.read();
+        if (done) return;
+        yield value;
+      }
+    } finally { okuyucu.releaseLock(); }
+  };
+}
+
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdfjs/pdf.worker.min.mjs', import.meta.url).href;
 
 const PDF_BASE = new URL('./vendor/pdfjs/', import.meta.url);
