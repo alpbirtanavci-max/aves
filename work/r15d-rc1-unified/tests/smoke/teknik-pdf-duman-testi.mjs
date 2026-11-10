@@ -124,7 +124,8 @@ try {
     assert.ok(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.pdf$/.test(T[0].object_path), 'yol <denetim>/<uuid>.pdf olmalı');
     await p.waitForSelector('.fr65-pdf-candidate', { timeout: 15000 }).catch(async hata => {
       const ek = await p.evaluate(async id => { const r = await DB.get('teknik_pdf', id); return r && r.extracted_fields && `${r.extracted_fields.status}: ${r.extracted_fields.message}`; }, idOf());
-      throw new Error(`aday yok (${ek}) | ${hata.message}`);
+      const iz = await p.evaluate(async bytes => { try { const r = await import('./pdf-field-reader.mjs'); await r.extractTechnicalPdf(new File([new Uint8Array(bytes)], 'a.pdf')); return 'ok'; } catch (e) { return String(e.stack || e).split('\n').slice(0, 6).join(' // '); } }, Array.from(pdfMetinli));
+      throw new Error(`aday yok (${ek}) | iz: ${iz} | ${hata.message}`);
     });
     assert.ok(await p.locator('.fr65-pdf-candidate').count() >= 2, 'hız / yük adayları bulunmalı');
     assert.match(await p.locator('#fr65TechnicalPdfCard').innerText(), /otomatik aktarılmaz/);
