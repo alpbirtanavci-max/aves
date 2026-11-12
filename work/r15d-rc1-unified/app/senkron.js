@@ -527,6 +527,25 @@ const Sync = (() => {
     return map;
   }
 
+  // Eşitleme sonrası kullanıcıya söylenen sonuç: yalnız tamamlandığında “tamamlandı” denir; kalan kuyruk, fotoğraf ve PDF sayılır.
+  async function sonucMesaji(ok) {
+    const korunan = await korunanKalemler();
+    if (korunan.length) return `${korunan.length} işlem hâlâ inceleme gerektiriyor`;
+    const kalanIslem = await DB.outboxCount();
+    const kalanFoto = [...(await bekleyenFotoOzeti()).values()].reduce((a, b) => a + b, 0);
+    const kalanPdf = [...(await bekleyenTeknikPdfOzeti()).values()].reduce((a, b) => a + b.total, 0);
+    const parcalar = [kalanIslem && `${kalanIslem} işlem`, kalanFoto && `${kalanFoto} fotoğraf`, kalanPdf && `${kalanPdf} teknik PDF`].filter(Boolean);
+    if (parcalar.length) return `${parcalar.join(' · ')} gönderilemedi; cihazda korunuyor, yeniden denenecek`;
+    return ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek';
+  }
+
+  // Sunucunun JSON hata gövdesinden okunur sebep (ör. kısıt adı); bulunamazsa ham metin.
+  function redSebebi(items) {
+    const metin = (items.find(it => it.last_error_message && !/^Bağlı denetim/.test(it.last_error_message)) || {}).last_error_message || '';
+    const m = metin.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+    return (m ? m[1].replace(/\\"/g, '"') : metin).slice(0, 200);
+  }
+
   async function syncCenter() {
     const items = await DB.outboxAll();
     const warning = await DB.kvGet('sync_warning');
@@ -576,7 +595,7 @@ const Sync = (() => {
       const d = denetimler.find(x => x.id === id);
       const md = mdHatali(id);
       return `<div class="sync-review-row is-conflict" data-sync-rej="${escSync(id)}"><b>${escSync(adOf(id))}</b>` +
-        `<small>Sunucu bu kaydı reddetti: ${md ? `Makine dairesi tipi (MR/MRL) ${d && d.makine_dairesi_tipi ? 'geçersiz' : 'eksik'}` : 'kayıt doğrulaması başarısız'}. Veri cihazda korunuyor.</small>` +
+        `<small>Sunucu bu kaydı reddetti: ${md ? `Makine dairesi tipi (MR/MRL) ${d && d.makine_dairesi_tipi ? 'geçersiz' : 'eksik'}` : escSync(redSebebi(reddedilenKalemler.filter(it => it.inspection_id === id)) || 'kayıt doğrulaması başarısız')}. Veri cihazda korunuyor.${md ? '' : ' “Yeniden dene” yalnız sunucu kuralı değiştiyse işe yarar; sebebi iletip tanılama bilgisini paylaşın.'}</small>` +
         `${md ? '<select data-sync-md aria-label="Makine dairesi tipi"><option value="">Makine dairesi seçin…</option><option value="MR">MR</option><option value="MRL">MRL</option></select> ' : ''}` +
         `<button class="btn btn-ghost" data-sync-duzelt="${escSync(id)}">${md ? 'Düzelt ve gönder' : 'Yeniden dene'}</button></div>`;
     }).join('')}</div>` : '';
@@ -614,12 +633,7 @@ const Sync = (() => {
       if (typeof UI !== 'undefined' && UI.bekleyenFotograflariYukle) {
         try { await UI.bekleyenFotograflariYukle(); } catch (e) { console.warn('Fotoğraf gönderimi sürdü', e); }
       }
-      const kalanPdf = [...(await bekleyenTeknikPdfOzeti()).values()].reduce((a, b) => a + b.total, 0);
-      const kalan = await korunanKalemler();
-      const kalanFoto = [...(await bekleyenFotoOzeti()).values()].reduce((a, b) => a + b, 0);
-      toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor`
-        : (kalanFoto || kalanPdf) ? `${kalanFoto ? `${kalanFoto} fotoğraf` : ''}${kalanFoto && kalanPdf ? ' · ' : ''}${kalanPdf ? `${kalanPdf} teknik PDF` : ''} gönderilemedi; cihazda korunuyor`
-        : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
+      toast(await sonucMesaji(ok));
       await updatePill();
     };
 
@@ -633,9 +647,8 @@ const Sync = (() => {
       catch (error) { toast(error.message); btn.disabled = false; return; }
       close();
       toast('Senkronize ediliyor…');
-      await full();
-      const kalan = await korunanKalemler();
-      toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı');
+      const ok = await full();
+      toast(await sonucMesaji(ok));
       await updatePill();
     }; });
 
@@ -661,9 +674,8 @@ const Sync = (() => {
       }
       close();
       toast('Senkronize ediliyor…');
-      await full();
-      const kalan = await korunanKalemler();
-      toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı');
+      const ok = await full();
+      toast(await sonucMesaji(ok));
       await updatePill();
     };
   }
@@ -682,7 +694,7 @@ const Sync = (() => {
     if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik senkron olur'); return; }
     toast('Senkronize ediliyor…');
     const completed = await full();
-    toast(completed ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek');
+    toast(await sonucMesaji(completed));
   }
 
   // Cihaz senkron durumu sunucuya (en iyi çaba) bildirilir: yönetici hangi cihazın neyi gönderemediğini görür.
@@ -717,6 +729,6 @@ const Sync = (() => {
     updatePill();
   }
 
-  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir, reddedileniDuzelt };
+  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir, reddedileniDuzelt, sonucMesaji };
 })();
 

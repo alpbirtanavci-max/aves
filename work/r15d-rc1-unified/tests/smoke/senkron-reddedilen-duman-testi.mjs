@@ -82,6 +82,41 @@ try {
     assert.equal(await p.evaluate(id => DB.get('denetimler', id).then(r => r.makine_dairesi_tipi), bozuk), 'MRL');
   });
 
+  await report.step('başka tür doğrulama reddi: sebep (kısıt adı) gösterilir, MR/MRL seçimi sunulmaz; başarı mesajı yanlış “tamamlandı” demez', async () => {
+    const diger = '33333333-3333-4333-8333-333333333333';
+    s.fake.state.dogrulaOrnek = true;
+    await p.evaluate(async ({ diger, email }) => {
+      const satir = { id: diger, musteri_unvani: 'Başka Hata A.Ş.', asansor_seri_no: 'S-3333', olusturan_email: email, modul: 'Modül E',
+        ana_standart: 'EN 81-20', denetim_durumu: 'Devam Ediyor', makine_dairesi_tipi: 'MR', ornek_alan: 'gecersiz' };
+      await DB.put('denetimler', satir);
+      await DB.outboxAdd({ operation_id: crypto.randomUUID(), user_id: email, device_id: 'test', inspection_id: diger, entity_type: 'denetimler',
+        operation_type: 'upsert', table: 'denetimler', rows: [satir], created_at: new Date().toISOString(), ts: Date.now(), attempt_count: 0, sync_status: 'pending' });
+      await Sync.pushOutbox();
+      await Sync.syncCenter();
+    }, { diger, email: persona.email });
+    await p.waitForSelector('[data-sync-rej]');
+    const kart = p.locator('[data-sync-rej]');
+    assert.match(await kart.innerText(), /denetimler_ornek_alan_check/);
+    assert.equal(await kart.locator('[data-sync-md]').count(), 0, 'MR/MRL seçimi yalnız Makine dairesi hatasında sunulmalı');
+    assert.match(await kart.innerText(), /Yeniden dene/);
+    // “Yeniden dene” sunucu aynı sebeple reddettiği için kalıcı hata sürer: mesaj “tamamlandı” OLMAMALI.
+    await p.click('[data-sync-duzelt]');
+    await until(async () => /hâlâ inceleme gerektiriyor/.test(await p.evaluate(() => document.querySelector('.toast, #toast')?.textContent || '')), 'reddedilen kayıt için “hâlâ inceleme” mesajı yok');
+    assert.doesNotMatch(await p.evaluate(() => document.querySelector('.toast, #toast')?.textContent || ''), /Senkron tamamlandı/);
+    // kuyrukta geçici hata (retry) kalırsa da “tamamlandı” denmez
+    const mesajlar = await p.evaluate(async () => {
+      for (const it of await DB.outboxAll()) await DB.outboxDel(it.seq);
+      const bos = await Sync.sonucMesaji(true);
+      await DB.outboxAdd({ operation_id: crypto.randomUUID(), inspection_id: 'x', table: 'denetimler', rows: [], created_at: new Date().toISOString(), ts: 1, attempt_count: 1, sync_status: 'retry' });
+      const retry = await Sync.sonucMesaji(true);
+      for (const it of await DB.outboxAll()) await DB.outboxDel(it.seq);
+      return { bos, retry };
+    });
+    assert.equal(mesajlar.bos, 'Senkron tamamlandı');
+    assert.match(mesajlar.retry, /1 işlem gönderilemedi; cihazda korunuyor, yeniden denenecek/);
+    s.fake.state.dogrulaOrnek = false;
+  });
+
   await report.step('sayfa hatası yok', async () => { const hatalar = s.errors.filter(e => !/favicon|manifest|status of 400/.test(e)); assert.deepEqual(hatalar, [], hatalar.join(' || ').slice(0, 600)); });
 } finally { await browser.close(); app.close(); }
 process.exit(report.summary() ? 1 : 0);
