@@ -571,7 +571,6 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
         <button class="backlink" id="fr65Back">‹ Denetimler</button>
         <div class="inspection-actions">
           ${fr65Tamamlandi ? '<button class="delbtn" id="fr65Summary" title="Girilen saha verilerinin özeti">📋 Denetim Özeti</button>' : ''}
-          <button class="delbtn" id="fr65Excel" title="Saha verisini Excel dosyası olarak indir">📊 Excel</button>
           <button class="delbtn" id="fr65Word" title="ÜB.FR.65 Teknik Dosya–Saha Eşleşme Formu (Word)">📝 Word</button>
           <button class="delbtn" id="fr65Print" title="FR.65 saha veri özetini yazdır veya PDF kaydet">🖨 Çıktı / PDF</button>
           ${canReopenDenetim(d) ? '<button class="delbtn" id="fr65Reopen" title="İz bırakarak düzenlemeye aç">↻ Düzenlemeye Aç</button>' : ''}
@@ -919,32 +918,6 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
       if (latest && !(await cevrimdisiHazirlikDurumu(latest, [])).ready) await sahayaHazirla(latest, []);
     }).catch(() => {});
   }
-  const excelAction = document.getElementById('fr65Excel');
-  if (excelAction) excelAction.onclick = async () => {
-    excelAction.disabled = true;
-    try {
-      try { if (canEdit) await flushCapture(); }
-      catch (error) { toast('Son kayıt doğrulanamadı; cihazdaki kayıtlı değerler aktarılıyor'); }
-      const latest = await DB.get('denetimler', d.id) || d;
-      const record = AVES_DENETIM_FORM_SETI.normalize(latest.denetim_form_kayitlari, latest.teknik_dosya_kayitlari);
-      const bytes = await AVES_FR65_EXCEL.build({
-        JSZip: window.JSZip, record: latest, values: record.forms?.FR65?.values || {},
-        sections: AVES_TEKNIK_DOSYA_FORM.visibleFr65Sections(latest.tahrik_tipi),
-        isActive: (field, values) => AVES_TEKNIK_DOSYA_FORM.fr65CaptureFieldActive(field, values),
-        duzeltmeler: AVES_FR65_CIKTI.duzeltmeOzeti(await DB.allByIndex('gecmis', 'byDenetim', d.id)),
-        meta: { surum: APP_VERSION, uretildi: new Date().toLocaleString('tr-TR') },
-      });
-      const ad = String(latest.asansor_seri_no || latest.musteri_unvani || 'kayit').replace(/[^A-Za-z0-9._-]+/g, '_').slice(0, 40);
-      await dosyaIndir(new File([bytes], `AVES_FR65_${ad}_${new Date().toISOString().slice(0, 10)}.xlsx`,
-        { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
-      toast('Excel dosyası hazırlandı');
-    } catch (error) {
-      if (!(error && error.name === 'AbortError')) {
-        console.error('FR.65 Excel dışa aktarma hatası', error);
-        toast('Excel dosyası oluşturulamadı; veri cihazda korunuyor');
-      }
-    } finally { excelAction.disabled = false; }
-  };
   const wordAction = document.getElementById('fr65Word');
   if (wordAction) wordAction.onclick = async () => {
     wordAction.disabled = true;
