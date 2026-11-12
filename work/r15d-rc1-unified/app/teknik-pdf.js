@@ -297,6 +297,13 @@ window.AVES_TEKNIK_PDF = (() => {
           error.remoteMetadata = old;
           throw error;
         }
+        // Depo ve tablo kuralları denetimin sunucuda var olmasını şart koşar; yeni denetim henüz eşitlenmediyse bekle.
+        const sunucudaDenetim = await API.select('denetimler', `select=id&id=eq.${encodeURIComponent(item.denetim_id)}&limit=1`);
+        if (!sunucudaDenetim.length) {
+          const bekle = new Error('Denetim kaydı henüz sunucuda yok; PDF, denetim eşitlenince gönderilecek.');
+          bekle.denetimBekliyor = true;
+          throw bekle;
+        }
         if (!alreadyUploaded && !item.uploaded_to_storage) {
           const current = await getCurrent();
           if (!current) continue;
@@ -331,6 +338,11 @@ window.AVES_TEKNIK_PDF = (() => {
         const current = await getCurrent();
         if (!current) continue;
         item = current;
+        if (error?.denetimBekliyor) {
+          item.sync_error = error.message;
+          await DB.put('teknik_pdf', item);
+          continue;
+        }
         if (error?.pdfConflict) {
           item.sync_status = 'conflict';
           conflictRemoteMetadata = error.remoteMetadata || null;

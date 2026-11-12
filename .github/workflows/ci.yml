@@ -36,6 +36,10 @@ jobs:
         env:
           PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
         run: node work/r15d-rc1-unified/tests/smoke/teknik-pdf-duman-testi.mjs
+      - name: Duman testi (reddedilen kayıt kuyruğu bloklamaz)
+        env:
+          PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
+        run: node work/r15d-rc1-unified/tests/smoke/senkron-reddedilen-duman-testi.mjs
 
   duman-testi-safari:
     name: Duman testi (Safari / WebKit motoru)
@@ -57,6 +61,10 @@ jobs:
         env:
           PLAYWRIGHT_BROWSER: webkit
         run: node work/r15d-rc1-unified/tests/smoke/teknik-pdf-duman-testi.mjs
+      - name: Duman testi (reddedilen kayıt kuyruğu bloklamaz)
+        env:
+          PLAYWRIGHT_BROWSER: webkit
+        run: node work/r15d-rc1-unified/tests/smoke/senkron-reddedilen-duman-testi.mjs
 
   rls-test:
     name: RLS dort-persona senaryo testi
