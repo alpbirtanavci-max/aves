@@ -117,10 +117,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.21.3 sürümü', index.includes('R15D-RC3.21.3</b>'));
-test('app R15D rc3.21.3 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.3'"));
-test('service worker rc3.21.3 cache', sw.includes("aves-saha-r15d-rc3213'"));
-test('uygulama manifesti rc3.21.3 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.3"'));
+test('index R15D rc3.21.4 sürümü', index.includes('R15D-RC3.21.4</b>'));
+test('app R15D rc3.21.4 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.4'"));
+test('service worker rc3.21.4 cache', sw.includes("aves-saha-r15d-rc3214'"));
+test('uygulama manifesti rc3.21.4 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.4"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -365,6 +365,9 @@ test('eşitleme: sunucunun kalıcı doğrulama reddi (400 + 23514/23502/22xxx) k
   app.includes('reddedilenDenetimler.has(item.inspection_id)') && app.includes('async function reddedileniDuzelt(denetimId, makineDairesi)') &&
   app.includes('data-sync-duzelt') && app.includes('data-sync-md') &&
   fs.readFileSync(path.join(appDir, 'cihaz-durumu.js'), 'utf8').includes("'rejected'"));
+test('eşitleme sonuç mesajı: kalan işlem/fotoğraf/PDF varken “tamamlandı” denmez; reddedilen kayıt sebebi gösterilir',
+  app.includes('async function sonucMesaji(ok)') && app.includes('function redSebebi(items)') && (app.match(/toast\(await sonucMesaji\(/g) || []).length === 4 &&
+  !/toast\(kalan\.length \? `\$\{kalan\.length\} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı'\)/.test(app));
 test('teknik PDF: bağlı denetim sunucuda yoksa gönderilmez (bekler); PDF, denetim gönderiminden SONRA denenir',
   fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes('denetimBekliyor') && fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes("select=id&id=eq.${encodeURIComponent(item.denetim_id)}") &&
   (() => { const full = app.slice(app.indexOf('async function full()')); return full.indexOf('const sent = await pushOutbox();') < full.indexOf('AVES_TEKNIK_PDF.pushPending()'); })() &&
@@ -1154,7 +1157,7 @@ test('retry hatası outbox üzerinde tutuluyor', app.includes("sync_status = 're
 test('yarıda kalan sending işlemleri yeniden deneniyor', app.includes("['pending', 'retry', 'sending']"));
 test('korunan outbox varken senkron tamamlandı sayılmıyor', app.includes("allSent && (await DB.outboxCount()) === 0"));
 test('forbidden kayıt sık yeniden deneme döngüsüne girmiyor', app.includes('const retryableItems = (await DB.outboxAll()).filter'));
-test('manuel senkron gerçek tamamlanma sonucunu gösteriyor', app.includes("completed ? 'Senkron tamamlandı'"));
+test('manuel senkron gerçek tamamlanma sonucunu gösteriyor', app.includes("ok ? 'Senkron tamamlandı'") && app.includes('toast(await sonucMesaji(completed))'));
 test('senkron sonrası denetim içi durum güvenli olduğunda yeniden hesaplanıyor', app.includes('UI.canRefreshSafely()') && app.includes("currentView === 'inspection' && currentDenetimId"));
 test('aktif form alanı arka plan senkronuyla yeniden çizilmiyor',
   app.includes('UI.canRefreshSafely()') && app.includes("active.matches('input,textarea,select')"));

@@ -88,6 +88,10 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     if (method === 'POST') {
       const prefer = req.headers()['prefer'] || '';
       const incoming = Array.isArray(body) ? body : [body];
+      if (state.dogrulaOrnek && m[1] === 'denetimler' && incoming.some(row => row.ornek_alan === 'gecersiz')) {
+        return route.fulfill(json(400, { code: '23514', details: null, hint: null,
+          message: 'new row for relation "denetimler" violates check constraint "denetimler_ornek_alan_check"' }));
+      }
       if (state.dogrulaMd && m[1] === 'denetimler' && incoming.some(row => !['MR', 'MRL'].includes(row.makine_dairesi_tipi))) {
         // Gerçek sunucunun migration 21 kısıtı: Makine dairesi MR/MRL olmalı (PostgREST 400 + 23514).
         return route.fulfill(json(400, { code: '23514', details: null, hint: null,
