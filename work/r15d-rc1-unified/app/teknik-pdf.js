@@ -7,6 +7,8 @@
 window.AVES_TEKNIK_PDF = (() => {
   const BUCKET = 'denetim-teknik-dosyalari';
   const MAX_BYTES = 20 * 1024 * 1024;
+  // Okuyucu sürümü adreste taşınır: SW önbellek-öncelikli olduğundan, kurallar değişince eski kopya sonsuza dek sunulmasın.
+  const READER_URL = './pdf-field-reader.mjs?v=3';
   const PENDING = new Set(['pending', 'metadata_pending', 'delete_pending', 'conflict']);
   let pendingPushPromise = null;
   let pendingPushAgain = false;
@@ -66,7 +68,7 @@ window.AVES_TEKNIK_PDF = (() => {
     }
     const cache = await caches.open('aves-pdfjs-v6.2.108');
     const coreUrls = [
-      './pdf-field-reader.mjs',
+      READER_URL,
       './vendor/pdfjs/pdf.min.mjs',
       './vendor/pdfjs/pdf.worker.min.mjs',
       './vendor/pdfjs/assets.json',
@@ -98,7 +100,7 @@ window.AVES_TEKNIK_PDF = (() => {
       if (!navigator.onLine) throw error;
       console.warn('PDF okuyucu önbelleği hazırlanamadı; okuyucu ağdan yükleniyor', error);
     }
-    const reader = await import('./pdf-field-reader.mjs');
+    const reader = await import(READER_URL);
     return reader.extractTechnicalPdf(file);
   }
 
@@ -148,7 +150,7 @@ window.AVES_TEKNIK_PDF = (() => {
     try { extracted = await readPdf(blob); }
     catch (error) {
       extracted = {
-        reader: 'pdfjs-local-rules-v2', status: 'reader_error',
+        reader: 'pdfjs-local-rules-v3', status: 'reader_error',
         message: String(error?.message || 'PDF metni okunamadı').slice(0, 180),
         parsed_at: new Date().toISOString(), page_count: remote.page_count || null,
         text_page_count: remote.text_page_count ?? 0, values: [], equipment: [],
@@ -374,7 +376,7 @@ window.AVES_TEKNIK_PDF = (() => {
     } catch (error) {
       if (String(error?.message || '').includes('250 sayfadan uzun')) throw error;
       extracted = {
-        reader: 'pdfjs-local-rules-v2',
+        reader: 'pdfjs-local-rules-v3',
         status: navigator.onLine ? 'reader_error' : 'not_extracted',
         message: String(error?.message || 'PDF metni okunamadı').slice(0, 180),
         parsed_at: new Date().toISOString(), page_count: null, text_page_count: 0, values: [], equipment: [],

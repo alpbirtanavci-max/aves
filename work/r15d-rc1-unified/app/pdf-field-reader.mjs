@@ -27,13 +27,13 @@ const fold = value => String(value || '')
   .trim();
 
 const EQUIPMENT = [
-  { key: 'makine_motor', label: 'Makine / motor', pattern: /\b(makine|motor|machine|traction machine)\b/ },
-  { key: 'kapi_kilidi', label: 'Kapı kilitleri', pattern: /\b(kat kapisi.{0,18}kilit|kapi kilidi|door lock)\b/ },
+  { key: 'makine_motor', label: 'Makine / motor', pattern: /\b(makin[ae]|motor|machine|traction machine)\b/ },
+  { key: 'kapi_kilidi', label: 'Kapı kilitleri', pattern: /\b(kat kapisi.{0,18}kilit|kapi kilidi|kilitler|door lock)\b/ },
   { key: 'guvenlik_tertibati', label: 'Güvenlik tertibatı / paraşüt fren', pattern: /\b(parasut\w*|guvenlik tertibati\w*|safety gear|safety device)\b/ },
   { key: 'tampon', label: 'Kabin / karşı ağırlık tamponu', pattern: /\b(tampon\w*|buffer)\b/ },
   { key: 'hiz_regulatoru', label: 'Hız regülatörü', pattern: /\b(hiz regulator\w*|regulator\w*|overspeed governor|governor)\b/ },
   { key: 'fren', label: 'Fren', pattern: /\b(fren\w*|brake)\b/ },
-  { key: 'ana_kart', label: 'Ana kart / kontrol kartı', pattern: /\b(ana kart\w*|ana kontrol kart\w*|main board|control board)\b/ },
+  { key: 'ana_kart', label: 'Ana kart / kontrol kartı', pattern: /\b(ana kart\w*|ana kontrol kart\w*|k\. ?panosu|kontrol panosu|main board|control board)\b/ },
   { key: 'ucm', label: 'UCM tertibatı', pattern: /\bucm\b|istemsiz kabin hareketi|unintended car movement/ },
   { key: 'gsm_modulu', label: 'GSM modülü', pattern: /\b(gsm modulu|gsm module|alarm modulu|alarm module)\b/ },
 ];
@@ -121,6 +121,82 @@ function tableRows(items, page) {
       evidence: `${row.no} · ${all.replace(/^\d+ · /, '')}`,
     };
   }).filter(row => row.name);
+}
+
+// "Güvenlik Ekipmanları Listesi" düzeni: sıra numarası yok; başlık "KULLANILAN EKİPMAN / MARKASI / TİPİ / SERİ NO /
+// SERTİFİKA NO / ONAYLANMIŞ KURULUŞ". Ekipman adı soldaki sütunda dikey ortalanmış (çok satırlı), diğer hücreler
+// satır grupları halinde: ad kümeleri ile veri kümeleri sırayla eşleştirilir; hücreler başlık merkezine göre sütunlanır.
+const gruplaY = (hucreler, aralik) => {
+  const sirali = [...hucreler].sort((a, b) => b.y - a.y);
+  const kumeler = [];
+  for (const hucre of sirali) {
+    const son = kumeler[kumeler.length - 1];
+    if (son && son.altY - hucre.y <= aralik) { son.hucreler.push(hucre); son.altY = hucre.y; }
+    else kumeler.push({ ustY: hucre.y, altY: hucre.y, hucreler: [hucre] });
+  }
+  return kumeler.map(kume => ({ ...kume, merkez: (kume.ustY + kume.altY) / 2 }));
+};
+
+function listRows(items, page) {
+  const cells = [];
+  for (const item of items) {
+    if (!item || typeof item.str !== 'string' || !item.str.trim()) continue;
+    const x = Number(item.transform?.[4]);
+    const y = Number(item.transform?.[5]);
+    const width = Number(item.width) || 0;
+    if (Number.isFinite(x) && Number.isFinite(y)) cells.push({ x, y, cx: x + width / 2, text: item.str.trim() });
+  }
+  const find = pattern => cells.find(cell => pattern.test(fold(cell.text)));
+  const head = {
+    label: find(/^kullanilan$/), equipment: find(/^ekipman$/), brand: find(/^markasi$/), type: find(/^tipi$/),
+    serial: find(/^seri no$/), cert: find(/^sertifika no$/), body: find(/^onaylanmis$/),
+  };
+  if (!head.label || !head.equipment || !head.brand || !head.type) return [];
+  const columns = ['brand', 'type', 'serial', 'cert', 'body'].filter(role => head[role]).map(role => ({ role, cx: head[role].cx }));
+  const labelLimit = (head.label.cx + head.brand.cx) / 2;
+  const baslikMetni = /^(kullanilan|ekipman|markasi|tipi|seri no|sertifika no|onaylanmis|kurulus|veren)$/;
+  const body = cells.filter(cell => cell.y < head.equipment.y - 2 && !baslikMetni.test(fold(cell.text)));
+  const isSubLabel = text => /^(z|\d+)\.? ?kat$/.test(fold(text)) || /^[-–—]$/.test(text);
+  const labelCells = body.filter(cell => cell.cx < labelLimit && !isSubLabel(cell.text));
+  const dataCells = body.filter(cell => cell.cx >= labelLimit);
+  if (!labelCells.length || !dataCells.length) return [];
+  const labels = gruplaY(labelCells, 14.5);
+  const datas = gruplaY(dataCells, 20);
+  const pairs = [];
+  if (labels.length === datas.length) labels.forEach((label, i) => pairs.push([label, datas[i]]));
+  else {
+    const used = new Set();
+    for (const label of labels) {
+      let best = -1;
+      datas.forEach((data, i) => { if (!used.has(i) && (best < 0 || Math.abs(data.merkez - label.merkez) < Math.abs(datas[best].merkez - label.merkez))) best = i; });
+      if (best >= 0 && Math.abs(datas[best].merkez - label.merkez) <= 40) { used.add(best); pairs.push([label, datas[best]]); }
+    }
+  }
+  const metin = (hucreler, role) => hucreler
+    .filter(cell => cell.role === role && !/^[-–—]$/.test(cell.text))
+    .sort((a, b) => b.y - a.y || a.x - b.x).map(cell => cell.text).join(' ').replace(/\s+/g, ' ').trim();
+  return pairs.map(([label, data], index) => {
+    const hucreler = data.hucreler.map(cell => {
+      let best = columns[0];
+      for (const column of columns) if (Math.abs(column.cx - cell.cx) < Math.abs(best.cx - cell.cx)) best = column;
+      return { ...cell, role: best.role };
+    });
+    const name = label.hucreler.sort((a, b) => b.y - a.y || a.x - b.x).map(cell => cell.text).join(' ').replace(/\s+/g, ' ').trim();
+    const brand = metin(hucreler, 'brand');
+    const model = metin(hucreler, 'type');
+    const serial = metin(hucreler, 'serial');
+    const cert = metin(hucreler, 'cert');
+    const maker = metin(hucreler, 'body');
+    return {
+      page,
+      no: String(index + 1),
+      name,
+      brand,
+      model,
+      maker,
+      evidence: [name, brand, model, serial && `Seri ${serial}`, cert && `Sertifika ${cert}`, maker && `Kuruluş ${maker}`].filter(Boolean).join(' · '),
+    };
+  }).filter(row => row.name && (row.brand || row.model));
 }
 
 function tableCandidates(rows) {
@@ -248,7 +324,7 @@ export async function extractTechnicalPdf(file) {
       const result = pageLines(content.items, pageNumber);
       if (result.length) textPageCount++;
       lines.push(...result);
-      tableItems.push(...tableCandidates(tableRows(content.items, pageNumber)));
+      tableItems.push(...tableCandidates([...tableRows(content.items, pageNumber), ...listRows(content.items, pageNumber)]));
       page.cleanup();
     }
     const extracted = extractCandidates(lines, new Set(tableItems.map(item => item.page)));
@@ -256,7 +332,7 @@ export async function extractTechnicalPdf(file) {
     const status = textPageCount === 0 ? 'no_text_layer'
       : (extracted.values.length || extracted.equipment.length ? 'candidates_found' : 'no_matches');
     return {
-      reader: 'pdfjs-local-rules-v2',
+      reader: 'pdfjs-local-rules-v3',
       status,
       parsed_at: new Date().toISOString(),
       page_count: pdf.numPages,

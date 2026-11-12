@@ -49,7 +49,12 @@ try {
   });
 
   await report.step('gönderim: sağlam denetim sunucuya gider; bozuk denetimin iki işlemi "reddedildi" olarak korunur', async () => {
-    await p.evaluate(() => Sync.pushOutbox());
+    // Arka planda süren bir gönderim varsa pushOutbox() hemen döner; koşul gerçekleşene kadar yeniden dene.
+    await until(async () => {
+      await p.evaluate(() => Sync.pushOutbox());
+      return sunucu.some(r => r.id === saglam) && (await p.evaluate(() => DB.outboxCount())) === 2 &&
+        (await p.evaluate(async () => (await DB.outboxAll()).every(i => i.sync_status === 'rejected')));
+    }, 'sağlam denetim sunucuya gitmedi veya bozuk denetim “reddedildi” olmadı (kuyruk bloklandı)');
     assert.ok(sunucu.some(r => r.id === saglam), 'sağlam denetim sunucuya gitmedi (kuyruk bloklandı)');
     assert.ok(!sunucu.some(r => r.id === bozuk), 'bozuk denetim sunucuya girmemeli');
     const kalan = await p.evaluate(async () => (await DB.outboxAll()).map(i => ({ t: i.table, d: i.inspection_id, s: i.sync_status, e: i.last_error_message })));
