@@ -117,10 +117,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.21.2 sürümü', index.includes('R15D-RC3.21.2</b>'));
-test('app R15D rc3.21.2 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.2'"));
-test('service worker rc3.21.2 cache', sw.includes("aves-saha-r15d-rc3212'"));
-test('uygulama manifesti rc3.21.2 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.2"'));
+test('index R15D rc3.21.3 sürümü', index.includes('R15D-RC3.21.3</b>'));
+test('app R15D rc3.21.3 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.3'"));
+test('service worker rc3.21.3 cache', sw.includes("aves-saha-r15d-rc3213'"));
+test('uygulama manifesti rc3.21.3 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.3"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -2007,6 +2007,18 @@ test('FR.65 çıktı: kuyu şeması (tampon tipine göre), girilmemiş alanlar, 
       app.includes('Satır içi olay işleyicileri CSP ile engellenir') && app.includes("localStorage.setItem('aves_cikti_buyuk_yazi'") &&
       index.includes('<script src="fr65-sema.js"></script>') && sw.includes("'./fr65-sema.js'") && app.includes("'./fr65-sema.js'");
   })() );
+test('teknik PDF okuyucusu: adres sürümlü (SW önbellek-öncelikli; eski kopya takılı kalmasın) ve okuyucu sürümüyle uyumlu',
+  (() => {
+    const pdf = fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8');
+    const okuyucu = fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'), 'utf8');
+    const adres = (pdf.match(/READER_URL = '\.\/pdf-field-reader\.mjs\?v=(\d+)'/) || [])[1];
+    return !!adres && okuyucu.includes(`pdfjs-local-rules-v${adres}`) && pdf.includes(`pdfjs-local-rules-v${adres}`) &&
+      pdf.includes('await import(READER_URL)') && !pdf.includes("import('./pdf-field-reader.mjs')");
+  })());
+test('teknik PDF okuyucusu: sütunlu komponent tablosu ve güvenlik ekipmanları listesi düzenleri tanınır',
+  fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'), 'utf8').includes('function tableRows(items, page)') &&
+  fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'), 'utf8').includes('function listRows(items, page)') &&
+  fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'), 'utf8').includes('[...tableRows(content.items, pageNumber), ...listRows(content.items, pageNumber)]'));
 test('FR.65 Excel dışa aktarma kaldırıldı (kullanıcı kararı); dosya, düğme ve kayıtlar yok',
   !app.includes('id="fr65Excel"') && !app.includes('AVES_FR65_EXCEL') && !fs.existsSync(path.join(appDir, 'fr65-excel.js')) &&
   !index.includes('fr65-excel.js') && !sw.includes('fr65-excel.js') && !app.includes('fr65-excel.js'));
@@ -2285,7 +2297,7 @@ const pdfOkuyucuSrc = fs.readFileSync(path.join(appDir, 'pdf-field-reader.mjs'),
 const migration88 = fs.readFileSync(path.join(root, 'database', '88_r15d_rc3192_teknik_dosya_pdf.sql'), 'utf8');
 test('teknik PDF: dış AI/OCR çağrısı yok, çıkarım yalnız yerel; aday saha alanlarına otomatik yazılmaz',
   !/openai|anthropic|gemini|tesseract|fetch\(['"`]https?:/i.test(teknikPdfSrc + pdfOkuyucuSrc) &&
-  pdfOkuyucuSrc.includes('pdfjs-local-rules-v2') && !teknikPdfSrc.includes('saveFr65') &&
+  pdfOkuyucuSrc.includes('pdfjs-local-rules-v3') && !teknikPdfSrc.includes('saveFr65') &&
   app.includes('Aday değer kopyalandı; saha ölçümüne otomatik aktarılmadı'));
 test('PDF okuyucu eski Safari icin ReadableStream async yineleyici polyfill icerir',
   pdfOkuyucuSrc.includes('ReadableStream.prototype[Symbol.asyncIterator]') && pdfOkuyucuSrc.indexOf('Symbol.asyncIterator') < pdfOkuyucuSrc.indexOf('export async function extractTechnicalPdf'));
