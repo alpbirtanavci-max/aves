@@ -10,7 +10,7 @@ const Sync = (() => {
   let pushRunning = false;
   let pushTimer = null;
 
-  const KORUNAN_DURUMLAR = ['conflict', 'forbidden'];
+  const KORUNAN_DURUMLAR = ['conflict', 'forbidden', 'rejected'];
 
   async function retrySafeFr65Conflicts() {
     if (typeof AVES_FR65_SAHA_TOOLS === 'undefined') return 0;
@@ -108,7 +108,8 @@ const Sync = (() => {
     } else if (uyariVar) {
       pill.className = 'syncpill error';
       const cakisma = warning ? warning.kind === 'conflict' : (pdfCakisma > 0 || korunan.some(x => x.sync_status === 'conflict'));
-      label.textContent = (cakisma ? 'Çakışma uyarısı' : 'Yetki uyarısı') + ' · dokun';
+      const reddedildi = !cakisma && korunan.some(x => x.sync_status === 'rejected');
+      label.textContent = (cakisma ? 'Çakışma uyarısı' : reddedildi ? 'Reddedilen kayıt' : 'Yetki uyarısı') + ' · dokun';
     } else if (n + pdfToplam > 0) {
       pill.className = 'syncpill pending';
       label.textContent = `${n + pdfToplam} bekliyor`;
@@ -128,6 +129,13 @@ const Sync = (() => {
     return map;
   }
 
+  // PostgREST 400 + Postgres doğrulama hatası (23514 check, 23502 not-null, 22xxx veri biçimi) tekrar denemekle düzelmez.
+  // 23503 (yabancı anahtar) ve 23505 (benzersiz) sıra/çakışma kaynaklı olabileceğinden burada sayılmaz.
+  function kaliciDogrulamaReddi(error) {
+    if (!error || error.status !== 400) return false;
+    return /"code"\s*:\s*"(23514|23502|22\d{3})"/.test(String(error.message || ''));
+  }
+
   async function pushOutbox() {
     // Başka bir gönderim sürüyorsa bunu "tamamlandı" sayma; aksi halde eşzamanlı
     // full() çağrısı henüz gönderilmemiş yerel kayıtların üstüne PULL yapabilir.
@@ -135,6 +143,7 @@ const Sync = (() => {
     if (!navigator.onLine || !API.loggedIn) return false;
     pushRunning = true;
     let allSent = true;
+    const reddedilenDenetimler = new Set();
     try {
       await retrySafeFr65Conflicts();
       const items = (await DB.outboxAll()).filter(item =>
@@ -145,6 +154,7 @@ const Sync = (() => {
         // başta okunan eski kopya DB'deki güncel kalemi ezmesin diye her turda yeniden okunur.
         const item = await DB.outboxGet(queued.seq);
         if (!item || (item.sync_status && !['pending', 'retry', 'sending'].includes(item.sync_status))) continue;
+        if (item.inspection_id && reddedilenDenetimler.has(item.inspection_id)) continue;
         try {
           item.sync_status = 'sending';
           item.attempt_count = (item.attempt_count || 0) + 1;
@@ -204,6 +214,37 @@ const Sync = (() => {
           }
           await DB.outboxDel(item.seq);
         } catch (e) {
+          if (kaliciDogrulamaReddi(e)) {
+            // Sunucu kaydı kalıcı olarak reddetti (ör. check/not-null kısıtı). Aynı denetimin kalan işlemleri
+            // onsuz anlamsızdır; hepsi cihazda korunur, diğer denetimlerin gönderimi sürer.
+            const reddedilenDenetim = item.inspection_id || null;
+            item.sync_status = 'rejected';
+            item.last_error_code = e.status;
+            item.last_error_message = e.message;
+            item.rejected_at = new Date().toISOString();
+            await DB.outboxPut(item);
+            if (reddedilenDenetim) {
+              reddedilenDenetimler.add(reddedilenDenetim);
+              for (const sonraki of await DB.outboxAll()) {
+                if (sonraki.seq === item.seq || sonraki.inspection_id !== reddedilenDenetim) continue;
+                if (sonraki.sync_status && !['pending', 'retry', 'sending'].includes(sonraki.sync_status)) continue;
+                sonraki.sync_status = 'rejected';
+                sonraki.last_error_code = e.status;
+                sonraki.last_error_message = 'Bağlı denetim kaydı sunucuda reddedildi; düzeltilince birlikte gönderilecek.';
+                sonraki.rejected_at = item.rejected_at;
+                await DB.outboxPut(sonraki);
+              }
+            }
+            const warning = {
+              kind: 'rejected',
+              message: 'Sunucu bir denetim kaydını reddetti; veri cihazda korunuyor. Senkron Merkezi’nden düzeltin.',
+              ts: Date.now(),
+            };
+            await DB.kvSet('sync_warning', warning);
+            console.warn('Sunucu kaydı reddetti, cihazda korundu:', item.table, e.message);
+            allSent = false;
+            continue;
+          }
           if (e.status === 403) {
             item.sync_status = 'forbidden';
             item.last_error_code = 403;
@@ -252,6 +293,8 @@ const Sync = (() => {
         await DB.kvDel('sync_warning');
       } else if (warning?.kind === 'forbidden' && !remaining.some(item => item.sync_status === 'forbidden')) {
         await DB.kvDel('sync_warning');
+      } else if (warning?.kind === 'rejected' && !remaining.some(item => item.sync_status === 'rejected')) {
+        await DB.kvDel('sync_warning');
       }
     } finally {
       pushRunning = false;
@@ -262,11 +305,46 @@ const Sync = (() => {
     return allSent && (await DB.outboxCount()) === 0;
   }
 
+  // Teknik PDF gönderimi: bağlı denetim sunucuya gittikten sonra (teknik-pdf.js kendisi de kontrol eder).
+  async function pdfGonder() {
+    if (!window.AVES_TEKNIK_PDF) return;
+    try { await window.AVES_TEKNIK_PDF.pushPending(); }
+    catch (error) { console.warn('Teknik PDF aktarımı sürecek; cihazdaki dosya korundu', error); }
+  }
+
+  // Sunucunun reddettiği denetimi (ör. Makine dairesi tipi eksik) kullanıcının seçtiği değerle düzeltir ve
+  // o denetimin korunan işlemlerini yeniden gönderime alır. Saha cevaplarına dokunulmaz.
+  async function reddedileniDuzelt(denetimId, makineDairesi) {
+    if (makineDairesi != null && !['MR', 'MRL'].includes(makineDairesi)) throw new Error('Makine dairesi tipi MR veya MRL olmalı');
+    if (makineDairesi != null) {
+      const local = await DB.get('denetimler', denetimId);
+      if (local) { local.makine_dairesi_tipi = makineDairesi; await DB.put('denetimler', local); }
+    }
+    let n = 0;
+    for (const item of await DB.outboxAll()) {
+      if (item.inspection_id !== denetimId || item.sync_status !== 'rejected') continue;
+      if (makineDairesi != null && item.table === 'denetimler') {
+        for (const row of (item.rows || [])) if (row && row.id === denetimId) row.makine_dairesi_tipi = makineDairesi;
+      }
+      item.sync_status = 'retry';
+      item.last_error_code = null;
+      item.last_error_message = null;
+      delete item.rejected_at;
+      await DB.outboxPut(item);
+      n++;
+    }
+    const kalan = (await DB.outboxAll()).some(item => item.sync_status === 'rejected');
+    if (!kalan && (await DB.kvGet('sync_warning'))?.kind === 'rejected') await DB.kvDel('sync_warning');
+    await updatePill();
+    return n;
+  }
+
   function schedulePush(delay = 900) {
     if (!navigator.onLine || !API.loggedIn) { updatePill(); return; }
     clearTimeout(pushTimer);
     pushTimer = setTimeout(async () => {
       await pushOutbox();
+      await pdfGonder();
       const retryableItems = (await DB.outboxAll()).filter(item =>
         !item.sync_status || ['pending', 'retry', 'sending'].includes(item.sync_status)
       );
@@ -377,11 +455,12 @@ const Sync = (() => {
     running = true;
     let completed = false;
     try {
+      const sent = await pushOutbox();
+      // PDF, bağlı denetim sunucuya gittikten SONRA gönderilir (depo/tablo kuralı denetimin var olmasını ister).
       if (window.AVES_TEKNIK_PDF) {
         try { await window.AVES_TEKNIK_PDF.pushPending(); }
         catch (error) { console.warn('Teknik PDF aktarımı sürecek; cihazdaki dosya korundu', error); }
       }
-      const sent = await pushOutbox();
       if (!sent) return false; // yerel değişiklik sunucuya gitmediyse PULL ile üzerine yazma
       await pullKutuphane();
       await pullDenetimler();
@@ -407,10 +486,11 @@ const Sync = (() => {
   function outboxOzeti(items) {
     const cakisma = items.filter(it => it.sync_status === 'conflict').length;
     const yetki = items.filter(it => it.sync_status === 'forbidden').length;
-    const korunan = cakisma + yetki;
+    const reddedilen = items.filter(it => it.sync_status === 'rejected').length;
+    const korunan = cakisma + yetki + reddedilen;
     const bekleyen = items.length - korunan;
     const sonHata = items.map(it => it.last_error_message).filter(Boolean).slice(-1)[0] || '';
-    return { toplam: items.length, cakisma, yetki, korunan, bekleyen, sonHata };
+    return { toplam: items.length, cakisma, yetki, reddedilen, korunan, bekleyen, sonHata };
   }
   async function denetimSyncOzeti(denetimId) {
     const items = (await DB.outboxAll()).filter(it => it.inspection_id === denetimId);
@@ -484,10 +564,22 @@ const Sync = (() => {
         if (pdf.total) parts.push(`${pdf.total} teknik PDF${pdf.conflict ? ` · ${pdf.conflict} çakışma` : ''}`);
         if (o.yetki) parts.push(`${o.yetki} yetki incelemesi`);
         if (o.cakisma) parts.push(`${o.cakisma} çakışma`);
-        return `<div class="sync-review-row ${o.cakisma || pdf.conflict ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
+        if (o.reddedilen) parts.push(`${o.reddedilen} işlem sunucuda reddedildi`);
+        return `<div class="sync-review-row ${o.cakisma || o.reddedilen || pdf.conflict ? 'is-conflict' : ''}"><b>${escSync(adOf(id))}</b>` +
           `<small>${parts.join(' · ') || 'sunucu aktarımı bekliyor'}${o.sonHata ? ` · ${escSync(o.sonHata).slice(0, 140)}` : ''}</small></div>`;
       }).join('');
 
+    const reddedilenKalemler = items.filter(it => it.sync_status === 'rejected');
+    const reddedilenIdler = [...new Set(reddedilenKalemler.map(it => it.inspection_id).filter(Boolean))];
+    const mdHatali = id => reddedilenKalemler.some(it => it.inspection_id === id && /makine_dairesi/.test(it.last_error_message || ''));
+    const reddedilenHtml = reddedilenIdler.length ? `<div class="sync-review-list">${reddedilenIdler.map(id => {
+      const d = denetimler.find(x => x.id === id);
+      const md = mdHatali(id);
+      return `<div class="sync-review-row is-conflict" data-sync-rej="${escSync(id)}"><b>${escSync(adOf(id))}</b>` +
+        `<small>Sunucu bu kaydı reddetti: ${md ? `Makine dairesi tipi (MR/MRL) ${d && d.makine_dairesi_tipi ? 'geçersiz' : 'eksik'}` : 'kayıt doğrulaması başarısız'}. Veri cihazda korunuyor.</small>` +
+        `${md ? '<select data-sync-md aria-label="Makine dairesi tipi"><option value="">Makine dairesi seçin…</option><option value="MR">MR</option><option value="MRL">MRL</option></select> ' : ''}` +
+        `<button class="btn btn-ghost" data-sync-duzelt="${escSync(id)}">${md ? 'Düzelt ve gönder' : 'Yeniden dene'}</button></div>`;
+    }).join('')}</div>` : '';
     const yetkiKalemleri = items.filter(it => it.sync_status === 'forbidden');
     const cakismaVar = items.some(it => it.sync_status === 'conflict');
 
@@ -498,6 +590,7 @@ const Sync = (() => {
       <h3>Senkron Merkezi</h3>
       <div class="photo-help">${warning ? escSync(warning.message) + ' ' : ''}Hiçbir saha cevabı silinmedi; cihazda korunuyor. Bağlantı geldikçe bekleyen işlemler, fotoğraflar ve teknik PDF dosyaları otomatik gönderilir.</div>
       <div class="sync-review-list">${satirlar}</div>
+      ${reddedilenHtml}
       <div class="print-actions">
         <button class="btn btn-primary" id="syncCenterNow">Şimdi senkronize et</button>
         ${yetkiKalemleri.length ? '<button class="btn btn-ghost" id="syncRetryForbidden">Yetki kayıtlarını yeniden dene</button>' : ''}
@@ -529,6 +622,22 @@ const Sync = (() => {
         : (ok ? 'Senkron tamamlandı' : 'Bazı kayıtlar cihazda korunuyor; yeniden denenecek'));
       await updatePill();
     };
+
+    ov.querySelectorAll('[data-sync-duzelt]').forEach(btn => { btn.onclick = async () => {
+      if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince yeniden deneyin'); return; }
+      const id = btn.dataset.syncDuzelt;
+      const secim = btn.closest('[data-sync-rej]').querySelector('[data-sync-md]');
+      if (secim && !['MR', 'MRL'].includes(secim.value)) { toast('Makine dairesi tipini (MR/MRL) seçin'); return; }
+      btn.disabled = true;
+      try { await reddedileniDuzelt(id, secim ? secim.value : null); }
+      catch (error) { toast(error.message); btn.disabled = false; return; }
+      close();
+      toast('Senkronize ediliyor…');
+      await full();
+      const kalan = await korunanKalemler();
+      toast(kalan.length ? `${kalan.length} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı');
+      await updatePill();
+    }; });
 
     const btnRetry = ov.querySelector('#syncRetryForbidden');
     if (btnRetry) btnRetry.onclick = async () => {
@@ -602,12 +711,12 @@ const Sync = (() => {
   function start() {
     window.addEventListener('online', full);
     window.addEventListener('offline', updatePill);
-    setInterval(() => { pushOutbox(); }, 20000);
+    setInterval(() => { pushOutbox().then(pdfGonder).catch(() => {}); }, 20000);
     setInterval(() => { durumBildir(); }, 60000);
     window.addEventListener('online', () => { durumBildir({ zorla: true }); });
     updatePill();
   }
 
-  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir };
+  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir, reddedileniDuzelt };
 })();
 

@@ -23,7 +23,7 @@
       else kayit.bekleyen += 1;
       denetimler.set(id, kayit);
     });
-    const bekleyenler = outbox.filter(item => BEKLEYEN.includes(durumuOf(item)) || ['conflict', 'forbidden'].includes(durumuOf(item)));
+    const bekleyenler = outbox.filter(item => BEKLEYEN.includes(durumuOf(item)) || ['conflict', 'forbidden', 'rejected'].includes(durumuOf(item)));
     const enEski = bekleyenler.map(item => item.created_at).filter(Boolean).sort()[0] || null;
     const sonHata = [...outbox].reverse().map(item => item.last_error_message).find(Boolean) || '';
     const satir = {

@@ -88,6 +88,11 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     if (method === 'POST') {
       const prefer = req.headers()['prefer'] || '';
       const incoming = Array.isArray(body) ? body : [body];
+      if (state.dogrulaMd && m[1] === 'denetimler' && incoming.some(row => !['MR', 'MRL'].includes(row.makine_dairesi_tipi))) {
+        // Gerçek sunucunun migration 21 kısıtı: Makine dairesi MR/MRL olmalı (PostgREST 400 + 23514).
+        return route.fulfill(json(400, { code: '23514', details: null, hint: null,
+          message: 'new row for relation "denetimler" violates check constraint "denetimler_makine_dairesi_r15c_check"' }));
+      }
       for (const row of incoming) {
         if (m[1] === 'cihaz_senkron_durumu') {
           // Sunucu tetikleyicisi: e-posta oturumdan, zaman sunucudan; (email, cihaz_id) birincil anahtar.

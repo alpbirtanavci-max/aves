@@ -120,10 +120,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.21.0 sürümü', index.includes('R15D-RC3.21.0</b>'));
-test('app R15D rc3.21.0 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.0'"));
-test('service worker rc3.21.0 cache', sw.includes("aves-saha-r15d-rc3210'"));
-test('uygulama manifesti rc3.21.0 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.0"'));
+test('index R15D rc3.21.2 sürümü', index.includes('R15D-RC3.21.2</b>'));
+test('app R15D rc3.21.2 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.2'"));
+test('service worker rc3.21.2 cache', sw.includes("aves-saha-r15d-rc3212'"));
+test('uygulama manifesti rc3.21.2 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.2"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -362,7 +362,16 @@ test('senkron merkezi: syncCenter + sync_warning kilidi kırılır + export',
   app.includes('syncCenter,') && app.includes('reviewWarning,') &&
   app.includes('async function reviewWarning() { await syncCenter(); }') &&
   app.includes('async function korunanKalemler()') &&
-  app.includes("KORUNAN_DURUMLAR = ['conflict', 'forbidden']"));
+  app.includes("KORUNAN_DURUMLAR = ['conflict', 'forbidden', 'rejected']"));
+test('eşitleme: sunucunun kalıcı doğrulama reddi (400 + 23514/23502/22xxx) kuyruğu bloklamaz; cihazda korunur, düzeltme yolu var',
+  app.includes('function kaliciDogrulamaReddi(error)') && app.includes("item.sync_status = 'rejected'") &&
+  app.includes('reddedilenDenetimler.has(item.inspection_id)') && app.includes('async function reddedileniDuzelt(denetimId, makineDairesi)') &&
+  app.includes('data-sync-duzelt') && app.includes('data-sync-md') &&
+  fs.readFileSync(path.join(appDir, 'cihaz-durumu.js'), 'utf8').includes("'rejected'"));
+test('teknik PDF: bağlı denetim sunucuda yoksa gönderilmez (bekler); PDF, denetim gönderiminden SONRA denenir',
+  fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes('denetimBekliyor') && fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes("select=id&id=eq.${encodeURIComponent(item.denetim_id)}") &&
+  (() => { const full = app.slice(app.indexOf('async function full()')); return full.indexOf('const sent = await pushOutbox();') < full.indexOf('AVES_TEKNIK_PDF.pushPending()'); })() &&
+  app.includes('await pdfGonder();'));
 test('manual() gerçek outbox + bekleyen fotoğraf durumuna bakar, Senkron Merkezi açar',
   app.includes('const outboxVar = (await DB.outboxCount()) > 0;') &&
   app.includes('const fotoVar = !warning && !outboxVar && (await bekleyenFotoOzeti()).size > 0;') &&

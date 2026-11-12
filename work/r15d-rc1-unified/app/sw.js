@@ -1,5 +1,5 @@
 // AVES Saha — uygulama kabuğunu çevrimdışı kullanım için önbelleğe alır
-const CACHE = 'aves-saha-r15d-rc3210';
+const CACHE = 'aves-saha-r15d-rc3212';
 const ASSETS = [
   './', './index.html', './section-mapping.js', './kapanis-guven-ozeti.js', './teknik-dosya-formlari.js', './denetim-form-setleri.js', './form-draft-journal.js', './fr65-saha-tools.js', './yedek-geri-yukle.js', './tanilama.js', './deger-kontrol.js', './fr65-docx.js', './cihaz-durumu.js', './fr65-cikti.js', './fr65-sema.js', './fr65-excel.js', './config.js', './db.js', './api.js', './profil.js', './senkron.js', './yerel-yazma.js', './teknik-pdf.js', './ui-durum.js', './ui-foto.js', './ui-yonetim.js', './ui-kayit.js', './ui-liste.js', './ui-yeni.js', './ui-fr65.js', './ui-denetim.js', './ui-taslak.js', './ui-form.js', './ui-madde.js', './ui-kapanis.js', './ui-son.js', './baslat.js', './manifest.json', './logo.png', './aves-logo-white.png',
   './fonts/Inter-latin-ext.woff2', './fonts/Inter-latin.woff2',
