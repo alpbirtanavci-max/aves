@@ -50,6 +50,27 @@ function tabloIcerik() {
   return par.join('\n');
 }
 const pdfTablo = makePdf([], 'tablo', tabloIcerik());
+// "Güvenlik Ekipmanları Listesi" düzeninin yapay kopyası: sıra no yok, ekipman adı sol sütunda dikey ortalı (çok satırlı),
+// hücreler birden çok y satırına yayılır; kilitler satırında kat alt-etiketleri ve '-' dolgusu var.
+function listeIcerik() {
+  const yaz = (x, y, tt) => `BT /F1 8 Tf 1 0 0 1 ${x} ${y} Tm (${tt}) Tj ET`;
+  const par = [yaz(496, 637.7, 'VEREN'), yaz(51, 631.3, 'KULLANILAN'), yaz(146, 625.1, 'MARKASI'), yaz(236, 625.1, 'TIPI'), yaz(303, 625.1, 'SERI NO'),
+    yaz(378, 625.1, 'SERTIFIKA NO'), yaz(479, 625.1, 'ONAYLANMIS'), yaz(61, 618.7, 'EKIPMAN'), yaz(489, 612.5, 'KURULUS'), yaz(49, 666.7, 'Asansor Seri No: X-1')];
+  [['Z.KAT', 597.5, '111111'], ['1.KAT', 582.1, '222222'], ['2.KAT', 566.8, '333333'], ['3.KAT', 551.4, '444444']].forEach(([k, y, n]) => par.push(yaz(80, y, k), yaz(308, y - 1.7, n)));
+  par.push(yaz(93, 536, '-'), yaz(321, 534.4, '-'), yaz(93, 520.7, '-'), yaz(321, 519, '-'), yaz(150, 505.4, 'ALFA'), yaz(232, 505.4, 'LK1'), yaz(378, 505.4, 'C-61-1/ZZ'), yaz(504, 511.8, '1015'), yaz(477, 499.1, 'ONKA'), yaz(50, 484, 'KILITLER'));
+  const satir = (y, ad, marka, tip, seri, sert, onk) => {
+    ad.forEach((a, k) => par.push(yaz(50, y + (ad.length === 2 ? 6.3 - k * 12.6 : 0), a)));
+    par.push(yaz(150, y, marka), yaz(228, y, tip), yaz(305, y, seri), yaz(370, y, sert), yaz(480, y, onk));
+  };
+  satir(388.2, ['HIZ', 'REGULATORU'], 'ZETA', 'HR-1', '8868', 'LS-B 0130', '2729 GCN');
+  satir(353.4, ['FREN BLOKLARI'], 'MKL', 'MK 02', '00788', 'LD-0724', '2528 D');
+  satir(318.6, ['KABIN TAMPONU'], 'HAS', 'HPT 03', '2203181', 'I-61-23036', '1015');
+  satir(283.8, ['AGIRLIK', 'TAMPONU'], 'HAS', 'HPT 03', '2203182', 'I-61-23036', '1015');
+  satir(249, ['K. PANOSU /', 'KARTI'], 'HEDEF', 'HD-IN75', '011120', 'NL18-400', '0400');
+  satir(214.2, ['MAKINA MOTOR'], 'AKIS', 'MF1', '869AT10', '902388', 'LL-C');
+  return par.join('\n');
+}
+const pdfListe = makePdf([], 'liste', listeIcerik());
 const sha = buf => createHash('sha256').update(buf).digest('hex');
 const pdfMetinli = makePdf(['Anma hiz: 1.0 m/s', 'Anma yuku 630 kg', 'Durak sayisi: 6', 'Model: GTW-630'], 'metinli');
 const pdfMetinsiz = makePdf([], 'taranmis');
@@ -164,6 +185,19 @@ try {
       'Kapi Kilidi=LIFTUP LIFTUP LOCK', 'Fren=ERKAN EL-8', 'Ana Kart=LS LIFTONE']);
     assert.deepEqual(sonuc.equipment.map(e => e.key), ['tampon', 'tampon', 'hiz_regulatoru', 'kapi_kilidi', 'fren', 'ana_kart']);
     assert.ok(sonuc.equipment.every(e => e.page === 1 && e.evidence.includes('·')), 'sayfa ve kanıt satırı olmalı');
+  });
+
+  await report.step('güvenlik ekipmanları listesi düzeni (sıra no yok, çok satırlı ad): 7 ekipman, doğru marka/tip/seri/sertifika', async () => {
+    const sonuc = await p.evaluate(async bytes => {
+      const r = await import('./pdf-field-reader.mjs');
+      return r.extractTechnicalPdf(new File([new Uint8Array(bytes)], 'liste.pdf'));
+    }, Array.from(pdfListe));
+    assert.deepEqual(sonuc.equipment.map(e => `${e.label}=${e.value}`), ['KILITLER=ALFA LK1', 'HIZ REGULATORU=ZETA HR-1', 'FREN BLOKLARI=MKL MK 02',
+      'KABIN TAMPONU=HAS HPT 03', 'AGIRLIK TAMPONU=HAS HPT 03', 'K. PANOSU / KARTI=HEDEF HD-IN75', 'MAKINA MOTOR=AKIS MF1']);
+    assert.deepEqual(sonuc.equipment.map(e => e.key), ['kapi_kilidi', 'hiz_regulatoru', 'fren', 'tampon', 'tampon', 'ana_kart', 'makine_motor']);
+    assert.ok(/Seri 111111 222222 333333 444444 · Sertifika C-61-1\/ZZ · Kuruluş 1015 ONKA/.test(sonuc.equipment[0].evidence), JSON.stringify(sonuc.equipment[0].evidence));
+    assert.ok(!/KURULUS/.test(sonuc.equipment[0].evidence), 'başlık hücresi veriye karışmamalı');
+    assert.match(sonuc.equipment[3].evidence, /Seri 2203181 · Sertifika I-61-23036/);
   });
 
   await report.step('adaylar saha alanlarına yazılmaz (FR.65 değerleri değişmedi)', async () => {
