@@ -40,7 +40,7 @@ jobs:
         env:
           PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
         run: node work/r15d-rc1-unified/tests/smoke/senkron-reddedilen-duman-testi.mjs
-      - name: Duman testi (veri güvencesi: çubuk, doğrulama, tamamlama kapısı)
+      - name: Duman testi (veri güvencesi - çubuk, doğrulama, tamamlama kapısı)
         env:
           PLAYWRIGHT_CHROME_PATH: /usr/bin/google-chrome
         run: node work/r15d-rc1-unified/tests/smoke/veri-guvence-duman-testi.mjs
@@ -69,7 +69,7 @@ jobs:
         env:
           PLAYWRIGHT_BROWSER: webkit
         run: node work/r15d-rc1-unified/tests/smoke/senkron-reddedilen-duman-testi.mjs
-      - name: Duman testi (veri güvencesi: çubuk, doğrulama, tamamlama kapısı)
+      - name: Duman testi (veri güvencesi - çubuk, doğrulama, tamamlama kapısı)
         env:
           PLAYWRIGHT_BROWSER: webkit
         run: node work/r15d-rc1-unified/tests/smoke/veri-guvence-duman-testi.mjs
