@@ -94,6 +94,7 @@ async function kapanisOzetiniGoster(yeniDurum) {
         return;
       }
     } else confirmButton.disabled = true;
+    if (!(await tamamlamaOncesiGuvence(currentDenetimId))) { confirmButton.disabled = false; return; }
     await denetimDurumuDegistir(yeniDurum, ov, true);
   };
 }

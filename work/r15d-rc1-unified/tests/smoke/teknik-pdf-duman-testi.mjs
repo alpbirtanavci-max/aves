@@ -140,7 +140,12 @@ try {
   };
   // Kaldırma bittiğinde hem sunucu hem kart güncel olmalı (kart yenilenmeden dosya seçmek eski girdiye yazar).
   const kaldir = async () => {
-    await p.click('#fr65PdfRemove');
+    // Kart arka plan yenilemesiyle yeniden çizilirken tıklama kaybolabilir; kayıt "synced" kalıyorsa tıklamayı yinele.
+    for (let deneme = 0; deneme < 4; deneme++) {
+      await p.click('#fr65PdfRemove').catch(() => {});
+      const basladi = await until(async () => T.length === 0 || (await yerel())?.durum !== 'synced', 'kaldırma başlamadı', 3000).then(() => true, () => false);
+      if (basladi) break;
+    }
     await until(() => T.length === 0 && store.size === 0, 'sunucudan silinmedi');
     await until(async () => /henüz PDF eklenmedi/.test(await durum()), 'kart sıfırlanmadı');
   };

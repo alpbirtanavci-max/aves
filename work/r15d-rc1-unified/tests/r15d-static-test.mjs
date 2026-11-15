@@ -117,10 +117,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.21.4 sürümü', index.includes('R15D-RC3.21.4</b>'));
-test('app R15D rc3.21.4 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.4'"));
-test('service worker rc3.21.4 cache', sw.includes("aves-saha-r15d-rc3214'"));
-test('uygulama manifesti rc3.21.4 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.4"'));
+test('index R15D rc3.21.5 sürümü', index.includes('R15D-RC3.21.5</b>'));
+test('app R15D rc3.21.5 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.5'"));
+test('service worker rc3.21.5 cache', sw.includes("aves-saha-r15d-rc3215'"));
+test('uygulama manifesti rc3.21.5 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.5"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -365,8 +365,44 @@ test('eşitleme: sunucunun kalıcı doğrulama reddi (400 + 23514/23502/22xxx) k
   app.includes('reddedilenDenetimler.has(item.inspection_id)') && app.includes('async function reddedileniDuzelt(denetimId, makineDairesi)') &&
   app.includes('data-sync-duzelt') && app.includes('data-sync-md') &&
   fs.readFileSync(path.join(appDir, 'cihaz-durumu.js'), 'utf8').includes("'rejected'"));
+/* ---- Veri güvencesi (veri-guvence.js): saf mantık ---- */
+const vgCtx = {};
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'veri-guvence.js'), 'utf8'), vgCtx, { filename: 'veri-guvence.js' });
+const VG = vgCtx.AVES_VERI_GUVENCE;
+const dk = n => n * 60 * 1000;
+test('veri güvencesi: bekleyen yok → yeşil; doğrulama kanıtı varsa saatiyle “Sunucuda doğrulandı”',
+  VG.durum({ bekleyen: 0 }).seviye === 'guvende' && /Tüm işlemler sunucuya gönderildi/.test(VG.durum({ bekleyen: 0 }).baslik) &&
+  /Sunucuda doğrulandı/.test(VG.durum({ dogrulama: { ok: true, at: '2026-11-15T10:30:00Z' } }).baslik));
+test('veri güvencesi: çevrimiçi ve eşik dolmadıysa “gönderiliyor”, eşikten sonra kırmızı uyarı (kaç dakikadır) + Şimdi gönder eylemi',
+  VG.durum({ bekleyen: 2, enEskiMs: dk(2) }).seviye === 'bekliyor' &&
+  (() => { const u = VG.durum({ bekleyen: 2, enEskiMs: dk(15) }); return u.seviye === 'uyari' && /SUNUCUDA DEĞİL/.test(u.baslik) && /15 dk/.test(u.baslik) && u.eylem === 'gonder'; })() &&
+  VG.durum({ bekleyen: 1, enEskiMs: 5, esikMs: 1 }).seviye === 'uyari');
+test('veri güvencesi: çevrimdışı → “yalnızca bu cihazda”; korunan (reddedilen) kayıt → sorun; eski bekleme gün olarak yazılır',
+  (() => { const c = VG.durum({ bekleyen: 3, cevrimici: false, enEskiMs: dk(1) }); return c.seviye === 'cevrimdisi' && /yalnızca bu cihazda/.test(c.baslik); })() &&
+  VG.durum({ bekleyen: 5, korunan: 1 }).seviye === 'sorun' &&
+  /30 gün/.test(VG.durum({ bekleyen: 46, enEskiMs: 30 * 24 * 60 * dk(1) }).baslik));
+test('veri güvencesi: fotoğraf ve teknik PDF de “sunucuda değil” sayılır; kalıcı depo izni yoksa not düşer; doğrulama farkı sorun',
+  /2 fotoğraf/.test(VG.durum({ bekleyenFoto: 2, enEskiMs: dk(1) }).baslik) && /1 teknik PDF/.test(VG.durum({ bekleyenPdf: 1, enEskiMs: dk(1) }).baslik) &&
+  /kalıcı saklama izni/.test(VG.durum({ kalicidepo: false }).detay) &&
+  VG.durum({ dogrulama: { ok: false, farklar: ['3 madde sunucuda yok'] } }).seviye === 'sorun');
+test('veri güvencesi: karşılaştırma — aynı veri ok; eksik/fazla madde, farklı sonuç, farklı durum ve form farkı yakalanır; saat damgası farkı yok sayılır',
+  (() => {
+    const yerel = { durum: 'Devam Ediyor', maddeler: [{ madde_id: 'a', durum: 'Uygun' }, { madde_id: 'b', durum: null }], formlar: { FR65: { values: { x: 1 }, updated_at: 'A' } } };
+    const ayni = { durum: 'Devam Ediyor', maddeler: [{ madde_id: 'b', durum: null }, { madde_id: 'a', durum: 'Uygun' }], formlar: { FR65: { updated_at: 'B', values: { x: 1 } } } };
+    const fark = (degisim) => VG.karsilastir(yerel, { ...ayni, ...degisim });
+    return VG.karsilastir(yerel, ayni).ok === true && VG.karsilastir(yerel, null).ok === false &&
+      fark({ maddeler: [{ madde_id: 'a', durum: 'Uygun' }] }).farklar.some(f => /1 madde sunucuda yok/.test(f)) &&
+      fark({ maddeler: [...ayni.maddeler, { madde_id: 'c', durum: null }] }).farklar.some(f => /yalnız sunucuda/.test(f)) &&
+      fark({ maddeler: [{ madde_id: 'a', durum: 'Olumsuz bulgu' }, { madde_id: 'b', durum: null }] }).farklar.some(f => /sonucu farklı/.test(f)) &&
+      fark({ durum: 'Gözden Geçirme' }).ok === false && fark({ formlar: { FR65: { values: { x: 2 } } } }).farklar.some(f => /Form verileri/.test(f));
+  })());
+test('veri güvencesi: ekranda hep görünen çubuk, sunucu doğrulaması, tamamlama kapısı (yedek indirme) ve kayıtlar bağlı',
+  index.includes('id="veriGuvenceBar"') && index.includes('<script src="veri-guvence.js"></script>') && sw.includes("'./veri-guvence.js'") &&
+  app.includes('async function dogrula(denetimId)') && app.includes('async function tamamlamaGuvencesi(denetimId)') && app.includes('guvenceBariCiz().catch') &&
+  app.includes("setInterval(() => { updatePill(); }, 30000)") && app.includes('async function tamamlamaOncesiGuvence(denetimId)') &&
+  (app.match(/tamamlamaOncesiGuvence\(/g) || []).length >= 3 && app.includes('await yedekIndir([denetimId])'));
 test('eşitleme sonuç mesajı: kalan işlem/fotoğraf/PDF varken “tamamlandı” denmez; reddedilen kayıt sebebi gösterilir',
-  app.includes('async function sonucMesaji(ok)') && app.includes('function redSebebi(items)') && (app.match(/toast\(await sonucMesaji\(/g) || []).length === 4 &&
+  app.includes('async function sonucMesaji(ok)') && app.includes('function redSebebi(items)') && (app.match(/toast\(await sonucMesaji\(/g) || []).length >= 4 &&
   !/toast\(kalan\.length \? `\$\{kalan\.length\} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı'\)/.test(app));
 test('teknik PDF: bağlı denetim sunucuda yoksa gönderilmez (bekler); PDF, denetim gönderiminden SONRA denenir',
   fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes('denetimBekliyor') && fs.readFileSync(path.join(appDir, 'teknik-pdf.js'), 'utf8').includes("select=id&id=eq.${encodeURIComponent(item.denetim_id)}") &&

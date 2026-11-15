@@ -54,6 +54,14 @@ input,select,textarea{font-family:var(--sans);font-size:15px;}
 .syncpill.pending .dot{background:#F0A93B;}
 .syncpill.offline .dot{background:#8A8FA8;}
 .syncpill.error .dot{background:#EA0048;}
+.guvence-bar{display:flex;align-items:center;gap:10px;justify-content:space-between;padding:7px 14px;font-size:13px;line-height:1.3;border-bottom:1px solid rgba(255,255,255,.12);background:#123d2a;color:#e8fff1;}
+.guvence-bar[hidden]{display:none;}
+.guvence-bar b{display:block;font-weight:650;}
+.guvence-bar small{display:block;opacity:.85;}
+.guvence-bar[data-seviye="bekliyor"]{background:#5a4a12;color:#fff6d6;}
+.guvence-bar[data-seviye="cevrimdisi"]{background:#3a3f55;color:#eef0fa;}
+.guvence-bar[data-seviye="uyari"],.guvence-bar[data-seviye="sorun"]{background:#8d1535;color:#fff;font-size:14px;}
+.guvence-bar .guvence-eylem{flex:none;border:1px solid rgba(255,255,255,.55);background:rgba(255,255,255,.14);color:inherit;border-radius:8px;padding:7px 12px;font-weight:650;cursor:pointer;}
 .iconbtn{background:none;border:none;color:#C7CAE2;font-size:18px;padding:4px;}
 
 /* ===== SCREENS ===== */
@@ -678,7 +686,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <button type="button" class="brand-home" id="brandHome" disabled aria-label="AVES Saha Denetim" title="AVES Saha Denetim">
     <span class="brand-lockup">
       <img src="aves-logo-white.png" alt="" aria-hidden="true">
-      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.21.4</b></span>
+      <span class="sub brand-divider">Saha<br>Denetim <b>R15D-RC3.21.5</b></span>
     </span>
   </button>
   <div class="spacer"></div>
@@ -688,6 +696,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <button class="iconbtn hidden" id="btnLogout" title="Çıkış">⏻</button>
 </div>
 
+<div id="veriGuvenceBar" class="guvence-bar" role="status" aria-live="polite" hidden></div>
 <div id="app"></div>
 <div class="toast" id="toast"></div>
 
@@ -702,6 +711,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 <script src="deger-kontrol.js"></script>
 <script src="fr65-docx.js"></script>
 <script src="cihaz-durumu.js"></script>
+<script src="veri-guvence.js"></script>
 <script src="fr65-sema.js"></script>
 <script src="fr65-cikti.js"></script>
 <script src="vendor/jszip.min.js"></script>
