@@ -7,7 +7,7 @@
 'use strict';
 
 async function fotografOnbellekYenile(denetimId) {
-  if (navigator.onLine && API.loggedIn) {
+  if (navigator.onLine && API.loggedIn && !(await AVES_DEMO.mu(denetimId))) {
     try {
       const remote = await API.select('denetim_fotograflari', `select=*&denetim_id=eq.${denetimId}&order=created_at.asc`);
       const local = await DB.allByIndex('fotograflar', 'byDenetim', denetimId);
@@ -42,6 +42,11 @@ async function fotografSikistir(file) {
 }
 
 async function fotografYukle(foto) {
+  if (await AVES_DEMO.mu(foto.denetim_id)) {
+    // Demo denetim fotoğrafı yalnız cihazda kalır; sunucuya yüklenmez, bekleyen sayılmaz.
+    if (foto.sync_status !== 'demo') { foto.sync_status = 'demo'; await DB.put('fotograflar', foto); }
+    return true;
+  }
   if (!navigator.onLine || !foto.blob) return false;
   // x-upsert:true — metadata yazımı bir önceki denemede başarısız olup obje storage'da
   // yetim kalmışsa (örn. yetki hatası), yeniden deneme aynı object_path'i sorunsuz üstüne yazabilsin.
@@ -61,7 +66,8 @@ async function bekleyenFotograflariYukle() {
   if (!navigator.onLine) return;
   const all = await DB.all('fotograflar');
   let degisti = false;
-  for (const foto of all.filter(f => f.sync_status === 'pending' && f.blob)) {
+  const demoIdleri = new Set(await AVES_DEMO.idler());
+  for (const foto of all.filter(f => f.sync_status === 'pending' && f.blob && !demoIdleri.has(f.denetim_id))) {
     try { await fotografYukle(foto); degisti = true; } catch (error) { console.warn('Fotoğraf daha sonra yeniden yüklenecek', error); }
   }
   if (degisti && currentDenetimId) {

@@ -10,7 +10,7 @@ const dataDir = path.join(root, 'data');
 const databaseDir = path.join(root, 'database');
 
 // app.js ve UI kapanışı bölündü: testler, yükleme sırasıyla birleştirilmiş uygulama kaynağını (eski tek dosya gibi) tarar.
-const appParcalari = ['config', 'db', 'api', 'profil', 'senkron', 'yerel-yazma', 'teknik-pdf', 'ui-durum', 'ui-foto', 'ui-yonetim', 'ui-kayit', 'ui-liste', 'ui-yeni', 'ui-fr65', 'ui-denetim', 'ui-taslak', 'ui-form', 'ui-madde', 'ui-kapanis', 'ui-son', 'baslat'];
+const appParcalari = ['config', 'db', 'demo', 'api', 'profil', 'senkron', 'yerel-yazma', 'teknik-pdf', 'ui-durum', 'ui-foto', 'ui-yonetim', 'ui-kayit', 'ui-liste', 'ui-yeni', 'ui-fr65', 'ui-denetim', 'ui-taslak', 'ui-form', 'ui-madde', 'ui-kapanis', 'ui-son', 'baslat'];
 const app = appParcalari.map(ad => fs.readFileSync(path.join(appDir, ad + '.js'), 'utf8')).join(String.fromCharCode(10));
 const sw = fs.readFileSync(path.join(appDir, 'sw.js'), 'utf8');
 const manifest = fs.readFileSync(path.join(appDir, 'manifest.json'), 'utf8');
@@ -117,10 +117,10 @@ const closureSummaryCards = closureSummaryContext.AVES_KAPANIS_GUVEN_OZETI.kartl
 const checks = [];
 const test = (name, condition) => checks.push({ name, ok: !!condition });
 
-test('index R15D rc3.21.5 sürümü', index.includes('R15D-RC3.21.5</b>'));
-test('app R15D rc3.21.5 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.5'"));
-test('service worker rc3.21.5 cache', sw.includes("aves-saha-r15d-rc3215'"));
-test('uygulama manifesti rc3.21.5 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.5"'));
+test('index R15D rc3.21.6 sürümü', index.includes('R15D-RC3.21.6</b>'));
+test('app R15D rc3.21.6 sürümü', app.includes("const APP_VERSION = 'R15D-rc3.21.6'"));
+test('service worker rc3.21.6 cache', sw.includes("aves-saha-r15d-rc3216'"));
+test('uygulama manifesti rc3.21.6 sürümüyle tutarlı', manifest.includes('"version": "R15D-rc3.21.6"'));
 test('FR.65 araç modülü ana sayfada ve çevrimdışı pakette yükleniyor',
   index.includes('<script src="fr65-saha-tools.js"></script>') &&
   app.includes("'./fr65-saha-tools.js'") && sw.includes("'./fr65-saha-tools.js'"));
@@ -401,6 +401,41 @@ test('veri güvencesi: ekranda hep görünen çubuk, sunucu doğrulaması, tamam
   app.includes('async function dogrula(denetimId)') && app.includes('async function tamamlamaGuvencesi(denetimId)') && app.includes('guvenceBariCiz().catch') &&
   app.includes("setInterval(() => { updatePill(); }, 30000)") && app.includes('async function tamamlamaOncesiGuvence(denetimId)') &&
   (app.match(/tamamlamaOncesiGuvence\(/g) || []).length >= 3 && app.includes('await yedekIndir([denetimId])'));
+/* ---- Demo denetim (demo.js) ---- */
+const demoKv = new Map();
+const demoCtx = { DB: { kvGet: async k => demoKv.get(k), kvSet: async (k, v) => { demoKv.set(k, v); } } };
+vm.runInNewContext(fs.readFileSync(path.join(appDir, 'demo.js'), 'utf8') + String.fromCharCode(10) + 'globalThis.AVES_DEMO = AVES_DEMO;', demoCtx, { filename: 'demo.js' });
+const DEMO = demoCtx.AVES_DEMO;
+test('demo: yalnız aavci@avesbelgelendirme.com.tr yetkili (büyük/küçük harf ve boşluk fark etmez); başkası/boş/benzeri değil',
+  DEMO.yetkili('aavci@avesbelgelendirme.com.tr') && DEMO.yetkili('  AAVCI@AvesBelgelendirme.com.tr ') &&
+  !DEMO.yetkili('yonetici@test.local') && !DEMO.yetkili('') && !DEMO.yetkili(null) && !DEMO.yetkili('aavci@avesbelgelendirme.com.tr.evil.com') &&
+  !DEMO.yetkili('xaavci@avesbelgelendirme.com.tr') && DEMO.YETKILI_EPOSTALAR.length === 1);
+test('demo: kimlik kaydet/sorgula/unut cihazda tutulur; boş kimlik demo sayılmaz; örnek bilgi benzersiz seri üretir',
+  await (async () => {
+    const a = DEMO.ornekBilgi('G'); const b = DEMO.ornekBilgi('G');
+    await DEMO.kaydet('id-1');
+    const var1 = await DEMO.mu('id-1'); const yok = await DEMO.mu('id-2'); const bos = await DEMO.mu(null);
+    await DEMO.unut('id-1');
+    return var1 && !yok && !bos && !(await DEMO.mu('id-1')) && a.seri !== b.seri && /^DEMO-G-/.test(a.seri) && /^DEMO – /.test(a.musteri) && JSON.stringify(demoKv.get('demo_denetimler')) === '[]';
+  })());
+test('demo: sunucuya dokunan HER yol demo kaydı atlar (yerel yazma, çekme, fotoğraf, PDF, silme, doğrulama, tamamlama kapısı, bekleyen sayacı)',
+  (() => {
+    const yazma = fs.readFileSync(path.join(appDir, 'yerel-yazma.js'), 'utf8');
+    const senkron = fs.readFileSync(path.join(appDir, 'senkron.js'), 'utf8');
+    return yazma.includes('await AVES_DEMO.mu(denetimKimligi)') && yazma.indexOf('AVES_DEMO.mu(denetimKimligi)') < yazma.indexOf('putAllWithOutbox') &&
+      /async function pullSaha\(denetimId\) \{\s*if \(await AVES_DEMO\.mu\(denetimId\)\) return;/.test(senkron) &&
+      /async function pullGecmis\(denetimId\) \{\s*if \(await AVES_DEMO\.mu\(denetimId\)\) return;/.test(senkron);
+  })() &&
+  app.includes('if (await AVES_DEMO.mu(denetimId)) return null; // demo kayıt sunucuda yoktur') && app.includes('return { devam: true, demo: true }') &&
+  app.includes('!demoIdleri.has(item.denetim_id)') && app.includes('if (await AVES_DEMO.mu(denetimId)) return local || null') &&
+  app.includes("foto.sync_status = 'demo'") && app.includes('!(await AVES_DEMO.mu(denetimId))') &&
+  (app.match(/AVES_DEMO\.unut\(/g) || []).length >= 3 && app.includes("bar.dataset.seviye = 'demo'"));
+test('demo: oluşturma ilk yazmadan ÖNCE işaretler (G ve FR.65); yeni denetim ekranında yalnız yetkili hesapta panel eklenir; 4 modül',
+  app.indexOf("if (f.demo) await AVES_DEMO.kaydet(d.id);") > 0 && (app.match(/if \(f\.demo\) await AVES_DEMO\.kaydet\(d\.id\)/g) || []).length === 2 &&
+  app.includes('if (AVES_DEMO.yetkili(Profile.email)) demoPaneliniEkle();') && app.includes("if (!AVES_DEMO.yetkili(Profile.email)) { toast('Demo denetim bu hesapta kullanılamaz'); return; }") &&
+  ['G', 'B', 'E', 'H1'].every(m => app.includes(`data-demo="${m}"`)) &&
+  index.includes('<script src="demo.js"></script>') && index.indexOf('db.js"></script>') < index.indexOf('demo.js"></script>') && index.indexOf('demo.js"></script>') < index.indexOf('api.js"></script>') &&
+  sw.includes("'./demo.js'") && app.includes("'./demo.js'"));
 test('eşitleme sonuç mesajı: kalan işlem/fotoğraf/PDF varken “tamamlandı” denmez; reddedilen kayıt sebebi gösterilir',
   app.includes('async function sonucMesaji(ok)') && app.includes('function redSebebi(items)') && (app.match(/toast\(await sonucMesaji\(/g) || []).length >= 4 &&
   !/toast\(kalan\.length \? `\$\{kalan\.length\} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı'\)/.test(app));

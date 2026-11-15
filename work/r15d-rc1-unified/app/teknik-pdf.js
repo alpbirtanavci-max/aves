@@ -107,6 +107,7 @@ window.AVES_TEKNIK_PDF = (() => {
   async function load(denetimId) {
     const local = await DB.get('teknik_pdf', denetimId);
     if (local && PENDING.has(local.sync_status)) return local;
+    if (await AVES_DEMO.mu(denetimId)) return local || null; // demo kayıt: sunucuya sorulmaz
     if (!navigator.onLine || !API.loggedIn) return local || null;
     try {
       const remote = await remoteMetadata(denetimId);
@@ -227,8 +228,9 @@ window.AVES_TEKNIK_PDF = (() => {
   }
 
   async function pushPendingOnce() {
+    const demoIdleri = new Set(await AVES_DEMO.idler());
     const queue = (await DB.all('teknik_pdf'))
-      .filter(item => ['pending', 'metadata_pending', 'delete_pending'].includes(item.sync_status))
+      .filter(item => ['pending', 'metadata_pending', 'delete_pending'].includes(item.sync_status) && !demoIdleri.has(item.denetim_id))
       .map(item => item.denetim_id);
     let sent = 0;
     let failed = 0;

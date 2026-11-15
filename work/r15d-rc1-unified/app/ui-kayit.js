@@ -95,6 +95,15 @@ async function fr65SahaKaydiniSil(denetim, button = null) {
   }
   const id = String(denetim.id || '');
   const kimlik = `${denetim.musteri_unvani || 'Firma yok'} · ${denetim.asansor_seri_no || 'Seri no yok'}`;
+  if (await AVES_DEMO.mu(id)) {
+    if (!confirm(`DEMO kaydı “${kimlik}” silinsin mi? (Yalnız bu cihazda; sunucuda zaten yok.)`)) return;
+    await DB.deleteInspectionLocal(id);
+    await AVES_DEMO.unut(id);
+    await Sync.updatePill();
+    toast('Demo kaydı silindi');
+    showList();
+    return;
+  }
   if (!confirm(`“${kimlik}” FR.65 saha kaydı ve bağlı verileri silinsin mi?`)) return;
   if (!confirm('Bu işlem geri alınamaz. Sunucudan ve bu cihazdan silinecek. Emin misiniz?')) return;
   if (!navigator.onLine || !API.loggedIn) {
