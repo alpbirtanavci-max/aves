@@ -477,7 +477,8 @@ async function runModuleG(browser, appUrl, report) {
   await report.step(`${tag} sil → sunucudan ve cihazdan kalkar`, async () => {
     const id = serverRecord(s).id;
     await p.click('#btnSil');
-    await p.waitForSelector('#btnYeni', { timeout: 60000 });
+    // 600+ maddelik G denetiminin cihazdan silinmesi WebKit'te (CI) bazen 60 sn'yi aşan ağır bir IndexedDB işlemidir.
+    await p.waitForSelector('#btnYeni', { timeout: 180000 });
     await until(() => s.fake.tables.denetimler.length === 0, 'sunucuda denetim kaldı');
     assert.equal(s.fake.tables.saha_kontrol.filter(r => r.denetim_id === id).length >= 0, true);
     assert.equal(await p.evaluate(async i => !!(await DB.get('denetimler', i)), id), false, 'cihazda kayıt kaldı');

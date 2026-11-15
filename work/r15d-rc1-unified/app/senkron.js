@@ -117,6 +117,102 @@ const Sync = (() => {
       pill.className = 'syncpill';
       label.textContent = 'Senkron';
     }
+    guvenceBariCiz().catch(() => {});
+  }
+
+  // ---- Veri güvencesi: ekranda hep görünen "verim sunucuda mı?" durumu + karşılaştırmalı doğrulama ----
+  function bekleyenMi(it) { return !it.sync_status || BEKLEYEN_DURUMLAR.includes(it.sync_status); }
+
+  async function guvenceGirdisi() {
+    const outbox = await DB.outboxAll();
+    const bekleyenler = outbox.filter(bekleyenMi);
+    const damgalar = bekleyenler.map(it => Number(it.ts) || Date.parse(it.created_at || '')).filter(Number.isFinite);
+    const pdf = [...(await bekleyenTeknikPdfOzeti()).values()].reduce((a, b) => a + b.total, 0);
+    const persist = await DB.kvGet('storage_persist');
+    const esik = await DB.kvGet('veri_guvence_esik_ms');
+    return {
+      bekleyen: bekleyenler.length,
+      korunan: outbox.filter(it => KORUNAN_DURUMLAR.includes(it.sync_status)).length,
+      bekleyenFoto: Number(await DB.kvGet('bekleyen_foto_sayi')) || 0,
+      bekleyenPdf: pdf,
+      enEskiMs: damgalar.length ? Date.now() - Math.min(...damgalar) : null,
+      cevrimici: navigator.onLine,
+      dogrulama: await DB.kvGet('dogrulama_son'),
+      kalicidepo: persist && persist.supported && persist.granted === false ? false : true,
+      esikMs: Number.isFinite(esik) ? esik : undefined,
+    };
+  }
+
+  async function guvenceBariCiz() {
+    const bar = document.getElementById('veriGuvenceBar');
+    if (!bar || !window.AVES_VERI_GUVENCE) return;
+    if (!API.loggedIn) { bar.hidden = true; return; }
+    const g = AVES_VERI_GUVENCE.durum(await guvenceGirdisi());
+    bar.hidden = false;
+    bar.dataset.seviye = g.seviye;
+    bar.textContent = '';
+    const metin = document.createElement('span');
+    const baslik = document.createElement('b');
+    baslik.textContent = g.baslik;
+    const detay = document.createElement('small');
+    detay.textContent = g.detay;
+    metin.append(baslik, detay);
+    bar.append(metin);
+    if (g.eylem) {
+      const dugme = document.createElement('button');
+      dugme.type = 'button';
+      dugme.className = 'guvence-eylem';
+      dugme.textContent = g.eylem === 'gonder' ? 'Şimdi gönder' : 'İncele';
+      dugme.onclick = async () => {
+        if (g.eylem !== 'gonder') { syncCenter(); return; }
+        if (!navigator.onLine) { toast('Çevrimdışısınız — bağlantı gelince otomatik gönderilir'); return; }
+        dugme.disabled = true;
+        toast('Sunucuya gönderiliyor…');
+        const ok = await full();
+        toast(await sonucMesaji(ok));
+        await updatePill();
+      };
+      bar.append(dugme);
+    }
+  }
+
+  // Denetimin cihazdaki kopyası ile sunucudaki kopyasını karşılaştırır; sonuç "doğrulandı" kanıtıdır.
+  async function dogrula(denetimId) {
+    if (!denetimId || !navigator.onLine || !API.loggedIn || !window.AVES_VERI_GUVENCE) return null;
+    const yerel = await DB.get('denetimler', denetimId);
+    if (!yerel) return null;
+    const enc = encodeURIComponent(denetimId);
+    const satir = (await API.select('denetimler', `select=id,denetim_durumu,denetim_form_kayitlari&id=eq.${enc}&limit=1`))[0] || null;
+    let sunucu = null;
+    if (satir) {
+      const maddeler = await API.select('saha_kontrol', `select=madde_id,durum&denetim_id=eq.${enc}`);
+      sunucu = { durum: satir.denetim_durumu, maddeler, formlar: (satir.denetim_form_kayitlari && satir.denetim_form_kayitlari.forms) || null };
+    }
+    const yerelMaddeler = (await DB.allByIndex('saha', 'byDenetim', denetimId)).map(r => ({ madde_id: r.madde_id, durum: r.durum }));
+    const sonuc = AVES_VERI_GUVENCE.karsilastir(
+      { durum: yerel.denetim_durumu, maddeler: yerelMaddeler, formlar: (yerel.denetim_form_kayitlari && yerel.denetim_form_kayitlari.forms) || null }, sunucu);
+    const kayit = { id: denetimId, at: new Date().toISOString(), ok: sonuc.ok, farklar: sonuc.farklar };
+    await DB.kvSet('dogrulama_son', kayit);
+    await guvenceBariCiz();
+    return kayit;
+  }
+
+  // Tamamlamadan önce: önce gönder, sonra sunucuyla karşılaştır. { devam, neden } döner (devam=false → kullanıcıya sorulur).
+  async function tamamlamaGuvencesi(denetimId) {
+    if (navigator.onLine && API.loggedIn) { try { await full(); } catch { /* aşağıda durum yine ölçülür */ } }
+    const ozet = await denetimSyncOzeti(denetimId);
+    const foto = (await bekleyenFotoOzeti()).get(denetimId) || 0;
+    const pdf = (await bekleyenTeknikPdfOzeti()).get(denetimId);
+    if (ozet.items.length) return { devam: false, neden: `${ozet.items.length} işlem sunucuya gönderilemedi` };
+    if (foto) return { devam: false, neden: `${foto} fotoğraf sunucuya gönderilemedi` };
+    if (pdf && pdf.total) return { devam: false, neden: 'Teknik PDF sunucuya gönderilemedi' };
+    if (!navigator.onLine || !API.loggedIn) return { devam: false, neden: 'Çevrimdışısınız; veriler sunucuda doğrulanamadı' };
+    let dogrulama = null;
+    try { dogrulama = await dogrula(denetimId); }
+    catch (error) { return { devam: false, neden: `Sunucu doğrulaması yapılamadı (${error.message || 'bağlantı hatası'})` }; }
+    if (!dogrulama) return { devam: false, neden: 'Sunucu doğrulaması yapılamadı' };
+    if (!dogrulama.ok) return { devam: false, neden: `Sunucudaki kopya farklı: ${dogrulama.farklar.slice(0, 3).join(' · ')}` };
+    return { devam: true, dogrulama };
   }
 
   async function pendingRows(table) {
@@ -143,6 +239,7 @@ const Sync = (() => {
     if (!navigator.onLine || !API.loggedIn) return false;
     pushRunning = true;
     let allSent = true;
+    let gonderilen = 0;
     const reddedilenDenetimler = new Set();
     try {
       await retrySafeFr65Conflicts();
@@ -213,6 +310,7 @@ const Sync = (() => {
             await API.upsert(item.table, item.rows);
           }
           await DB.outboxDel(item.seq);
+          gonderilen++;
         } catch (e) {
           if (kaliciDogrulamaReddi(e)) {
             // Sunucu kaydı kalıcı olarak reddetti (ör. check/not-null kısıtı). Aynı denetimin kalan işlemleri
@@ -298,7 +396,14 @@ const Sync = (() => {
       }
     } finally {
       pushRunning = false;
+      // Yeni işlem gittiyse eski "doğrulandı" kaydı geçersizdir; sunucu kopyası yeniden karşılaştırılır.
+      if (gonderilen > 0) { try { await DB.kvDel('dogrulama_son'); } catch { /* en iyi çaba */ } }
       await updatePill();
+      // Kuyruk boşaldıysa açık denetimin sunucu kopyası hemen karşılaştırılır ("doğrulandı" kanıtı kendiliğinden gelir).
+      if (gonderilen > 0 && UI.currentDenetimId) {
+        DB.outboxCount().then(kalan => (kalan === 0 ? dogrula(UI.currentDenetimId) : null))
+          .catch(error => console.warn('Sunucu doğrulaması yapılamadı', error.message));
+      }
       durumBildir();
       if (typeof UI !== 'undefined' && UI.refresh && UI.canRefreshSafely()) UI.refresh();
     }
@@ -469,6 +574,8 @@ const Sync = (() => {
         await pullGecmis(UI.currentDenetimId);
       }
       completed = true;
+      // Açık denetim varsa sunucu kopyası yerelle karşılaştırılır (en iyi çaba; "doğrulandı" kanıtı).
+      if (UI.currentDenetimId && (await DB.outboxCount()) === 0) await dogrula(UI.currentDenetimId).catch(error => console.warn('Sunucu doğrulaması yapılamadı', error.message));
     } catch (e) {
       console.warn('Senkron hatası:', e.message);
     } finally {
@@ -712,6 +819,7 @@ const Sync = (() => {
       if (!zorla && imza === sonDurumBildirimi.imza && taze) return;
       // Fotoğraf sayısı blob'lu kayıtları taradığı için yalnız gerçekten bildirirken hesaplanır.
       satir.bekleyen_fotograf = (await DB.all('fotograflar')).filter(f => f.sync_status === 'pending' && f.blob).length;
+      try { await DB.kvSet('bekleyen_foto_sayi', satir.bekleyen_fotograf); } catch { /* en iyi çaba */ }
       imza = AVES_CIHAZ_DURUMU.olustur({ cihazId: satir.cihaz_id, surum: APP_VERSION, cevrimici: true, outbox, bekleyenFotograf: satir.bekleyen_fotograf }).imza;
       await API.upsert('cihaz_senkron_durumu', [satir]);
       sonDurumBildirimi = { imza, at: Date.now() };
@@ -725,10 +833,11 @@ const Sync = (() => {
     window.addEventListener('offline', updatePill);
     setInterval(() => { pushOutbox().then(pdfGonder).catch(() => {}); }, 20000);
     setInterval(() => { durumBildir(); }, 60000);
+    setInterval(() => { updatePill(); }, 30000); // bekleme süresi (ör. "12 dk") ekranda kendiliğinden güncellensin
     window.addEventListener('online', () => { durumBildir({ zorla: true }); });
     updatePill();
   }
 
-  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir, reddedileniDuzelt, sonucMesaji };
+  return { full, manual, reviewWarning, syncCenter, denetimSyncOzeti, start, updatePill, pullSaha, pullGecmis, pullKutuphane, pushOutbox, schedulePush, sunucuBolumSurumleri, durumBildir, reddedileniDuzelt, sonucMesaji, guvenceBariCiz, dogrula, tamamlamaGuvencesi };
 })();
 

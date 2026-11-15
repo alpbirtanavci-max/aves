@@ -64,6 +64,19 @@ async function yedekPaketiOlustur(idler) {
   return { ...govde, paket_hash: await sha256Hex(stableStringify(govde)) };
 }
 
+// Tamamlamadan önce: veriler sunucuda doğrulanamıyorsa yedek indirilir ve kullanıcıya açıkça sorulur.
+// Dönüş: true → tamamlama sürsün, false → vazgeçildi.
+async function tamamlamaOncesiGuvence(denetimId) {
+  const sonuc = await Sync.tamamlamaGuvencesi(denetimId);
+  if (sonuc.devam) return true;
+  const onay = confirm(`Veriler sunucuda doğrulanamadı: ${sonuc.neden}.
+
+Veri cihazınızda duruyor. Tamamlamadan önce bu denetimin YEDEĞİ indirilecek. Yine de tamamlansın mı?`);
+  if (!onay) return false;
+  await yedekIndir([denetimId]);
+  return true;
+}
+
 async function yedekIndir(idler, button = null) {
   if (button) button.disabled = true;
   try {

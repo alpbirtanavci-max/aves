@@ -1162,6 +1162,7 @@ async function renderFr65SahaKaydi(initialDenetim = null) {
         // Kapatma için zorunlu alan yoktur; zorunluluklar yalnız kaydı açarken istenir.
         const total = AVES_TEKNIK_DOSYA_FORM.countFr65Capture(latestRecord, latest.tahrik_tipi);
         if (!confirm(`${total.recorded}/${total.total} FR.65 alanında veri var. Bu işlem yalnız veri toplama kaydını kapatır; uygunluk veya belgelendirme kararı vermez. Kaydı kapatmak istiyor musunuz?`)) return;
+        if (!(await tamamlamaOncesiGuvence(latest.id))) return;
         const now = new Date().toISOString();
         const expectedUpdatedAt = latest.updated_at;
         latest.denetim_durumu = 'Çalışma Tamamlandı';
