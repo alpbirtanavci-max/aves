@@ -13,6 +13,40 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
   } catch { /* kütüphane yoksa G akışı test edilemez */ }
   const log = [];
   const state = { offline: false, failNext: null, serverClock: 0 };
+
+  // ÜRETİM VERİTABANININ GERÇEK CHECK KISITLARI (pg_constraint'ten okundu). Sahte sunucu bunları uygulamazsa
+  // sunucuya özgü ret (ör. Makine dairesi boş → 23514) CI'da görünmez; gerçek olayda veri 30 gün cihazda takılı kaldı.
+  // Ret biçimi PostgREST ile aynıdır: 400 + {"code":"23514","message":"new row for relation ... violates check constraint ..."}.
+  const bosMu = v => v === null || v === undefined;
+  const listede = (v, liste) => bosMu(v) || liste.includes(v);
+  const nesneMi = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+  const DENETIM_KISITLARI = [
+    ['denetimler_a3_only_module_g_check', r => r.ana_standart !== '81-1/2+A3' || (r.kontrol_profili === 'modul_g_tam' && listede(r.modul, ['Modül G']) && listede(r.denetim_turu, ['Modül G - Birim Doğrulaması']))],
+    ['denetimler_bina_asansor_sayisi_check', r => bosMu(r.bina_asansor_sayisi) || r.bina_asansor_sayisi > 0],
+    ['denetimler_denetim_durumu_check', r => ['Devam Ediyor', 'Gözden Geçirme', 'Çalışma Tamamlandı'].includes(r.denetim_durumu)],
+    ['denetimler_denetim_form_kayitlari_object_check', r => bosMu(r.denetim_form_kayitlari) || nesneMi(r.denetim_form_kayitlari)],
+    ['denetimler_denetim_turu_check', r => listede(r.denetim_turu, ['Modül G - Birim Doğrulaması', 'Modül E - Gözetim Saha Teyidi', 'Modül H1 - Gözetim Saha Teyidi', 'Modül B - AB Tip İncelemesi'])],
+    ['denetimler_duzeltme_nedeni_check', r => listede(r.duzeltme_nedeni, ['Yanlış seçim düzeltmesi', 'Eksik bilgi tamamlama', 'Saha notu düzeltmesi'])],
+    ['denetimler_form_cikti_snapshot_object_chk', r => bosMu(r.form_cikti_snapshot) || nesneMi(r.form_cikti_snapshot)],
+    ['denetimler_kabin_giris_duzeni_check', r => listede(r.kabin_giris_duzeni, ['Tek giriş', 'Karşılıklı giriş', 'Bitişik duvarlarda giriş'])],
+    ['denetimler_kabin_kapi_acilma_tipi_check', r => listede(r.kabin_kapi_acilma_tipi, ['Teleskopik', 'Merkezi'])],
+    ['denetimler_kontrol_profili_check', r => listede(r.kontrol_profili, ['modul_g_tam', 'saha_teyidi_e', 'saha_teyidi_h1', 'modul_b_tip_inceleme'])],
+    // NOT VALID: yalnız yeni/güncellenen satırlara uygulanır (eski boş kayıtlar geçerli kalır).
+    ['denetimler_makine_dairesi_r15c_check', r => ['MR', 'MRL'].includes(r.makine_dairesi_tipi)],
+    ['denetimler_seri_numaralari_object_check', r => bosMu(r.seri_numaralari) || nesneMi(r.seri_numaralari)],
+    ['denetimler_teknik_dosya_kayitlari_object_check', r => bosMu(r.teknik_dosya_kayitlari) || nesneMi(r.teknik_dosya_kayitlari)],
+  ];
+  const MADDE_KISITLARI = [
+    ['saha_kontrol_durum_check', r => listede(r.durum, ['Kontrol tamamlandı', 'Olumsuz bulgu', 'Uygulanmaz'])],
+    ['saha_kontrol_esik_operator_check', r => listede(r.esik_operator, ['>=', '<='])],
+    ['saha_kontrol_gozden_gecirme_nedeni_check', r => listede(r.gozden_gecirme_nedeni, ['Sonra tekrar bakılacak', 'Erişim sağlanacak', 'Ortam / aydınlatma düzeltilecek', 'Teknik bilgi doğrulanacak', 'Diğer'])],
+  ];
+  const ihlal = (tablo, satir) => {
+    const liste = tablo === 'denetimler' ? DENETIM_KISITLARI : tablo === 'saha_kontrol' ? MADDE_KISITLARI : [];
+    const hit = liste.find(([, uygun]) => !uygun(satir));
+    return hit ? hit[0] : null;
+  };
+  const kisitHatasi = (tablo, ad) => json(400, { code: '23514', details: null, hint: null, message: `new row for relation "${tablo}" violates check constraint "${ad}"` });
   let tick = 0;
   const stamp = () => { tick += 1; return new Date(Date.parse(now()) + tick).toISOString(); };
 
@@ -88,6 +122,13 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     if (method === 'POST') {
       const prefer = req.headers()['prefer'] || '';
       const incoming = Array.isArray(body) ? body : [body];
+      if (!state.kisitlariKapat) {
+        for (const row of incoming) {
+          const mevcut = table.find(r => r.id !== undefined && r.id === row.id);
+          const ad = ihlal(m[1], { ...(mevcut || {}), ...row });
+          if (ad) return route.fulfill(kisitHatasi(m[1], ad));
+        }
+      }
       if (state.dogrulaOrnek && m[1] === 'denetimler' && incoming.some(row => row.ornek_alan === 'gecersiz')) {
         return route.fulfill(json(400, { code: '23514', details: null, hint: null,
           message: 'new row for relation "denetimler" violates check constraint "denetimler_ornek_alan_check"' }));
@@ -120,6 +161,9 @@ export function createFakeSupabase({ profile, now = () => new Date().toISOString
     }
     if (method === 'PATCH') {
       const hit = table.filter(r => matches(r, filters));
+      if (!state.kisitlariKapat) {
+        for (const r of hit) { const ad = ihlal(m[1], { ...r, ...body }); if (ad) return route.fulfill(kisitHatasi(m[1], ad)); }
+      }
       for (const r of hit) Object.assign(r, body, { updated_at: stamp() });
       return route.fulfill(json(200, hit.map(r => ({ ...r }))));
     }
