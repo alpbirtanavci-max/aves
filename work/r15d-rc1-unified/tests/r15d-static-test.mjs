@@ -401,6 +401,16 @@ test('veri güvencesi: ekranda hep görünen çubuk, sunucu doğrulaması, tamam
   app.includes('async function dogrula(denetimId)') && app.includes('async function tamamlamaGuvencesi(denetimId)') && app.includes('guvenceBariCiz().catch') &&
   app.includes("setInterval(() => { updatePill(); }, 30000)") && app.includes('async function tamamlamaOncesiGuvence(denetimId)') &&
   (app.match(/tamamlamaOncesiGuvence\(/g) || []).length >= 3 && app.includes('await yedekIndir([denetimId])'));
+test('sahte sunucu üretim CHECK kısıtlarını uygular; istemcinin tür/profil sabitleri bu listelerle birebir uyumlu (sapma CI’da yakalanır)',
+  (() => {
+    const sahte = fs.readFileSync(path.join(appDir, '..', 'tests', 'smoke', 'fake-supabase.mjs'), 'utf8');
+    const config = fs.readFileSync(path.join(appDir, 'config.js'), 'utf8');
+    const turler = [...config.slice(config.indexOf('const DENETIM_TURLERI')).split('};')[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
+    const profiller = [...config.slice(config.indexOf('const KONTROL_PROFILLERI')).split('};')[0].matchAll(/'([^']+)'/g)].map(m => m[1]);
+    return turler.length === 4 && profiller.length === 4 && turler.every(v => sahte.includes(`'${v}'`)) && profiller.every(v => sahte.includes(`'${v}'`)) &&
+      ['denetimler_makine_dairesi_r15c_check', 'denetimler_denetim_turu_check', 'denetimler_kontrol_profili_check', 'denetimler_denetim_durumu_check', 'saha_kontrol_durum_check']
+        .every(ad => sahte.includes(`'${ad}'`));
+  })());
 test('eşitleme sonuç mesajı: kalan işlem/fotoğraf/PDF varken “tamamlandı” denmez; reddedilen kayıt sebebi gösterilir',
   app.includes('async function sonucMesaji(ok)') && app.includes('function redSebebi(items)') && (app.match(/toast\(await sonucMesaji\(/g) || []).length >= 4 &&
   !/toast\(kalan\.length \? `\$\{kalan\.length\} işlem hâlâ inceleme gerektiriyor` : 'Senkron tamamlandı'\)/.test(app));

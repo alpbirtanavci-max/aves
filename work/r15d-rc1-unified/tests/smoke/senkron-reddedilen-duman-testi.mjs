@@ -122,6 +122,32 @@ try {
     s.fake.state.dogrulaOrnek = false;
   });
 
+  await report.step('sahte sunucu ÜRETİM kısıtlarını uygular (bayrak gerekmez): geçersiz denetim türü/durum/profil ve boş Makine dairesi reddedilir, geçerli kayıt kabul edilir', async () => {
+    const sonuclar = await p.evaluate(async email => {
+      const temel = { musteri_unvani: 'Kısıt A.Ş.', asansor_seri_no: 'K-1', olusturan_email: email, modul: 'Modül E', ana_standart: '81-20',
+        denetim_turu: 'Modül E - Gözetim Saha Teyidi', kontrol_profili: 'saha_teyidi_e', denetim_durumu: 'Devam Ediyor', makine_dairesi_tipi: 'MR' };
+      const dene = async (ek) => {
+        const yanit = await fetch('https://jmccmkqyncunpqliqvox.supabase.co/rest/v1/denetimler', { method: 'POST', headers: { 'content-type': 'application/json', apikey: 'x', authorization: 'Bearer x' },
+          body: JSON.stringify({ id: crypto.randomUUID(), ...temel, ...ek }) });
+        return { durum: yanit.status, metin: (await yanit.text()).slice(0, 400) };
+      };
+      return {
+        gecerli: await dene({}),
+        turYanlis: await dene({ denetim_turu: 'Modül X' }),
+        durumYanlis: await dene({ denetim_durumu: 'Bitti' }),
+        profilYanlis: await dene({ kontrol_profili: 'serbest' }),
+        mdBos: await dene({ makine_dairesi_tipi: null }),
+        a3Kural: await dene({ ana_standart: '81-1/2+A3' }),
+      };
+    }, persona.email);
+    assert.equal(sonuclar.gecerli.durum, 201, JSON.stringify(sonuclar.gecerli));
+    for (const [ad, kisit] of [['turYanlis', 'denetimler_denetim_turu_check'], ['durumYanlis', 'denetimler_denetim_durumu_check'], ['profilYanlis', 'denetimler_kontrol_profili_check'],
+      ['mdBos', 'denetimler_makine_dairesi_r15c_check'], ['a3Kural', 'denetimler_a3_only_module_g_check']]) {
+      assert.equal(sonuclar[ad].durum, 400, `${ad}: ${JSON.stringify(sonuclar[ad])}`);
+      assert.ok(sonuclar[ad].metin.includes('"code":"23514"') && sonuclar[ad].metin.includes(kisit), `${ad}: ${sonuclar[ad].metin}`);
+    }
+  });
+
   await report.step('sayfa hatası yok', async () => { const hatalar = s.errors.filter(e => !/favicon|manifest|status of 400/.test(e)); assert.deepEqual(hatalar, [], hatalar.join(' || ').slice(0, 600)); });
 } finally { await browser.close(); app.close(); }
 process.exit(report.summary() ? 1 : 0);
