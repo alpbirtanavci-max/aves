@@ -148,6 +148,20 @@ const Sync = (() => {
     if (!bar || !window.AVES_VERI_GUVENCE) return;
     if (!API.loggedIn) { bar.hidden = true; return; }
     const g = AVES_VERI_GUVENCE.durum(await guvenceGirdisi());
+    // Açık denetim demo ise bunu açıkça söyle: bu veri sunucuda OLMAYACAK (yanlış güven vermesin).
+    if (typeof UI !== 'undefined' && UI.currentDenetimId && await AVES_DEMO.mu(UI.currentDenetimId)) {
+      bar.hidden = false;
+      bar.dataset.seviye = 'demo';
+      bar.textContent = '';
+      const metin = document.createElement('span');
+      const baslik = document.createElement('b');
+      baslik.textContent = 'DEMO denetim · yalnızca bu cihazda';
+      const detay = document.createElement('small');
+      detay.textContent = 'Bu kayıt sunucuya gönderilmez; gerçek denetim değildir.';
+      metin.append(baslik, detay);
+      bar.append(metin);
+      return;
+    }
     bar.hidden = false;
     bar.dataset.seviye = g.seviye;
     bar.textContent = '';
@@ -178,6 +192,7 @@ const Sync = (() => {
 
   // Denetimin cihazdaki kopyası ile sunucudaki kopyasını karşılaştırır; sonuç "doğrulandı" kanıtıdır.
   async function dogrula(denetimId) {
+    if (await AVES_DEMO.mu(denetimId)) return null; // demo kayıt sunucuda yoktur
     if (!denetimId || !navigator.onLine || !API.loggedIn || !window.AVES_VERI_GUVENCE) return null;
     const yerel = await DB.get('denetimler', denetimId);
     if (!yerel) return null;
@@ -199,6 +214,7 @@ const Sync = (() => {
 
   // Tamamlamadan önce: önce gönder, sonra sunucuyla karşılaştır. { devam, neden } döner (devam=false → kullanıcıya sorulur).
   async function tamamlamaGuvencesi(denetimId) {
+    if (await AVES_DEMO.mu(denetimId)) return { devam: true, demo: true }; // demo: sunucu doğrulaması yok, yedek istenmez
     if (navigator.onLine && API.loggedIn) { try { await full(); } catch { /* aşağıda durum yine ölçülür */ } }
     const ozet = await denetimSyncOzeti(denetimId);
     const foto = (await bekleyenFotoOzeti()).get(denetimId) || 0;
@@ -531,6 +547,7 @@ const Sync = (() => {
   }
 
   async function pullSaha(denetimId) {
+    if (await AVES_DEMO.mu(denetimId)) return; // demo kayıt sunucuda yoktur; yerel kopya korunur
     const rows = await API.selectPaged('saha_kontrol', `select=*&denetim_id=eq.${denetimId}&order=sira_no.asc,madde_id.asc`);
     const localRows = await DB.allByIndex('saha', 'byDenetim', denetimId);
     const pending = await pendingRows('saha_kontrol');
@@ -543,6 +560,7 @@ const Sync = (() => {
   }
 
   async function pullGecmis(denetimId) {
+    if (await AVES_DEMO.mu(denetimId)) return;
     const rows = await API.selectPaged(
       'denetim_degisim_gecmisi',
       `select=*&denetim_id=eq.${denetimId}&order=created_at.desc`
@@ -614,7 +632,7 @@ const Sync = (() => {
   async function bekleyenFotoOzeti() {
     const map = new Map();
     for (const f of await DB.all('fotograflar')) {
-      if (f.sync_status !== 'pending' || !f.blob) continue;
+      if (f.sync_status !== 'pending' || !f.blob || await AVES_DEMO.mu(f.denetim_id)) continue;
       map.set(f.denetim_id, (map.get(f.denetim_id) || 0) + 1);
     }
     return map;
@@ -626,6 +644,7 @@ const Sync = (() => {
     for (const item of await DB.all('teknik_pdf')) {
       if (!['pending', 'metadata_pending', 'delete_pending', 'conflict'].includes(item.sync_status)) continue;
       if (item.sync_status === 'pending' && !item.blob) continue;
+      if (await AVES_DEMO.mu(item.denetim_id)) continue;
       const summary = map.get(item.denetim_id) || { total: 0, conflict: 0 };
       summary.total++;
       if (item.sync_status === 'conflict') summary.conflict++;
@@ -818,7 +837,8 @@ const Sync = (() => {
       const taze = Date.now() - sonDurumBildirimi.at < 15 * 60 * 1000;
       if (!zorla && imza === sonDurumBildirimi.imza && taze) return;
       // Fotoğraf sayısı blob'lu kayıtları taradığı için yalnız gerçekten bildirirken hesaplanır.
-      satir.bekleyen_fotograf = (await DB.all('fotograflar')).filter(f => f.sync_status === 'pending' && f.blob).length;
+      const demoIdleri = new Set(await AVES_DEMO.idler());
+      satir.bekleyen_fotograf = (await DB.all('fotograflar')).filter(f => f.sync_status === 'pending' && f.blob && !demoIdleri.has(f.denetim_id)).length;
       try { await DB.kvSet('bekleyen_foto_sayi', satir.bekleyen_fotograf); } catch { /* en iyi çaba */ }
       imza = AVES_CIHAZ_DURUMU.olustur({ cihazId: satir.cihaz_id, surum: APP_VERSION, cevrimici: true, outbox, bekleyenFotograf: satir.bekleyen_fotograf }).imza;
       await API.upsert('cihaz_senkron_durumu', [satir]);

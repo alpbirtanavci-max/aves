@@ -273,6 +273,8 @@ async function showList({ arkaPlan = false } = {}) {
     const noResult = document.getElementById('listNoResult');
     if (noResult) noResult.classList.toggle('hidden', visible > 0 || denetimler.length === 0);
   };
+  // Liste çizimi beklerken görünüm değişmiş olabilir (başka ekran açıldı / eşzamanlı yenileme): DOM yoksa sessizce bırak.
+  if (!document.getElementById('listSearch') || !document.getElementById('listDate') || !document.getElementById('listClear')) return;
   document.getElementById('listSearch').oninput = e => { listSearch = e.target.value; applyListFilters(); };
   document.getElementById('listDate').onchange = e => { listDateFilter = e.target.value || 'all'; applyListFilters(); };
   document.getElementById('listClear').onclick = () => {
@@ -702,6 +704,7 @@ async function olusturFr65Kaydi(f) {
     created_at: now,
     updated_at: now,
   };
+  if (f.demo) await AVES_DEMO.kaydet(d.id); // demo: ilk yazmadan ÖNCE işaretlenir; sunucuya hiç gitmez
   await localWrite('denetimler', d, 'denetimler', { insert_only: true });
   toast('FR.65 saha veri kaydı cihazda oluşturuldu');
   return d.id;

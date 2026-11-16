@@ -102,6 +102,8 @@ async function guncelSahaSatiri(id) {
 }
 
 async function renderDenetim() {
+  // Silme/çıkıştan sonra gecikmiş bir yenileme gelirse (currentDenetimId boş) yok say; liste zaten gösteriliyor.
+  if (!currentDenetimId) return;
   const d = await DB.get('denetimler', currentDenetimId);
   if (!d) { showList(); return; }
   if (fr65SahaKaydiMi(d)) {
@@ -390,6 +392,16 @@ async function renderDenetim() {
   };
   if (btnSil) btnSil.onclick = async () => {
     if (!canDeleteDenetim(d)) { toast('Denetim silme yetkiniz yok'); return; }
+    if (await AVES_DEMO.mu(d.id)) {
+      if (!confirm(`DEMO denetim “${d.musteri_unvani}” silinsin mi? (Yalnız bu cihazda; sunucuda zaten yok.)`)) return;
+      await DB.deleteInspectionLocal(d.id);
+      await DB.kvDel(`offline_ready_${d.id}`);
+      await AVES_DEMO.unut(d.id);
+      await Sync.updatePill();
+      toast('Demo denetim silindi');
+      showList();
+      return;
+    }
     const bagliTakipler = (await DB.all('denetimler')).filter(item =>
       item.id !== d.id && (item.takip_onceki_denetim_id === d.id || item.takip_ana_denetim_id === d.id)
     );

@@ -138,6 +138,7 @@ function showYeniForm() {
     });
   });
   document.querySelector('#sModul [data-v="G"]').classList.add('on');
+  if (AVES_DEMO.yetkili(Profile.email)) demoPaneliniEkle();
 
   document.getElementById('fKaydet').onclick = async () => {
     const muhendis = Profile.name;
@@ -228,6 +229,71 @@ function showYeniForm() {
     };
     showOnayEkrani(formVals, tahmini);
   };
+}
+
+// Demo denetim (yalnız yetkili hesapta görünür): firma bilgisi girmeden özellikleri denemek için. Kayıt yalnız bu
+// cihazda tutulur, sunucuya hiç gönderilmez. Gerçek denetim için aşağıdaki form olduğu gibi kullanılır.
+function demoPaneliniEkle() {
+  const kart = document.createElement('div');
+  kart.className = 'form-card demo-panel';
+  kart.innerHTML = `<h3>Denetim türü</h3>
+    <div class="demo-secenekler">
+      <div><b>Gerçek denetim</b><small>Aşağıdaki formu doldurun; veri sunucuya gönderilir.</small></div>
+      <div><b>Demo denetim</b><small>Hazır örnek bilgilerle hemen deneyin. Yalnız bu cihazda kalır, sunucuya gönderilmez.</small>
+        <div class="segs" id="demoModuller">
+          <button type="button" class="seg" data-demo="G">Modül G</button>
+          <button type="button" class="seg" data-demo="B">Modül B</button>
+          <button type="button" class="seg" data-demo="E">Modül E</button>
+          <button type="button" class="seg" data-demo="H1">Modül H1</button>
+        </div>
+        <button type="button" class="btn btn-ghost" id="demoTemizle">Tüm demo denetimleri sil</button>
+      </div>
+    </div>`;
+  const ilkKart = app.querySelector('.screen .form-card');
+  ilkKart.parentNode.insertBefore(kart, ilkKart);
+  kart.querySelector('#demoModuller').onclick = async event => {
+    const dugme = event.target.closest('[data-demo]');
+    if (!dugme) return;
+    kart.querySelectorAll('[data-demo]').forEach(b => { b.disabled = true; });
+    dugme.textContent = 'Hazırlanıyor…';
+    try { await demoDenetimiOlustur(dugme.dataset.demo); }
+    catch (error) { console.error('Demo denetim oluşturulamadı', error); toast(error.message || 'Demo denetim oluşturulamadı'); showYeniForm(); }
+  };
+  kart.querySelector('#demoTemizle').onclick = async () => {
+    const idler = await AVES_DEMO.idler();
+    if (!idler.length) { toast('Silinecek demo denetim yok'); return; }
+    if (!confirm(`${idler.length} demo denetim bu cihazdan silinsin mi? Gerçek denetimlere dokunulmaz.`)) return;
+    for (const id of idler) { await DB.deleteInspectionLocal(id); await AVES_DEMO.unut(id); }
+    await Sync.updatePill();
+    toast(`${idler.length} demo denetim silindi`);
+  };
+}
+
+async function demoDenetimiOlustur(modul) {
+  if (!AVES_DEMO.yetkili(Profile.email)) { toast('Demo denetim bu hesapta kullanılamaz'); return; }
+  const o = AVES_DEMO.ornekBilgi(modul);
+  const ortak = { muhendis: Profile.name, musteri: o.musteri, firmaAdresi: o.firmaAdresi, dosya: null, kimlikNo: null, demo: true };
+  if (modul === 'G') {
+    const ekStandartlarDemo = [];
+    await olustur({
+      ...ortak, seri: o.seri, adres: o.adres, modul: 'Modül G', denetimTuru: DENETIM_TURLERI.MODUL_G, kontrolProfili: KONTROL_PROFILLERI.TAM,
+      anaTip: null, tipVaryantKodu: null, anaStandart: '81-20', ekStandartlar: ekStandartlarDemo, binaAsansorSayisi: o.binaAsansorSayisi,
+      kabinGirisDuzeni: 'Tek giriş', kabinKapiAcilmaTipi: 'Teleskopik', tahrik: o.tahrik, md: o.md,
+      yuk: o.yuk, hiz: o.hiz, kapasite: o.kapasite, durak: o.durak, aski: null,
+    });
+    return;
+  }
+  const modulAyari = {
+    B: { modul: 'Modül B', tur: DENETIM_TURLERI.MODUL_B, profil: KONTROL_PROFILLERI.MODUL_B },
+    E: { modul: 'Modül E', tur: DENETIM_TURLERI.MODUL_E, profil: KONTROL_PROFILLERI.SAHA_TEYIDI_E },
+    H1: { modul: 'Modül H1', tur: DENETIM_TURLERI.MODUL_H1, profil: KONTROL_PROFILLERI.SAHA_TEYIDI_H1 },
+  }[modul];
+  if (!modulAyari) throw new Error('Bilinmeyen demo modülü');
+  const id = await olusturFr65Kaydi({
+    ...ortak, akış: 'fr65_saha_v1', seri: '', adres: '', modul: modulAyari.modul, denetimTuru: modulAyari.tur, kontrolProfili: modulAyari.profil,
+    tahrik: o.tahrik, md: o.md, yuk: o.yuk, kapasite: o.kapasite, hiz: o.hiz, durak: o.durak, kat: o.kat, binaAsansorSayisi: o.binaAsansorSayisi,
+  });
+  await showDenetim(id);
 }
 
 function showOnayEkrani(f, tahmini) {
@@ -427,6 +493,7 @@ async function olustur(f) {
     d.snapshot_madde_set_hash = await sha256Hex(itemIds.join('|'));
     d.snapshot_content_hash = await sha256Hex(stableStringify(contentManifest));
 
+    if (f.demo) await AVES_DEMO.kaydet(d.id); // demo: ilk yazmadan ÖNCE işaretlenir; sunucuya hiç gitmez
     await localWrite('denetimler', d, 'denetimler');
     // 1000+ satırı tek outbox kalemi yapmak yerine 200'lük parçalara böl (istek boyutu güvenliği)
     for (let i = 0; i < sahaRows.length; i += 200) {
