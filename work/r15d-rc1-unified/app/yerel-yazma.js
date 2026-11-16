@@ -68,6 +68,22 @@ async function localWrite(table, rows, store, options = {}) {
   const arr = Array.isArray(rows) ? rows : [rows];
   const operationId = crypto.randomUUID();
   const now = new Date().toISOString();
+  // Demo denetim: yalnız bu cihaza yazılır; kuyruk (outbox) ve değişim geçmişi sunucu için üretilmez.
+  const denetimKimligi = (table === 'saha_kontrol' || table === 'denetim_degisim_gecmisi') ? (arr[0] && arr[0].denetim_id) : (arr[0] && arr[0].id);
+  if (await AVES_DEMO.mu(denetimKimligi)) {
+    for (const row of arr) {
+      if (table === 'denetimler' || table === 'saha_kontrol') {
+        row.son_degistiren_email = Profile.email || API.email || null;
+        row.son_degistiren_ad = Profile.name || null;
+        row.son_degistiren_rol = Profile.role || null;
+        row.son_degistiren_at = now;
+      }
+    }
+    await DB.putAll(store, arr);
+    await Sync.updatePill();
+    if (typeof UI !== 'undefined' && UI.refreshSyncState) await UI.refreshSyncState();
+    return operationId;
+  }
   const historyItems = await gecmisKayitlariHazirla(table, arr, store, now);
   for (const row of arr) {
     if (table === 'denetimler' || table === 'saha_kontrol') {
